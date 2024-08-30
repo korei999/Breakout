@@ -1,0 +1,394 @@
+#include "adt/AllocatorPool.hh"
+#include "adt/Arena.hh"
+#include "adt/ThreadPool.hh"
+#include "adt/utils.hh"
+#include "adt/FixedAllocator.hh"
+
+#include "Model.hh"
+#include "Shader.hh"
+#include "Text.hh"
+#include "colors.hh"
+#include "frame.hh"
+#include "math.hh"
+
+using namespace adt;
+
+namespace frame
+{
+
+static void mainLoop();
+
+App* g_pApp;
+
+controls::Player g_player({0.0f, 0.0f, 1.0f}, 0.5, 0.07);
+
+Pair<f32, f32> g_unit;
+
+f32 g_fov = 90.0f;
+f32 g_uiWidth = 192.0f;
+f32 g_uiHeight; /* set in prepareDraw */
+
+f64 g_currTime = 0.0;
+f64 g_deltaTime = 0.0;
+f64 g_lastFrameTime = 0.0;
+
+static Pair<f32, f32> s_aspect(16.0f, 9.0f);
+
+static f64 s_prevTime;
+static int s_fpsCount = 0;
+static char s_fpsStrBuff[40] {};
+
+static AllocatorPool<Arena, ASSET_MAX_COUNT> s_apAssets;
+
+Queue<Projectile> g_projectiles;
+
+Array<Entity> s_enemies(AllocatorPoolGet(&s_apAssets, SIZE_1K));
+
+static Shader s_sh2dColor;
+static Shader s_shTex;
+static Shader s_shBitMap;
+static Shader s_shColor;
+static Shader s_shCubeDepth;
+static Shader s_shOmniDirShadow;
+static Shader s_shSkyBox;
+static Shader s_shSprite;
+
+static Texture s_tAsciiMap(AllocatorPoolGet(&s_apAssets, SIZE_1M));
+static Texture s_tSampleTex(AllocatorPoolGet(&s_apAssets, SIZE_1M));
+static Texture s_tAngryFace(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
+static Texture s_tPlayer(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
+static Texture s_tBullet(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
+static Texture s_tBox(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
+static Texture s_tBall(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
+
+static Text s_textFPS;
+static Text s_textTest;
+
+static Plain s_plain;
+
+static Ubo s_uboProjView;
+
+static void
+updateDeltaTime()
+{
+    g_currTime = utils::timeNowMS();
+    g_deltaTime = g_currTime - g_lastFrameTime;
+    g_lastFrameTime = g_currTime;
+}
+
+void
+prepareDraw()
+{
+    AppBindGlContext(g_pApp);
+    AppShowWindow(g_pApp);
+
+#ifdef DEBUG
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(gl::debugCallback, g_pApp);
+#endif
+
+    /*glEnable(GL_CULL_FACE);*/
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+
+    math::V4 gray = {colors::black, 1.0f};
+    glClearColor(gray.r, gray.g, gray.b, gray.a);
+
+    g_uiHeight = (g_uiWidth * (f32)g_pApp->wHeight) / (f32)g_pApp->wWidth;
+
+    s_plain = Plain(GL_STATIC_DRAW);
+
+    g_aAllShaders = {AllocatorPoolGet(&s_apAssets, SIZE_1K)};
+    g_aAllTextures = {AllocatorPoolGet(&s_apAssets, SIZE_1K)};
+
+    ShaderLoad(&s_sh2dColor, "shaders/2d/2dUB.vert", "shaders/2d/2d.frag");
+    ShaderLoad(&s_shTex, "shaders/simpleTex.vert", "shaders/simpleTex.frag");
+    ShaderLoad(&s_shColor, "shaders/simpleUB.vert", "shaders/simple.frag");
+    ShaderLoad(&s_shBitMap, "shaders/font/font.vert", "shaders/font/font.frag");
+    ShaderLoad(&s_shCubeDepth, "shaders/shadows/cubeMap/cubeMapDepth.vert", "shaders/shadows/cubeMap/cubeMapDepth.geom", "shaders/shadows/cubeMap/cubeMapDepth.frag");
+    ShaderLoad(&s_shOmniDirShadow, "shaders/shadows/cubeMap/omniDirShadow.vert", "shaders/shadows/cubeMap/omniDirShadow.frag");
+    ShaderLoad(&s_shSkyBox, "shaders/skybox.vert", "shaders/skybox.frag");
+    ShaderLoad(&s_shSprite, "shaders/2d/sprite.vert", "shaders/2d/sprite.frag");
+
+    ShaderUse(&s_sh2dColor);
+    ShaderSetI(&s_sh2dColor, "tex0", 0);
+
+    ShaderUse(&s_shTex);
+    ShaderSetI(&s_shTex, "tex0", 0);
+
+    ShaderUse(&s_shBitMap);
+    ShaderSetI(&s_shBitMap, "tex0", 0);
+
+    ShaderUse(&s_shOmniDirShadow);
+    ShaderSetI(&s_shOmniDirShadow, "uDiffuseTexture", 0);
+    ShaderSetI(&s_shOmniDirShadow, "uDepthMap", 1);
+
+    ShaderUse(&s_shSkyBox);
+    ShaderSetI(&s_shSkyBox, "uSkyBox", 0);
+
+    ShaderUse(&s_shSprite);
+    ShaderSetI(&s_shSprite, "tex0", 0);
+
+    UboCreateBuffer(&s_uboProjView, sizeof(math::M4)*2, GL_DYNAMIC_DRAW);
+    UboBindShader(&s_uboProjView, &s_sh2dColor, "ubProjView", 0);
+    UboBindShader(&s_uboProjView, &s_shTex, "ubProjView", 0);
+    UboBindShader(&s_uboProjView, &s_shColor, "ubProjView", 0);
+    UboBindShader(&s_uboProjView, &s_shOmniDirShadow, "ubProjView", 0);
+    UboBindShader(&s_uboProjView, &s_shSkyBox, "ubProjView", 0);
+    UboBindShader(&s_uboProjView, &s_shSprite, "ubProjView", 0);
+
+    s_textFPS = Text("", utils::size(s_fpsStrBuff), 0, 0, GL_DYNAMIC_DRAW);
+    s_textTest = Text("", 256, 0, 0, GL_DYNAMIC_DRAW);
+
+    Arena allocScope(SIZE_1K);
+    ThreadPool tp(&allocScope.base, 1);
+    ThreadPoolStart(&tp);
+
+    /* unbind before creating threads */
+    AppUnbindGlContext(g_pApp);
+
+    TexLoadArg fontBitMap {&s_tAsciiMap, "test-assets/bitmapFont2.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
+    TexLoadArg sampleTex {&s_tSampleTex, "test-assets/dirt.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
+    TexLoadArg angryFace {&s_tAngryFace, "test-assets/angryFace.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg player {&s_tPlayer, "test-assets/player.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg bullet {&s_tBullet, "test-assets/bullet.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg box {&s_tBox, "test-assets/box3.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg ball {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+
+    ThreadPoolSubmit(&tp, TextureSubmit, &sampleTex);
+    ThreadPoolSubmit(&tp, TextureSubmit, &fontBitMap);
+    ThreadPoolSubmit(&tp, TextureSubmit, &angryFace);
+    ThreadPoolSubmit(&tp, TextureSubmit, &player);
+    ThreadPoolSubmit(&tp, TextureSubmit, &bullet);
+    ThreadPoolSubmit(&tp, TextureSubmit, &box);
+    ThreadPoolSubmit(&tp, TextureSubmit, &ball);
+
+    ThreadPoolWait(&tp);
+    /* restore context after assets are loaded */
+    AppBindGlContext(g_pApp);
+
+    ThreadPoolDestroy(&tp);
+    ArenaFreeAll(&allocScope);
+
+    AppSetSwapInterval(g_pApp, 1);
+    AppToggleFullscreen(g_pApp);
+}
+
+void
+run()
+{
+    g_pApp->bRunning = true;
+    g_pApp->bRelativeMode = false;
+    g_pApp->bPaused = false;
+    AppSetCursorImage(g_pApp, "default");
+
+    s_prevTime = utils::timeNowS();
+
+    prepareDraw();
+    updateDeltaTime(); /* reset delta time before drawing */
+    updateDeltaTime();
+
+    /* proc once to get events */
+    AppSwapBuffers(g_pApp);
+    controls::PlayerProcMouse(&g_player);
+    controls::PlayerProcKeys(&g_player);
+    AppProcEvents(g_pApp);
+    AppEnableRelativeMode(g_pApp);
+
+    mainLoop();
+}
+
+static void
+renderFPSCounter(Allocator* pAlloc)
+{
+    math::M4 proj = math::M4Ortho(0.0f, g_uiWidth, 0.0f, g_uiHeight, -1.0f, 1.0f);
+    ShaderUse(&s_shBitMap);
+    TextureBind(&s_tAsciiMap, GL_TEXTURE0);
+    ShaderSetM4(&s_shBitMap, "uProj", proj);
+
+    f64 currTime = utils::timeNowMS();
+    if (currTime >= s_prevTime + 1000.0)
+    {
+        memset(s_fpsStrBuff, 0, utils::size(s_fpsStrBuff));
+        snprintf(s_fpsStrBuff, utils::size(s_fpsStrBuff), "FPS: %u\nFrame time: %.3f ms", s_fpsCount, g_deltaTime);
+
+        s_fpsCount = 0;
+        s_prevTime = currTime;
+
+        TextUpdate(&s_textFPS, pAlloc, s_fpsStrBuff, 0, 0);
+    }
+
+    TextDraw(&s_textFPS);
+}
+
+template<typename A, typename B>
+inline bool
+intersects(const A& l, const B& r)
+{
+    auto& px = l.pos.x;
+    auto& py = l.pos.y;
+    auto& ex = r.pos.x;
+    auto& ey = r.pos.y;
+
+    if (px >= ex - g_unit.x && px <= ex + g_unit.x &&
+        py >= ey - g_unit.y && py <= ey + g_unit.y)
+        return true;
+
+    return false;
+}
+
+static void
+mainLoop()
+{
+    g_projectiles = {AllocatorPoolGet(&s_apAssets, SIZE_1K / 2), SIZE_1K / 2};
+
+    static f32 rot = 0.0f;
+
+    constexpr int levelY = utils::size(game::g_level);
+    constexpr int levelX = sizeof(game::g_level) / levelY;
+
+    g_unit.x = WIDTH / levelX / 2;
+    g_unit.y = HEIGHT / levelY / 2;
+
+    for (u32 i = 0; i < levelY; i++)
+    {
+        for (u32 j = 0; j < levelX; j++)
+        {
+            if (game::g_level[i][j] != s8(game::BLOCK_COLOR::INVISIBLE))
+            {
+                ArrayPush(&s_enemies, {
+                    .pos = {g_unit.x*2*j, (HEIGHT - g_unit.y*2) - g_unit.y*2*i},
+                    .shaderIdx = 0,
+                    .modelIdx = 0,
+                    .texIdx = 0,
+                    .color = (game::BLOCK_COLOR)game::g_level[i][j],
+                    .bDead = false
+                });
+            }
+        }
+    }
+
+    while (g_pApp->bRunning)
+    {
+        u8 aFrameMem[SIZE_8K] {};
+        FixedAllocator allocFrame (aFrameMem, sizeof(aFrameMem));
+
+        {
+            AppProcEvents(g_pApp);
+            updateDeltaTime();
+            PlayerProcKeys(&g_player);
+
+            g_player.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, g_pApp->wWidth, g_pApp->wHeight);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            UboBufferData(&s_uboProjView, &g_player, 0, sizeof(math::M4) * 2);
+
+            /* enemies */
+            for (auto& enemy : s_enemies)
+            {
+                if (enemy.bDead) continue;
+
+                /*math::V3 pos {((sinf(i) * WIDTH) + WIDTH) / 2.0f, enemy.pos.y, 0.0f};*/
+                math::V3 pos {enemy.pos.x, enemy.pos.y, 0.0f};
+
+                /*enemy.pos = pos;*/
+
+                math::M4 tm;
+                tm = math::M4Iden();
+                tm = M4Translate(tm, pos);
+                tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
+
+                ShaderUse(&s_shSprite);
+                TextureBind(&s_tBox, GL_TEXTURE0);
+                ShaderSetM4(&s_shSprite, "uModel", tm);
+                ShaderSetV3(&s_shSprite, "uColor", game::blockColorToV3(enemy.color));
+                PlainDraw(&s_plain);
+
+                /*TextureBind(&s_tSampleTex, GL_TEXTURE0);*/
+                /*PlainDrawBox(&s_plain);*/
+            }
+
+            /* player */
+            {
+                math::V2 pos {g_player.pos.x, g_player.pos.y};
+
+                math::M4 tm;
+                tm = math::M4Iden();
+                tm = M4Translate(tm, {pos.x, pos.y, 10.0f});
+                tm = M4Translate(tm, {g_unit.x, g_unit.y, 0.0f});
+                tm = M4RotZ(tm, rot);
+                tm = M4Translate(tm, {-g_unit.x, -g_unit.y, 0.0f});
+                tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
+                rot += g_deltaTime * 0.001;
+
+                ShaderUse(&s_shSprite);
+                TextureBind(&s_tPlayer, GL_TEXTURE0);
+                ShaderSetM4(&s_shSprite, "uModel", tm);
+                ShaderSetV3(&s_shSprite, "uColor", colors::silver);
+                PlainDraw(&s_plain);
+            }
+
+            /* projectiles */
+            {
+                for (auto& projectile : g_projectiles)
+                {
+                    projectile.pos += projectile.dir * (f64(projectile.speed) * g_deltaTime);
+                    math::V3 drawPos {projectile.pos.x, projectile.pos.y, 0.0f};
+
+                    if (!projectile.bBroken)
+                    {
+                        math::M4 tm;
+                        tm = math::M4Iden();
+                        tm = M4Translate(tm, drawPos);
+                        tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
+
+                        ShaderUse(&s_shSprite);
+                        TextureBind(&s_tBall, GL_TEXTURE0);
+                        ShaderSetM4(&s_shSprite, "uModel", tm);
+                        ShaderSetV3(&s_shSprite, "uColor", colors::tomato);
+                        PlainDraw(&s_plain);
+
+                        TextureBind(&s_tAsciiMap, GL_TEXTURE0);
+
+                        for (auto& enemy : s_enemies)
+                        {
+                            if (!enemy.bDead && !projectile.bBroken)
+                            {
+                                if (intersects(enemy, projectile))
+                                {
+                                    enemy.bDead = true;
+                                    projectile.bBroken = true;
+                                }
+                            }
+                        }
+                    }
+
+                    if (projectile.pos.y > HEIGHT + 2*g_unit.y) QueuePopFront(&g_projectiles);
+                }
+            }
+
+            renderFPSCounter(&allocFrame.base);
+        }
+
+        AppSwapBuffers(g_pApp);
+
+        s_fpsCount++;
+    }
+
+    PlainDestroy(&s_plain);
+    UboDestroy(&s_uboProjView);
+
+    for (auto& e : g_aAllShaders)
+        ShaderDestroy(&e);
+
+    for (auto& t : g_aAllTextures)
+        TextureDestroy(&t);
+
+    for (auto& a : s_apAssets.aAllocators)
+        ArenaFreeAll(&a);
+}
+
+} /* namespace frame */
