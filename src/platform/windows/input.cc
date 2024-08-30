@@ -1,9 +1,11 @@
 #include <windowsx.h>
 
 #include "input.hh"
-#include "logs.hh"
+#include "adt/logs.hh"
 #include "../../frame.hh"
 
+namespace platform
+{
 namespace win32
 {
 namespace input
@@ -219,16 +221,16 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg)
     {
         case WM_DESTROY:
-            pApp->_bRunning = false;
+            pApp->base.bRunning = false;
             return 0;
 
         case WM_SIZE:
-            pApp->_wWidth = LOWORD(lParam);
-            pApp->_wHeight = HIWORD(lParam);
+            pApp->base.wWidth = LOWORD(lParam);
+            pApp->base.wHeight = HIWORD(lParam);
             break;
 
         case WM_KILLFOCUS:
-            memset(controls::pressedKeys, 0, sizeof(controls::pressedKeys));
+            memset(controls::g_pressedKeys, 0, sizeof(controls::g_pressedKeys));
             break;
 
         case WM_NCCREATE:
@@ -250,15 +252,15 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 if (bWasDown == bDown)
                     break;
 
-                controls::pressedKeys[ asciiToLinuxKeyCodes[keyCode] ] = bDown;
-                controls::procKeysOnce(pApp, asciiToLinuxKeyCodes[keyCode], bDown);
+                controls::g_pressedKeys[ asciiToLinuxKeyCodes[keyCode] ] = bDown;
+                controls::procKeysOnce(asciiToLinuxKeyCodes[keyCode], bDown);
             }
             break;
 
         case WM_MOUSEMOVE:
             {
-                frame::player._mouse.absX = GET_X_LPARAM(lParam);
-                frame::player._mouse.absY = GET_Y_LPARAM(lParam);
+                frame::g_player.mouse.absX = GET_X_LPARAM(lParam);
+                frame::g_player.mouse.absY = GET_Y_LPARAM(lParam);
             }
             break;
 
@@ -270,8 +272,8 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
                 if (raw->header.dwType == RIM_TYPEMOUSE)
                 {
-                    frame::player._mouse.relX += raw->data.mouse.lLastX;
-                    frame::player._mouse.relY += raw->data.mouse.lLastY;
+                    frame::g_player.mouse.relX += raw->data.mouse.lLastX;
+                    frame::g_player.mouse.relY += raw->data.mouse.lLastY;
                 }
             }
             break;
@@ -280,9 +282,9 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
     }
 
-    if (pApp && pApp->_bRelativeMode)
+    if (pApp && pApp->base.bRelativeMode)
     {
-        SetCursorPos(pApp->_wWidth / 2, pApp->_wHeight / 2);
+        SetCursorPos(pApp->base.wWidth / 2, pApp->base.wHeight / 2);
         SetCursor(nullptr);
     }
 
@@ -291,3 +293,4 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 } /* namespace input */
 } /* namespace win32 */
+} /* namespace platform */

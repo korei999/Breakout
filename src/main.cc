@@ -25,11 +25,11 @@ WinMain([[maybe_unused]] HINSTANCE instance,
         [[maybe_unused]] LPSTR cmdline,
         [[maybe_unused]] int cmdshow)
 {
-    win32::Window app("wl-cube", instance);
-    frame::g_app = &app;
+    platform::win32::Window app("wl-cube", instance);
+    frame::g_pApp = &app.base;
     frame::run();
 
-    win32::WindowDestroy(&app);
+    platform::win32::WindowDestroy(&app);
 }
 
     #ifdef DEBUG

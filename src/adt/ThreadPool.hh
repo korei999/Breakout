@@ -9,8 +9,21 @@
     #include <sys/sysinfo.h>
     #define getLogicalCoresCount() get_nprocs()
 #elif _WIN32
-    #include <sysinfoapi.h>
     #include <windows.h>
+    #include <sysinfoapi.h>
+
+    #ifdef min
+        #undef min
+    #endif
+    #ifdef max
+        #undef max
+    #endif
+    #ifdef near
+        #undef near
+    #endif
+    #ifdef far
+        #undef far
+    #endif
 
 inline DWORD
 getLogicalCoresCountWIN32()
@@ -166,10 +179,7 @@ __ThreadPoolStop(ThreadPool* s)
     s->bDone = true;
     cnd_broadcast(&s->cndQ);
     for (u32 i = 0; i < s->threadCount; i++)
-    {
-        assert(s->pThreads[i] && "joining a thread with id of '0'");
         thrd_join(s->pThreads[i], nullptr);
-    }
 }
 
 inline void

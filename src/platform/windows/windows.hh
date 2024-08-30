@@ -1,14 +1,30 @@
 #pragma once
 
+#include <windows.h>
+
+#ifdef min
+    #undef min
+#endif
+#ifdef max
+    #undef max
+#endif
+#ifdef near
+    #undef near
+#endif
+#ifdef far
+    #undef far
+#endif
+
 #include "App.hh"
 
-#include <windef.h>
-
+namespace platform
+{
 namespace win32
 {
 
-struct Window : App
+struct Window
 {
+    App base;
     HINSTANCE _hInstance;
     HWND _hWindow;
     HDC _hDeviceContext;
@@ -16,24 +32,26 @@ struct Window : App
     WNDCLASSEXW _windowClass;
     RAWINPUTDEVICE _rawInputDevices[2];
 
-    Window(Allocator* p, String name, HINSTANCE instance);
-    virtual ~Window() override;
-
-    virtual void init() override;
-    virtual void disableRelativeMode() override;
-    virtual void enableRelativeMode() override;
-    virtual void togglePointerRelativeMode() override;
-    virtual void toggleFullscreen() override;
-    virtual void setCursorImage(String cursorType) override;
-    virtual void setFullscreen() override;
-    virtual void unsetFullscreen() override;
-    virtual void bindGlContext() override;
-    virtual void unbindGlContext() override;
-    virtual void setSwapInterval(int interval) override;
-    virtual void toggleVSync() override;
-    virtual void swapBuffers() override;
-    virtual void procEvents() override;
-    virtual void showWindow() override;
+    Window() = default;
+    Window(String name, HINSTANCE instance);
 };
 
-};
+void WindowDestroy(Window* s);
+void WindowInit(Window* s);
+void WindowEnableRelativeMode(Window* s);
+void WindowDisableRelativeMode(Window* s);
+void WindowSetCursorImage(Window* s, String cursorType);
+void WindowSetFullscreen(Window* s);
+void WindowUnsetFullscreen(Window* s);
+void WindowTogglePointerRelativeMode(Window* s);
+void WindowToggleFullscreen(Window* s);
+void WindowBindGlContext(Window* s);
+void WindowUnbindGlContext(Window* s);
+void WindowSetSwapInterval(Window* s, int interval);
+void WindowToggleVSync(Window* s);
+void WindowSwapBuffers(Window* s);
+void WindowProcEvents([[maybe_unused]] Window* s);
+void WindowShowWindow([[maybe_unused]] Window* s);
+
+} /* namespace win32 */
+} /* namespace platform */
