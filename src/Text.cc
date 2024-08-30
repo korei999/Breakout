@@ -6,7 +6,7 @@
 static Array<TextCharQuad> TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
 static void TextGenMesh(Text* s, int xOrigin, int yOrigin, GLint drawMode);
 
-Text::Text(String s, u32 size, int x, int y, GLint drawMode)
+Text::Text(String s, u64 size, int x, int y, GLint drawMode)
     : str(s), maxSize(size)
 {
     TextGenMesh(this, x, y, drawMode);

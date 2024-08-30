@@ -19,7 +19,7 @@ struct Text
     GLuint vboSize;
 
     Text() = default;
-    Text(String s, u32 size, int x, int y, GLint drawMode);
+    Text(String s, u64 size, int x, int y, GLint drawMode);
 };
 
 void TextUpdate(Text* s, Allocator* pAlloc, String str, int x, int y);

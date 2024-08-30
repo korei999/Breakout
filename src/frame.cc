@@ -42,7 +42,7 @@ static AllocatorPool<Arena, ASSET_MAX_COUNT> s_apAssets;
 
 Queue<Projectile> g_projectiles;
 
-Array<Entity> s_enemies(AllocatorPoolGet(&s_apAssets, SIZE_1K));
+Array<Entity> s_enemies(AllocatorPoolGet(&s_apAssets, SIZE_1M));
 
 static Shader s_sh2dColor;
 static Shader s_shTex;
@@ -245,8 +245,8 @@ mainLoop()
 
     static f32 rot = 0.0f;
 
-    constexpr int levelY = utils::size(game::g_level);
-    constexpr int levelX = sizeof(game::g_level) / levelY;
+    constexpr int levelY = (int)utils::size(game::g_level);
+    constexpr int levelX = (int)sizeof(game::g_level) / levelY;
 
     g_unit.x = WIDTH / levelX / 2;
     g_unit.y = HEIGHT / levelY / 2;

@@ -3,8 +3,8 @@
 #ifdef __linux__
     #include <time.h>
 #elif _WIN32
-    #include <sysinfoapi.h>
     #include <windows.h>
+    #include <sysinfoapi.h>
 
     #ifdef min
         #undef min
