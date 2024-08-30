@@ -25,12 +25,12 @@ namespace win32
 struct Window
 {
     App base;
-    HINSTANCE _hInstance;
-    HWND _hWindow;
-    HDC _hDeviceContext;
-    HGLRC _hGlContext;
-    WNDCLASSEXW _windowClass;
-    RAWINPUTDEVICE _rawInputDevices[2];
+    HINSTANCE hInstance;
+    HWND hWindow;
+    HDC hDeviceContext;
+    HGLRC hGlContext;
+    WNDCLASSEXW windowClass;
+    RAWINPUTDEVICE rawInputDevices[2];
 
     Window() = default;
     Window(String name, HINSTANCE instance);

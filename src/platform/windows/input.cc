@@ -149,17 +149,17 @@ registerRawMouseDevice(Window* pApp, bool on)
 {
     DWORD flag = on ? RIDEV_NOLEGACY : RIDEV_REMOVE;
 
-    pApp->_rawInputDevices[0].usUsagePage = 0x01; /* HID_USAGE_PAGE_GENERIC */
-    pApp->_rawInputDevices[0].usUsage = 0x02;     /* HID_USAGE_GENERIC_MOUSE */
-    pApp->_rawInputDevices[0].dwFlags = flag;     /* adds mouse and also ignores legacy mouse messages */
-    pApp->_rawInputDevices[0].hwndTarget = 0;
+    pApp->rawInputDevices[0].usUsagePage = 0x01; /* HID_USAGE_PAGE_GENERIC */
+    pApp->rawInputDevices[0].usUsage = 0x02;     /* HID_USAGE_GENERIC_MOUSE */
+    pApp->rawInputDevices[0].dwFlags = flag;     /* adds mouse and also ignores legacy mouse messages */
+    pApp->rawInputDevices[0].hwndTarget = 0;
 
     // pApp->rawInputDevices[1].usUsagePage = 0x01;       /* HID_USAGE_PAGE_GENERIC */
     // pApp->rawInputDevices[1].usUsage = 0x06;           /* HID_USAGE_GENERIC_KEYBOARD */
     // pApp->rawInputDevices[1].dwFlags = RIDEV_NOLEGACY; /* adds keyboard and also ignores legacy keyboard messages */
     // pApp->rawInputDevices[1].hwndTarget = 0;
 
-    if (RegisterRawInputDevices(pApp->_rawInputDevices, 1, sizeof(pApp->_rawInputDevices[0])) == FALSE)
+    if (RegisterRawInputDevices(pApp->rawInputDevices, 1, sizeof(pApp->rawInputDevices[0])) == FALSE)
         LOG_FATAL("RegisterRawInputDevices failed: %lu\n", GetLastError());
 }
 
@@ -168,12 +168,12 @@ registerRawKBDevice(Window* pApp, bool on)
 {
     DWORD flag = on ? RIDEV_NOLEGACY : RIDEV_REMOVE;
 
-    pApp->_rawInputDevices[1].usUsagePage = 0x01;       /* HID_USAGE_PAGE_GENERIC */
-    pApp->_rawInputDevices[1].usUsage = 0x06;           /* HID_USAGE_GENERIC_KEYBOARD */
-    pApp->_rawInputDevices[1].dwFlags = flag; /* adds keyboard and also ignores legacy keyboard messages */
-    pApp->_rawInputDevices[1].hwndTarget = 0;
+    pApp->rawInputDevices[1].usUsagePage = 0x01;       /* HID_USAGE_PAGE_GENERIC */
+    pApp->rawInputDevices[1].usUsage = 0x06;           /* HID_USAGE_GENERIC_KEYBOARD */
+    pApp->rawInputDevices[1].dwFlags = flag; /* adds keyboard and also ignores legacy keyboard messages */
+    pApp->rawInputDevices[1].hwndTarget = 0;
 
-    if (RegisterRawInputDevices(pApp->_rawInputDevices, 1, sizeof(pApp->_rawInputDevices[1])) == FALSE)
+    if (RegisterRawInputDevices(pApp->rawInputDevices, 1, sizeof(pApp->rawInputDevices[1])) == FALSE)
         LOG_FATAL("RegisterRawInputDevices failed: %lu\n", GetLastError());
 }
 
