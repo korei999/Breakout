@@ -27,9 +27,6 @@ struct Mouse
 
     u32 button = 0;
     u32 state = 0;
-
-    Mouse() = default;
-    Mouse(f64 _sens) : sens{_sens} {}
 };
 
 struct Player
@@ -42,12 +39,11 @@ struct Player
     math::V3 front {0, 0, -1};
     math::V3 right {1, 0, 0};
     const math::V3 up {0, 1, 0};
-    f64 moveSpeed = 5.0;
-    Mouse mouse {};
 
-    Player() = default;
-    Player(const math::V3& _pos, f64 _moveSpeed, f64 _sens)
-        : pos{_pos}, moveSpeed{_moveSpeed}, mouse{_sens} {}
+    f64 moveSpeed = 5.0;
+    math::V3 dir {};
+
+    Mouse mouse {};
 };
 
 void PlayerProcMouse(Player* s);

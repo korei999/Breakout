@@ -26,7 +26,7 @@ M4::M4(const M3& m)
         0,      0,      0,      1} {}
 
 f32
-v2Length(const V2& v)
+V2Length(const V2& v)
 {
     f32 res = 0;
     res += sq(v.x);
@@ -71,7 +71,7 @@ V4Length(const V4& v)
 V2
 V2Norm(const V2& v)
 {
-    f32 len = v2Length(v);
+    f32 len = V2Length(v);
     return V2 {v.x / len, v.y / len};
 }
 
@@ -443,7 +443,7 @@ M3ToString(Allocator* pAlloc, const M3& m, String prefix)
 }
 
 String
-v4ToString(Allocator* pAlloc, const V4& v, String prefix)
+V4ToString(Allocator* pAlloc, const V4& v, String prefix)
 {
     auto r = StringAlloc(pAlloc, 128);
     snprintf(r.pData, r.size, "%.*s:\n\t%.3f %.3f %.3f %.3f\n", prefix.size, prefix.pData, v.x, v.y, v.z, v.w);

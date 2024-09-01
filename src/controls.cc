@@ -85,13 +85,8 @@ procKeysOnce(u32 key, u32 pressed)
             {
                 if (!pressed) break;
 
-                QueuePushBack(&frame::g_projectiles, {
-                    .entityIdx = 0,
-                    .speed = 1.0f, 
-                    .pos = frame::g_player.pos,
-                    .dir = math::V2Norm({0.0f, 1.0f}),
-                    .bBroken = false
-                });
+                frame::g_ball.bReleased = !frame::g_ball.bReleased;
+                frame::g_ball.dir = math::V2Norm({0.0f, 1.0f});
             }
             break;
 
@@ -104,80 +99,22 @@ void
 PlayerProcKeys(Player* s)
 {
     PlayerProcMovements(s);
-
-    if (g_pressedKeys[KEY_I])
-    {
-        frame::g_fov += 100.0f * f32(frame::g_deltaTime);
-        LOG_OK("fov: %.3f}\n", frame::g_fov);
-    }
-    if (g_pressedKeys[KEY_O])
-    {
-        frame::g_fov -= 100.0f * f32(frame::g_deltaTime);
-        LOG_OK("fov: %.3f\n", frame::g_fov);
-    }
-    if (g_pressedKeys[KEY_Z])
-    {
-        /*f64 inc = pressedKeys[KEY_LEFTSHIFT] ? (-4.0) : 4.0;*/
-        /*x += inc * deltaTime;*/
-        /*LOG_OK("x: %.3f\n", x);*/
-    }
-    if (g_pressedKeys[KEY_X])
-    {
-        /*f64 inc = pressedKeys[KEY_LEFTSHIFT] ? (-4.0) : 4.0;*/
-        /*y += inc * deltaTime;*/
-        /*LOG_OK("y: %.3f\n", y);*/
-    }
-    if (g_pressedKeys[KEY_C])
-    {
-        /*f64 inc = pressedKeys[KEY_LEFTSHIFT] ? (-4.0) : 4.0;*/
-        /*z += inc * deltaTime;*/
-        /*LOG_OK("z: %.3f\n", z);*/
-    }
 }
 
 void
 PlayerProcMovements(Player* s)
 {
-    f64 moveSpeed = s->moveSpeed * frame::g_deltaTime;
-
-    math::V3 combinedMove {};
+    s->dir = {0.0f, 0.0f, 0.0f};
 
     if (g_pressedKeys[KEY_A])
     {
-        math::V3 left = V3Norm(V3Cross(s->front, s->up));
-        combinedMove -= (left);
+        s->dir = {-1.0f, 0.0f, 0.0f};
     }
+
     if (g_pressedKeys[KEY_D])
     {
-        math::V3 left = V3Norm(V3Cross(s->front, s->up));
-        combinedMove += (left);
+        s->dir = {1.0f, 0.0f, 0.0f};
     }
-    // if (g_pressedKeys[KEY_W])
-    // {
-    //     combinedMove += s->up;
-    // }
-    // if (g_pressedKeys[KEY_S])
-    // {
-    //     combinedMove -= s->up;
-    // }
-    f32 len = V3Length(combinedMove);
-    if (len > 0) combinedMove = V3Norm(combinedMove, len);
-
-    if (g_pressedKeys[KEY_LEFTSHIFT])
-        moveSpeed *= 3;
-    if (g_pressedKeys[KEY_LEFTALT])
-        moveSpeed /= 3;
-
-    math::V3 newPos = s->pos + (combinedMove * f32(moveSpeed));
-
-    if (newPos.x >= frame::WIDTH - frame::g_unit.x*2) newPos.x = frame::WIDTH - frame::g_unit.x*2;
-    if (newPos.x < 0.0f) newPos.x = 0.0f;
-    // if (newPos.y >= frame::HEIGHT) newPos.y = frame::HEIGHT;
-    // if (newPos.y < 0.0f) newPos.y = 0.0f;
-
-    s->pos = newPos;
-
-    /*COUT("pos: %.2f, %.2f\n", newPos.x, newPos.y);*/
 }
 
 void 

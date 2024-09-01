@@ -20,7 +20,19 @@ static void mainLoop();
 
 App* g_pApp;
 
-controls::Player g_player({0.0f, 0.0f, 1.0f}, 0.5, 0.07);
+controls::Player g_player {
+    .moveSpeed = 0.9,
+    .dir {},
+    .mouse {.sens = 0.07},
+};
+
+game::Ball g_ball {
+    .bReleased = false,
+    .speed = 0.9f,
+    .radius = 2.0f,
+    .pos = g_player.pos,
+    .dir {},
+};
 
 Pair<f32, f32> g_unit;
 
@@ -40,16 +52,7 @@ static char s_fpsStrBuff[40] {};
 
 static AllocatorPool<Arena, ASSET_MAX_COUNT> s_apAssets;
 
-Queue<game::Projectile> g_projectiles;
-
 static Array<game::Entity> s_enemies(AllocatorPoolGet(&s_apAssets, SIZE_1K));
-
-static game::Ball s_ball {
-    .speed = 1.0f,
-    .pos = g_player.pos,
-    .dir {},
-    .radius = 1.0f
-};
 
 static Shader s_shTex;
 static Shader s_shBitMap;
@@ -223,11 +226,53 @@ intersects(const A& l, const B& r)
     return false;
 }
 
+enum REFLECT_SIDE { NONE, VERTICAL, HORIZONTAL };
+
+inline REFLECT_SIDE
+reflectFromBlock(const game::Ball& ball, const game::Entity& block)
+{
+    const auto& bx = ball.pos.x;
+    const auto& by = ball.pos.y;
+    const auto& ex = block.pos.x;
+    const auto& ey = block.pos.y;
+
+    if (by >= ey - g_unit.y && by <= ey + g_unit.y)
+    {
+        if (bx >= ex - g_unit.x - ball.radius && bx <= ex - g_unit.x + g_unit.x/8) /* left */
+            return VERTICAL;
+        if (bx <= ex + g_unit.x + ball.radius && bx >= ex + g_unit.x - g_unit.x/8) /* right */
+            return VERTICAL;
+    }
+
+    if (bx >= ex - g_unit.x && bx <= ex + g_unit.x)
+    {
+        if (by >= ey - g_unit.y - ball.radius && by <= ey - g_unit.y + g_unit.y/8)
+            return HORIZONTAL;
+        if (by <= ey + g_unit.y + ball.radius && by >= ey + g_unit.y - g_unit.y/8)
+            return HORIZONTAL;
+    }
+
+    return NONE;
+}
+
+inline bool
+paddleHit()
+{
+    const auto& bx = g_ball.pos.x;
+    const auto& by = g_ball.pos.y;
+    const auto& px = g_player.pos.x;
+    const auto& py = g_player.pos.y;
+
+    if (bx >= px - g_unit.x*2.0 && bx <= px + g_unit.x*2.0 &&
+        by >= py - g_ball.radius/2 && by <= py + g_ball.radius/2)
+        return true;
+
+    return false;
+}
+
 static void
 mainLoop()
 {
-    g_projectiles = {AllocatorPoolGet(&s_apAssets, SIZE_1K / 2), SIZE_1K / 2};
-
     constexpr int levelY = (int)utils::size(game::g_level);
     constexpr int levelX = (int)sizeof(game::g_level) / levelY;
 
@@ -296,12 +341,26 @@ mainLoop()
 
             /* player */
             {
-                math::V2 pos {g_player.pos.x, g_player.pos.y};
+                g_player.pos += g_player.dir * g_player.moveSpeed * g_deltaTime;
+
+                if (g_player.pos.x >= WIDTH - g_unit.x*3)
+                {
+                    g_player.pos.x = WIDTH - g_unit.x*3;
+                    g_player.dir = {};
+                }
+                else if (g_player.pos.x <= g_unit.x)
+                {
+                    g_player.pos.x = g_unit.x;
+                    g_player.dir = {};
+                }
+
+                const auto& pos = g_player.pos;
 
                 math::M4 tm;
                 tm = math::M4Iden();
-                tm = M4Translate(tm, {pos.x, pos.y, 10.0f});
-                tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
+                tm = M4Translate(tm, {pos.x - g_unit.x, pos.y, 10.0f});
+
+                tm = M4Scale(tm, {g_unit.x*2, g_unit.y, 1.0f});
 
                 ShaderUse(&s_shSprite);
                 TextureBind(&s_tPaddle, GL_TEXTURE0);
@@ -310,44 +369,66 @@ mainLoop()
                 PlainDraw(&s_plain);
             }
 
-            /* projectiles */
+            /* ball */
             {
-                for (auto& projectile : g_projectiles)
+                if (g_ball.bReleased)
                 {
-                    projectile.pos += projectile.dir * (f64(projectile.speed) * g_deltaTime);
-                    math::V3 drawPos {projectile.pos.x, projectile.pos.y, 0.0f};
-
-                    if (!projectile.bBroken)
-                    {
-                        math::M4 tm;
-                        tm = math::M4Iden();
-                        tm = M4Translate(tm, drawPos);
-                        tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
-
-                        ShaderUse(&s_shSprite);
-                        TextureBind(&s_tBall, GL_TEXTURE0);
-                        ShaderSetM4(&s_shSprite, "uModel", tm);
-                        ShaderSetV3(&s_shSprite, "uColor", colors::tomato);
-                        PlainDraw(&s_plain);
-
-                        TextureBind(&s_tAsciiMap, GL_TEXTURE0);
-
-                        for (auto& enemy : s_enemies)
+                    for (auto& e : s_enemies)
+                        if (!e.bDead)
                         {
-                            if (!enemy.bDead && !projectile.bBroken)
+                            REFLECT_SIDE side = reflectFromBlock(g_ball, e);
+                            switch (side)
                             {
-                                if (intersects(enemy, projectile))
-                                {
-                                    enemy.bDead = true;
-                                    projectile.bBroken = true;
-                                }
+                                case REFLECT_SIDE::HORIZONTAL:
+                                         {
+                                             e.bDead = true;
+                                             g_ball.dir.y = -g_ball.dir.y;
+                                         } break;
+
+                                case REFLECT_SIDE::VERTICAL:
+                                         {
+                                             e.bDead = true;
+                                             g_ball.dir.x = -g_ball.dir.x;
+                                         } break;
+
+                                default: break;
                             }
                         }
-                    }
-
-                    if (projectile.pos.y > HEIGHT + 2*g_unit.y) QueuePopFront(&g_projectiles);
                 }
+
+                if (paddleHit())
+                {
+                    g_ball.dir.y = 1.0f;
+                    if (math::V2Length(g_player.dir) > 0.0f)
+                        g_ball.dir += g_player.dir * 0.25f;
+                }
+
+                /* out of bounds */
+                if (g_ball.pos.y <= 0.0f - g_unit.y*2) g_ball.bReleased = false;
+                else if (g_ball.pos.y >= HEIGHT - g_unit.y) g_ball.dir.y = -1.0f;
+                else if (g_ball.pos.x <= 0.0f - g_unit.x) g_ball.dir.x = -g_ball.dir.x;
+                else if (g_ball.pos.x >= WIDTH - g_unit.x) g_ball.dir.x = -g_ball.dir.x;
+                /*else if (g_ball.pos.y <= 0.0f - g_unit.y) g_ball.dir.y = 1.0f;*/
+
+                if (g_ball.bReleased)
+                {
+                    g_ball.pos += V2Norm(g_ball.dir) * g_deltaTime * g_ball.speed;
+                } else g_ball.pos = g_player.pos;
+
+                const auto& pos = g_ball.pos;
+
+                math::M4 tm;
+                tm = math::M4Iden();
+                tm = M4Translate(tm, {pos.x, pos.y, 10.0f});
+                tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
+
+                ShaderUse(&s_shSprite);
+                TextureBind(&s_tBall, GL_TEXTURE0);
+                ShaderSetM4(&s_shSprite, "uModel", tm);
+                ShaderSetV3(&s_shSprite, "uColor", colors::tomato);
+                PlainDraw(&s_plain);
             }
+
 
             renderFPSCounter(&allocFrame.base);
         }
