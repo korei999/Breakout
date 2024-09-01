@@ -40,26 +40,29 @@ static char s_fpsStrBuff[40] {};
 
 static AllocatorPool<Arena, ASSET_MAX_COUNT> s_apAssets;
 
-Queue<Projectile> g_projectiles;
+Queue<game::Projectile> g_projectiles;
 
-Array<Entity> s_enemies(AllocatorPoolGet(&s_apAssets, SIZE_1M));
+static Array<game::Entity> s_enemies(AllocatorPoolGet(&s_apAssets, SIZE_1K));
 
-static Shader s_sh2dColor;
+static game::Ball s_ball {
+    .speed = 1.0f,
+    .pos = g_player.pos,
+    .dir {},
+    .radius = 1.0f
+};
+
 static Shader s_shTex;
 static Shader s_shBitMap;
 static Shader s_shColor;
-static Shader s_shCubeDepth;
-static Shader s_shOmniDirShadow;
-static Shader s_shSkyBox;
 static Shader s_shSprite;
 
 static Texture s_tAsciiMap(AllocatorPoolGet(&s_apAssets, SIZE_1M));
 static Texture s_tSampleTex(AllocatorPoolGet(&s_apAssets, SIZE_1M));
 static Texture s_tAngryFace(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
-static Texture s_tPlayer(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tBullet(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tBox(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tBall(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
+static Texture s_tPaddle(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 
 static Text s_textFPS;
 static Text s_textTest;
@@ -102,17 +105,10 @@ prepareDraw()
     g_aAllShaders = {AllocatorPoolGet(&s_apAssets, SIZE_1K)};
     g_aAllTextures = {AllocatorPoolGet(&s_apAssets, SIZE_1K)};
 
-    ShaderLoad(&s_sh2dColor, "shaders/2d/2dUB.vert", "shaders/2d/2d.frag");
     ShaderLoad(&s_shTex, "shaders/simpleTex.vert", "shaders/simpleTex.frag");
     ShaderLoad(&s_shColor, "shaders/simpleUB.vert", "shaders/simple.frag");
     ShaderLoad(&s_shBitMap, "shaders/font/font.vert", "shaders/font/font.frag");
-    ShaderLoad(&s_shCubeDepth, "shaders/shadows/cubeMap/cubeMapDepth.vert", "shaders/shadows/cubeMap/cubeMapDepth.geom", "shaders/shadows/cubeMap/cubeMapDepth.frag");
-    ShaderLoad(&s_shOmniDirShadow, "shaders/shadows/cubeMap/omniDirShadow.vert", "shaders/shadows/cubeMap/omniDirShadow.frag");
-    ShaderLoad(&s_shSkyBox, "shaders/skybox.vert", "shaders/skybox.frag");
     ShaderLoad(&s_shSprite, "shaders/2d/sprite.vert", "shaders/2d/sprite.frag");
-
-    ShaderUse(&s_sh2dColor);
-    ShaderSetI(&s_sh2dColor, "tex0", 0);
 
     ShaderUse(&s_shTex);
     ShaderSetI(&s_shTex, "tex0", 0);
@@ -120,23 +116,12 @@ prepareDraw()
     ShaderUse(&s_shBitMap);
     ShaderSetI(&s_shBitMap, "tex0", 0);
 
-    ShaderUse(&s_shOmniDirShadow);
-    ShaderSetI(&s_shOmniDirShadow, "uDiffuseTexture", 0);
-    ShaderSetI(&s_shOmniDirShadow, "uDepthMap", 1);
-
-    ShaderUse(&s_shSkyBox);
-    ShaderSetI(&s_shSkyBox, "uSkyBox", 0);
-
     ShaderUse(&s_shSprite);
     ShaderSetI(&s_shSprite, "tex0", 0);
 
     UboCreateBuffer(&s_uboProjView, sizeof(math::M4)*2, GL_DYNAMIC_DRAW);
-    UboBindShader(&s_uboProjView, &s_sh2dColor, "ubProjView", 0);
     UboBindShader(&s_uboProjView, &s_shTex, "ubProjView", 0);
     UboBindShader(&s_uboProjView, &s_shColor, "ubProjView", 0);
-    UboBindShader(&s_uboProjView, &s_shOmniDirShadow, "ubProjView", 0);
-    UboBindShader(&s_uboProjView, &s_shSkyBox, "ubProjView", 0);
-    UboBindShader(&s_uboProjView, &s_shSprite, "ubProjView", 0);
 
     s_textFPS = Text("", utils::size(s_fpsStrBuff), 0, 0, GL_DYNAMIC_DRAW);
     s_textTest = Text("", 256, 0, 0, GL_DYNAMIC_DRAW);
@@ -151,18 +136,18 @@ prepareDraw()
     TexLoadArg fontBitMap {&s_tAsciiMap, "test-assets/bitmapFont2.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
     TexLoadArg sampleTex {&s_tSampleTex, "test-assets/dirt.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
     TexLoadArg angryFace {&s_tAngryFace, "test-assets/angryFace.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
-    TexLoadArg player {&s_tPlayer, "test-assets/player.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg bullet {&s_tBullet, "test-assets/bullet.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg box {&s_tBox, "test-assets/box3.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg ball {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg paddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
 
     ThreadPoolSubmit(&tp, TextureSubmit, &sampleTex);
     ThreadPoolSubmit(&tp, TextureSubmit, &fontBitMap);
     ThreadPoolSubmit(&tp, TextureSubmit, &angryFace);
-    ThreadPoolSubmit(&tp, TextureSubmit, &player);
     ThreadPoolSubmit(&tp, TextureSubmit, &bullet);
     ThreadPoolSubmit(&tp, TextureSubmit, &box);
     ThreadPoolSubmit(&tp, TextureSubmit, &ball);
+    ThreadPoolSubmit(&tp, TextureSubmit, &paddle);
 
     ThreadPoolWait(&tp);
     /* restore context after assets are loaded */
@@ -243,8 +228,6 @@ mainLoop()
 {
     g_projectiles = {AllocatorPoolGet(&s_apAssets, SIZE_1K / 2), SIZE_1K / 2};
 
-    static f32 rot = 0.0f;
-
     constexpr int levelY = (int)utils::size(game::g_level);
     constexpr int levelX = (int)sizeof(game::g_level) / levelY;
 
@@ -318,16 +301,12 @@ mainLoop()
                 math::M4 tm;
                 tm = math::M4Iden();
                 tm = M4Translate(tm, {pos.x, pos.y, 10.0f});
-                tm = M4Translate(tm, {g_unit.x, g_unit.y, 0.0f});
-                tm = M4RotZ(tm, rot);
-                tm = M4Translate(tm, {-g_unit.x, -g_unit.y, 0.0f});
                 tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
-                rot += g_deltaTime * 0.001;
 
                 ShaderUse(&s_shSprite);
-                TextureBind(&s_tPlayer, GL_TEXTURE0);
+                TextureBind(&s_tPaddle, GL_TEXTURE0);
                 ShaderSetM4(&s_shSprite, "uModel", tm);
-                ShaderSetV3(&s_shSprite, "uColor", colors::silver);
+                ShaderSetV3(&s_shSprite, "uColor", colors::teal);
                 PlainDraw(&s_plain);
             }
 

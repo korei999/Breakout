@@ -11,25 +11,6 @@ using namespace adt;
 namespace frame
 {
 
-struct Entity
-{
-    math::V2 pos;
-    u16 shaderIdx;
-    u16 modelIdx;
-    u16 texIdx;
-    game::BLOCK_COLOR color;
-    bool bDead;
-};
-
-struct Projectile
-{
-    u16 entityIdx;
-    f32 speed;
-    math::V2 pos;
-    math::V2 dir;
-    bool bBroken;
-};
-
 constexpr u32 ASSET_MAX_COUNT = 512;
 
 constexpr f32 WIDTH = 1000.0f;
@@ -49,7 +30,7 @@ extern f64 g_currTime;
 extern f64 g_deltaTime;
 extern f64 g_lastFrameTime;
 
-extern Queue<Projectile> g_projectiles;
+extern Queue<game::Projectile> g_projectiles;
 
 void run();
 
