@@ -86,7 +86,7 @@ procKeysOnce(u32 key, u32 pressed)
                 if (!pressed) break;
 
                 frame::g_ball.bReleased = !frame::g_ball.bReleased;
-                frame::g_ball.dir = math::V2Norm({0.0f, 1.0f});
+                frame::g_ball.dir = math::V3(0.0f, 1.0f, 0.0f) + frame::g_player.dir * 0.25f;
             }
             break;
 

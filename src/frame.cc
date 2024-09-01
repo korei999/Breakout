@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "adt/AllocatorPool.hh"
 #include "adt/Arena.hh"
 #include "adt/ThreadPool.hh"
@@ -263,8 +265,9 @@ paddleHit()
     const auto& px = g_player.pos.x;
     const auto& py = g_player.pos.y;
 
+
     if (bx >= px - g_unit.x*2.0 && bx <= px + g_unit.x*2.0 &&
-        by >= py - g_ball.radius/2 && by <= py + g_ball.radius/2)
+        by >= py - g_unit.y && by <= py - g_unit.y + g_unit.y/2)
         return true;
 
     return false;
