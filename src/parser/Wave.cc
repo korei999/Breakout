@@ -1,5 +1,10 @@
 #include "Wave.hh"
-#include "adt/logs.hh"
+
+#ifdef WAVE
+    #include "adt/logs.hh"
+#endif
+
+#include <assert.h>
 
 namespace parser
 {
@@ -11,28 +16,28 @@ WaveParse(Wave* s)
 {
     s->bin.pos = 0;
 
-    String chunkID = BinReadString(&s->bin, 4);
+    [[maybe_unused]] String chunkID = BinReadString(&s->bin, 4);
     assert(chunkID == "RIFF" && "not a Wave header");
 
-    u32 chunkSize = BinRead32(&s->bin);
+    [[maybe_unused]] u32 chunkSize = BinRead32(&s->bin);
 
-    String format = BinReadString(&s->bin, 4);
+    [[maybe_unused]] String format = BinReadString(&s->bin, 4);
     assert(format == "WAVE" && "not a Wave header");
 
-    String subchunk1ID = BinReadString(&s->bin, 4);
+    [[maybe_unused]] String subchunk1ID = BinReadString(&s->bin, 4);
     assert(subchunk1ID == "fmt " && "not a Wave header");
 
-    u32 subchunk1Size = BinRead32(&s->bin);
-    s16 audioFormat = BinRead16(&s->bin);
+    [[maybe_unused]] u32 subchunk1Size = BinRead32(&s->bin);
+    [[maybe_unused]] s16 audioFormat = BinRead16(&s->bin);
     s16 numChannels = BinRead16(&s->bin);
     u32 sampleRate = BinRead32(&s->bin);
-    u32 byteRate = BinRead32(&s->bin); /* == SampleRate * NumChannels * BitsPerSample/8 */
-    u16 blockAlign = BinRead16(&s->bin); /*  == NumChannels * BitsPerSample/8
+    [[maybe_unused]] u32 byteRate = BinRead32(&s->bin); /* == SampleRate * NumChannels * BitsPerSample/8 */
+    [[maybe_unused]] u16 blockAlign = BinRead16(&s->bin); /*  == NumChannels * BitsPerSample/8
                                           *  The number of bytes for one sample including
                                           *  all channels. I wonder what happens when
                                           *  this number isn't an integer? */
 
-    u16 bitsPerSample = BinRead16(&s->bin);
+    [[maybe_unused]] u16 bitsPerSample = BinRead16(&s->bin);
 
     String subchunk2ID = BinReadString(&s->bin, 4);
     String data {};

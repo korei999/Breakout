@@ -87,10 +87,16 @@ MixerAdd(Mixer* s, audio::Track t)
     mtx_unlock(&s->mtxAdd);
 }
 
-// void
-// MixerRemove(Mixer* s, u32 i)
-// {
-// }
+void
+MixerAddBackground(Mixer* s, audio::Track t)
+{
+    mtx_lock(&s->mtxAdd);
+
+    if (s->aTracks.size < MAX_TRACK_COUNT) ArrayPush(&s->aBackgroundTracks, t);
+    else LOG_WARN("MAX_TRACK_COUNT(%u) reached, ignoring track push\n", MAX_TRACK_COUNT);
+
+    mtx_unlock(&s->mtxAdd);
+}
 
 static void
 MixerRunThread(Mixer* s, int argc, char** argv)
@@ -115,6 +121,9 @@ MixerRunThread(Mixer* s, int argc, char** argv)
         &s->s_streamEvents,
         s
     );
+
+    COUT("sampleRate: %u\n", s->sampleRate);
+    COUT("channels: %u\n", s->channels);
 
     spa_audio_info_raw rawInfo {
         .format = s->eformat,
@@ -168,24 +177,21 @@ cbOnProcess(void* data)
     u32 nFrames = buf->datas[0].maxsize / stride;
     if (b->requested) nFrames = SPA_MIN(b->requested, (u64)nFrames);
 
-    if (nFrames > 1024*4) nFrames = 1024*4; /* limit to arbitrary number, `SPA_MAX` maybe? */
+    if (nFrames > 1024*4) nFrames = 1024*4; /* limit to arbitrary number */
 
     s->lastNFrames = nFrames;
-
-    /* non linear nicer ramping */
-    /*f32 vol = s->base.bMuted ? 0.0 : powf(s->base.volume, 3.0f);*/
 
     for (u32 i = 0; i < nFrames; i++)
     {
         s16 val[4] {};
 
-        for (u32 i = 0; i < s->aTracks.size; i++)
-        {
-            auto& t = s->aTracks[i];
+        auto procTrack = [&val, s](audio::Track* track, u32* i) -> void {
+            auto& t = *track;
             f32 vol = powf(t.volume, 3.0f);
 
             if (t.pcmPos + 4 < t.pcmSize)
             {
+                /* FIXME: why 4 times, should be 2? */
                 val[0] += t.pData[t.pcmPos + 0] * vol;
                 val[1] += t.pData[t.pcmPos + 1] * vol;
                 val[2] += t.pData[t.pcmPos + 2] * vol;
@@ -201,11 +207,40 @@ cbOnProcess(void* data)
                 else
                 {
                     mtx_lock(&s->mtxAdd);
-                    ArrayPopAsLast(&s->aTracks, i);
-                    --i;
+                    ArrayPopAsLast(&s->aTracks, *i);
+                    --(*i);
                     mtx_unlock(&s->mtxAdd);
                 }
             }
+        };
+
+        if (s->aBackgroundTracks.size > 0)
+        {
+            auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
+            f32 vol = powf(t.volume, 3.0f);
+
+            if (t.pcmPos + 4 < t.pcmSize)
+            {
+                val[0] += t.pData[t.pcmPos + 0] * vol;
+                val[1] += t.pData[t.pcmPos + 1] * vol;
+                val[2] += t.pData[t.pcmPos + 2] * vol;
+                val[3] += t.pData[t.pcmPos + 3] * vol;
+                t.pcmPos += 4;
+            }
+            else
+            {
+                t.pcmPos = 0;
+                auto current = s->currentBackgroundTrackIdx + 1;
+                if (current > s->aBackgroundTracks.size - 1) current = 0;
+                s->currentBackgroundTrackIdx = current;
+            }
+        }
+
+
+        for (u32 i = 0; i < s->aTracks.size; i++)
+        {
+            auto& t = s->aTracks[i];
+            procTrack(&t, &i);
         }
 
         *dst++ = val[0];
@@ -221,10 +256,10 @@ cbOnProcess(void* data)
     pw_stream_queue_buffer(s->pStream, b);
 
     if (!frame::g_pApp->bRunning) pw_main_loop_quit(s->pLoop);
-    /* set bRunning for g_pMixer outside */
+    /* set bRunning for the mixer outside */
 }
 
-static bool
+[[maybe_unused]] static bool
 MixerEmpty(Mixer* s)
 {
     mtx_lock(&s->mtxAdd);

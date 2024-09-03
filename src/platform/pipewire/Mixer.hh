@@ -19,11 +19,13 @@ struct Mixer;
 void MixerInit(Mixer* s, int argc, char** argv);
 void MixerDestroy(Mixer* s);
 void MixerAdd(Mixer* s, audio::Track t);
+void MixerAddBackground(Mixer* s, audio::Track t);
 
 inline const audio::MixerInterface __PwMixerVTable {
     .init = decltype(audio::MixerInterface::init)(MixerInit),
     .destroy = decltype(audio::MixerInterface::destroy)(MixerDestroy),
     .add = decltype(audio::MixerInterface::add)(MixerAdd),
+    .addBackground = decltype(audio::MixerInterface::addBackground)(MixerAddBackground),
 };
 
 struct Mixer
@@ -42,11 +44,13 @@ struct Mixer
 
     mtx_t mtxAdd {};
     Array<audio::Track> aTracks {};
+    u32 currentBackgroundTrackIdx = 0;
+    Array<audio::Track> aBackgroundTracks {};
 
     thrd_t threadLoop {};
 
     Mixer() = default;
-    Mixer(Allocator* pA) : base {&__PwMixerVTable}, aTracks(pA, MAX_TRACK_COUNT) {}
+    Mixer(Allocator* pA) : base {&__PwMixerVTable}, aTracks(pA, MAX_TRACK_COUNT), aBackgroundTracks(pA, MAX_TRACK_COUNT) {}
 };
 
 } /* namespace pipewire */
