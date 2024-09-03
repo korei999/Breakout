@@ -57,6 +57,9 @@ struct Client
 
     wl_keyboard* keyboard {};
 
+    bool bRestoreRelativeMode = false;
+    bool bHiddenCursor = false;
+
     Client() = default;
     Client(String name);
 };
