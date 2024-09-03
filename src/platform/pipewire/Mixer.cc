@@ -183,10 +183,10 @@ cbOnProcess(void* data)
 
             if (t.pcmPos + 4 < t.pcmSize)
             {
-                val[0] += t.pData[t.pcmPos];
-                val[1] += t.pData[t.pcmPos + 1];
-                val[2] += t.pData[t.pcmPos + 2];
-                val[3] += t.pData[t.pcmPos + 3];
+                val[0] += t.pData[t.pcmPos + 0] * t.volume;
+                val[1] += t.pData[t.pcmPos + 1] * t.volume;
+                val[2] += t.pData[t.pcmPos + 2] * t.volume;
+                val[3] += t.pData[t.pcmPos + 3] * t.volume;
                 t.pcmPos += 4;
             }
             else

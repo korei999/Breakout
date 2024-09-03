@@ -50,27 +50,41 @@ WaveParse(Wave* s)
     u16 bitsPerSample = BinRead16(&s->bin);
     COUT("bitsPerSample: %u\n", bitsPerSample);
 
-    /* skip unneeded metadata */
-    // String subchunk2ID;
-    // do
-    // {
-    //     subchunk2ID = BinReadString(&s->bin, 4);
-    // } while (subchunk2ID != "data");
+    String subchunk2ID = BinReadString(&s->bin, 4);
+    COUT("subchunk2ID: '%.*s'\n", subchunk2ID.size, subchunk2ID.pData);
 
-    // COUT("subchunk2ID: '%.*s'\n", subchunk2ID.size, subchunk2ID.pData);
+    if (subchunk2ID == "LIST")
+    {
+        /* naively skip metadata */
+        String data {};
+        while (data != "data")
+        {
+            data = BinReadString(&s->bin, 4);
+            /*COUT("data: '%.*s'\n", data.size, data.pData);*/
+            s->bin.pos -= 3;
+        }
+        s->bin.pos -= 1;
 
-    // u32 subchunk2Size = BinRead32(&s->bin); /* == NumSamples * NumChannels * BitsPerSample/8
-    //                                          * This is the number of bytes in the data.
-    //                                          * You can also think of this as the size
-    //                                          * of the read of the subchunk following this 
-    //                                          * number. */
-    // COUT("subchunk2Size: %u\n", subchunk2Size);
+        String list = BinReadString(&s->bin, 4);
+        COUT("list: '%.*s'\n", list.size, list.pData);
+    }
+    else if (subchunk2ID == "data")
+    {
+        COUT("subchunk2ID: '%.*s'\n", subchunk2ID.size, subchunk2ID.pData);
+    }
+
+    u32 subchunk2Size = BinRead32(&s->bin); /* == NumSamples * NumChannels * BitsPerSample/8
+                                             * This is the number of bytes in the data.
+                                             * You can also think of this as the size
+                                             * of the read of the subchunk following this 
+                                             * number. */
+    COUT("subchunk2Size: %u\n", subchunk2Size);
 
     s->sampleRate = sampleRate;
     s->nChannels = numChannels;
-    s->pPcmData = reinterpret_cast<s16*>(&s->bin.sFile[0]);
-    COUT("fileSize: %u, pos: %u\n", s->bin.sFile.size, s->bin.pos);
-    s->pcmSize = chunkSize;
+    s->pPcmData = reinterpret_cast<s16*>(&s->bin.sFile[s->bin.pos]);
+    COUT("fileSize: %u, pos: %u\n\n", s->bin.sFile.size, s->bin.pos);
+    s->pcmSize = subchunk2Size;
 }
 
 } /* namespace parser */

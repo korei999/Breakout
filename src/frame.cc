@@ -174,6 +174,7 @@ prepareDraw()
 
     AppSetSwapInterval(g_pApp, 1);
     AppToggleFullscreen(g_pApp);
+    AppToggleVSync(g_pApp);
 }
 
 void
@@ -265,7 +266,7 @@ reflectFromBlock(const game::Ball& ball, const game::Entity& block)
 
 quit:
     if (ret == VERTICAL || ret == HORIZONTAL) 
-        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false));
+        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.5f));
     return ret;
 }
 
@@ -281,7 +282,7 @@ paddleHit()
     if (bx >= px - g_unit.x*2.0 && bx <= px + g_unit.x*2.0 &&
         by >= py - g_unit.y && by <= py - g_unit.y + g_unit.y/2)
     {
-        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false));
+        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.5f));
         return true;
     }
 
@@ -315,7 +316,7 @@ mainLoop()
         }
     }
 
-    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sDuClare, true));
+    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sDuClare, true, 1.0));
 
     while (g_pApp->bRunning || g_pMixer->bRunning) /* wait for mixer to stop also */
     {
@@ -363,14 +364,14 @@ mainLoop()
             {
                 g_player.pos += g_player.dir * g_player.moveSpeed * g_deltaTime;
 
-                if (g_player.pos.x >= WIDTH - g_unit.x*3)
+                if (g_player.pos.x >= WIDTH - g_unit.x*2)
                 {
-                    g_player.pos.x = WIDTH - g_unit.x*3;
+                    g_player.pos.x = WIDTH - g_unit.x*2;
                     g_player.dir = {};
                 }
-                else if (g_player.pos.x <= g_unit.x)
+                else if (g_player.pos.x <= 0)
                 {
-                    g_player.pos.x = g_unit.x;
+                    g_player.pos.x = 0;
                     g_player.dir = {};
                 }
 
@@ -426,7 +427,7 @@ mainLoop()
                 }
 
                 /* out of bounds */
-                if (g_ball.pos.y <= 0.0f - g_unit.y*2) 
+                if (g_ball.pos.y <= 0.0f - g_unit.y) 
                 {
                     g_ball.bReleased = false;
                     /*audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));*/
@@ -434,17 +435,17 @@ mainLoop()
                 else if (g_ball.pos.y >= HEIGHT - g_unit.y)
                 {
                     g_ball.dir.y = -1.0f;
-                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false));
+                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.5f));
                 }
                 else if (g_ball.pos.x <= 0.0f - g_unit.x)
                 {
                     g_ball.dir.x = -g_ball.dir.x;
-                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false));
+                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.5f));
                 }
                 else if (g_ball.pos.x >= WIDTH - g_unit.x)
                 {
                     g_ball.dir.x = -g_ball.dir.x;
-                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false));
+                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.5f));
                 }
 
                 if (g_ball.bReleased)

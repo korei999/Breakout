@@ -35,14 +35,15 @@ WaveLoadFile(Wave* s, String path)
 }
 
 inline audio::Track
-WaveGetTrack(Wave* s, bool bRepeat)
+WaveGetTrack(Wave* s, bool bRepeat, f32 vol)
 {
     return audio::Track {
         .pData = s->pPcmData,
         .pcmPos = 0,
         .pcmSize = s->pcmSize,
         .nChannels = s->nChannels,
-        .bRepeat = bRepeat
+        .bRepeat = bRepeat,
+        .volume = vol
     };
 }
 

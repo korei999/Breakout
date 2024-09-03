@@ -27,6 +27,7 @@ struct Track
     u32 pcmSize = 0;
     u8 nChannels = 0;
     bool bRepeat = false;
+    f32 volume = 0.0f;
 };
 
 struct Mixer
