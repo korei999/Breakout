@@ -50,6 +50,7 @@ add_executable(
     src/json/Parser.cc
     src/gltf/gltf.cc
     src/parser/Bin.cc
+    src/parser/Wave.cc
     src/Texture.cc
     src/Model.cc
     src/Text.cc
@@ -116,7 +117,7 @@ message(STATUS "CMAKE_SOURCE_DIR: '${CMAKE_SOURCE_DIR}'")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(LINUX_PKGS REQUIRED gl egl glesv2 wayland-client wayland-egl wayland-cursor)
+    pkg_check_modules(LINUX_PKGS REQUIRED gl egl glesv2 wayland-client wayland-egl wayland-cursor libpipewire-0.3)
     include_directories(BEFORE ${LINUX_PKGS_INCLUDE_DIRS})
     target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC ${LINUX_PKGS_LIBRARIES})
 
@@ -161,6 +162,8 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         ${WLPD}/pointer-constraints-unstable-v1.c
         ${WLPD}/relative-pointer-unstable-v1.c
         ${WLPD}/xdg-shell.c
+
+        src/platform/pipewire/Mixer.cc
     )
 elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     find_package(OpenGL REQUIRED)
@@ -170,9 +173,9 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     target_sources(
         ${CMAKE_PROJECT_NAME}
         PRIVATE
-        src/platform/windows/glad.cc
-        src/platform/windows/input.cc
-        src/platform/windows/windows.cc
+        src/platform/win32/glad.cc
+        src/platform/win32/input.cc
+        src/platform/win32/windows.cc
     )
 endif()
 

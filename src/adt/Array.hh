@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Allocator.hh"
+#include "adt/utils.hh"
 
 #include <assert.h>
 
@@ -63,6 +64,8 @@ template<typename T> inline T& ArrayLast(Array<T>* s);
 template<typename T> inline T& ArrayFirst(Array<T>* s);
 template<typename T> inline T* ArrayPop(Array<T>* s);
 template<typename T> inline void ArraySetSize(Array<T>* s, u32 size);
+template<typename T> inline void ArraySwapWithLast(Array<T>* s, u32 i);
+template<typename T> inline void ArrayPopAsLast(Array<T>* s, u32 i);
 template<typename T> inline void ArrayDestroy(Array<T>* s);
 
 template<typename T>
@@ -115,6 +118,20 @@ ArraySetSize(Array<T>* s, u32 size)
         ArrayGrow(s, size);
 
     s->size = size;
+}
+
+template<typename T>
+inline void
+ArraySwapWithLast(Array<T>* s, u32 i)
+{
+    utils::swap(s->pData[i], s->pData[s->size - 1]);
+}
+
+template<typename T>
+inline void
+ArrayPopAsLast(Array<T>* s, u32 i)
+{
+    s->pData[i] = s->pData[--s->size];
 }
 
 template<typename T>

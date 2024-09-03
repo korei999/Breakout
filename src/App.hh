@@ -4,6 +4,7 @@
 
 using namespace adt;
 
+/* Platform abstracted application/window interface */
 struct App;
 
 struct AppInterface

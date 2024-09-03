@@ -245,7 +245,8 @@ loadBMP(Allocator* pAlloc, String path, bool flip)
     u16 bitDepth;
     u8 byteDepth;
 
-    parser::Bin p(pAlloc, path);
+    parser::Bin p(pAlloc);
+    parser::BinLoadFile(&p, path);
     auto BM = parser::BinReadString(&p, 2);
 
     if (BM != "BM")
@@ -305,12 +306,12 @@ loadBMP(Allocator* pAlloc, String path, bool flip)
     {
         default:
         case GL_RGB:
-            flipCpyBGRtoRGBA(pixels.pData, (u8*)(&p[p.start]), width, height, flip);
+            flipCpyBGRtoRGBA(pixels.pData, (u8*)(&p[p.pos]), width, height, flip);
             format = GL_RGBA;
             break;
 
         case GL_RGBA:
-            flipCpyBGRAtoRGBA(pixels.pData, (u8*)(&p[p.start]), width, height, flip);
+            flipCpyBGRAtoRGBA(pixels.pData, (u8*)(&p[p.pos]), width, height, flip);
             break;
     }
 
