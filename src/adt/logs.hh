@@ -16,6 +16,14 @@
 #define COUT(...) fprintf(stdout, __VA_ARGS__)
 #define CERR(...) fprintf(stderr, __VA_ARGS__)
 
+#ifdef DEBUG
+    #define DCOUT(...) COUT(__VA_ARGS__)
+    #define DCERR(...) CERR(__VA_ARGS__)
+#else
+    #define DCOUT(...)
+    #define DCERR(...)
+#endif
+
 enum _LOG_SEV
 {
     _LOG_SEV_OK,

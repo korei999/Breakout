@@ -427,26 +427,29 @@ mainLoop()
                 }
 
                 /* out of bounds */
+                bool bOut = false;
                 if (g_ball.pos.y <= 0.0f - g_unit.y) 
                 {
                     g_ball.bReleased = false;
-                    /*audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));*/
+                    bOut = true;
                 }
                 else if (g_ball.pos.y >= HEIGHT - g_unit.y)
                 {
                     g_ball.dir.y = -1.0f;
-                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.5f));
+                    bOut = true;
                 }
                 else if (g_ball.pos.x <= 0.0f - g_unit.x)
                 {
                     g_ball.dir.x = -g_ball.dir.x;
-                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.5f));
+                    bOut = true;
                 }
                 else if (g_ball.pos.x >= WIDTH - g_unit.x)
                 {
                     g_ball.dir.x = -g_ball.dir.x;
-                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.5f));
+                    bOut = true;
                 }
+
+                if (bOut) audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.2f));
 
                 if (g_ball.bReleased)
                 {
