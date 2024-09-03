@@ -122,9 +122,6 @@ MixerRunThread(Mixer* s, int argc, char** argv)
         s
     );
 
-    COUT("sampleRate: %u\n", s->sampleRate);
-    COUT("channels: %u\n", s->channels);
-
     spa_audio_info_raw rawInfo {
         .format = s->eformat,
         .flags {},
@@ -173,7 +170,7 @@ cbOnProcess(void* data)
         return;
     }
 
-    u32 stride = sizeof(f32) * s->channels;
+    u32 stride = sizeof(s16) * s->channels;
     u32 nFrames = buf->datas[0].maxsize / stride;
     if (b->requested) nFrames = SPA_MIN(b->requested, (u64)nFrames);
 
@@ -183,20 +180,17 @@ cbOnProcess(void* data)
 
     for (u32 i = 0; i < nFrames; i++)
     {
-        s16 val[4] {};
+        s16 val[2] {};
 
         auto procTrack = [&val, s](audio::Track* track, u32* i) -> void {
             auto& t = *track;
             f32 vol = powf(t.volume, 3.0f);
 
-            if (t.pcmPos + 4 < t.pcmSize)
+            if (t.pcmPos + 2 <= t.pcmSize)
             {
-                /* FIXME: why 4 times, should be 2? */
                 val[0] += t.pData[t.pcmPos + 0] * vol;
                 val[1] += t.pData[t.pcmPos + 1] * vol;
-                val[2] += t.pData[t.pcmPos + 2] * vol;
-                val[3] += t.pData[t.pcmPos + 3] * vol;
-                t.pcmPos += 4;
+                t.pcmPos += 2;
             }
             else
             {
@@ -219,13 +213,11 @@ cbOnProcess(void* data)
             auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
             f32 vol = powf(t.volume, 3.0f);
 
-            if (t.pcmPos + 4 < t.pcmSize)
+            if (t.pcmPos + 2 <= t.pcmSize)
             {
                 val[0] += t.pData[t.pcmPos + 0] * vol;
                 val[1] += t.pData[t.pcmPos + 1] * vol;
-                val[2] += t.pData[t.pcmPos + 2] * vol;
-                val[3] += t.pData[t.pcmPos + 3] * vol;
-                t.pcmPos += 4;
+                t.pcmPos += 2;
             }
             else
             {
@@ -236,7 +228,6 @@ cbOnProcess(void* data)
             }
         }
 
-
         for (u32 i = 0; i < s->aTracks.size; i++)
         {
             auto& t = s->aTracks[i];
@@ -245,8 +236,6 @@ cbOnProcess(void* data)
 
         *dst++ = val[0];
         *dst++ = val[1];
-        *dst++ = val[2];
-        *dst++ = val[3];
     }
 
     buf->datas[0].chunk->offset = 0;
