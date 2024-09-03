@@ -403,13 +403,17 @@ mainLoop()
                             {
                                 case REFLECT_SIDE::HORIZONTAL:
                                          {
-                                             e.bDead = true;
+                                             if (e.color != game::BLOCK_COLOR::GRAY)
+                                                 e.bDead = true;
+
                                              g_ball.dir.y = -g_ball.dir.y;
                                          } break;
 
                                 case REFLECT_SIDE::VERTICAL:
                                          {
-                                             e.bDead = true;
+                                             if (e.color != game::BLOCK_COLOR::GRAY)
+                                                 e.bDead = true;
+
                                              g_ball.dir.x = -g_ball.dir.x;
                                          } break;
 
