@@ -22,10 +22,11 @@ struct MixerInterface
 
 struct Track
 {
-    f32* pData = nullptr;
+    s16* pData = nullptr;
     u32 pcmPos = 0;
     u32 pcmSize = 0;
     u8 nChannels = 0;
+    bool bRepeat = false;
 };
 
 struct Mixer

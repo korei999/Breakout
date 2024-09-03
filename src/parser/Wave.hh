@@ -19,7 +19,7 @@ enum WAVE_FORMATS : s8
 struct Wave
 {
     Bin bin;
-    f32* pPcmData = nullptr;
+    s16* pPcmData = nullptr;
     u64 pcmSize = 0;
     u8 nChannels = 0;
     u32 sampleRate = 0;
@@ -35,13 +35,14 @@ WaveLoadFile(Wave* s, String path)
 }
 
 inline audio::Track
-WaveGetTrack(Wave* s)
+WaveGetTrack(Wave* s, bool bRepeat)
 {
     return audio::Track {
         .pData = s->pPcmData,
         .pcmPos = 0,
         .pcmSize = s->pcmSize,
-        .nChannels = s->nChannels
+        .nChannels = s->nChannels,
+        .bRepeat = bRepeat
     };
 }
 

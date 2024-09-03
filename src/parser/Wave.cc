@@ -68,9 +68,9 @@ WaveParse(Wave* s)
 
     s->sampleRate = sampleRate;
     s->nChannels = numChannels;
-    s->pPcmData = reinterpret_cast<f32*>(&s->bin.sFile[44]);
+    s->pPcmData = reinterpret_cast<s16*>(&s->bin.sFile[0]);
     COUT("fileSize: %u, pos: %u\n", s->bin.sFile.size, s->bin.pos);
-    s->pcmSize = chunkSize - 44;
+    s->pcmSize = chunkSize;
 }
 
 } /* namespace parser */

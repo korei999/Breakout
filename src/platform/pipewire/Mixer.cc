@@ -16,8 +16,7 @@ namespace pipewire
 
 static void MixerRunThread(Mixer* s, int argc, char** argv);
 static void cbOnProcess(void* data);
-
-static f32 s_chunk[audio::CHUNK_SIZE] {};
+static bool MixerEmpty(Mixer* s);
 
 const pw_stream_events Mixer::s_streamEvents {
     .version = PW_VERSION_STREAM_EVENTS,
@@ -43,7 +42,7 @@ MixerInit(Mixer* s, int argc, char** argv)
 
     s->sampleRate = 48000;
     s->channels = 2;
-    s->eformat = SPA_AUDIO_FORMAT_S16;
+    s->eformat = SPA_AUDIO_FORMAT_S16_LE;
 
     mtx_init(&s->mtxAdd, mtx_plain);
 
@@ -133,6 +132,7 @@ MixerRunThread(Mixer* s, int argc, char** argv)
         utils::size(params)
     );
 
+    ArraySetSize(&s->aTracks, 1);
     pw_main_loop_run(s->pLoop);
 
     pw_stream_destroy(s->pStream);
@@ -154,16 +154,16 @@ cbOnProcess(void* data)
     }
 
     spa_buffer* buf = b->buffer;
-    f32* dst;
+    s16* dst = (s16*)buf->datas[0].data;
 
-    if ((dst = (f32*)buf->datas[0].data) == nullptr)
+    if (!dst)
     {
         LOG_WARN("dst == nullptr\n");
         return;
     }
 
-    int stride = sizeof(f32) * s->channels;
-    int nFrames = buf->datas[0].maxsize / stride;
+    u32 stride = sizeof(f32) * s->channels;
+    u32 nFrames = buf->datas[0].maxsize / stride;
     if (b->requested) nFrames = SPA_MIN(b->requested, (u64)nFrames);
 
     if (nFrames > 1024*4) nFrames = 1024*4; /* limit to arbitrary number, `SPA_MAX` maybe? */
@@ -171,24 +171,29 @@ cbOnProcess(void* data)
     s->lastNFrames = nFrames;
 
     /* non linear nicer ramping */
-    f32 vol = s->base.bMuted ? 0.0 : powf(s->base.volume, 3.0f);
+    /*f32 vol = s->base.bMuted ? 0.0 : powf(s->base.volume, 3.0f);*/
 
-    for (int i = 0; i < nFrames; i++)
+    for (u32 i = 0; i < nFrames; i++)
     {
-        for (int j = 0; j < (int)s->channels; j++)
+        s16 val[4] {};
+
+        for (u32 i = 0; i < s->aTracks.size; i++)
         {
-            /* modify each sample here */
-            /*f32 val = s_chunk[chunkPos] * vol;*/
-            f32 val = 0.0f;
+            auto& t = s->aTracks[i];
 
-            for (u32 i = 0; i < s->aTracks.size; i++)
+            if (t.pcmPos + 4 < t.pcmSize)
             {
-                auto& t = s->aTracks[i];
-
-                if (t.pcmPos < t.pcmSize)
+                val[0] += t.pData[t.pcmPos];
+                val[1] += t.pData[t.pcmPos + 1];
+                val[2] += t.pData[t.pcmPos + 2];
+                val[3] += t.pData[t.pcmPos + 3];
+                t.pcmPos += 4;
+            }
+            else
+            {
+                if (t.bRepeat)
                 {
-                    val = t.pData[t.pcmPos];
-                    t.pcmPos++;
+                    t.pcmPos = 0;
                 }
                 else
                 {
@@ -198,9 +203,12 @@ cbOnProcess(void* data)
                     mtx_unlock(&s->mtxAdd);
                 }
             }
-
-            *dst++ = val;
         }
+
+        *dst++ = val[0];
+        *dst++ = val[1];
+        *dst++ = val[2];
+        *dst++ = val[3];
     }
 
     buf->datas[0].chunk->offset = 0;
@@ -211,6 +219,16 @@ cbOnProcess(void* data)
 
     if (!frame::g_pApp->bRunning) pw_main_loop_quit(s->pLoop);
     /* set bRunning for g_pMixer outside */
+}
+
+static bool
+MixerEmpty(Mixer* s)
+{
+    mtx_lock(&s->mtxAdd);
+    bool r = s->aTracks.size > 0;
+    mtx_unlock(&s->mtxAdd);
+
+    return r;
 }
 
 } /* namespace pipewire */

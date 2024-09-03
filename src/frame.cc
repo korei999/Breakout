@@ -72,6 +72,7 @@ static Texture s_tBall(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tPaddle(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 
 static parser::Wave s_sBeep(AllocatorPoolGet(&s_apAssets, SIZE_1K * 400));
+static parser::Wave s_sDuClare(AllocatorPoolGet(&s_apAssets, SIZE_1M * 35));
 
 static Text s_textFPS;
 static Text s_textTest;
@@ -137,6 +138,9 @@ prepareDraw()
 
     parser::WaveLoadFile(&s_sBeep, "test-assets/c100s16.wav");
     parser::WaveParse(&s_sBeep);
+
+    parser::WaveLoadFile(&s_sDuClare, "test-assets/duclare.wav");
+    parser::WaveParse(&s_sDuClare);
 
     Arena allocScope(SIZE_1K);
     ThreadPool tp(&allocScope.base, 1);
@@ -219,22 +223,6 @@ renderFPSCounter(Allocator* pAlloc)
     TextDraw(&s_textFPS);
 }
 
-template<typename A, typename B>
-inline bool
-intersects(const A& l, const B& r)
-{
-    auto& px = l.pos.x;
-    auto& py = l.pos.y;
-    auto& ex = r.pos.x;
-    auto& ey = r.pos.y;
-
-    if (px >= ex - g_unit.x && px <= ex + g_unit.x &&
-        py >= ey - g_unit.y && py <= ey + g_unit.y)
-        return true;
-
-    return false;
-}
-
 enum REFLECT_SIDE { NONE, VERTICAL, HORIZONTAL };
 
 inline REFLECT_SIDE
@@ -245,23 +233,40 @@ reflectFromBlock(const game::Ball& ball, const game::Entity& block)
     const auto& ex = block.pos.x;
     const auto& ey = block.pos.y;
 
+    REFLECT_SIDE ret = NONE;
+
     if (by >= ey - g_unit.y && by <= ey + g_unit.y)
     {
         if (bx >= ex - g_unit.x - ball.radius && bx <= ex - g_unit.x + g_unit.x/8) /* left */
-            return VERTICAL;
+        {
+            ret = VERTICAL;
+            goto quit;
+        }
         if (bx <= ex + g_unit.x + ball.radius && bx >= ex + g_unit.x - g_unit.x/8) /* right */
-            return VERTICAL;
+        {
+            ret = VERTICAL;
+            goto quit;
+        }
     }
 
     if (bx >= ex - g_unit.x && bx <= ex + g_unit.x)
     {
         if (by >= ey - g_unit.y - ball.radius && by <= ey - g_unit.y + g_unit.y/4)
-            return HORIZONTAL;
+        {
+            ret = HORIZONTAL;
+            goto quit;
+        }
         if (by <= ey + g_unit.y + ball.radius && by >= ey + g_unit.y - g_unit.y/4)
-            return HORIZONTAL;
+        {
+            ret = HORIZONTAL;
+            goto quit;
+        }
     }
 
-    return NONE;
+quit:
+    if (ret == VERTICAL || ret == HORIZONTAL) 
+        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false));
+    return ret;
 }
 
 inline bool
@@ -275,7 +280,10 @@ paddleHit()
 
     if (bx >= px - g_unit.x*2.0 && bx <= px + g_unit.x*2.0 &&
         by >= py - g_unit.y && by <= py - g_unit.y + g_unit.y/2)
+    {
+        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false));
         return true;
+    }
 
     return false;
 }
@@ -306,6 +314,8 @@ mainLoop()
             }
         }
     }
+
+    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sDuClare, true));
 
     while (g_pApp->bRunning || g_pMixer->bRunning) /* wait for mixer to stop also */
     {
@@ -394,14 +404,12 @@ mainLoop()
                                          {
                                              e.bDead = true;
                                              g_ball.dir.y = -g_ball.dir.y;
-                                             audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));
                                          } break;
 
                                 case REFLECT_SIDE::VERTICAL:
                                          {
                                              e.bDead = true;
                                              g_ball.dir.x = -g_ball.dir.x;
-                                             audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));
                                          } break;
 
                                 default: break;
@@ -411,7 +419,7 @@ mainLoop()
 
                 if (paddleHit())
                 {
-                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));
+                    /*audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));*/
                     g_ball.dir.y = 1.0f;
                     if (math::V2Length(g_player.dir) > 0.0f)
                         g_ball.dir += g_player.dir * 0.25f;
@@ -421,22 +429,22 @@ mainLoop()
                 if (g_ball.pos.y <= 0.0f - g_unit.y*2) 
                 {
                     g_ball.bReleased = false;
-                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));
+                    /*audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));*/
                 }
                 else if (g_ball.pos.y >= HEIGHT - g_unit.y)
                 {
                     g_ball.dir.y = -1.0f;
-                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));
+                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false));
                 }
                 else if (g_ball.pos.x <= 0.0f - g_unit.x)
                 {
                     g_ball.dir.x = -g_ball.dir.x;
-                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));
+                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false));
                 }
                 else if (g_ball.pos.x >= WIDTH - g_unit.x)
                 {
                     g_ball.dir.x = -g_ball.dir.x;
-                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));
+                    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false));
                 }
 
                 if (g_ball.bReleased)

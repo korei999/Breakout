@@ -29,7 +29,7 @@ struct Mixer
     audio::Mixer base;
     u32 sampleRate = 48000;
     u8 channels = 2;
-    enum spa_audio_format eformat = SPA_AUDIO_FORMAT_F32;
+    enum spa_audio_format eformat;
 
     static const pw_stream_events s_streamEvents;
     pw_core* pCore = nullptr;
