@@ -443,10 +443,10 @@ mainLoop()
                 bool bAddSound = false;
                 if (g_ball.pos.y <= 0.0f - g_unit.y) 
                 {
-                    /*g_ball.bReleased = false;*/
-                    g_ball.pos.y = 0.0f - g_unit.y + 4;
-                    g_ball.dir.y = -g_ball.dir.y;
-                    bAddSound = true;
+                    g_ball.bReleased = false;
+                    /*g_ball.pos.y = 0.0f - g_unit.y + 4;*/
+                    /*g_ball.dir.y = -g_ball.dir.y;*/
+                    /*bAddSound = true;*/
                 }
                 else if (g_ball.pos.y >= HEIGHT - g_unit.y)
                 {
