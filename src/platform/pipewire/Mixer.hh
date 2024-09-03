@@ -12,6 +12,8 @@ namespace platform
 namespace pipewire
 {
 
+constexpr u32 MAX_TRACK_COUNT = 1024;
+
 struct Mixer;
 
 void MixerInit(Mixer* s, int argc, char** argv);
@@ -44,7 +46,7 @@ struct Mixer
     thrd_t threadLoop {};
 
     Mixer() = default;
-    Mixer(Allocator* pA) : base {&__PwMixerVTable}, aTracks(pA, 64) {}
+    Mixer(Allocator* pA) : base {&__PwMixerVTable}, aTracks(pA, MAX_TRACK_COUNT) {}
 };
 
 } /* namespace pipewire */

@@ -72,7 +72,7 @@ static Texture s_tBall(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tPaddle(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 
 static parser::Wave s_sBeep(AllocatorPoolGet(&s_apAssets, SIZE_1K * 400));
-static parser::Wave s_sDuClare(AllocatorPoolGet(&s_apAssets, SIZE_1M * 35));
+static parser::Wave s_sndDuClare(AllocatorPoolGet(&s_apAssets, SIZE_1M * 35));
 
 static Text s_textFPS;
 static Text s_textTest;
@@ -139,8 +139,8 @@ prepareDraw()
     parser::WaveLoadFile(&s_sBeep, "test-assets/c100s16.wav");
     parser::WaveParse(&s_sBeep);
 
-    parser::WaveLoadFile(&s_sDuClare, "test-assets/duclare.wav");
-    parser::WaveParse(&s_sDuClare);
+    parser::WaveLoadFile(&s_sndDuClare, "test-assets/DuClare.wav");
+    parser::WaveParse(&s_sndDuClare);
 
     Arena allocScope(SIZE_1K);
     ThreadPool tp(&allocScope.base, 1);
@@ -266,7 +266,7 @@ reflectFromBlock(const game::Ball& ball, const game::Entity& block)
 
 quit:
     if (ret == VERTICAL || ret == HORIZONTAL) 
-        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.5f));
+        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.2f));
     return ret;
 }
 
@@ -282,7 +282,7 @@ paddleHit()
     if (bx >= px - g_unit.x*2.0 && bx <= px + g_unit.x*2.0 &&
         by >= py - g_unit.y && by <= py - g_unit.y + g_unit.y/2)
     {
-        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.5f));
+        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.2f));
         return true;
     }
 
@@ -316,7 +316,7 @@ mainLoop()
         }
     }
 
-    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sDuClare, true, 1.0));
+    audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndDuClare, true, 0.8));
 
     while (g_pApp->bRunning || g_pMixer->bRunning) /* wait for mixer to stop also */
     {
@@ -420,7 +420,6 @@ mainLoop()
 
                 if (paddleHit())
                 {
-                    /*audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep));*/
                     g_ball.dir.y = 1.0f;
                     if (math::V2Length(g_player.dir) > 0.0f)
                         g_ball.dir += g_player.dir * 0.25f;
@@ -431,7 +430,6 @@ mainLoop()
                 if (g_ball.pos.y <= 0.0f - g_unit.y) 
                 {
                     g_ball.bReleased = false;
-                    bOut = true;
                 }
                 else if (g_ball.pos.y >= HEIGHT - g_unit.y)
                 {
