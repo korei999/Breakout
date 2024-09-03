@@ -28,6 +28,12 @@ struct Wave
     Wave(Allocator* pA) : bin(pA) {}
 };
 
+struct WaveLoadArg
+{
+    Wave* s;
+    String path;
+};
+
 inline void
 WaveLoadFile(Wave* s, String path)
 {
@@ -45,6 +51,16 @@ WaveGetTrack(Wave* s, bool bRepeat, f32 vol)
         .bRepeat = bRepeat,
         .volume = vol
     };
+}
+
+inline int
+WaveSubmit(void* pArg)
+{
+    auto a = *(WaveLoadArg*)pArg;
+    WaveLoadFile(a.s, a.path);
+    WaveParse(a.s);
+
+    return 0;
 }
 
 } /* namespace parser */

@@ -137,21 +137,16 @@ prepareDraw()
     s_textFPS = Text("", utils::size(s_fpsStrBuff), 0, 0, GL_DYNAMIC_DRAW);
     s_textTest = Text("", 256, 0, 0, GL_DYNAMIC_DRAW);
 
-    parser::WaveLoadFile(&s_sBeep, "test-assets/c100s16.wav");
-    parser::WaveParse(&s_sBeep);
-
-    parser::WaveLoadFile(&s_sndDuClare, "test-assets/DuClare.wav");
-    parser::WaveParse(&s_sndDuClare);
-
-    parser::WaveLoadFile(&s_sndUnatco, "test-assets/Unatco.wav");
-    parser::WaveParse(&s_sndUnatco);
-
     Arena allocScope(SIZE_1K);
     ThreadPool tp(&allocScope.base, 1);
     ThreadPoolStart(&tp);
 
     /* unbind before creating threads */
     AppUnbindGlContext(g_pApp);
+
+    parser::WaveLoadArg beep {&s_sBeep, "test-assets/c100s16.wav"};
+    parser::WaveLoadArg duclare {&s_sndDuClare, "test-assets/DuClare.wav"};
+    parser::WaveLoadArg unatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
     TexLoadArg fontBitMap {&s_tAsciiMap, "test-assets/bitmapFont2.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
     TexLoadArg sampleTex {&s_tSampleTex, "test-assets/dirt.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
@@ -160,6 +155,10 @@ prepareDraw()
     TexLoadArg box {&s_tBox, "test-assets/box3.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg ball {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg paddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+
+    ThreadPoolSubmit(&tp, parser::WaveSubmit, &beep);
+    ThreadPoolSubmit(&tp, parser::WaveSubmit, &duclare);
+    ThreadPoolSubmit(&tp, parser::WaveSubmit, &unatco);
 
     ThreadPoolSubmit(&tp, TextureSubmit, &sampleTex);
     ThreadPoolSubmit(&tp, TextureSubmit, &fontBitMap);
