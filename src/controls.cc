@@ -65,6 +65,12 @@ procKeysOnce(u32 key, u32 pressed)
             if (pressed)
             {
                 frame::g_pApp->bRunning = false;
+
+#ifdef _WIN32
+                /* FIXME: implement mixer on windows */
+                frame::g_pMixer->bRunning = false;
+#endif
+
                 LOG_OK("quit...\n");
             }
             break;

@@ -178,7 +178,7 @@ registerRawKBDevice(Window* pApp, bool on)
 }
 
 bool
-enterFullscreen(HWND hwnd, int fullscreenWidth, int fullscreenHeight, int colourBits, int refreshRate)
+enterFullscreen(HWND hwnd, int fullscreenWidth, int fullscreenHeight, int colorBits, int refreshRate)
 {
     DEVMODE fullscreenSettings;
     bool bSucces;
@@ -186,7 +186,7 @@ enterFullscreen(HWND hwnd, int fullscreenWidth, int fullscreenHeight, int colour
     EnumDisplaySettings(NULL, 0, &fullscreenSettings);
     fullscreenSettings.dmPelsWidth = fullscreenWidth;
     fullscreenSettings.dmPelsHeight = fullscreenHeight;
-    fullscreenSettings.dmBitsPerPel = colourBits;
+    fullscreenSettings.dmBitsPerPel = colorBits;
     fullscreenSettings.dmDisplayFrequency = refreshRate;
     fullscreenSettings.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY;
 

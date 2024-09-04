@@ -5,7 +5,7 @@
 #ifdef __linux__
 #include <GLES3/gl32.h>
 #elif _WIN32
-#include "../platform/windows/glad.h"
+#include "../platform/win32/glad.h"
 #endif
 
 #ifdef DEBUG

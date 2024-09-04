@@ -45,4 +45,46 @@ ADT_NO_UB constexpr void MixerDestroy(Mixer* s) { s->pVTable->destroy(s); }
 ADT_NO_UB constexpr void MixerAdd(Mixer* s, Track t) { s->pVTable->add(s, t); }
 ADT_NO_UB constexpr void MixerAddBackground(Mixer* s, Track t) { s->pVTable->addBackground(s, t); }
 
+struct DummyMixer
+{
+    Mixer base;
+
+    constexpr DummyMixer();
+};
+
+constexpr void
+DummyMixerInit([[maybe_unused]] DummyMixer* s, [[maybe_unused]] int argc, [[maybe_unused]] char** argv)
+{
+    //
+}
+
+constexpr void
+DummyMixerDestroy([[maybe_unused]] DummyMixer* s)
+{
+    //
+}
+
+constexpr void
+DummyMixerAdd([[maybe_unused]] DummyMixer* s, [[maybe_unused]] Track t)
+{
+    //
+}
+
+constexpr void
+DummyMixerAddBackground([[maybe_unused]] DummyMixer* s, [[maybe_unused]] Track t)
+{
+    //
+}
+
+inline const MixerInterface __DummyMixerVTable {
+    .init = decltype(MixerInterface::init)(DummyMixerInit),
+    .destroy = decltype(MixerInterface::destroy)(DummyMixerDestroy),
+    .add = decltype(MixerInterface::add)(DummyMixerAdd),
+    .addBackground = decltype(MixerInterface::addBackground)(DummyMixerAddBackground)
+};
+
+constexpr
+DummyMixer::DummyMixer()
+    : base {&__DummyMixerVTable} {}
+
 } /* namespace audio */

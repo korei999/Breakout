@@ -46,7 +46,7 @@ WaveGetTrack(Wave* s, bool bRepeat, f32 vol)
     return audio::Track {
         .pData = s->pPcmData,
         .pcmPos = 0,
-        .pcmSize = s->pcmSize,
+        .pcmSize = u32(s->pcmSize),
         .nChannels = s->nChannels,
         .bRepeat = bRepeat,
         .volume = vol

@@ -13,7 +13,7 @@ int
 main(int argc, char* argv[])
 {
     platform::pipewire::Mixer mixer(&alMixer.base);
-    platform::wayland::Client app("WlCubes");
+    platform::wayland::Client app("Breakout");
 
     platform::pipewire::MixerInit(&mixer, argc, argv);
 
@@ -35,11 +35,19 @@ WinMain([[maybe_unused]] HINSTANCE instance,
         [[maybe_unused]] LPSTR cmdline,
         [[maybe_unused]] int cmdshow)
 {
-    platform::win32::Window app("wl-cube", instance);
+    using namespace platform::win32;
+
+    audio::DummyMixer mixer;
+    audio::DummyMixerInit(&mixer, {}, {});
+    Window app("Breakout", instance);
+
+    frame::g_pMixer = &mixer.base;
     frame::g_pApp = &app.base;
+
     frame::run();
 
-    platform::win32::WindowDestroy(&app);
+    audio::DummyMixerDestroy(&mixer);
+    WindowDestroy(&app);
 }
 
     #ifdef DEBUG
