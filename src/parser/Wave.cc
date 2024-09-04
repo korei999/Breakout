@@ -10,45 +10,44 @@ namespace parser
 {
 
 /* http://soundfile.sapp.org/doc/WaveFormat/ */
+/* https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html */
 
 void
 WaveParse(Wave* s)
 {
-    s->bin.pos = 0;
+    [[maybe_unused]] String ckID = BinReadString(&s->bin, 4);
+    assert(ckID == "RIFF" && "not a Wave header");
 
-    [[maybe_unused]] String chunkID = BinReadString(&s->bin, 4);
-    assert(chunkID == "RIFF" && "not a Wave header");
+    [[maybe_unused]] u32 ckSize = BinRead32(&s->bin);
 
-    [[maybe_unused]] u32 chunkSize = BinRead32(&s->bin);
+    [[maybe_unused]] String waveid = BinReadString(&s->bin, 4);
+    assert(waveid == "WAVE" && "not a Wave header");
 
-    [[maybe_unused]] String format = BinReadString(&s->bin, 4);
-    assert(format == "WAVE" && "not a Wave header");
+    /* FMT CHUNK */
+    [[maybe_unused]] String fmtCkID = BinReadString(&s->bin, 4);
+    assert(fmtCkID == "fmt " && "not a Wave header");
 
-    [[maybe_unused]] String subchunk1ID = BinReadString(&s->bin, 4);
-    assert(subchunk1ID == "fmt " && "not a Wave header");
+    [[maybe_unused]] u32 fmtCkSize = BinRead32(&s->bin);
+    assert(fmtCkSize == 16 || fmtCkSize == 18 || fmtCkSize == 40);
 
-    [[maybe_unused]] u32 subchunk1Size = BinRead32(&s->bin);
-    [[maybe_unused]] s16 audioFormat = BinRead16(&s->bin);
-    s16 numChannels = BinRead16(&s->bin);
-    u32 sampleRate = BinRead32(&s->bin);
-    [[maybe_unused]] u32 byteRate = BinRead32(&s->bin); /* == SampleRate * NumChannels * BitsPerSample/8 */
-    [[maybe_unused]] u16 blockAlign = BinRead16(&s->bin); /*  == NumChannels * BitsPerSample/8
-                                          *  The number of bytes for one sample including
-                                          *  all channels. I wonder what happens when
-                                          *  this number isn't an integer? */
+    [[maybe_unused]] s16 wFormatTag = BinRead16(&s->bin);
+    s16 nChannels = BinRead16(&s->bin);
+    u32 nSamplesPerSec = BinRead32(&s->bin);
+    [[maybe_unused]] s32 nAvgBytesPerSec = BinRead32(&s->bin);
+    [[maybe_unused]] s16 nBlockAlign = BinRead16(&s->bin);
 
-    [[maybe_unused]] u16 bitsPerSample = BinRead16(&s->bin);
+    [[maybe_unused]] u16 wBitsPerSample = BinRead16(&s->bin);
 
     String subchunk2ID = BinReadString(&s->bin, 4);
-    String data {};
 
+    String data {};
     if (subchunk2ID == "LIST")
     {
         /* naively skip metadata */
-        String _data {};
-        while (_data != "data")
+        String __data {};
+        while (__data != "data")
         {
-            _data = BinReadString(&s->bin, 4);
+            __data = BinReadString(&s->bin, 4);
             s->bin.pos -= 3;
         }
         s->bin.pos -= 1;
@@ -59,34 +58,29 @@ WaveParse(Wave* s)
     {
     }
 
-    u32 subchunk2Size = BinRead32(&s->bin); /* == NumSamples * NumChannels * BitsPerSample/8
-                                             * This is the number of bytes in the data.
-                                             * You can also think of this as the size
-                                             * of the read of the subchunk following this 
-                                             * number. */
+    u32 subchunk2Size = BinRead32(&s->bin);
 
-    s->sampleRate = sampleRate;
-    s->nChannels = numChannels;
+    s->sampleRate = nSamplesPerSec;
+    s->nChannels = nChannels;
     s->pPcmData = reinterpret_cast<s16*>(&s->bin.sFile[s->bin.pos]);
     s->pcmSize = subchunk2Size / sizeof(s16);
 
 #ifdef WAVE
-    LOG_OK("chunkID: '%.*s'\n", chunkID.size, chunkID.pData);
-    LOG_OK("chunkSize: %u\n", chunkSize);
-    LOG_OK("format: '%.*s'\n", format.size, format.pData);
-    LOG_OK("subchunk1ID: '%.*s'\n", subchunk1ID.size, subchunk1ID.pData);
-    LOG_OK("subchunk1Size: %u\n", subchunk1Size);
-    LOG_OK("audioFormat: %d\n", audioFormat);
-    LOG_OK("numChannels: %d\n", numChannels);
-    LOG_OK("sampleRate: %u\n", sampleRate);
-    LOG_OK("byteRate: %u\n", byteRate);
-    LOG_OK("blockAlign: %u\n", blockAlign);
-    LOG_OK("bitsPerSample: %u\n", bitsPerSample);
+    LOG_OK("ckID: '%.*s'\n", ckID.size, ckID.pData);
+    LOG_OK("ckSize: %u\n", ckSize);
+    LOG_OK("waveid: '%.*s'\n", waveid.size, waveid.pData);
+    LOG_OK("fmtCkID: '%.*s'\n", fmtCkID.size, fmtCkID.pData);
+    LOG_OK("fmtCkSize: %u\n", fmtCkSize);
+    LOG_OK("wFormatTag: %d\n", wFormatTag);
+    LOG_OK("nChannels: %d\n", nChannels);
+    LOG_OK("nSamplesPerSec: %u\n", nSamplesPerSec);
+    LOG_OK("nAvgBytesPerSec: %u\n", nAvgBytesPerSec);
+    LOG_OK("nBlockAlign: %u\n", nBlockAlign);
+    LOG_OK("wBitsPerSample: %u\n", wBitsPerSample);
     LOG_OK("subchunk2ID: '%.*s'\n", subchunk2ID.size, subchunk2ID.pData);
     LOG_OK("data: '%.*s'\n", data.size, data.pData);
     LOG_OK("subchunk2Size: %u\n", subchunk2Size);
-    LOG_OK("fileSize: %u, pos: %u\n", s->bin.sFile.size, s->bin.pos);
-    CERR("\n");
+    LOG_OK("fileSize: %u, pos: %u\n\n", s->bin.sFile.size, s->bin.pos);
 #endif
 }
 
