@@ -324,8 +324,8 @@ mainLoop()
         }
     }
 
-    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.8));
-    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndDuClare, true, 0.8));
+    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.8f));
+    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndDuClare, true, 0.8f));
 
     while (g_pApp->bRunning || g_pMixer->bRunning) /* wait for mixer to stop also */
     {
