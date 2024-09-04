@@ -1,15 +1,9 @@
 #include "Wave.hh"
-
-#ifdef WAVE
-    #include "adt/logs.hh"
-#endif
-
-#include <assert.h>
+#include "adt/logs.hh"
 
 namespace parser
 {
 
-/* http://soundfile.sapp.org/doc/WaveFormat/ */
 /* https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html */
 
 void
@@ -31,6 +25,12 @@ WaveParse(Wave* s)
     assert(fmtCkSize == 16 || fmtCkSize == 18 || fmtCkSize == 40);
 
     [[maybe_unused]] s16 wFormatTag = BinRead16(&s->bin);
+    if (wFormatTag != 1 && wFormatTag != 3)
+    {
+        LOG_WARN("wFormatTag: '%#hx' unsupported Wave format\n", wFormatTag);
+        return;
+    }
+
     s16 nChannels = BinRead16(&s->bin);
     u32 nSamplesPerSec = BinRead32(&s->bin);
     [[maybe_unused]] s32 nAvgBytesPerSec = BinRead32(&s->bin);
@@ -41,21 +41,29 @@ WaveParse(Wave* s)
     String subchunk2ID = BinReadString(&s->bin, 4);
 
     String data {};
-    if (subchunk2ID == "LIST")
+    if (subchunk2ID != "data")
     {
         /* naively skip metadata */
         String __data {};
-        while (__data != "data")
+        while (__data != "data" && s->bin.pos + 4 < s->bin.sFile.size)
         {
             __data = BinReadString(&s->bin, 4);
             s->bin.pos -= 3;
+
         }
         s->bin.pos -= 1;
 
         data = BinReadString(&s->bin, 4);
     }
-    else if (subchunk2ID == "data")
+    else
     {
+        /* TODO: qfact LIST  */
+    }
+
+    if (data != "data")
+    {
+        LOG_WARN("error loading wave file (no 'data' chunk)\n");
+        return;
     }
 
     u32 subchunk2Size = BinRead32(&s->bin);
@@ -66,12 +74,13 @@ WaveParse(Wave* s)
     s->pcmSize = subchunk2Size / sizeof(s16);
 
 #ifdef WAVE
+    LOG_OK("'%.*s':\n", s->bin.sPath.size, s->bin.sPath.pData);
     LOG_OK("ckID: '%.*s'\n", ckID.size, ckID.pData);
     LOG_OK("ckSize: %u\n", ckSize);
     LOG_OK("waveid: '%.*s'\n", waveid.size, waveid.pData);
     LOG_OK("fmtCkID: '%.*s'\n", fmtCkID.size, fmtCkID.pData);
     LOG_OK("fmtCkSize: %u\n", fmtCkSize);
-    LOG_OK("wFormatTag: %d\n", wFormatTag);
+    LOG_OK("wFormatTag: %p\n", reinterpret_cast<void*>(wFormatTag));
     LOG_OK("nChannels: %d\n", nChannels);
     LOG_OK("nSamplesPerSec: %u\n", nSamplesPerSec);
     LOG_OK("nAvgBytesPerSec: %u\n", nAvgBytesPerSec);

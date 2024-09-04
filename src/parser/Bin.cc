@@ -4,11 +4,14 @@
 namespace parser
 {
 
-void 
+bool 
 BinLoadFile(Bin* s, String path)
 {
+    s->sPath = StringAlloc(s->pAlloc, path);
     s->pos = 0;
     s->sFile = file::load(s->pAlloc, path);
+
+    return s->sFile.pData != nullptr;
 }
 
 void 

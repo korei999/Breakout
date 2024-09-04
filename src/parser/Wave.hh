@@ -10,6 +10,8 @@ namespace parser
 struct Wave;
 
 void WaveParse(Wave* s);
+inline bool WaveLoadFile(Wave* s, String path);
+inline int WaveSubmit(void* pArg);
 
 enum WAVE_FORMATS : s8
 {
@@ -34,10 +36,10 @@ struct WaveLoadArg
     String path;
 };
 
-inline void
+inline bool
 WaveLoadFile(Wave* s, String path)
 {
-    BinLoadFile(&s->bin, path);
+    return BinLoadFile(&s->bin, path);
 }
 
 inline audio::Track

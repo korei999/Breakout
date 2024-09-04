@@ -34,13 +34,25 @@ enum _LOG_SEV
     _LOG_SEV_ENUM_SIZE
 };
 
-inline const char* _LOG_SEV_STR[] = {"", "GOOD: ", "WARNING: ", "BAD: ", "FATAL: "};
+inline const char* _LOG_SEV_STR[] = {
+    "",
+    COL_GREEN "GOOD: " COL_NORM,
+    COL_YELLOW "WARNING: " COL_NORM,
+    COL_RED "BAD: " COL_NORM,
+    COL_RED "FATAL: " COL_NORM
+};
+
+#if defined __clang__ || __GNUC__
+    #define ADT_FILE __FILE_NAME__
+#else
+    #define ADT_FILE __FILE__
+#endif
 
 #define _LOG(SEV, ...)                                                                                                 \
     do                                                                                                                 \
     {                                                                                                                  \
         assert(SEV >= 0 && SEV < _LOG_SEV_ENUM_SIZE && "wrong _LOG_SEV*");                                             \
-        CERR("(%s%s, %d): ", _LOG_SEV_STR[SEV], __FILE__, __LINE__);                                                   \
+        CERR("(%s%s, %d): ", _LOG_SEV_STR[SEV], ADT_FILE, __LINE__);                                                   \
         CERR(__VA_ARGS__);                                                                                             \
         switch (SEV)                                                                                                   \
         {                                                                                                              \
@@ -54,6 +66,14 @@ inline const char* _LOG_SEV_STR[] = {"", "GOOD: ", "WARNING: ", "BAD: ", "FATAL:
     } while (0)
 
 #define LOG_OK(...) _LOG(_LOG_SEV_OK, __VA_ARGS__)
+#define LOG_GOOD(...) _LOG(_LOG_SEV_GOOD, __VA_ARGS__)
 #define LOG_WARN(...) _LOG(_LOG_SEV_WARN, __VA_ARGS__)
 #define LOG_BAD(...) _LOG(_LOG_SEV_BAD, __VA_ARGS__)
 #define LOG_FATAL(...) _LOG(_LOG_SEV_FATAL, __VA_ARGS__)
+
+/* TODO: */
+// #ifdef _WIN32
+//     #define ASSERT assert
+// #else
+//     #define ASSERT(EXPR, ...)
+// #endif

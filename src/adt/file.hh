@@ -2,8 +2,7 @@
 
 #include "String.hh"
 #include "Array.hh"
-
-#include <stdio.h>
+#include "logs.hh"
 
 namespace adt
 {
@@ -11,7 +10,6 @@ namespace file
 {
 
 inline String load(Allocator* pAlloc, String path);
-inline Array<u8> loadToCharArray(Allocator* pAlloc, String path);
 inline String replacePathEnding(Allocator* pAlloc, String path, String sEnding);
 
 inline String
@@ -34,28 +32,7 @@ load(Allocator* pAlloc, String path)
 
         fclose(pf);
     }
-
-    return ret;
-}
-
-inline Array<u8>
-loadToCharArray(Allocator* pAlloc, String path)
-{
-    Array<u8> ret(pAlloc);
-
-    FILE* pf = fopen(path.pData, "rb");
-    if (pf)
-    {
-        fseek(pf, 0, SEEK_END);
-        long size = ftell(pf);
-        rewind(pf);
-
-        ArraySetSize(&ret, size + 1);
-        ret.size = size;
-        fread(ret.pData, 1, size, pf);
-
-        fclose(pf);
-    }
+    else LOG_WARN("ret(%p): Error opening '%.*s' file\n", pf, path.size, path.pData);
 
     return ret;
 }

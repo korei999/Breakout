@@ -71,7 +71,7 @@ static Texture s_tBox(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tBall(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tPaddle(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 
-static parser::Wave s_sBeep(AllocatorPoolGet(&s_apAssets, SIZE_1K * 400));
+static parser::Wave s_sndBeep(AllocatorPoolGet(&s_apAssets, SIZE_1K * 400));
 static parser::Wave s_sndDuClare(AllocatorPoolGet(&s_apAssets, SIZE_1M * 35));
 static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_apAssets, SIZE_1M * 35));
 
@@ -144,31 +144,32 @@ prepareDraw()
     /* unbind before creating threads */
     AppUnbindGlContext(g_pApp);
 
-    parser::WaveLoadArg beep {&s_sBeep, "test-assets/c100s16.wav"};
-    parser::WaveLoadArg duclare {&s_sndDuClare, "test-assets/DuClare.wav"};
-    parser::WaveLoadArg unatco {&s_sndUnatco, "test-assets/Unatco.wav"};
+    parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
+    parser::WaveLoadArg argDuclare {&s_sndDuClare, "test-assets/DuClare.wav"};
+    parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
-    TexLoadArg fontBitMap {&s_tAsciiMap, "test-assets/bitmapFont2.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
-    TexLoadArg sampleTex {&s_tSampleTex, "test-assets/dirt.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
-    TexLoadArg angryFace {&s_tAngryFace, "test-assets/angryFace.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
-    TexLoadArg bullet {&s_tBullet, "test-assets/bullet.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
-    TexLoadArg box {&s_tBox, "test-assets/box3.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
-    TexLoadArg ball {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
-    TexLoadArg paddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg argFontBitMap {&s_tAsciiMap, "test-assets/bitmapFont2.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
+    TexLoadArg argSampleTex {&s_tSampleTex, "test-assets/dirt.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
+    TexLoadArg argAngryFace {&s_tAngryFace, "test-assets/angryFace.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg argBullet {&s_tBullet, "test-assets/bullet.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg argBox {&s_tBox, "test-assets/box3.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg argBall {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
 
-    ThreadPoolSubmit(&tp, parser::WaveSubmit, &beep);
-    ThreadPoolSubmit(&tp, parser::WaveSubmit, &duclare);
-    ThreadPoolSubmit(&tp, parser::WaveSubmit, &unatco);
+    ThreadPoolSubmit(&tp, parser::WaveSubmit, &argBeep);
+    ThreadPoolSubmit(&tp, parser::WaveSubmit, &argDuclare);
+    ThreadPoolSubmit(&tp, parser::WaveSubmit, &argUnatco);
 
-    ThreadPoolSubmit(&tp, TextureSubmit, &sampleTex);
-    ThreadPoolSubmit(&tp, TextureSubmit, &fontBitMap);
-    ThreadPoolSubmit(&tp, TextureSubmit, &angryFace);
-    ThreadPoolSubmit(&tp, TextureSubmit, &bullet);
-    ThreadPoolSubmit(&tp, TextureSubmit, &box);
-    ThreadPoolSubmit(&tp, TextureSubmit, &ball);
-    ThreadPoolSubmit(&tp, TextureSubmit, &paddle);
+    ThreadPoolSubmit(&tp, TextureSubmit, &argSampleTex);
+    ThreadPoolSubmit(&tp, TextureSubmit, &argFontBitMap);
+    ThreadPoolSubmit(&tp, TextureSubmit, &argAngryFace);
+    ThreadPoolSubmit(&tp, TextureSubmit, &argBullet);
+    ThreadPoolSubmit(&tp, TextureSubmit, &argBox);
+    ThreadPoolSubmit(&tp, TextureSubmit, &argBall);
+    ThreadPoolSubmit(&tp, TextureSubmit, &argPaddle);
 
     ThreadPoolWait(&tp);
+
     /* restore context after assets are loaded */
     AppBindGlContext(g_pApp);
 
@@ -273,7 +274,7 @@ reflectFromBlock(const game::Ball& ball, const game::Entity& block)
 
 quit:
     if (ret == VERTICAL || ret == HORIZONTAL) 
-        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.2f));
+        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
     return ret;
 }
 
@@ -285,12 +286,11 @@ paddleHit()
     const auto& px = g_player.pos.x;
     const auto& py = g_player.pos.y;
 
-
     if (bx >= px - g_unit.x*2.0 && bx <= px + g_unit.x*2.0 &&
         by >= py - g_unit.y && by <= py - g_unit.y + g_unit.y/2)
     {
         g_ball.pos.y = (py - g_unit.y + g_unit.y/2) + 4;
-        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.2f));
+        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
         return true;
     }
 
@@ -324,8 +324,8 @@ mainLoop()
         }
     }
 
-    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.8f));
     audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndDuClare, true, 0.8f));
+    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.8f));
 
     while (g_pApp->bRunning || g_pMixer->bRunning) /* wait for mixer to stop also */
     {
@@ -411,20 +411,20 @@ mainLoop()
                             switch (side)
                             {
                                 case REFLECT_SIDE::HORIZONTAL:
-                                         {
-                                             if (e.color != game::BLOCK_COLOR::GRAY)
-                                                 e.bDead = true;
+                                    {
+                                        if (e.color != game::BLOCK_COLOR::GRAY)
+                                            e.bDead = true;
 
-                                             g_ball.dir.y = -g_ball.dir.y;
-                                         } break;
+                                        g_ball.dir.y = -g_ball.dir.y;
+                                    } break;
 
                                 case REFLECT_SIDE::VERTICAL:
-                                         {
-                                             if (e.color != game::BLOCK_COLOR::GRAY)
-                                                 e.bDead = true;
+                                    {
+                                        if (e.color != game::BLOCK_COLOR::GRAY)
+                                            e.bDead = true;
 
-                                             g_ball.dir.x = -g_ball.dir.x;
-                                         } break;
+                                        g_ball.dir.x = -g_ball.dir.x;
+                                    } break;
 
                                 default: break;
                             }
@@ -466,7 +466,7 @@ mainLoop()
                     bAddSound = true;
                 }
 
-                if (bAddSound) audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sBeep, false, 1.2f));
+                if (bAddSound) audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 
                 if (g_ball.bReleased)
                 {

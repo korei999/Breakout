@@ -12,6 +12,7 @@ struct Bin
 {
     Allocator* pAlloc;
     String sFile;
+    String sPath;
     u32 pos;
 
     Bin() = default;
@@ -20,7 +21,7 @@ struct Bin
     char& operator[](u32 i) { return sFile[i]; };
 };
 
-void BinLoadFile(Bin* s, String path);
+bool BinLoadFile(Bin* s, String path);
 void BinSkipBytes(Bin* s, u32 n);
 String BinReadString(Bin* s, u32 bytes);
 u8 BinRead8(Bin* s);
