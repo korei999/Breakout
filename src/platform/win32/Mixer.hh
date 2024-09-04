@@ -1,15 +1,16 @@
 #pragma once
 
+#define WIN32_LEAN_AND_MEAN 1
+#include <Windows.h>
+#include <xaudio2.h>
+#include <threads.h>
+
 #include "audio.hh"
 #include "adt/Array.hh"
 
-#include <threads.h>
-#include <pipewire/pipewire.h>
-#include <spa/param/audio/format-utils.h>
-
 namespace platform
 {
-namespace pipewire
+namespace win32
 {
 
 struct Mixer;
@@ -19,7 +20,7 @@ void MixerDestroy(Mixer* s);
 void MixerAdd(Mixer* s, audio::Track t);
 void MixerAddBackground(Mixer* s, audio::Track t);
 
-inline const audio::MixerInterface __PwMixerVTable {
+inline const audio::MixerInterface __XAudio2MixerVTable {
     .init = decltype(audio::MixerInterface::init)(MixerInit),
     .destroy = decltype(audio::MixerInterface::destroy)(MixerDestroy),
     .add = decltype(audio::MixerInterface::add)(MixerAdd),
@@ -29,16 +30,8 @@ inline const audio::MixerInterface __PwMixerVTable {
 struct Mixer
 {
     audio::Mixer base;
-    u32 sampleRate = 48000;
-    u8 channels = 2;
-    enum spa_audio_format eformat;
-
-    static const pw_stream_events s_streamEvents;
-    pw_core* pCore = nullptr;
-    pw_context* pCtx = nullptr;
-    pw_main_loop* pLoop = nullptr;
-    pw_stream* pStream = nullptr;
-    u32 lastNFrames = 0;
+    IXAudio2* pXAudio2 = nullptr;
+    IXAudio2SourceVoice* pSourceVoice = nullptr;
 
     mtx_t mtxAdd {};
     Array<audio::Track> aTracks {};
@@ -48,8 +41,8 @@ struct Mixer
     thrd_t threadLoop {};
 
     Mixer() = default;
-    Mixer(Allocator* pA) : base {&__PwMixerVTable}, aTracks(pA, MAX_TRACK_COUNT), aBackgroundTracks(pA, audio::MAX_TRACK_COUNT) {}
+    Mixer(Allocator* pA) : base {&__XAudio2MixerVTable}, aTracks(pA, audio::MAX_TRACK_COUNT), aBackgroundTracks(pA, audio::MAX_TRACK_COUNT) {}
 };
 
-} /* namespace pipewire */
+} /* namespace win32 */
 } /* namespace platform */

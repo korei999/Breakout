@@ -81,8 +81,8 @@ MixerAdd(Mixer* s, audio::Track t)
 {
     mtx_lock(&s->mtxAdd);
 
-    if (s->aTracks.size < MAX_TRACK_COUNT) ArrayPush(&s->aTracks, t);
-    else LOG_WARN("MAX_TRACK_COUNT(%u) reached, ignoring track push\n", MAX_TRACK_COUNT);
+    if (s->aTracks.size < audio::MAX_TRACK_COUNT) ArrayPush(&s->aTracks, t);
+    else LOG_WARN("MAX_TRACK_COUNT(%u) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
 
     mtx_unlock(&s->mtxAdd);
 }
@@ -92,8 +92,8 @@ MixerAddBackground(Mixer* s, audio::Track t)
 {
     mtx_lock(&s->mtxAdd);
 
-    if (s->aTracks.size < MAX_TRACK_COUNT) ArrayPush(&s->aBackgroundTracks, t);
-    else LOG_WARN("MAX_TRACK_COUNT(%u) reached, ignoring track push\n", MAX_TRACK_COUNT);
+    if (s->aTracks.size < audio::MAX_TRACK_COUNT) ArrayPush(&s->aBackgroundTracks, t);
+    else LOG_WARN("MAX_TRACK_COUNT(%u) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
 
     mtx_unlock(&s->mtxAdd);
 }

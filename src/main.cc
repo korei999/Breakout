@@ -27,7 +27,7 @@ main(int argc, char* argv[])
 }
 
 #elif _WIN32
-    #include "platform/win32/windows.hh"
+    #include "platform/win32/Window.hh"
 
 int WINAPI
 WinMain([[maybe_unused]] HINSTANCE instance,

@@ -8,6 +8,7 @@ namespace audio
 {
 
 constexpr u64 CHUNK_SIZE = 0x4000; /* big enough */
+constexpr u32 MAX_TRACK_COUNT = 64;
 
 /* Platrform abstracted audio interface */
 struct Mixer;

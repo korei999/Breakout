@@ -106,7 +106,7 @@ message(STATUS "CMAKE_BUILD_TYPE: '${CMAKE_BUILD_TYPE}'")
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267 /wd4101 /wd4200")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267 /wd4101 /wd4200 /wd4244")
     else()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmissing-field-initializers -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function")
     endif()
@@ -178,7 +178,8 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
         PRIVATE
         src/platform/win32/glad.cc
         src/platform/win32/input.cc
-        src/platform/win32/windows.cc
+        src/platform/win32/Window.cc
+        src/platform/win32/Mixer.cc
     )
 endif()
 

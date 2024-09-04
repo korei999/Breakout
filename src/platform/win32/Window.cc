@@ -1,4 +1,4 @@
-#include "windows.hh"
+#include "Window.hh"
 #include "input.hh"
 #include "adt/logs.hh"
 #include "gl/gl.hh"
@@ -123,7 +123,7 @@ Window::Window(String sName, HINSTANCE hInstance)
 
 
 void
-WindowDestroy(Window* s)
+WindowDestroy([[maybe_unused]] Window* s)
 {
 }
 
@@ -256,7 +256,7 @@ WindowToggleFullscreen(Window* s)
 }
 
 void 
-WindowSetCursorImage(Window* s, String cursorType)
+WindowSetCursorImage([[maybe_unused]] Window* s, [[maybe_unused]] String cursorType)
 {
     /* TODO: */
 }
