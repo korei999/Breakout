@@ -496,6 +496,8 @@ mainLoop()
         s_fpsCount++;
     }
 
+#ifndef NDEBUG
+
     PlainDestroy(&s_plain);
     UboDestroy(&s_uboProjView);
 
@@ -507,6 +509,8 @@ mainLoop()
 
     for (auto& a : s_apAssets.aAllocators)
         ArenaFreeAll(&a);
+
+#endif
 }
 
 } /* namespace frame */
