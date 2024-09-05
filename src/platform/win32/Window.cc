@@ -155,17 +155,19 @@ WindowInit(Window* s)
     s->base.wHeight = rect.bottom - rect.top;
 
     s->hWindow = CreateWindowExW(exstyle,
-                             s->windowClass.lpszClassName,
-                             L"OpenGL Window",
-                             style,
-                             CW_USEDEFAULT,
-                             CW_USEDEFAULT,
-                             s->base.wWidth,
-                             s->base.wHeight,
-                             nullptr,
-                             nullptr,
-                             s->windowClass.hInstance,
-                             s);
+        s->windowClass.lpszClassName,
+        L"Breakout",
+        style,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        s->base.wWidth,
+        s->base.wHeight,
+        nullptr,
+        nullptr,
+        s->windowClass.hInstance,
+        s
+    );
+
     if (!s->hWindow) LOG_FATAL("CreateWindowExW failed\n");
 
     s->hDeviceContext = GetDC(s->hWindow);

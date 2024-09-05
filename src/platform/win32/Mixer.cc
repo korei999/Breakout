@@ -1,4 +1,5 @@
 #include "Mixer.hh"
+#include "adt/logs.hh"
 
 namespace platform
 {
@@ -22,7 +23,9 @@ public:
     virtual void OnVoiceError(void* pBufferContext, HRESULT error) noexcept override;
 };
 
-static XAudio2Voice voiceArr[audio::MAX_TRACK_COUNT * 2];
+/*static XAudio2Voice voiceArr[audio::MAX_TRACK_COUNT * 2];*/
+static XAudio2Voice s_xVoice {};
+static s16 s_chunk[audio::CHUNK_SIZE] {};
 
 void
 MixerInit(Mixer* s, int argc, char** argv)
@@ -53,8 +56,37 @@ MixerInit(Mixer* s, int argc, char** argv)
         return thrd_success;
     };
 
-    thrd_create(&s->threadLoop, fnp, &a);
-    thrd_detach(s->threadLoop);
+    /*thrd_create(&s->threadLoop, fnp, &a);*/
+    /*thrd_detach(s->threadLoop);*/
+
+    MixerRunThread(s, argc, argv);
+}
+
+void
+MixerDestroy([[maybe_unused]] Mixer* s)
+{
+    //
+}
+
+void
+MixerAdd(Mixer* s, audio::Track t)
+{
+    //
+}
+
+void
+MixerAddBackground(Mixer* s, audio::Track t)
+{
+    XAUDIO2_BUFFER b {};
+    b.Flags = XAUDIO2_END_OF_STREAM;
+    b.AudioBytes = t.pcmSize * 2;
+    b.pAudioData = (BYTE*)t.pData;
+    b.LoopCount = XAUDIO2_LOOP_INFINITE;
+
+    COUT("sent: size(%u), ptr(%x)\n", t.pcmSize * 2, t.pData);
+
+    HRESULT hr = s_xVoice.m_pVoice->SubmitSourceBuffer(&b);
+    if (FAILED(hr)) LOG_WARN("SubmitSourceBuffer: failed\n");
 }
 
 static void
@@ -78,19 +110,19 @@ MixerRunThread(Mixer* s, int argc, char** argv)
     wave.nBlockAlign = (2 * wave.wBitsPerSample) / 8;
     wave.nAvgBytesPerSec = wave.nSamplesPerSec * wave.nBlockAlign;
 
-    for (auto& v: voiceArr)
-    {
-        hr = s->pXAudio2->CreateSourceVoice(
-            &v.m_pVoice, &wave, 0, XAUDIO2_DEFAULT_FREQ_RATIO, &v, {}, {}
-        );
-        v.m_pVoice->SetVolume(1.0f);
-    }
+    hr = s->pXAudio2->CreateSourceVoice(
+        &s_xVoice.m_pVoice, &wave, 0, XAUDIO2_DEFAULT_FREQ_RATIO, &s_xVoice, {}, {}
+    );
+    assert(!FAILED(hr));
+
+
+    /*s_xVoice.m_pVoice->SetVolume(1.0f);*/
+    s_xVoice.m_pVoice->Start();
 }
 
 void
 XAudio2Voice::OnVoiceProcessingPassStart(UINT32 bytesRequired) noexcept
 {
-    XAUDIO2_BUFFER buff {};
 }
 
 void

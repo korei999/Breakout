@@ -1,8 +1,12 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN 1
-#define NOMINMAX
-#include <Windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN 1
+#endif
+    #ifndef NOMINMAX
+    #define NOMINMAX
+#endif
+#include <windows.h>
 #include <xaudio2.h>
 #include <threads.h>
 

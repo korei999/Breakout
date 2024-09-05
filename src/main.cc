@@ -27,6 +27,7 @@ main(int argc, char* argv[])
 }
 
 #elif _WIN32
+    #include "platform/win32/Mixer.hh"
     #include "platform/win32/Window.hh"
 
 int WINAPI
@@ -35,19 +36,19 @@ WinMain([[maybe_unused]] HINSTANCE instance,
         [[maybe_unused]] LPSTR cmdline,
         [[maybe_unused]] int cmdshow)
 {
-    using namespace platform::win32;
+    using namespace platform;
 
-    audio::DummyMixer mixer;
-    audio::DummyMixerInit(&mixer, {}, {});
-    Window app("Breakout", instance);
+    win32::Mixer mixer(&alMixer.base);
+    win32::MixerInit(&mixer, {}, {});
+    win32::Window app("Breakout", instance);
 
     frame::g_pMixer = &mixer.base;
     frame::g_pApp = &app.base;
 
     frame::run();
 
-    audio::DummyMixerDestroy(&mixer);
-    WindowDestroy(&app);
+    win32::MixerDestroy(&mixer);
+    win32::WindowDestroy(&app);
 }
 
     #ifdef DEBUG

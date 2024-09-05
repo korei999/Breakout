@@ -125,13 +125,13 @@ parseObject(Parser* s, Object* pNode)
 
     for (; s->tCurr.type != Token::RBRACE; next(s))
     {
-        expect(s, Token::IDENT, __FILE__, __LINE__);
+        expect(s, Token::IDENT, ADT_FILE, __LINE__);
         Object ob {.svKey = s->tCurr.sLiteral, .tagVal = {}};
         adt::ArrayPush(&aObjs, ob);
 
         /* skip identifier and ':' */
         next(s);
-        expect(s, Token::ASSIGN, __FILE__, __LINE__);
+        expect(s, Token::ASSIGN, ADT_FILE, __LINE__);
         next(s);
 
         parseNode(s, &adt::ArrayLast(&aObjs));
@@ -143,8 +143,7 @@ parseObject(Parser* s, Object* pNode)
         }
     }
 
-    if (aObjs.size == 0)
-        next(s);
+    if (aObjs.size == 0) next(s);
 }
 
 static void
@@ -192,8 +191,7 @@ parseArray(Parser* s, Object* pNode)
         }
     }
 
-    if (aTVs.size == 0)
-        next(s);
+    if (aTVs.size == 0) next(s);
 }
 
 static void
@@ -225,8 +223,7 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
 
     switch (pNode->tagVal.tag)
     {
-        default:
-            break;
+        default: break;
 
         case TAG::OBJECT:
             {
@@ -253,8 +250,7 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
                 }
                 COUT("%*s", depth, "");
                 COUT("}%.*s", svEnd.size, svEnd.pData);
-            }
-            break;
+            } break;
 
         case TAG::ARRAY:
             {
@@ -294,8 +290,7 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
                                 adt::String sl = getString(&arr[i]);
                                 COUT("%*s", depth + 2, "");
                                 COUT("\"%.*s\"%.*s", sl.size, sl.pData, slE.size, slE.pData);
-                            }
-                            break;
+                            } break;
 
                         case TAG::NULL_:
                                 COUT("%*s", depth + 2, "");
@@ -307,24 +302,21 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
                                 long num = getLong(&arr[i]);
                                 COUT("%*s", depth + 2, "");
                                 COUT("%ld%.*s", num, slE.size, slE.pData);
-                            }
-                            break;
+                            } break;
 
                         case TAG::DOUBLE:
                             {
                                 double dnum = getDouble(&arr[i]);
                                 COUT("%*s", depth + 2, "");
                                 COUT("%.17lf%.*s", dnum, slE.size, slE.pData);
-                            }
-                            break;
+                            } break;
 
                         case TAG::BOOL:
                             {
                                 bool b = getBool(&arr[i]);
                                 COUT("%*s", depth + 2, "");
                                 COUT("%s%.*s", b ? "true" : "false", slE.size, slE.pData);
-                            }
-                            break;
+                            } break;
 
                         case TAG::OBJECT:
                                 ParserPrintNode(&arr[i], slE, depth + 2);
@@ -333,25 +325,21 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
                 }
                 COUT("%*s", depth, "");
                 COUT("]%.*s", (int)svEnd.size, svEnd.pData);
-            }
-            break;
+            } break;
 
         case TAG::DOUBLE:
             {
-                /* TODO: add some sort formatting for floats */
                 double f = getDouble(pNode);
                 COUT("%*s", depth, "");
                 COUT("\"%.*s\": %.17lf%.*s", key.size, key.pData, f, svEnd.size, svEnd.pData);
-            }
-            break;
+            } break;
 
         case TAG::LONG:
             {
                 long i = getLong(pNode);
                 COUT("%*s", depth, "");
                 COUT("\"%.*s\": %ld%.*s", key.size, key.pData, i, svEnd.size, svEnd.pData);
-            }
-            break;
+            } break;
 
         case TAG::NULL_:
                 COUT("%*s", depth, "");
@@ -363,16 +351,14 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
                 adt::String sl = getString(pNode);
                 COUT("%*s", depth, "");
                 COUT("\"%.*s\": \"%.*s\"%.*s", key.size, key.pData, sl.size, sl.pData, svEnd.size, svEnd.pData);
-            }
-            break;
+            } break;
 
         case TAG::BOOL:
             {
                 bool b = getBool(pNode);
                 COUT("%*s", depth, "");
                 COUT("\"%.*s\": %s%.*s", key.size, key.pData, b ? "true" : "false", svEnd.size, svEnd.pData);
-            }
-            break;
+            } break;
     }
 }
 
