@@ -283,7 +283,7 @@ ClientDestroy(Client* s)
 {
     LOG_OK("cleanup ...\n");
 
-    if (s->base.bRelativeMode) ClientDisableRelativeMode(s);
+    if (s->base.bPointerRelativeMode) ClientDisableRelativeMode(s);
     if (s->pointer) wl_pointer_destroy(s->pointer);
     if (s->cursorTheme) wl_cursor_theme_destroy(s->cursorTheme);
     if (s->keyboard) wl_keyboard_destroy(s->keyboard);
@@ -390,9 +390,9 @@ ClientInit(Client* s)
 void
 ClientEnableRelativeMode(Client* s)
 {
-    if (s->base.bRelativeMode) return;
+    if (s->base.bPointerRelativeMode) return;
 
-    s->base.bRelativeMode = true;
+    s->base.bPointerRelativeMode = true;
 
     wl_pointer_set_cursor(s->pointer, s->_pointerSerial, nullptr, 0, 0);
     if (s->cursorSurface) wl_surface_destroy(s->cursorSurface);
@@ -408,9 +408,9 @@ ClientEnableRelativeMode(Client* s)
 void
 ClientDisableRelativeMode(Client* s)
 {
-    if (!s->base.bRelativeMode) return;
+    if (!s->base.bPointerRelativeMode) return;
 
-    s->base.bRelativeMode = false;
+    s->base.bPointerRelativeMode = false;
 
     zwp_locked_pointer_v1_destroy(s->lockedPointer);
     zwp_relative_pointer_v1_destroy(s->relativePointer);
@@ -469,8 +469,8 @@ ClientUnsetFullscreen(Client* s)
 void
 ClientTogglePointerRelativeMode(Client* s)
 {
-    s->base.bRelativeMode ? ClientDisableRelativeMode(s) : ClientEnableRelativeMode(s);
-    LOG_OK("relative mode: %d\n", s->base.bRelativeMode);
+    s->base.bPointerRelativeMode ? ClientDisableRelativeMode(s) : ClientEnableRelativeMode(s);
+    LOG_OK("relative mode: %d\n", s->base.bPointerRelativeMode);
 }
 
 void

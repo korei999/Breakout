@@ -48,7 +48,7 @@ struct Mixer
     thrd_t threadLoop {};
 
     Mixer() = default;
-    Mixer(Allocator* pA) : base {&__PwMixerVTable}, aTracks(pA, MAX_TRACK_COUNT), aBackgroundTracks(pA, audio::MAX_TRACK_COUNT) {}
+    Mixer(Allocator* pA) : base {&__PwMixerVTable}, aTracks(pA, audio::MAX_TRACK_COUNT), aBackgroundTracks(pA, audio::MAX_TRACK_COUNT) {}
 };
 
 } /* namespace pipewire */
