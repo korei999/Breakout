@@ -36,19 +36,17 @@ WinMain([[maybe_unused]] HINSTANCE instance,
         [[maybe_unused]] LPSTR cmdline,
         [[maybe_unused]] int cmdshow)
 {
-    using namespace platform;
-
-    win32::Mixer mixer(&alMixer.base);
-    win32::MixerInit(&mixer, {}, {});
-    win32::Window app("Breakout", instance);
+    platform::win32::Mixer mixer(&alMixer.base);
+    platform::win32::MixerInit(&mixer, {}, {});
+    platform::win32::Window app("Breakout", instance);
 
     frame::g_pMixer = &mixer.base;
     frame::g_pApp = &app.base;
 
     frame::run();
 
-    win32::MixerDestroy(&mixer);
-    win32::WindowDestroy(&app);
+    platform::win32::MixerDestroy(&mixer);
+    platform::win32::WindowDestroy(&app);
 }
 
     #ifdef DEBUG

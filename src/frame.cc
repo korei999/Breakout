@@ -185,8 +185,6 @@ void
 run()
 {
     g_pApp->bRunning = true;
-    g_pApp->bRelativeMode = false;
-    g_pApp->bPaused = false;
     AppSetCursorImage(g_pApp, "default");
 
     s_prevTime = utils::timeNowS();
@@ -200,7 +198,9 @@ run()
     controls::PlayerProcMouse(&g_player);
     controls::PlayerProcKeys(&g_player);
     AppProcEvents(g_pApp);
-    AppEnableRelativeMode(g_pApp);
+
+    if (!g_pApp->bPointerRelativeMode)
+        AppEnableRelativeMode(g_pApp);
 
     mainLoop();
 }
@@ -324,8 +324,8 @@ mainLoop()
         }
     }
 
-    /*audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndDuClare, true, 0.8f));*/
-    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.8f));
+    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndDuClare, true, 0.8f));
+    /*audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.8f));*/
 
     while (g_pApp->bRunning || g_pMixer->bRunning) /* wait for mixer to stop also */
     {
@@ -466,7 +466,7 @@ mainLoop()
                     bAddSound = true;
                 }
 
-                if (bAddSound) audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
+                if (bAddSound) audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
 
                 if (g_ball.bReleased)
                 {

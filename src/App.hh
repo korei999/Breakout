@@ -37,7 +37,7 @@ struct App
     bool bConfigured = false;
     int swapInterval = 1;
     bool bPaused = false;
-    bool bRelativeMode = false;
+    bool bPointerRelativeMode = false;
     bool bFullscreen = false;
 };
 

@@ -8,11 +8,12 @@ namespace win32
 
 static void MixerRunThread(Mixer* s, int argc, char** argv);
 
-class XAudio2Voice : public IXAudio2VoiceCallback
+class XAudio2VoiceInterface : public IXAudio2VoiceCallback
 {
 public:
-    IXAudio2SourceVoice* m_pVoice;
-    audio::Track track;
+    IXAudio2SourceVoice* m_pVoice = nullptr;
+    bool m_bPlaying = false;
+    audio::Track m_track {};
 
     virtual void OnVoiceProcessingPassStart(UINT32 bytesRequired) noexcept override;
     virtual void OnVoiceProcessingPassEnd() noexcept override;
@@ -23,9 +24,9 @@ public:
     virtual void OnVoiceError(void* pBufferContext, HRESULT error) noexcept override;
 };
 
-/*static XAudio2Voice voiceArr[audio::MAX_TRACK_COUNT * 2];*/
-static XAudio2Voice s_xVoice {};
-static s16 s_chunk[audio::CHUNK_SIZE] {};
+static XAudio2VoiceInterface s_aVoices[audio::MAX_TRACK_COUNT];
+/*static XAudio2Voice s_xVoice {};*/
+/*static s16 s_chunk[audio::CHUNK_SIZE] {};*/
 
 void
 MixerInit(Mixer* s, int argc, char** argv)
@@ -35,29 +36,6 @@ MixerInit(Mixer* s, int argc, char** argv)
     s->base.volume = 0.1f;
 
     mtx_init(&s->mtxAdd, mtx_plain);
-
-    struct Args
-    {
-        Mixer* s;
-        int argc;
-        char** argv;
-    };
-
-    static Args a {
-        .s = s,
-        .argc = argc,
-        .argv = argv
-    };
-
-    auto fnp = +[](void* arg) -> int {
-        auto a = *(Args*)arg;
-        MixerRunThread(a.s, a.argc, a.argv);
-
-        return thrd_success;
-    };
-
-    /*thrd_create(&s->threadLoop, fnp, &a);*/
-    /*thrd_detach(s->threadLoop);*/
 
     MixerRunThread(s, argc, argv);
 }
@@ -71,22 +49,62 @@ MixerDestroy([[maybe_unused]] Mixer* s)
 void
 MixerAdd(Mixer* s, audio::Track t)
 {
-    //
+    /* find free slot */
+    for (auto& v : s_aVoices)
+    {
+        if (!v.m_bPlaying)
+        {
+            XAUDIO2_BUFFER b {
+                .Flags = XAUDIO2_END_OF_STREAM,
+                .AudioBytes = t.pcmSize * 2,
+                .pAudioData = (BYTE*)t.pData,
+                .PlayBegin = 0,
+                .PlayLength = 0,
+                .LoopBegin = 0,
+                .LoopLength = 0,
+                .LoopCount = 0,
+                .pContext = s
+            };
+
+            auto hr = v.m_pVoice->SubmitSourceBuffer(&b);
+            if (FAILED(hr)) LOG_WARN("SubmitSourceBuffer: failed\n");
+
+            v.m_pVoice->SetVolume(t.volume);
+            v.m_bPlaying = true;
+            break;
+        }
+    }
 }
 
 void
 MixerAddBackground(Mixer* s, audio::Track t)
 {
-    XAUDIO2_BUFFER b {};
-    b.Flags = XAUDIO2_END_OF_STREAM;
-    b.AudioBytes = t.pcmSize * 2;
-    b.pAudioData = (BYTE*)t.pData;
-    b.LoopCount = XAUDIO2_LOOP_INFINITE;
+    /* find free slot */
+    for (auto& v : s_aVoices)
+    {
+        if (!v.m_bPlaying)
+        {
+            XAUDIO2_BUFFER b {
+                .Flags = XAUDIO2_END_OF_STREAM,
+                .AudioBytes = t.pcmSize * 2,
+                .pAudioData = (BYTE*)t.pData,
+                .PlayBegin = 0,
+                .PlayLength = 0,
+                .LoopBegin = 0,
+                .LoopLength = 0,
+                .LoopCount = 0,
+                .pContext = nullptr
+            };
 
-    COUT("sent: size(%u), ptr(%x)\n", t.pcmSize * 2, t.pData);
+            auto hr = v.m_pVoice->SubmitSourceBuffer(&b);
+            if (FAILED(hr)) LOG_WARN("SubmitSourceBuffer: failed\n");
 
-    HRESULT hr = s_xVoice.m_pVoice->SubmitSourceBuffer(&b);
-    if (FAILED(hr)) LOG_WARN("SubmitSourceBuffer: failed\n");
+            v.m_pVoice->SetVolume(t.volume);
+            v.m_bPlaying = true;
+            v.m_track = t;
+            break;
+        }
+    }
 }
 
 static void
@@ -110,49 +128,89 @@ MixerRunThread(Mixer* s, int argc, char** argv)
     wave.nBlockAlign = (2 * wave.wBitsPerSample) / 8;
     wave.nAvgBytesPerSec = wave.nSamplesPerSec * wave.nBlockAlign;
 
-    hr = s->pXAudio2->CreateSourceVoice(
-        &s_xVoice.m_pVoice, &wave, 0, XAUDIO2_DEFAULT_FREQ_RATIO, &s_xVoice, {}, {}
-    );
-    assert(!FAILED(hr));
+    COUT("nAvgBytesPerSec: %lu\n", wave.nAvgBytesPerSec);
 
+    for (auto& v : s_aVoices)
+    {
+        hr = s->pXAudio2->CreateSourceVoice(
+            &v.m_pVoice, &wave, 0, XAUDIO2_DEFAULT_FREQ_RATIO, &v, {}, {}
+        );
 
-    /*s_xVoice.m_pVoice->SetVolume(1.0f);*/
-    s_xVoice.m_pVoice->Start();
+        assert(!FAILED(hr));
+
+        v.m_pVoice->SetVolume(1.0f);
+        v.m_pVoice->Start();
+        v.m_bPlaying = false;
+    }
 }
 
 void
-XAudio2Voice::OnVoiceProcessingPassStart(UINT32 bytesRequired) noexcept
+XAudio2VoiceInterface::OnVoiceProcessingPassStart(UINT32 bytesRequired) noexcept
 {
+    /*COUT("OnVoiceProcessingPassStart: bytesRequired: %u\n", bytesRequired);*/
 }
 
 void
-XAudio2Voice::OnVoiceProcessingPassEnd() noexcept
+XAudio2VoiceInterface::OnVoiceProcessingPassEnd() noexcept
 {
+    /*COUT("OnVoiceProcessingPassEnd\n");*/
 }
 
 void
-XAudio2Voice::OnStreamEnd() noexcept
+XAudio2VoiceInterface::OnStreamEnd() noexcept
 {
+    m_pVoice->FlushSourceBuffers();
+    COUT("OnStreamEnd\n");
+
+    if (m_track.bRepeat)
+    {
+        auto& t = m_track;
+
+        XAUDIO2_BUFFER b {
+            .Flags = XAUDIO2_END_OF_STREAM,
+            .AudioBytes = t.pcmSize * 2,
+            .pAudioData = (BYTE*)t.pData,
+            .PlayBegin = 0,
+            .PlayLength = 0,
+            .LoopBegin = 0,
+            .LoopLength = 0,
+            .LoopCount = 0,
+            .pContext = nullptr
+        };
+
+        auto hr = m_pVoice->SubmitSourceBuffer(&b);
+        if (FAILED(hr)) LOG_WARN("SubmitSourceBuffer: failed\n");
+
+        m_pVoice->SetVolume(t.volume);
+        m_bPlaying = true;
+        m_track = t;
+    }
+    else m_bPlaying = false;
 }
 
 void
-XAudio2Voice::OnBufferStart(void* pBufferContext) noexcept
+XAudio2VoiceInterface::OnBufferStart(void* pBufferContext) noexcept
 {
+    /*COUT("OnBufferStart\n");*/
 }
 
 void
-XAudio2Voice::OnBufferEnd(void* pBufferContext) noexcept
+XAudio2VoiceInterface::OnBufferEnd(void* pBufferContext) noexcept
 {
+    LOG_GOOD("OnBufferEnd\n");
+    auto* s = (Mixer*)pBufferContext;
 }
 
 void
-XAudio2Voice::OnLoopEnd(void* pBufferContext) noexcept
+XAudio2VoiceInterface::OnLoopEnd(void* pBufferContext) noexcept
 {
+    /*COUT("OnLoopEnd\n");*/
 }
 
 void
-XAudio2Voice::OnVoiceError(void* pBufferContext, HRESULT error) noexcept
+XAudio2VoiceInterface::OnVoiceError(void* pBufferContext, HRESULT error) noexcept
 {
+    LOG_WARN("OnVoiceError\n");
 }
 
 } /* namespace win32 */

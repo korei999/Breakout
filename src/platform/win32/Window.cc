@@ -225,28 +225,31 @@ WindowInit(Window* s)
     if (!gladLoadGL()) LOG_FATAL("gladLoadGL failed\n");
 
     WindowUnbindGlContext(s);
+
+    s->base.bPointerRelativeMode = false;
+    s->base.bPaused = false;
 }
 
 void
 WindowDisableRelativeMode(Window* s)
 {
-    s->base.bRelativeMode = false;
+    s->base.bPointerRelativeMode = false;
     input::registerRawMouseDevice(s, false);
 }
 
 void
 WindowEnableRelativeMode(Window* s)
 {
-    s->base.bRelativeMode = true;
+    s->base.bPointerRelativeMode = true;
     input::registerRawMouseDevice(s, true);
 }
 
 void
 WindowTogglePointerRelativeMode(Window* s)
 {
-    s->base.bRelativeMode = !s->base.bRelativeMode;
-    s->base.bRelativeMode ? WindowEnableRelativeMode(s) : WindowDisableRelativeMode(s);
-    LOG_OK("relative mode: %d\n", s->base.bRelativeMode);
+    s->base.bPointerRelativeMode = !s->base.bPointerRelativeMode;
+    s->base.bPointerRelativeMode ? WindowEnableRelativeMode(s) : WindowDisableRelativeMode(s);
+    LOG_OK("relative mode: %d\n", s->base.bPointerRelativeMode);
 }
 
 void
@@ -254,7 +257,7 @@ WindowToggleFullscreen(Window* s)
 {
     s->base.bFullscreen = !s->base.bFullscreen;
     s->base.bFullscreen ? WindowSetFullscreen(s) : WindowUnsetFullscreen(s);
-    LOG_OK("fullscreen: %d\n", s->base.bRelativeMode);
+    LOG_OK("fullscreen: %d\n", s->base.bPointerRelativeMode);
 }
 
 void 

@@ -283,7 +283,7 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
     }
 
-    if (pApp && pApp->base.bRelativeMode)
+    if (pApp && pApp->base.bPointerRelativeMode)
     {
         SetCursorPos(pApp->base.wWidth / 2, pApp->base.wHeight / 2);
         SetCursor(nullptr);
