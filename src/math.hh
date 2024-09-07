@@ -60,6 +60,8 @@ union V2
     V2(const V3& v);
     constexpr V2(f32 _x, f32 _y) : x(_x), y(_y) {}
 
+    constexpr V2 operator-() { return {-x, -y}; }
+
     V2& operator+=(const V2& other);
 };
 
@@ -175,7 +177,7 @@ M3Iden()
 constexpr Qt
 QtIden()
 {
-    return Qt(0, 0, 0, 1);
+    return {0, 0, 0, 1};
 }
 
 f32 V2Length(const V2& v);
@@ -187,17 +189,29 @@ V3 V3Norm(const V3& v); /* normilized (not length) */
 V4 V4Norm(const V4& v); /* normilized (not length) */
 V3 V3Norm(const V3& v, const f32 length); /* normilized (not length) */
 V3 V3Cross(const V3& l, const V3& r);
+V2 V2Clamp(const V2& x, const V2& min, const V2& max);
 V2 operator-(const V2& l, const V2& r);
 V3 operator-(const V3& l, const V3& r);
 V2 operator+(const V2& l, const V2& r);
 V3 operator+(const V3& l, const V3& r);
 V2 operator*(const V2& v, const f32 s);
 V3 operator*(const V3& v, const f32 s);
+V3 operator/(const V3& v, const f32 s);
+V3& operator/=(V3& v, const f32 s);
+bool operator<(const V2& l, const V2& r);
+bool operator<=(const V2& l, const V2& r);
+bool operator==(const V2& l, const V2& r);
+bool operator>(const V2& l, const V2& r);
+bool operator>=(const V2& l, const V2& r);
 f32 V3Rad(const V3& l, const V3& r); /* degree between two vectors */
 f32 V2Dist(const V2& l, const V2& r);
 f32 V3Dist(const V3& l, const V3& r); /* distance between two points in space */
+f32 V2Dot(const V2& l, const V2& r);
 f32 V3Dot(const V3& l, const V3& r);
 f32 V4Dot(const V4& l, const V4& r);
+V3 V3Color(const u32 hex);
+V4 V4Color(const u32 hex);
+
 M4 operator*(const M4& l, const M4& r);
 M4 M4Rot(const M4& m, const f32 th, const V3& ax);
 M4 M4RotX(const M4& m, const f32 angle);
@@ -213,8 +227,7 @@ M4 M4Transpose(const M4& m);
 M3 M3Transpose(const M3& m);
 M3 M3Inverse(const M3& m);
 M3 M3Normal(const M3& m);
-V3 V3Color(const u32 hex);
-V4 V4Color(const u32 hex);
+
 Qt QtAxisAngle(const V3& axis, f32 th);
 M4 QtRot(const Qt& q);
 Qt QtConj(const Qt& q);

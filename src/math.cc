@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "math.hh"
+#include "adt/utils.hh"
 
 namespace math
 {
@@ -105,6 +106,23 @@ V3Cross(const V3& l, const V3& r)
     };
 }
 
+V2
+V2Clamp(const V2& x, const V2& min, const V2& max)
+{
+    V2 r {};
+
+    f32 minX = utils::min(min.x, max.x);
+    f32 minY = utils::min(min.y, max.y);
+
+    f32 maxX = utils::max(min.x, max.x);
+    f32 maxY = utils::max(min.y, max.y);
+
+    r.x = utils::clamp(x.x, minX, maxX);
+    r.y = utils::clamp(x.y, minY, maxY);
+
+    return r;
+}
+
 V3
 operator-(const V3& l, const V3& r)
 {
@@ -183,11 +201,56 @@ operator*(const V3& v, const f32 s)
     };
 }
 
+V3
+operator/(const V3& v, const f32 s)
+{
+    return {
+        v.x / s,
+        v.y / s,
+        v.z / s
+    };
+}
+
+V3&
+operator/=(V3& v, const f32 s)
+{
+    return v = v / s;
+}
+
+bool
+operator<(const V2& l, const V2& r)
+{
+    return V2Length(l) < V2Length(r) ? true : false;
+}
+
+bool
+operator<=(const V2& l, const V2& r)
+{
+    return l < r || l == r;
+}
+
+bool
+operator==(const V2& l, const V2& r)
+{
+    return l.x == r.x && l.y == r.y;
+}
+
+bool
+operator>(const V2& l, const V2& r)
+{
+    return V2Length(l) > V2Length(r) ? true : false;
+}
+
+bool
+operator>=(const V2& l, const V2& r)
+{
+    return l > r || l == r;
+}
+
 V3&
 V3::operator*=(const f32 s)
 {
-    *this = *this * s;
-    return *this;
+    return *this = *this * s;
 }
 
 f32
@@ -209,6 +272,12 @@ V3Dist(const V3& l, const V3& r)
 }
 
 f32
+V2Dot(const V2& l, const V2& r)
+{
+    return (l.x * r.x) + (l.y * r.y);
+}
+
+f32
 V3Dot(const V3& l, const V3& r)
 {
     return (l.x * r.x) + (l.y * r.y) + (l.z * r.z);
@@ -218,6 +287,20 @@ f32
 V4Dot(const V4& l, const V4& r)
 {
     return (l.x * r.x) + (l.y * r.y) + (l.z * r.z) + (l.w * r.w);
+}
+
+V3
+V3Color(const u32 hex)
+{
+    V3 t = MATH_COLOR3(hex);
+    return t;
+}
+
+V4
+V4Color(const u32 hex)
+{
+    V4 t = MATH_COLOR4(hex);
+    return t;
 }
 
 M4&
@@ -482,30 +565,16 @@ M3Normal(const M3& m)
     return M3Transpose(M3Inverse(m));
 }
 
-V3
-V3Color(const u32 hex)
-{
-    V3 t = MATH_COLOR3(hex);
-    return t;
-}
-
-V4
-V4Color(const u32 hex)
-{
-    V4 t = MATH_COLOR4(hex);
-    return t;
-}
-
 Qt
 QtAxisAngle(const V3& axis, f32 th)
 {
-    f32 sinTh = static_cast<f32>(sin(th / 2));
+    f32 sinTh = f32(sin(th / 2));
 
     return {
         axis.x * sinTh,
         axis.y * sinTh,
         axis.z * sinTh,
-        static_cast<f32>(cos(th / 2))
+        f32(cos(th / 2))
     };
 }
 

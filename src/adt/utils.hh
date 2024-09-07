@@ -43,6 +43,7 @@ template<typename T> constexpr int partition(T a[], int l, int h);
 template<typename T> constexpr void qSort(T a[], int l, int h);
 template<typename T> constexpr void qSort(T* a);
 template<typename T> constexpr void copy(T* pDest, T* pSrc, u64 size); /* memcpy with size * sizeof(T) */
+template<typename T> [[nodiscard]] constexpr T clamp(const T& x, const T& _min, const T& _max);
 
 template<typename T>
 constexpr void
@@ -167,6 +168,14 @@ constexpr void
 copy(T* pDest, T* pSrc, u64 size)
 {
     memcpy(pDest, pSrc, size * sizeof(T));
+}
+
+template<typename T>
+[[nodiscard]]
+constexpr T
+clamp(const T& x, const T& _min, const T& _max)
+{
+    return max(_min, min(_max, x));
 }
 
 } /* namespace utils */

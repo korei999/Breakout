@@ -68,6 +68,7 @@ void ClientDestroy(Client* s);
 void ClientInit(Client* s);
 void ClientEnableRelativeMode(Client* s);
 void ClientDisableRelativeMode(Client* s);
+void ClientHideCursor(Client* s);
 void ClientSetCursorImage(Client* s, String cursorType);
 void ClientSetFullscreen(Client* s);
 void ClientUnsetFullscreen(Client* s);
@@ -80,7 +81,6 @@ void ClientToggleVSync(Client* s);
 void ClientSwapBuffers(Client* s);
 void ClientProcEvents([[maybe_unused]] Client* s);
 void ClientShowWindow([[maybe_unused]] Client* s);
-
 
 } /* namespace wayland */
 } /* namespace platform */

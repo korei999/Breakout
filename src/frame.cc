@@ -32,8 +32,8 @@ controls::Player g_player {
 
 game::Ball g_ball {
     .bReleased = false,
-    .speed = 0.9f,
-    .radius = 2.0f,
+    .speed = 1.0f,
+    .radius = 1.0f,
     .pos = g_player.pos,
     .dir {},
 };
@@ -65,8 +65,6 @@ static Shader s_shSprite;
 
 static Texture s_tAsciiMap(AllocatorPoolGet(&s_apAssets, SIZE_1M));
 static Texture s_tSampleTex(AllocatorPoolGet(&s_apAssets, SIZE_1M));
-static Texture s_tAngryFace(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
-static Texture s_tBullet(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tBox(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tBall(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tPaddle(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
@@ -150,8 +148,6 @@ prepareDraw()
 
     TexLoadArg argFontBitMap {&s_tAsciiMap, "test-assets/bitmapFont2.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
     TexLoadArg argSampleTex {&s_tSampleTex, "test-assets/dirt.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
-    TexLoadArg argAngryFace {&s_tAngryFace, "test-assets/angryFace.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
-    TexLoadArg argBullet {&s_tBullet, "test-assets/bullet.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg argBox {&s_tBox, "test-assets/box3.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg argBall {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
@@ -162,8 +158,6 @@ prepareDraw()
 
     ThreadPoolSubmit(&tp, TextureSubmit, &argSampleTex);
     ThreadPoolSubmit(&tp, TextureSubmit, &argFontBitMap);
-    ThreadPoolSubmit(&tp, TextureSubmit, &argAngryFace);
-    ThreadPoolSubmit(&tp, TextureSubmit, &argBullet);
     ThreadPoolSubmit(&tp, TextureSubmit, &argBox);
     ThreadPoolSubmit(&tp, TextureSubmit, &argBall);
     ThreadPoolSubmit(&tp, TextureSubmit, &argPaddle);
@@ -177,8 +171,7 @@ prepareDraw()
     ArenaFreeAll(&allocScope);
 
     AppSetSwapInterval(g_pApp, 1);
-    AppToggleFullscreen(g_pApp);
-    AppToggleVSync(g_pApp);
+    AppSetFullscreen(g_pApp);
 }
 
 void
@@ -228,58 +221,89 @@ renderFPSCounter(Allocator* pAlloc)
     TextDraw(&s_textFPS);
 }
 
-enum REFLECT_SIDE { NONE, VERTICAL, HORIZONTAL };
+enum REFLECT_SIDE { UP, RIGHT, DOWN, LEFT };
 
 inline REFLECT_SIDE
-reflectFromBlock(const game::Ball& ball, const game::Entity& block)
+getReflectionSide(math::V2 tar)
 {
-    const auto& bx = ball.pos.x;
-    const auto& by = ball.pos.y;
-    const auto& ex = block.pos.x;
-    const auto& ey = block.pos.y;
+    math::V2 compass[] {
+        { 0.0,  1.0 }, /* up */
+        { 1.0,  0.0 }, /* right */
+        { 0.0, -1.0 }, /* down */
+        {-1.0, -1.0 }, /* left */
+    };
+    f32 max = 0.0f;
+    u32 bestMatch = -1U;
 
-    REFLECT_SIDE ret = NONE;
-
-    if (by >= ey - g_unit.y && by <= ey + g_unit.y)
+    for (u32 i = 0; i < 4; i++)
     {
-        if (bx >= ex - g_unit.x - ball.radius && bx <= ex - g_unit.x + g_unit.x/8) /* left */
+        f32 dot = math::V2Dot(math::V2Norm(tar), compass[i]);
+        if (dot > max)
         {
-            g_ball.pos.x = ex - g_unit.x - ball.radius - 1;
-            ret = VERTICAL;
-            goto quit;
-        }
-        if (bx <= ex + g_unit.x + ball.radius && bx >= ex + g_unit.x - g_unit.x/8) /* right */
-        {
-            g_ball.pos.x = ex + g_unit.x + ball.radius + 1;
-            ret = VERTICAL;
-            goto quit;
+            max = dot;
+            bestMatch = i;
         }
     }
 
-    if (bx >= ex - g_unit.x && bx <= ex + g_unit.x)
-    {
-        if (by >= ey - g_unit.y - ball.radius && by <= ey - g_unit.y + g_unit.y/4) /* bot */
-        {
-            g_ball.pos.y = ey - g_unit.y - ball.radius - 1;
-            ret = HORIZONTAL;
-            goto quit;
-        }
-        if (by <= ey + g_unit.y + ball.radius && by >= ey + g_unit.y - g_unit.y/4) /* top */
-        {
-            g_ball.pos.y = ey + g_unit.y + ball.radius + 1;
-            ret = HORIZONTAL;
-            goto quit;
-        }
-    }
-
-quit:
-    if (ret == VERTICAL || ret == HORIZONTAL) 
-        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
-    return ret;
+    return REFLECT_SIDE(bestMatch);
 }
 
-inline bool
-paddleHit()
+inline void
+procBlockHit()
+{
+    for (auto& e : s_enemies)
+    {
+        if (e.bDead) continue;
+
+        math::V2 center = g_ball.pos;
+
+        math::V2 aabbHalfExtents(g_unit.x / 2, g_unit.y / 2);
+        math::V2 aabbCenter = e.pos;
+
+        math::V2 diff = center - e.pos;
+
+        math::V2 clamped = math::V2Clamp(diff, -aabbHalfExtents, aabbHalfExtents);
+
+        math::V2 closest = aabbCenter + clamped;
+
+        diff = closest - center;
+        auto diffLen = math::V2Length(diff);
+
+        if (diffLen - 10 < g_unit.x / 2)
+        {
+            auto side = getReflectionSide(diff);
+
+            if (side == REFLECT_SIDE::UP)
+            {
+                g_ball.pos.y = e.pos.y - g_unit.y - g_ball.radius - 1;
+                g_ball.dir.y = -g_ball.dir.y;
+            }
+            else if (side == REFLECT_SIDE::DOWN)
+            {
+                g_ball.pos.y = e.pos.y + g_unit.y + g_ball.radius + 1;
+                g_ball.dir.y = -g_ball.dir.y;
+            }
+            else if (side == REFLECT_SIDE::LEFT)
+            {
+                g_ball.pos.x = e.pos.x + g_unit.x + g_ball.radius + 1;
+                g_ball.dir.x = -g_ball.dir.x;
+            }
+            else if (side == REFLECT_SIDE::RIGHT)
+            {
+                g_ball.pos.x = e.pos.x - g_unit.x - g_ball.radius - 1;
+                g_ball.dir.x = -g_ball.dir.x;
+            }
+
+            if (e.color != game::BLOCK_COLOR::GRAY) e.bDead = true;
+
+            audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
+            break;
+        }
+    }
+}
+
+inline void
+procPaddleHit()
 {
     const auto& bx = g_ball.pos.x;
     const auto& by = g_ball.pos.y;
@@ -291,17 +315,60 @@ paddleHit()
     {
         g_ball.pos.y = (py - g_unit.y + g_unit.y/2) + 4;
         audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
-        return true;
+
+        g_ball.dir.y = 1.0f;
+        if (math::V2Length(g_player.dir) > 0.0f)
+            g_ball.dir += g_player.dir * 0.25f;
+    }
+}
+
+inline void
+procOutOfBounds()
+{
+    /* out of bounds */
+    bool bAddSound = false;
+    if (g_ball.pos.y <= 0.0f - g_unit.y) 
+    {
+        g_ball.bReleased = false;
+        /*g_ball.pos.y = 0.0f - g_unit.y + 4;*/
+        /*g_ball.dir.y = -g_ball.dir.y;*/
+        /*bAddSound = true;*/
+    }
+    else if (g_ball.pos.y >= HEIGHT - g_unit.y)
+    {
+        g_ball.pos.y = HEIGHT - g_unit.y - 4;
+        g_ball.dir.y = -1.0f;
+        bAddSound = true;
+    }
+    else if (g_ball.pos.x <= 0.0f - g_unit.x)
+    {
+        g_ball.pos.x = -g_unit.x + 4;
+        g_ball.dir.x = -g_ball.dir.x;
+        bAddSound = true;
+    }
+    else if (g_ball.pos.x >= WIDTH - g_unit.x)
+    {
+        g_ball.pos.x = WIDTH - g_unit.x - 4;
+        g_ball.dir.x = -g_ball.dir.x;
+        bAddSound = true;
     }
 
-    return false;
+    if (bAddSound)
+    {
+        audio::MixerAdd(
+            g_pMixer,
+            parser::WaveGetTrack(&s_sndBeep, false, 1.2f)
+        );
+    }
 }
 
 static void
 mainLoop()
 {
-    constexpr int levelY = (int)utils::size(game::g_level);
-    constexpr int levelX = (int)sizeof(game::g_level) / levelY;
+    auto& level = game::g_level1;
+
+    constexpr int levelY = (int)utils::size(level);
+    constexpr int levelX = (int)sizeof(level) / levelY;
 
     g_unit.x = WIDTH / levelX / 2;
     g_unit.y = HEIGHT / levelY / 2;
@@ -310,14 +377,14 @@ mainLoop()
     {
         for (u32 j = 0; j < levelX; j++)
         {
-            if (game::g_level[i][j] != s8(game::BLOCK_COLOR::INVISIBLE))
+            if (level[i][j] != s8(game::BLOCK_COLOR::INVISIBLE))
             {
                 ArrayPush(&s_enemies, {
                     .pos = {g_unit.x*2*j, (HEIGHT - g_unit.y*2) - g_unit.y*2*i},
                     .shaderIdx = 0,
                     .modelIdx = 0,
                     .texIdx = 0,
-                    .color = (game::BLOCK_COLOR)game::g_level[i][j],
+                    .color = (game::BLOCK_COLOR)level[i][j],
                     .bDead = false
                 });
             }
@@ -403,74 +470,11 @@ mainLoop()
             {
                 if (g_ball.bReleased)
                 {
-                    for (auto& e : s_enemies)
-                        if (!e.bDead)
-                        {
-                            REFLECT_SIDE side = reflectFromBlock(g_ball, e);
-
-                            switch (side)
-                            {
-                                case REFLECT_SIDE::HORIZONTAL:
-                                    {
-                                        if (e.color != game::BLOCK_COLOR::GRAY)
-                                            e.bDead = true;
-
-                                        g_ball.dir.y = -g_ball.dir.y;
-                                    } break;
-
-                                case REFLECT_SIDE::VERTICAL:
-                                    {
-                                        if (e.color != game::BLOCK_COLOR::GRAY)
-                                            e.bDead = true;
-
-                                        g_ball.dir.x = -g_ball.dir.x;
-                                    } break;
-
-                                default: break;
-                            }
-                        }
-                }
-
-                if (paddleHit())
-                {
-                    g_ball.dir.y = 1.0f;
-                    if (math::V2Length(g_player.dir) > 0.0f)
-                        g_ball.dir += g_player.dir * 0.25f;
-                }
-
-                /* out of bounds */
-                bool bAddSound = false;
-                if (g_ball.pos.y <= 0.0f - g_unit.y) 
-                {
-                    g_ball.bReleased = false;
-                    /*g_ball.pos.y = 0.0f - g_unit.y + 4;*/
-                    /*g_ball.dir.y = -g_ball.dir.y;*/
-                    /*bAddSound = true;*/
-                }
-                else if (g_ball.pos.y >= HEIGHT - g_unit.y)
-                {
-                    g_ball.pos.y = HEIGHT - g_unit.y - 4;
-                    g_ball.dir.y = -1.0f;
-                    bAddSound = true;
-                }
-                else if (g_ball.pos.x <= 0.0f - g_unit.x)
-                {
-                    g_ball.pos.x = -g_unit.x + 4;
-                    g_ball.dir.x = -g_ball.dir.x;
-                    bAddSound = true;
-                }
-                else if (g_ball.pos.x >= WIDTH - g_unit.x)
-                {
-                    g_ball.pos.x = WIDTH - g_unit.x - 4;
-                    g_ball.dir.x = -g_ball.dir.x;
-                    bAddSound = true;
-                }
-
-                if (bAddSound) audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
-
-                if (g_ball.bReleased)
-                {
                     g_ball.pos += V2Norm(g_ball.dir) * g_deltaTime * g_ball.speed;
+
+                    procBlockHit();
+                    procPaddleHit();
+                    procOutOfBounds();
                 } else g_ball.pos = g_player.pos;
 
                 const auto& pos = g_ball.pos;
@@ -486,7 +490,6 @@ mainLoop()
                 ShaderSetV3(&s_shSprite, "uColor", colors::tomato);
                 PlainDraw(&s_plain);
             }
-
 
             renderFPSCounter(&allocFrame.base);
         }

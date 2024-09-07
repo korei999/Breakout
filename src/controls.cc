@@ -7,8 +7,6 @@
 #ifdef __linux__
     #include <linux/input-event-codes.h>
 #elif _WIN32
-    #undef near
-    #undef far
 #endif
 
 namespace controls
@@ -120,6 +118,16 @@ PlayerProcMovements(Player* s)
     if (g_pressedKeys[KEY_D])
     {
         s->dir = {1.0f, 0.0f, 0.0f};
+    }
+
+    if (g_pressedKeys[KEY_LEFTALT])
+    {
+        s->dir /= 2.0;
+    }
+
+    if (g_pressedKeys[KEY_LEFTSHIFT])
+    {
+        s->dir *= 2.0;
     }
 }
 

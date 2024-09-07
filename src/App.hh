@@ -14,6 +14,7 @@ struct AppInterface
     void (*enableRelativeMode)(App*);
     void (*togglePointerRelativeMode)(App*);
     void (*toggleFullscreen)(App*);
+    void (*hideCursor)(App*);
     void (*setCursorImage)(App*, String cursorType);
     void (*setFullscreen)(App*);
     void (*unsetFullscreen)(App*);
@@ -46,6 +47,7 @@ ADT_NO_UB constexpr void AppDisableRelativeMode(App* s) { s->pVTable->disableRel
 ADT_NO_UB constexpr void AppEnableRelativeMode(App* s) { s->pVTable->enableRelativeMode(s); }
 ADT_NO_UB constexpr void AppTogglePointerRelativeMode(App* s) { s->pVTable->togglePointerRelativeMode(s); }
 ADT_NO_UB constexpr void AppToggleFullscreen(App* s) { s->pVTable->toggleFullscreen(s); }
+ADT_NO_UB constexpr void AppHideCursor(App* s) { s->pVTable->hideCursor(s); }
 ADT_NO_UB constexpr void AppSetCursorImage(App* s, String cursorType) { s->pVTable->setCursorImage(s, cursorType); }
 ADT_NO_UB constexpr void AppSetFullscreen(App* s) { s->pVTable->setFullscreen(s); }
 ADT_NO_UB constexpr void AppUnsetFullscreen(App* s) { s->pVTable->unsetFullscreen(s); }

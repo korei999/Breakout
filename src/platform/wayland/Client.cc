@@ -258,6 +258,7 @@ Client::Client(String name)
         .enableRelativeMode = (decltype(AppInterface::enableRelativeMode))ClientEnableRelativeMode,
         .togglePointerRelativeMode = (decltype(AppInterface::togglePointerRelativeMode))ClientTogglePointerRelativeMode,
         .toggleFullscreen = (decltype(AppInterface::toggleFullscreen))ClientToggleFullscreen,
+        .hideCursor = (decltype(AppInterface::hideCursor))ClientHideCursor,
         .setCursorImage = (decltype(AppInterface::setCursorImage))ClientSetCursorImage,
         .setFullscreen = (decltype(AppInterface::setFullscreen))ClientSetFullscreen,
         .unsetFullscreen = (decltype(AppInterface::unsetFullscreen))ClientUnsetFullscreen,
@@ -394,7 +395,8 @@ ClientEnableRelativeMode(Client* s)
 
     s->base.bPointerRelativeMode = true;
 
-    wl_pointer_set_cursor(s->pointer, s->_pointerSerial, nullptr, 0, 0);
+    ClientHideCursor(s);
+
     if (s->cursorSurface) wl_surface_destroy(s->cursorSurface);
 
     s->lockedPointer = zwp_pointer_constraints_v1_lock_pointer(
@@ -416,6 +418,12 @@ ClientDisableRelativeMode(Client* s)
     zwp_relative_pointer_v1_destroy(s->relativePointer);
 
     ClientSetCursorImage(s, "default");
+}
+
+void
+ClientHideCursor(Client* s)
+{
+    wl_pointer_set_cursor(s->pointer, s->_pointerSerial, nullptr, 0, 0);
 }
 
 void

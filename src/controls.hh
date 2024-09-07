@@ -38,7 +38,7 @@ struct Player
     math::V3 pos {0, 0, 3};
     math::V3 front {0, 0, -1};
     math::V3 right {1, 0, 0};
-    const math::V3 up {0, 1, 0};
+    static constexpr math::V3 up {0, 1, 0};
 
     f64 moveSpeed = 5.0;
     math::V3 dir {};
