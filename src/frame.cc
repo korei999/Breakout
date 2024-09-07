@@ -237,7 +237,7 @@ getReflectionSide(math::V2 tar)
     REFLECT_SIDE bestMatch = NONE;
     for (int i = 0; i < REFLECT_SIDE::ESIZE; i++)
     {
-        f32 dot = math::V2Dot(math::V2Norm(tar), compass[i]);
+        f32 dot = V2Dot(V2Norm(tar), compass[i]);
         if (dot > max)
         {
             max = dot;
@@ -245,7 +245,7 @@ getReflectionSide(math::V2 tar)
         }
     }
 
-    return REFLECT_SIDE(bestMatch);
+    return bestMatch;
 }
 
 inline void
@@ -411,6 +411,8 @@ mainLoop()
             UboBufferData(&s_uboProjView, &g_player, 0, sizeof(math::M4) * 2);
 
             /* enemies */
+            TextureBind(&s_tBox, GL_TEXTURE0);
+            ShaderUse(&s_shSprite);
             for (auto& enemy : s_enemies)
             {
                 if (enemy.bDead) continue;
@@ -425,8 +427,6 @@ mainLoop()
                 tm = M4Translate(tm, pos);
                 tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
 
-                ShaderUse(&s_shSprite);
-                TextureBind(&s_tBox, GL_TEXTURE0);
                 ShaderSetM4(&s_shSprite, "uModel", tm);
                 ShaderSetV3(&s_shSprite, "uColor", game::blockColorToV3(enemy.color));
                 PlainDraw(&s_plain);
