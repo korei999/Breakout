@@ -32,8 +32,8 @@ controls::Player g_player {
 
 game::Ball g_ball {
     .bReleased = false,
-    .speed = 1.0f,
-    .radius = 1.0f,
+    .speed = 0.8f,
+    .radius = 20.0f,
     .pos = g_player.pos,
     .dir {},
 };
@@ -221,27 +221,27 @@ renderFPSCounter(Allocator* pAlloc)
     TextDraw(&s_textFPS);
 }
 
-enum REFLECT_SIDE { UP, RIGHT, DOWN, LEFT };
+enum REFLECT_SIDE : s8 { NONE = -1, UP, RIGHT, DOWN, LEFT, ESIZE };
 
 inline REFLECT_SIDE
 getReflectionSide(math::V2 tar)
 {
-    math::V2 compass[] {
+    constexpr math::V2 compass[] {
         { 0.0,  1.0 }, /* up */
         { 1.0,  0.0 }, /* right */
         { 0.0, -1.0 }, /* down */
         {-1.0, -1.0 }, /* left */
     };
     f32 max = 0.0f;
-    u32 bestMatch = -1U;
 
-    for (u32 i = 0; i < 4; i++)
+    REFLECT_SIDE bestMatch = NONE;
+    for (int i = 0; i < REFLECT_SIDE::ESIZE; i++)
     {
         f32 dot = math::V2Dot(math::V2Norm(tar), compass[i]);
         if (dot > max)
         {
             max = dot;
-            bestMatch = i;
+            bestMatch = REFLECT_SIDE(i);
         }
     }
 
@@ -251,55 +251,59 @@ getReflectionSide(math::V2 tar)
 inline void
 procBlockHit()
 {
+    bool bAddSound = false;
+
     for (auto& e : s_enemies)
     {
         if (e.bDead) continue;
 
         math::V2 center = g_ball.pos;
-
         math::V2 aabbHalfExtents(g_unit.x / 2, g_unit.y / 2);
         math::V2 aabbCenter = e.pos;
-
         math::V2 diff = center - e.pos;
-
         math::V2 clamped = math::V2Clamp(diff, -aabbHalfExtents, aabbHalfExtents);
-
         math::V2 closest = aabbCenter + clamped;
 
         diff = closest - center;
         auto diffLen = math::V2Length(diff);
 
-        if (diffLen - 10 < g_unit.x / 2)
+        if (diffLen < g_ball.radius)
         {
             auto side = getReflectionSide(diff);
 
             if (side == REFLECT_SIDE::UP)
             {
-                g_ball.pos.y = e.pos.y - g_unit.y - g_ball.radius - 1;
+                /*f32 penetration = g_ball.radius - abs(diff.y);*/
+                /*g_ball.pos.y -= penetration;*/
                 g_ball.dir.y = -g_ball.dir.y;
             }
             else if (side == REFLECT_SIDE::DOWN)
             {
-                g_ball.pos.y = e.pos.y + g_unit.y + g_ball.radius + 1;
+                /*f32 penetration = g_ball.radius - abs(diff.y);*/
+                /*g_ball.pos.y += penetration;*/
                 g_ball.dir.y = -g_ball.dir.y;
             }
             else if (side == REFLECT_SIDE::LEFT)
             {
-                g_ball.pos.x = e.pos.x + g_unit.x + g_ball.radius + 1;
+                /*f32 penetration = g_ball.radius - abs(diff.x);*/
+                /*g_ball.pos.x += penetration;*/
                 g_ball.dir.x = -g_ball.dir.x;
             }
             else if (side == REFLECT_SIDE::RIGHT)
             {
-                g_ball.pos.x = e.pos.x - g_unit.x - g_ball.radius - 1;
+                /*f32 penetration = g_ball.radius - abs(diff.x);*/
+                /*g_ball.pos.x -= penetration;*/
                 g_ball.dir.x = -g_ball.dir.x;
             }
 
             if (e.color != game::BLOCK_COLOR::GRAY) e.bDead = true;
 
-            audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
-            break;
+            bAddSound = true;
         }
     }
+
+    if (bAddSound)
+        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 }
 
 inline void
@@ -354,12 +358,7 @@ procOutOfBounds()
     }
 
     if (bAddSound)
-    {
-        audio::MixerAdd(
-            g_pMixer,
-            parser::WaveGetTrack(&s_sndBeep, false, 1.2f)
-        );
-    }
+        audio::MixerAdd( g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 }
 
 static void
