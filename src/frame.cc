@@ -185,7 +185,7 @@ run()
     controls::PlayerProcKeys(&g_player);
     AppProcEvents(g_pApp);
 
-    AppHideCursor(g_pApp);
+    AppEnableRelativeMode(g_pApp);
 
     mainLoop();
 }
@@ -362,10 +362,10 @@ procOutOfBounds()
 static void
 mainLoop()
 {
-    auto& level = game::g_level1;
+    const auto& level = game::g_level1;
 
-    constexpr int levelY = (int)utils::size(level);
-    constexpr int levelX = (int)sizeof(level) / levelY;
+    const int levelY = int(utils::size(level));
+    const int levelX = int(sizeof(level) / levelY);
 
     g_unit.x = WIDTH / levelX / 2;
     g_unit.y = HEIGHT / levelY / 2;

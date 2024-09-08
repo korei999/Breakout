@@ -223,6 +223,7 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         case WM_DESTROY:
             pApp->base.bRunning = false;
+            frame::g_pMixer->bRunning = false;
             return 0;
 
         case WM_SIZE:

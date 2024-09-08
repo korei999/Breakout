@@ -51,13 +51,14 @@ void WindowSetFullscreen(Window* s);
 void WindowUnsetFullscreen(Window* s);
 void WindowTogglePointerRelativeMode(Window* s);
 void WindowToggleFullscreen(Window* s);
+void WindowHideCursor(Window* s);
 void WindowBindGlContext(Window* s);
 void WindowUnbindGlContext(Window* s);
 void WindowSetSwapInterval(Window* s, int interval);
 void WindowToggleVSync(Window* s);
 void WindowSwapBuffers(Window* s);
-void WindowProcEvents([[maybe_unused]] Window* s);
-void WindowShowWindow([[maybe_unused]] Window* s);
+void WindowProcEvents(Window* s);
+void WindowShowWindow(Window* s);
 
 } /* namespace win32 */
 } /* namespace platform */

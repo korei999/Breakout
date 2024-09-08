@@ -101,6 +101,7 @@ Window::Window(String sName, HINSTANCE hInstance)
         .enableRelativeMode = (decltype(AppInterface::enableRelativeMode))WindowEnableRelativeMode,
         .togglePointerRelativeMode = (decltype(AppInterface::togglePointerRelativeMode))WindowTogglePointerRelativeMode,
         .toggleFullscreen = (decltype(AppInterface::toggleFullscreen))WindowToggleFullscreen,
+        .hideCursor = (decltype(AppInterface::hideCursor))WindowHideCursor,
         .setCursorImage = (decltype(AppInterface::setCursorImage))WindowSetCursorImage,
         .setFullscreen = (decltype(AppInterface::setFullscreen))WindowSetFullscreen,
         .unsetFullscreen = (decltype(AppInterface::unsetFullscreen))WindowUnsetFullscreen,
@@ -261,6 +262,12 @@ WindowToggleFullscreen(Window* s)
 }
 
 void 
+WindowHideCursor([[maybe_unused]] Window* s)
+{
+    /* TODO: */
+}
+
+void 
 WindowSetCursorImage([[maybe_unused]] Window* s, [[maybe_unused]] String cursorType)
 {
     /* TODO: */
@@ -269,18 +276,22 @@ WindowSetCursorImage([[maybe_unused]] Window* s, [[maybe_unused]] String cursorT
 void 
 WindowSetFullscreen(Window* s) 
 {
+    s->base.bFullscreen = true;
+
     input::enterFullscreen(
         s->hWindow,
         GetDeviceCaps(s->hDeviceContext, 0),
-        GetDeviceCaps(s->hDeviceContext, 0),
-        GetDeviceCaps(s->hDeviceContext, 0),
-        GetDeviceCaps(s->hDeviceContext, 0)
+        GetDeviceCaps(s->hDeviceContext, 1),
+        GetDeviceCaps(s->hDeviceContext, 2),
+        GetDeviceCaps(s->hDeviceContext, 3)
     );
 }
 
 void
 WindowUnsetFullscreen(Window* s)
 {
+    s->base.bFullscreen = false;
+
     input::exitFullscreen(s->hWindow, 0, 0, 800, 600, 0, 0);
 }
 

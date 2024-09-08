@@ -128,8 +128,6 @@ MixerRunThread(Mixer* s, int argc, char** argv)
     wave.nBlockAlign = (2 * wave.wBitsPerSample) / 8;
     wave.nAvgBytesPerSec = wave.nSamplesPerSec * wave.nBlockAlign;
 
-    COUT("nAvgBytesPerSec: %lu\n", wave.nAvgBytesPerSec);
-
     for (auto& v : s_aVoices)
     {
         hr = s->pXAudio2->CreateSourceVoice(
@@ -160,7 +158,6 @@ void
 XAudio2VoiceInterface::OnStreamEnd() noexcept
 {
     m_pVoice->FlushSourceBuffers();
-    COUT("OnStreamEnd\n");
 
     if (m_track.bRepeat)
     {
@@ -197,7 +194,6 @@ XAudio2VoiceInterface::OnBufferStart(void* pBufferContext) noexcept
 void
 XAudio2VoiceInterface::OnBufferEnd(void* pBufferContext) noexcept
 {
-    LOG_GOOD("OnBufferEnd\n");
     auto* s = (Mixer*)pBufferContext;
 }
 
