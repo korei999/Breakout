@@ -276,7 +276,6 @@ Client::Client(String name)
     base.pVTable = {&vTable};
 
     base.sName = name;
-    ClientInit(this);
 }
 
 void
@@ -423,6 +422,7 @@ ClientDisableRelativeMode(Client* s)
 void
 ClientHideCursor(Client* s)
 {
+    s->base.bHideCursor = true;
     wl_pointer_set_cursor(s->pointer, s->_pointerSerial, nullptr, 0, 0);
 }
 

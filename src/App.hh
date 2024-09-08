@@ -38,8 +38,10 @@ struct App
     bool bConfigured = false;
     bool bPaused = false;
     bool bPointerRelativeMode = false;
+    bool bHideCursor = false;
     bool bFullscreen = false;
     int swapInterval = 1;
+    f64 hideCursorTime = 0.0f;
 };
 
 ADT_NO_UB constexpr void AppInit(App* s) { s->pVTable->init(s); }

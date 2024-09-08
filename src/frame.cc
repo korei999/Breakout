@@ -185,8 +185,7 @@ run()
     controls::PlayerProcKeys(&g_player);
     AppProcEvents(g_pApp);
 
-    if (!g_pApp->bPointerRelativeMode)
-        AppEnableRelativeMode(g_pApp);
+    AppHideCursor(g_pApp);
 
     mainLoop();
 }

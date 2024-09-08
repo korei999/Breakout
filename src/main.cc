@@ -15,6 +15,7 @@ main(int argc, char* argv[])
     platform::pipewire::Mixer mixer(&alMixer.base);
     platform::wayland::Client app("Breakout");
 
+    platform::wayland::ClientInit(&app);
     platform::pipewire::MixerInit(&mixer, argc, argv);
 
     frame::g_pApp = &app.base;

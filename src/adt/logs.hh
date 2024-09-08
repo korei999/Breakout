@@ -20,8 +20,8 @@
     #define DCOUT(...) COUT(__VA_ARGS__)
     #define DCERR(...) CERR(__VA_ARGS__)
 #else
-    #define DCOUT(...)
-    #define DCERR(...)
+    #define DCOUT(...) (void)0
+    #define DCERR(...) (void)0
 #endif
 
 enum _LOG_SEV
@@ -48,28 +48,38 @@ inline const char* _LOG_SEV_STR[] = {
     #define ADT_FILE __FILE__
 #endif
 
-#define _LOG(SEV, ...)                                                                                                 \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        assert(SEV >= 0 && SEV < _LOG_SEV_ENUM_SIZE && "wrong _LOG_SEV*");                                             \
-        CERR("(%s%s, %d): ", _LOG_SEV_STR[SEV], ADT_FILE, __LINE__);                                                   \
-        CERR(__VA_ARGS__);                                                                                             \
-        switch (SEV)                                                                                                   \
+#ifdef LOGS
+    #define _LOG(SEV, ...)                                                                                             \
+        do                                                                                                             \
         {                                                                                                              \
-            default:                                                                                                   \
-                break;                                                                                                 \
-            case _LOG_SEV_BAD:                                                                                         \
-                exit(static_cast<int>(SEV));                                                                           \
-            case _LOG_SEV_FATAL:                                                                                       \
-                abort();                                                                                               \
-        }                                                                                                              \
-    } while (0)
+            assert(SEV >= 0 && SEV < _LOG_SEV_ENUM_SIZE && "wrong _LOG_SEV*");                                         \
+            CERR("(%s%s, %d): ", _LOG_SEV_STR[SEV], ADT_FILE, __LINE__);                                               \
+            CERR(__VA_ARGS__);                                                                                         \
+            switch (SEV)                                                                                               \
+            {                                                                                                          \
+                default:                                                                                               \
+                    break;                                                                                             \
+                case _LOG_SEV_BAD:                                                                                     \
+                    exit(static_cast<int>(SEV));                                                                       \
+                case _LOG_SEV_FATAL:                                                                                   \
+                    abort();                                                                                           \
+            }                                                                                                          \
+        } while (0)
 
-#define LOG_OK(...) _LOG(_LOG_SEV_OK, __VA_ARGS__)
-#define LOG_GOOD(...) _LOG(_LOG_SEV_GOOD, __VA_ARGS__)
-#define LOG_WARN(...) _LOG(_LOG_SEV_WARN, __VA_ARGS__)
-#define LOG_BAD(...) _LOG(_LOG_SEV_BAD, __VA_ARGS__)
-#define LOG_FATAL(...) _LOG(_LOG_SEV_FATAL, __VA_ARGS__)
+    #define LOG_OK(...) _LOG(_LOG_SEV_OK, __VA_ARGS__)
+    #define LOG_GOOD(...) _LOG(_LOG_SEV_GOOD, __VA_ARGS__)
+    #define LOG_WARN(...) _LOG(_LOG_SEV_WARN, __VA_ARGS__)
+    #define LOG_BAD(...) _LOG(_LOG_SEV_BAD, __VA_ARGS__)
+    #define LOG_FATAL(...) _LOG(_LOG_SEV_FATAL, __VA_ARGS__)
+#else
+    #define _LOG (void)0
+    #define LOG_OK(...) (void)0
+    #define LOG_GOOD(...) (void)0
+    #define LOG_WARN(...) (void)0
+    #define LOG_BAD(...) (void)0
+    #define LOG_FATAL(...) (void)0
+#endif
+
 
 /* TODO: */
 // #ifdef _WIN32

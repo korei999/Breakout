@@ -124,18 +124,18 @@ pointerEnterHandler(
 {
     LOG_OK("pointerEnterHandler\n");
 
-    auto app = (Client*)(data);
-    app->_pointerSerial = serial;
+    auto s = (Client*)(data);
+    s->_pointerSerial = serial;
 
-    if (app->base.bPointerRelativeMode)
+    if (s->base.bPointerRelativeMode)
         wl_pointer_set_cursor(pointer, serial, nullptr, 0, 0);
     else
         wl_pointer_set_cursor(
             pointer,
             serial,
-            app->cursorSurface,
-            app->cursorImage->hotspot_x,
-            app->cursorImage->hotspot_y
+            s->cursorSurface,
+            s->cursorImage->hotspot_x,
+            s->cursorImage->hotspot_y
         );
 }
 
@@ -159,8 +159,13 @@ pointerMotionHandler(
     [[maybe_unused]] wl_fixed_t surfaceY
 )
 {
+    auto s = (Client*)(data);
+
     frame::g_player.mouse.absX = wl_fixed_to_double(surfaceX);
     frame::g_player.mouse.absY = wl_fixed_to_double(surfaceY);
+
+    if (s->base.bHideCursor)
+        ClientHideCursor(s);
 }
 
 void
