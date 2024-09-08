@@ -33,7 +33,7 @@ controls::Player g_player {
 game::Ball g_ball {
     .bReleased = false,
     .speed = 0.8f,
-    .radius = 20.0f,
+    .radius = 22.0f,
     .pos = g_player.pos,
     .dir {},
 };
@@ -143,7 +143,6 @@ prepareDraw()
     AppUnbindGlContext(g_pApp);
 
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
-    parser::WaveLoadArg argDuclare {&s_sndDuClare, "test-assets/DuClare.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
     TexLoadArg argFontBitMap {&s_tAsciiMap, "test-assets/bitmapFont2.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
@@ -153,7 +152,6 @@ prepareDraw()
     TexLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
 
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argBeep);
-    ThreadPoolSubmit(&tp, parser::WaveSubmit, &argDuclare);
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argUnatco);
 
     ThreadPoolSubmit(&tp, TextureSubmit, &argSampleTex);
@@ -395,8 +393,7 @@ mainLoop()
         }
     }
 
-    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndDuClare, true, 0.8f));
-    /*audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.8f));*/
+    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.8f));
 
     while (g_pApp->bRunning || g_pMixer->bRunning) /* wait for mixer to stop also */
     {
