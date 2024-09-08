@@ -271,28 +271,33 @@ procBlockHit()
         {
             auto side = getReflectionSide(diff);
 
+            /* FIXME: sides are flipped */
             if (side == REFLECT_SIDE::UP)
             {
-                /*f32 penetration = g_ball.radius - abs(diff.y);*/
-                /*g_ball.pos.y -= penetration;*/
+                /*COUT("UP\n");*/
+                f32 penetration = g_ball.radius - fabs(diff.y);
+                g_ball.pos.y -= (penetration + 10);
                 g_ball.dir.y = -g_ball.dir.y;
             }
             else if (side == REFLECT_SIDE::DOWN)
             {
-                /*f32 penetration = g_ball.radius - abs(diff.y);*/
-                /*g_ball.pos.y += penetration;*/
+                /*COUT("DOWN\n");*/
+                f32 penetration = g_ball.radius - fabs(diff.y);
+                g_ball.pos.y += (penetration + 10);
                 g_ball.dir.y = -g_ball.dir.y;
             }
             else if (side == REFLECT_SIDE::LEFT)
             {
-                /*f32 penetration = g_ball.radius - abs(diff.x);*/
-                /*g_ball.pos.x += penetration;*/
+                /*COUT("LEFT\n");*/
+                /*f32 penetration = g_ball.radius - fabs(diff.y);*/
+                /*g_ball.pos.x += (penetration);*/
                 g_ball.dir.x = -g_ball.dir.x;
             }
             else if (side == REFLECT_SIDE::RIGHT)
             {
-                /*f32 penetration = g_ball.radius - abs(diff.x);*/
-                /*g_ball.pos.x -= penetration;*/
+                /*COUT("RIGHT\n");*/
+                /*f32 penetration = g_ball.radius - fabs(diff.y);*/
+                /*g_ball.pos.x -= (penetration);*/
                 g_ball.dir.x = -g_ball.dir.x;
             }
 
