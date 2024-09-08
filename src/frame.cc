@@ -41,7 +41,7 @@ game::Ball g_ball {
 Pair<f32, f32> g_unit;
 
 f32 g_fov = 90.0f;
-f32 g_uiWidth = 192.0f;
+f32 g_uiWidth = 192.0f * 0.75;
 f32 g_uiHeight; /* set in prepareDraw */
 
 f64 g_currTime = 0.0;
@@ -52,8 +52,8 @@ static Pair<f32, f32> s_aspect(16.0f, 9.0f);
 
 static f64 s_prevTime;
 static int s_fpsCount = 0;
-static char s_fpsStrBuff[40] {};
 
+static u8 s_aFrameMem[SIZE_8K] {};
 static AllocatorPool<Arena, ASSET_MAX_COUNT> s_apAssets;
 
 static Array<game::Entity> s_enemies(AllocatorPoolGet(&s_apAssets, SIZE_8K));
@@ -64,7 +64,6 @@ static Shader s_shColor;
 static Shader s_shSprite;
 
 static Texture s_tAsciiMap(AllocatorPoolGet(&s_apAssets, SIZE_1M));
-static Texture s_tSampleTex(AllocatorPoolGet(&s_apAssets, SIZE_1M));
 static Texture s_tBox(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tBall(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tPaddle(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
@@ -74,7 +73,6 @@ static parser::Wave s_sndDuClare(AllocatorPoolGet(&s_apAssets, SIZE_1M * 35));
 static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_apAssets, SIZE_1M * 35));
 
 static Text s_textFPS;
-static Text s_textTest;
 
 static Plain s_plain;
 
@@ -132,8 +130,7 @@ prepareDraw()
     UboBindShader(&s_uboProjView, &s_shTex, "ubProjView", 0);
     UboBindShader(&s_uboProjView, &s_shColor, "ubProjView", 0);
 
-    s_textFPS = Text("", utils::size(s_fpsStrBuff), 0, 0, GL_DYNAMIC_DRAW);
-    s_textTest = Text("", 256, 0, 0, GL_DYNAMIC_DRAW);
+    s_textFPS = Text("", 40, 0, 0, GL_DYNAMIC_DRAW);
 
     Arena allocScope(SIZE_1K);
     ThreadPool tp(&allocScope.base, 1);
@@ -145,8 +142,7 @@ prepareDraw()
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
-    TexLoadArg argFontBitMap {&s_tAsciiMap, "test-assets/bitmapFont2.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
-    TexLoadArg argSampleTex {&s_tSampleTex, "test-assets/dirt.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
+    TexLoadArg argFontBitMap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
     TexLoadArg argBox {&s_tBox, "test-assets/box3.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg argBall {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
@@ -154,7 +150,6 @@ prepareDraw()
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argBeep);
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argUnatco);
 
-    ThreadPoolSubmit(&tp, TextureSubmit, &argSampleTex);
     ThreadPoolSubmit(&tp, TextureSubmit, &argFontBitMap);
     ThreadPoolSubmit(&tp, TextureSubmit, &argBox);
     ThreadPoolSubmit(&tp, TextureSubmit, &argBall);
@@ -207,13 +202,14 @@ renderFPSCounter(Allocator* pAlloc)
     f64 currTime = utils::timeNowMS();
     if (currTime >= s_prevTime + 1000.0)
     {
-        memset(s_fpsStrBuff, 0, utils::size(s_fpsStrBuff));
-        snprintf(s_fpsStrBuff, utils::size(s_fpsStrBuff), "FPS: %u\nFrame time: %.3f ms", s_fpsCount, g_deltaTime);
+        String s = StringAlloc(pAlloc, s_textFPS.maxSize);
+        memset(s.pData, 0, s.size);
+        snprintf(s.pData, s.size, "FPS: %u\nFrame time: %.3f ms", s_fpsCount, g_deltaTime);
 
         s_fpsCount = 0;
         s_prevTime = currTime;
 
-        TextUpdate(&s_textFPS, pAlloc, s_fpsStrBuff, 0, 0);
+        TextUpdate(&s_textFPS, pAlloc, s, 0, 0);
     }
 
     TextDraw(&s_textFPS);
@@ -397,8 +393,7 @@ mainLoop()
 
     while (g_pApp->bRunning || g_pMixer->bRunning) /* wait for mixer to stop also */
     {
-        u8 aFrameMem[SIZE_8K] {};
-        FixedAllocator allocFrame (aFrameMem, sizeof(aFrameMem));
+        FixedAllocator alFrame (s_aFrameMem, sizeof(s_aFrameMem));
 
         {
             AppProcEvents(g_pApp);
@@ -492,12 +487,13 @@ mainLoop()
                 PlainDraw(&s_plain);
             }
 
-            renderFPSCounter(&allocFrame.base);
+            renderFPSCounter(&alFrame.base);
         }
 
         AppSwapBuffers(g_pApp);
 
         s_fpsCount++;
+        FixedAllocatorReset(&alFrame);
     }
 
 #ifndef NDEBUG

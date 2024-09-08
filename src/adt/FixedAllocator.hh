@@ -23,6 +23,7 @@ struct FixedAllocator
 constexpr void* FixedAllocatorAlloc(FixedAllocator* s, u64 mCount, u64 mSize);
 constexpr void* FixedAllocatorRealloc(FixedAllocator* s, void* p, u64 mCount, u64 mSize);
 constexpr void FixedAllocatorFree([[maybe_unused]] FixedAllocator* s, [[maybe_unused]] void* p);
+constexpr void FixedAllocatorReset(FixedAllocator* s);
 
 constexpr void*
 FixedAllocatorAlloc(FixedAllocator* s, u64 mCount, u64 mSize)
@@ -65,6 +66,12 @@ constexpr void
 FixedAllocatorFree([[maybe_unused]] FixedAllocator* s, [[maybe_unused]] void* p)
 {
     /* not needed since stack memory should be used as a buffer */
+}
+
+constexpr void
+FixedAllocatorReset(FixedAllocator* s)
+{
+    s->size = 0;
 }
 
 inline const AllocatorInterface __FixedAllocatorVTable {

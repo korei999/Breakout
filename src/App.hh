@@ -36,10 +36,10 @@ struct App
     int wHeight = 1080;
     bool bRunning = false;
     bool bConfigured = false;
-    int swapInterval = 1;
     bool bPaused = false;
     bool bPointerRelativeMode = false;
     bool bFullscreen = false;
+    int swapInterval = 1;
 };
 
 ADT_NO_UB constexpr void AppInit(App* s) { s->pVTable->init(s); }

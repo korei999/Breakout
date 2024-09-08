@@ -15,7 +15,7 @@ namespace pipewire
 [[maybe_unused]] constexpr f64 M_PI_M2 = M_PI + M_PI;
 
 static void MixerRunThread(Mixer* s, int argc, char** argv);
-static void cbOnProcess(void* data);
+static void onProcess(void* data);
 static bool MixerEmpty(Mixer* s);
 
 const pw_stream_events Mixer::s_streamEvents {
@@ -27,7 +27,7 @@ const pw_stream_events Mixer::s_streamEvents {
     .param_changed = {},
     .add_buffer {},
     .remove_buffer {},
-    .process = cbOnProcess,
+    .process = onProcess,
     .drained {},
     .command {},
     .trigger_done {},
@@ -150,7 +150,7 @@ MixerRunThread(Mixer* s, int argc, char** argv)
 }
 
 static void
-cbOnProcess(void* data)
+onProcess(void* data)
 {
     auto* s = (Mixer*)data;
 

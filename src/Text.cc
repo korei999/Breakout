@@ -98,6 +98,8 @@ TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, 
 void
 TextUpdate(Text* s, Allocator* pAlloc, String str, int x, int y)
 {
+    assert(str.size <= s->maxSize);
+
     s->str = str;
     auto aQuads = TextUpdateBuffer(s, pAlloc, str, s->maxSize, x, y);
 
