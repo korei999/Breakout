@@ -165,7 +165,7 @@ onProcess(void* data)
 
     auto pBuffData = b->buffer->datas[0];
     s16* pDest = (s16*)pBuffData.data;
-    u32 itDest = 0;
+    __m128i_u* pSimdDest = (__m128i_u*)pBuffData.data;
 
     if (!pDest)
     {
@@ -183,8 +183,7 @@ onProcess(void* data)
 
     for (u32 i = 0; i < nFrames / 4; i++)
     {
-        /*s16 val[4] {};*/
-        __m128i pv {};
+        __m128i packed8Samples {};
 
         if (s->aBackgroundTracks.size > 0)
         {
@@ -193,24 +192,18 @@ onProcess(void* data)
 
             if (t.pcmPos + 8 <= t.pcmSize)
             {
-                /*al[0] += t.pData[t.pcmPos + 0] * vol;*/
-                /*val[1] += t.pData[t.pcmPos + 1] * vol;*/
-                /*val[2] += t.pData[t.pcmPos + 2] * vol;*/
-                /*val[3] += t.pData[t.pcmPos + 3] * vol;*/
-
-                auto l = _mm_set_epi16(
-                    t.pData[t.pcmPos + 0] * vol,
-                    t.pData[t.pcmPos + 1] * vol,
-                    t.pData[t.pcmPos + 2] * vol,
-                    t.pData[t.pcmPos + 3] * vol,
-                    t.pData[t.pcmPos + 4] * vol,
-                    t.pData[t.pcmPos + 5] * vol,
+                auto what = _mm_set_epi16(
+                    t.pData[t.pcmPos + 7] * vol,
                     t.pData[t.pcmPos + 6] * vol,
-                    t.pData[t.pcmPos + 7] * vol
+                    t.pData[t.pcmPos + 5] * vol,
+                    t.pData[t.pcmPos + 4] * vol,
+                    t.pData[t.pcmPos + 3] * vol,
+                    t.pData[t.pcmPos + 2] * vol,
+                    t.pData[t.pcmPos + 1] * vol,
+                    t.pData[t.pcmPos + 0] * vol
                 );
 
-                auto kek = _mm_add_epi16(pv, l);
-                pv = kek;
+                packed8Samples = _mm_add_epi16(packed8Samples, what);
 
                 t.pcmPos += 8;
             }
@@ -223,45 +216,47 @@ onProcess(void* data)
             }
         }
 
-        // for (u32 i = 0; i < s->aTracks.size; i++)
-        // {
-        //     auto& t = s->aTracks[i];
-        //     f32 vol = powf(t.volume, 3.0f);
+        for (u32 i = 0; i < s->aTracks.size; i++)
+        {
+            auto& t = s->aTracks[i];
+            f32 vol = powf(t.volume, 3.0f);
 
-        //     if (t.pcmPos + 4 <= t.pcmSize)
-        //     {
-        //         val[0] += t.pData[t.pcmPos + 0] * vol;
-        //         val[1] += t.pData[t.pcmPos + 1] * vol;
-        //         val[2] += t.pData[t.pcmPos + 2] * vol;
-        //         val[3] += t.pData[t.pcmPos + 3] * vol;
+            if (t.pcmPos + 8 <= t.pcmSize)
+            {
+                auto what = _mm_set_epi16(
+                    t.pData[t.pcmPos + 7] * vol,
+                    t.pData[t.pcmPos + 6] * vol,
+                    t.pData[t.pcmPos + 5] * vol,
+                    t.pData[t.pcmPos + 4] * vol,
+                    t.pData[t.pcmPos + 3] * vol,
+                    t.pData[t.pcmPos + 2] * vol,
+                    t.pData[t.pcmPos + 1] * vol,
+                    t.pData[t.pcmPos + 0] * vol
+                );
 
-        //         t.pcmPos += 4;
-        //     }
-        //     else
-        //     {
-        //         if (t.bRepeat)
-        //         {
-        //             t.pcmPos = 0;
-        //         }
-        //         else
-        //         {
-        //             mtx_lock(&s->mtxAdd);
-        //             ArrayPopAsLast(&s->aTracks, i);
-        //             --i;
-        //             mtx_unlock(&s->mtxAdd);
-        //         }
-        //     }
-        // }
+                packed8Samples = _mm_add_epi16(packed8Samples, what);
 
-        /*pDest[itDest + 0] = val[0];*/
-        /*pDest[itDest + 1] = val[1];*/
-        /*pDest[itDest + 2] = val[2];*/
-        /*pDest[itDest + 3] = val[3];*/
+                t.pcmPos += 8;
+            }
+            else
+            {
+                if (t.bRepeat)
+                {
+                    t.pcmPos = 0;
+                }
+                else
+                {
+                    mtx_lock(&s->mtxAdd);
+                    ArrayPopAsLast(&s->aTracks, i);
+                    --i;
+                    mtx_unlock(&s->mtxAdd);
+                }
+            }
+        }
 
-        /*pDest[itDest] = *(s16*)&pv;*/
-        _mm_store_si128((__m128i *)&pDest[itDest], pv);
+        _mm_storeu_si128(pSimdDest, packed8Samples);
 
-        itDest += 8;
+        pSimdDest++;
     }
 
     pBuffData.chunk->offset = 0;

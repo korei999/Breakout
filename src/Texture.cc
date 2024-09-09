@@ -394,7 +394,7 @@ flipCpyBGRAtoRGBA(u8* dest, u8* src, int width, int height, bool vertFlip)
             pack = _mm_and_si128(pack, _mm_set1_epi32(0xff'00'ff'00));
 
             /* https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#techs=SSE_ALL&ig_expand=3975,627,305,2929,627&cats=Shift */
-            redBits = _mm_bsrli_si128(redBits, 2); /* shift 2 because: 'dst[127:0] := a[127:0] << (tmp*8)' */
+            redBits = _mm_bsrli_si128(redBits, 2); /* simd bitshifts are in bytes: 'dst[127:0] := a[127:0] << (tmp*8)' */
             blueBits = _mm_bslli_si128(blueBits, 2);
 
             pack = _mm_or_si128(_mm_or_si128(pack, redBits), blueBits);
