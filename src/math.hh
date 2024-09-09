@@ -15,8 +15,8 @@ namespace math
 
 constexpr f64 PI = 3.14159265358979323846;
 constexpr f32 PI_F = f32(PI);
-
-template<typename T> T sq(const T& x) { return x * x; }
+constexpr f64 EPS = 0.000001;
+constexpr f32 EPS_F = 0.00001;
 
 constexpr f64 toDeg(f64 x) { return x * 180.0 / PI; }
 constexpr f64 toRad(f64 x) { return x * PI / 180.0; }
@@ -27,6 +27,11 @@ constexpr f64 toRad(long x) { return toRad(f64(x)); }
 constexpr f64 toDeg(long x) { return toDeg(f64(x)); }
 constexpr f32 toRad(int x) { return toRad(f32(x)); }
 constexpr f32 toDeg(int x) { return toDeg(f32(x)); }
+
+constexpr bool rEq(f64 l, f64 r) { return l >= r - EPS && l <= r + EPS; } /* roughly equals */
+constexpr bool rEq(f32 l, f32 r) { return l >= r - EPS_F && l <= r + EPS_F; } /* roughly equals */
+
+template<typename T> constexpr T sq(const T& x) { return x * x; }
 
 #define MATH_COLOR4(hex)                                                                                               \
     {                                                                                                                  \

@@ -182,32 +182,6 @@ onProcess(void* data)
     {
         s16 val[2] {};
 
-        auto procTrack = [&val, s](audio::Track* track, u32* i) -> void {
-            auto& t = *track;
-            f32 vol = powf(t.volume, 3.0f);
-
-            if (t.pcmPos + 2 <= t.pcmSize)
-            {
-                val[0] += t.pData[t.pcmPos + 0] * vol;
-                val[1] += t.pData[t.pcmPos + 1] * vol;
-                t.pcmPos += 2;
-            }
-            else
-            {
-                if (t.bRepeat)
-                {
-                    t.pcmPos = 0;
-                }
-                else
-                {
-                    mtx_lock(&s->mtxAdd);
-                    ArrayPopAsLast(&s->aTracks, *i);
-                    --(*i);
-                    mtx_unlock(&s->mtxAdd);
-                }
-            }
-        };
-
         if (s->aBackgroundTracks.size > 0)
         {
             auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];

@@ -231,7 +231,7 @@ getReflectionSide(math::V2 tar)
         { 0.0,  1.0 }, /* up */
         { 1.0,  0.0 }, /* right */
         { 0.0, -1.0 }, /* down */
-        {-1.0, -1.0 }, /* left */
+        {-1.0,  0.0 }, /* left */
     };
     f32 max = 0.0f;
 
@@ -259,7 +259,7 @@ procBlockHit()
         if (e.bDead) continue;
 
         math::V2 center = nextPos(g_ball, true);
-        math::V2 aabbHalfExtents(g_unit.x / 2, g_unit.y / 2);
+        math::V2 aabbHalfExtents(g_unit.x / 2 + 4, g_unit.y / 2 + 4);
         math::V2 aabbCenter = e.pos;
         math::V2 diff = center - e.pos;
         math::V2 clamped = math::V2Clamp(diff, -aabbHalfExtents, aabbHalfExtents);
@@ -270,6 +270,10 @@ procBlockHit()
 
         if (diffLen <= g_ball.radius)
         {
+            if (e.color != game::BLOCK_COLOR::GRAY) e.bDead = true;
+
+            bAddSound = true;
+
             auto side = getReflectionSide(diff);
 
             /* FIXME: sides are flipped */
@@ -283,14 +287,24 @@ procBlockHit()
                     break;
             
                 case REFLECT_SIDE::LEFT:
+                    if (math::rEq(g_ball.dir.x, 0))
+                    {
+                        g_ball.dir.x = 0.25;
+                        break;
+                    }
+                [[fallthrough]];
                 case REFLECT_SIDE::RIGHT:
+                    if (math::rEq(g_ball.dir.x, 0))
+                    {
+                        g_ball.dir.x = -0.25;
+                        break;
+                    }
+
                     g_ball.dir.x = -g_ball.dir.x;
                     break;
             }
 
-            if (e.color != game::BLOCK_COLOR::GRAY) e.bDead = true;
-
-            bAddSound = true;
+            break;
         }
     }
 
