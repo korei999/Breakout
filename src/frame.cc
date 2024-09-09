@@ -11,6 +11,7 @@
 #include "Text.hh"
 #include "colors.hh"
 #include "frame.hh"
+#include "game.hh"
 #include "math.hh"
 #include "parser/Wave.hh"
 
@@ -23,21 +24,6 @@ static void mainLoop();
 
 App* g_pApp;
 audio::Mixer* g_pMixer;
-
-controls::Player g_player {
-    .pos {0, 0, 0},
-    .speed = 0.9,
-    .dir {},
-    .mouse {.sens = 0.07},
-};
-
-game::Ball g_ball {
-    .bReleased = false,
-    .speed = 0.8f,
-    .radius = 22.0f,
-    .pos = g_player.pos,
-    .dir {},
-};
 
 Pair<f32, f32> g_unit;
 
@@ -70,7 +56,6 @@ static Texture s_tBall(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 static Texture s_tPaddle(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
 
 static parser::Wave s_sndBeep(AllocatorPoolGet(&s_apAssets, SIZE_1K * 400));
-static parser::Wave s_sndDuClare(AllocatorPoolGet(&s_apAssets, SIZE_1M * 35));
 static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_apAssets, SIZE_1M * 35));
 
 static Text s_textFPS;
@@ -78,6 +63,20 @@ static Text s_textFPS;
 static Plain s_plain;
 
 static Ubo s_uboProjView;
+
+game::Player g_player {
+    .pos {0, 0, 0},
+    .speed = 0.9,
+    .dir {},
+};
+
+game::Ball g_ball {
+    .bReleased = false,
+    .speed = 0.8f,
+    .radius = 22.0f,
+    .pos = g_player.pos,
+    .dir {},
+};
 
 static void
 updateDeltaTime()
@@ -182,11 +181,13 @@ run()
 
     /* proc once to get events */
     AppSwapBuffers(g_pApp);
-    controls::PlayerProcMouse(&g_player);
-    controls::PlayerProcKeys(&g_player);
+    controls::procMouse();
+    controls::procKeys();
     AppProcEvents(g_pApp);
 
     AppEnableRelativeMode(g_pApp);
+
+    /*g_player.idxEntity = game::GetNextEntityIdx(&s_enemies);*/
 
     mainLoop();
 }
@@ -270,7 +271,7 @@ procBlockHit()
 
         if (diffLen <= g_ball.radius)
         {
-            if (e.color != game::BLOCK_COLOR::GRAY) e.bDead = true;
+            if (e.color != game::COLOR::GRAY) e.bDead = true;
 
             bAddSound = true;
 
@@ -382,21 +383,21 @@ mainLoop()
     {
         for (u32 j = 0; j < levelX; j++)
         {
-            if (level[i][j] != s8(game::BLOCK_COLOR::INVISIBLE))
+            if (level[i][j] != s8(game::COLOR::INVISIBLE))
             {
                 ArrayPush(&s_enemies, {
                     .pos = {g_unit.x*2*j, (HEIGHT - g_unit.y*2) - g_unit.y*2*i},
                     .shaderIdx = 0,
                     .modelIdx = 0,
                     .texIdx = 0,
-                    .color = (game::BLOCK_COLOR)level[i][j],
+                    .color = game::COLOR(level[i][j]),
                     .bDead = false
                 });
             }
         }
     }
 
-    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.8f));
+    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
 
     FixedAllocator alFrame (s_aFrameMem, sizeof(s_aFrameMem));
 
@@ -405,14 +406,14 @@ mainLoop()
         {
             AppProcEvents(g_pApp);
             updateDeltaTime();
-            PlayerProcKeys(&g_player);
+            controls::procKeys();
 
-            g_player.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
+            controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glViewport(0, 0, g_pApp->wWidth, g_pApp->wHeight);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            UboBufferData(&s_uboProjView, &g_player, 0, sizeof(math::M4) * 2);
+            UboBufferData(&s_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
 
             /* enemies */
             TextureBind(&s_tBox, GL_TEXTURE0);
@@ -421,10 +422,7 @@ mainLoop()
             {
                 if (enemy.bDead) continue;
 
-                /*math::V3 pos {((sinf(i) * WIDTH) + WIDTH) / 2.0f, enemy.pos.y, 0.0f};*/
                 math::V3 pos {enemy.pos.x, enemy.pos.y, 0.0f};
-
-                /*enemy.pos = pos;*/
 
                 math::M4 tm;
                 tm = math::M4Iden();
@@ -434,9 +432,6 @@ mainLoop()
                 ShaderSetM4(&s_shSprite, "uModel", tm);
                 ShaderSetV3(&s_shSprite, "uColor", game::blockColorToV3(enemy.color));
                 PlainDraw(&s_plain);
-
-                /*TextureBind(&s_tSampleTex, GL_TEXTURE0);*/
-                /*PlainDrawBox(&s_plain);*/
             }
 
             /* player */

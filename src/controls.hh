@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math.hh"
+#include "game.hh"
 
 using namespace adt;
 
@@ -29,7 +30,7 @@ struct Mouse
     u32 state = 0;
 };
 
-struct Player
+struct Camera
 {
     /* proj and view are adjecent for nice ubo buffering */
     math::M4 proj {};
@@ -39,22 +40,18 @@ struct Player
     math::V3 front {0, 0, -1};
     math::V3 right {1, 0, 0};
     static constexpr math::V3 up {0, 1, 0};
-
-    f64 speed = 5.0;
-    math::V3 dir {};
-
-    Mouse mouse {};
 };
 
-void PlayerProcMouse(Player* s);
-void PlayerProcMovements(Player* s);
-void PlayerProcKeys(Player* s);
-void PlayerUpdateView(Player* s);
-void PlayerUpdateProj(Player* s, f32 fov, f32 aspect, f32 near, f32 far);
+void procMouse();
+void procKeys();
+void PlayerUpdateView(game::Player* s);
+void PlayerUpdateProj(game::Player* s, f32 fov, f32 aspect, f32 near, f32 far);
 
 void procKeysOnce(u32 key, u32 pressed);
 
 extern bool g_pressedKeys[300];
+extern Mouse g_mouse;
+extern Camera g_camera;
 
 } /* namespace controls */
 

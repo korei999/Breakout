@@ -6,6 +6,7 @@
 
 #include <math.h>
 #include <emmintrin.h>
+#include <immintrin.h>
 
 namespace platform
 {
@@ -151,35 +152,11 @@ MixerRunThread(Mixer* s, int argc, char** argv)
     s->base.bRunning = false;
 }
 
+__attribute__((target("default")))
 static void
-onProcess(void* data)
+writeFrames(Mixer* s, void* pBuff, u32 nFrames)
 {
-    auto* s = (Mixer*)data;
-
-    pw_buffer* b;
-    if ((b = pw_stream_dequeue_buffer(s->pStream)) == nullptr)
-    {
-        pw_log_warn("out of buffers: %m");
-        return;
-    }
-
-    auto pBuffData = b->buffer->datas[0];
-    s16* pDest = (s16*)pBuffData.data;
-    __m128i_u* pSimdDest = (__m128i_u*)pBuffData.data;
-
-    if (!pDest)
-    {
-        LOG_WARN("dst == nullptr\n");
-        return;
-    }
-
-    u32 stride = sizeof(s16) * s->channels;
-    u32 nFrames = pBuffData.maxsize / stride;
-    if (b->requested) nFrames = SPA_MIN(b->requested, (u64)nFrames);
-
-    if (nFrames > 1024*4) nFrames = 1024*4; /* limit to arbitrary number */
-
-    s->lastNFrames = nFrames;
+    __m128i_u* pSimdDest = (__m128i_u*)pBuff;
 
     for (u32 i = 0; i < nFrames / 4; i++)
     {
@@ -258,6 +235,139 @@ onProcess(void* data)
 
         pSimdDest++;
     }
+}
+
+__attribute__((target("avx2")))
+static void
+writeFrames(Mixer* s, void* pBuff, u32 nFrames)
+{
+    __m256i_u* pSimdDest = (__m256i_u*)pBuff;
+
+    for (u32 i = 0; i < nFrames / 8; i++)
+    {
+        __m256i packed16Samples {};
+
+        if (s->aBackgroundTracks.size > 0)
+        {
+            auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
+            f32 vol = powf(t.volume, 3.0f);
+
+            if (t.pcmPos + 16 <= t.pcmSize)
+            {
+                auto what = _mm256_set_epi16(
+                    t.pData[t.pcmPos + 15] * vol,
+                    t.pData[t.pcmPos + 14] * vol,
+                    t.pData[t.pcmPos + 13] * vol,
+                    t.pData[t.pcmPos + 12] * vol,
+                    t.pData[t.pcmPos + 11] * vol,
+                    t.pData[t.pcmPos + 10] * vol,
+                    t.pData[t.pcmPos + 9 ] * vol,
+                    t.pData[t.pcmPos + 8 ] * vol,
+                    t.pData[t.pcmPos + 7 ] * vol,
+                    t.pData[t.pcmPos + 6 ] * vol,
+                    t.pData[t.pcmPos + 5 ] * vol,
+                    t.pData[t.pcmPos + 4 ] * vol,
+                    t.pData[t.pcmPos + 3 ] * vol,
+                    t.pData[t.pcmPos + 2 ] * vol,
+                    t.pData[t.pcmPos + 1 ] * vol,
+                    t.pData[t.pcmPos + 0 ] * vol
+                );
+
+                packed16Samples = _mm256_add_epi16(packed16Samples, what);
+
+                t.pcmPos += 16;
+            }
+            else
+            {
+                t.pcmPos = 0;
+                auto current = s->currentBackgroundTrackIdx + 1;
+                if (current > s->aBackgroundTracks.size - 1) current = 0;
+                s->currentBackgroundTrackIdx = current;
+            }
+        }
+
+        for (u32 i = 0; i < s->aTracks.size; i++)
+        {
+            auto& t = s->aTracks[i];
+            f32 vol = powf(t.volume, 3.0f);
+
+            if (t.pcmPos + 16 <= t.pcmSize)
+            {
+                auto what = _mm256_set_epi16(
+                    t.pData[t.pcmPos + 15] * vol,
+                    t.pData[t.pcmPos + 14] * vol,
+                    t.pData[t.pcmPos + 13] * vol,
+                    t.pData[t.pcmPos + 12] * vol,
+                    t.pData[t.pcmPos + 11] * vol,
+                    t.pData[t.pcmPos + 10] * vol,
+                    t.pData[t.pcmPos + 9 ] * vol,
+                    t.pData[t.pcmPos + 8 ] * vol,
+                    t.pData[t.pcmPos + 7 ] * vol,
+                    t.pData[t.pcmPos + 6 ] * vol,
+                    t.pData[t.pcmPos + 5 ] * vol,
+                    t.pData[t.pcmPos + 4 ] * vol,
+                    t.pData[t.pcmPos + 3 ] * vol,
+                    t.pData[t.pcmPos + 2 ] * vol,
+                    t.pData[t.pcmPos + 1 ] * vol,
+                    t.pData[t.pcmPos + 0 ] * vol
+                );
+
+                packed16Samples = _mm256_add_epi16(packed16Samples, what);
+
+                t.pcmPos += 16;
+            }
+            else
+            {
+                if (t.bRepeat)
+                {
+                    t.pcmPos = 0;
+                }
+                else
+                {
+                    mtx_lock(&s->mtxAdd);
+                    ArrayPopAsLast(&s->aTracks, i);
+                    --i;
+                    mtx_unlock(&s->mtxAdd);
+                }
+            }
+        }
+
+        _mm256_storeu_si256(pSimdDest, packed16Samples);
+
+        pSimdDest++;
+    }
+}
+
+static void
+onProcess(void* data)
+{
+    auto* s = (Mixer*)data;
+
+    pw_buffer* b;
+    if ((b = pw_stream_dequeue_buffer(s->pStream)) == nullptr)
+    {
+        pw_log_warn("out of buffers: %m");
+        return;
+    }
+
+    auto pBuffData = b->buffer->datas[0];
+    s16* pDest = (s16*)pBuffData.data;
+
+    if (!pDest)
+    {
+        LOG_WARN("dst == nullptr\n");
+        return;
+    }
+
+    u32 stride = sizeof(s16) * s->channels;
+    u32 nFrames = pBuffData.maxsize / stride;
+    if (b->requested) nFrames = SPA_MIN(b->requested, (u64)nFrames);
+
+    if (nFrames > 1024*4) nFrames = 1024*4; /* limit to arbitrary number */
+
+    s->lastNFrames = nFrames;
+
+    writeFrames(s, pDest, nFrames);
 
     pBuffData.chunk->offset = 0;
     pBuffData.chunk->stride = stride;
@@ -268,6 +378,13 @@ onProcess(void* data)
     if (!frame::g_pApp->bRunning) pw_main_loop_quit(s->pLoop);
     /* set bRunning for the mixer outside */
 }
+
+
+// __attribute__ ((target ("default")))
+// static void
+// writeFramesSSE(Mixer* s, void* pBuff, u32 nFrames)
+// {
+// }
 
 [[maybe_unused]] static bool
 MixerEmpty(Mixer* s)

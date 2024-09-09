@@ -2,7 +2,6 @@
 #include "adt/logs.hh"
 #include "adt/utils.hh"
 #include "controls.hh"
-#include "frame.hh"
 
 namespace platform
 {
@@ -159,8 +158,8 @@ pointerMotionHandler(
     [[maybe_unused]] wl_fixed_t surfaceY
 )
 {
-    frame::g_player.mouse.absX = wl_fixed_to_double(surfaceX);
-    frame::g_player.mouse.absY = wl_fixed_to_double(surfaceY);
+    controls::g_mouse.absX = wl_fixed_to_double(surfaceX);
+    controls::g_mouse.absY = wl_fixed_to_double(surfaceY);
 
     /*auto s = (Client*)(data);*/
     /*if (s->base.bHideCursor)*/
@@ -177,8 +176,8 @@ pointerButtonHandler(
     [[maybe_unused]] u32 buttonState
 )
 {
-    frame::g_player.mouse.button = button;
-    frame::g_player.mouse.state = buttonState;
+    controls::g_mouse.button = button;
+    controls::g_mouse.state = buttonState;
 }
 
 void
@@ -205,8 +204,8 @@ relativePointerMotionHandler(
     [[maybe_unused]] wl_fixed_t dyUnaccel
 )
 {
-    frame::g_player.mouse.relX += wl_fixed_to_int(dxUnaccel);
-    frame::g_player.mouse.relY += wl_fixed_to_int(dyUnaccel);
+    controls::g_mouse.relX += wl_fixed_to_int(dxUnaccel);
+    controls::g_mouse.relY += wl_fixed_to_int(dyUnaccel);
 }
 
 } /* namespace input */

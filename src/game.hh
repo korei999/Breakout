@@ -1,5 +1,6 @@
 #pragma once
 
+#include "adt/Array.hh"
 #include "adt/types.hh"
 #include "colors.hh"
 
@@ -14,7 +15,7 @@ enum class STATE : u8 {
     WIN
 };
 
-enum class BLOCK_COLOR : s8 {
+enum class COLOR : s8 {
     INVISIBLE = -1, GRAY, WHITE, RED, GREEN, BLUE
 };
 
@@ -24,13 +25,28 @@ struct Entity
     u16 shaderIdx;
     u16 modelIdx;
     u16 texIdx;
-    game::BLOCK_COLOR color;
+    game::COLOR color;
     bool bDead;
+};
+
+inline u32
+GetNextEntityIdx(Array<Entity>* s)
+{
+    ArrayPush(s, {});
+    return s->size - 1;
+}
+
+struct Player
+{
+    u32 idxEntity = 0;
+    math::V3 pos {0, 0, 3};
+    f64 speed = 5.0;
+    math::V3 dir {};
 };
 
 struct Projectile
 {
-    u16 entityIdx;
+    u16 idxEntity;
     f32 speed;
     math::V2 pos;
     math::V2 dir;
@@ -47,7 +63,7 @@ struct Ball
 };
 
 constexpr math::V3
-blockColorToV3(BLOCK_COLOR col)
+blockColorToV3(COLOR col)
 {
     constexpr math::V3 map[] {
         colors::black, colors::darkGrey, colors::white, colors::red, colors::green, colors::blue

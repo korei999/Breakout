@@ -13,31 +13,35 @@ namespace controls
 {
 
 bool g_pressedKeys[300] {};
+Mouse g_mouse {};
+Camera g_camera {};
+
+static void PlayerProcMovements(game::Player* s);
 
 void
-PlayerProcMouse(Player* s)
+procMouse()
 {
-    f64 offsetX = (s->mouse.relX - s->mouse.prevRelX) * s->mouse.sens;
-    f64 offsetY = (s->mouse.prevRelY - s->mouse.relY) * s->mouse.sens;
+    f64 offsetX = (g_mouse.relX - g_mouse.prevRelX) * g_mouse.sens;
+    f64 offsetY = (g_mouse.prevRelY - g_mouse.relY) * g_mouse.sens;
 
-    s->mouse.prevRelX = s->mouse.relX;
-    s->mouse.prevRelY = s->mouse.relY;
+    g_mouse.prevRelX = g_mouse.relX;
+    g_mouse.prevRelY = g_mouse.relY;
 
-    s->mouse.yaw += offsetX;
-    s->mouse.pitch += offsetY;
+    g_mouse.yaw += offsetX;
+    g_mouse.pitch += offsetY;
 
-    if (s->mouse.pitch > 89.9)
-        s->mouse.pitch = 89.9;
-    if (s->mouse.pitch < -89.9)
-        s->mouse.pitch = -89.9;
+    if (g_mouse.pitch > 89.9)
+        g_mouse.pitch = 89.9;
+    if (g_mouse.pitch < -89.9)
+        g_mouse.pitch = -89.9;
 
-    s->front = math::V3Norm({
-        f32(cos(math::toRad(s->mouse.yaw)) * cos(math::toRad(s->mouse.pitch))),
-        f32(sin(math::toRad(s->mouse.pitch))),
-        f32(sin(math::toRad(s->mouse.yaw)) * cos(math::toRad(s->mouse.pitch)))
+    g_camera.front = math::V3Norm({
+        f32(cos(math::toRad(g_mouse.yaw)) * cos(math::toRad(g_mouse.pitch))),
+        f32(sin(math::toRad(g_mouse.pitch))),
+        f32(sin(math::toRad(g_mouse.yaw)) * cos(math::toRad(g_mouse.pitch)))
     });
 
-    s->right = V3Norm(V3Cross(s->front, s->up));
+    g_camera.right = V3Norm(V3Cross(g_camera.front, g_camera.up));
 }
 
 void
@@ -100,13 +104,13 @@ procKeysOnce(u32 key, u32 pressed)
 }
 
 void
-PlayerProcKeys(Player* s)
+procKeys()
 {
-    PlayerProcMovements(s);
+    PlayerProcMovements(&frame::g_player);
 }
 
-void
-PlayerProcMovements(Player* s)
+static void
+PlayerProcMovements(game::Player* s)
 {
     s->dir = {0.0f, 0.0f, 0.0f};
 
@@ -132,15 +136,15 @@ PlayerProcMovements(Player* s)
 }
 
 void 
-PlayerUpdateView(Player* s)
+PlayerUpdateView(game::Player* s)
 {
-    s->view = math::M4LookAt(s->pos, s->pos + s->front, s->up);
+    // s->view = math::M4LookAt(s->pos, s->pos + s->front, s->up);
 }
 
 void 
-PlayerUpdateProj(Player* s, f32 fov, f32 aspect, f32 near, f32 far)
+PlayerUpdateProj(game::Player* s, f32 fov, f32 aspect, f32 near, f32 far)
 {
-    s->proj = math::M4Pers(fov, aspect, near, far);
+    // s->proj = math::M4Pers(fov, aspect, near, far);
 }
 
 } /* namespace controls */

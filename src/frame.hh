@@ -20,7 +20,7 @@ constexpr f32 HEIGHT = 1000.0f;
 extern App* g_pApp;
 extern audio::Mixer* g_pMixer;
 
-extern controls::Player g_player;
+extern game::Player g_player;
 extern game::Ball g_ball;
 
 extern Pair<f32, f32> g_unit;
