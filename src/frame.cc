@@ -193,9 +193,10 @@ run()
 
 template<typename T>
 inline decltype(T::pos)
-nextPos(const T& e)
+nextPos(const T& e, bool bNormalizeDir)
 {
-    return e.pos + (e.dir * g_deltaTime * e.speed);
+    auto dir = bNormalizeDir ? math::normalize(e.dir) : e.dir;
+    return e.pos + (dir * g_deltaTime * e.speed);
 }
 
 static void
@@ -257,7 +258,7 @@ procBlockHit()
     {
         if (e.bDead) continue;
 
-        math::V2 center = nextPos(g_ball);
+        math::V2 center = nextPos(g_ball, true);
         math::V2 aabbHalfExtents(g_unit.x / 2, g_unit.y / 2);
         math::V2 aabbCenter = e.pos;
         math::V2 diff = center - e.pos;
@@ -426,7 +427,7 @@ mainLoop()
 
             /* player */
             {
-                g_player.pos = nextPos(g_player);
+                g_player.pos = nextPos(g_player, false);
 
                 if (g_player.pos.x >= WIDTH - g_unit.x*2)
                 {
@@ -461,7 +462,7 @@ mainLoop()
                     procBlockHit();
                     procPaddleHit();
                     procOutOfBounds();
-                    g_ball.pos = nextPos(g_ball);
+                    g_ball.pos = nextPos(g_ball, true);
 
                 } else g_ball.pos = g_player.pos;
 

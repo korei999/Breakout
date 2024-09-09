@@ -231,7 +231,28 @@ onProcess(void* data)
         for (u32 i = 0; i < s->aTracks.size; i++)
         {
             auto& t = s->aTracks[i];
-            procTrack(&t, &i);
+            f32 vol = powf(t.volume, 3.0f);
+
+            if (t.pcmPos + 2 <= t.pcmSize)
+            {
+                val[0] += t.pData[t.pcmPos + 0] * vol;
+                val[1] += t.pData[t.pcmPos + 1] * vol;
+                t.pcmPos += 2;
+            }
+            else
+            {
+                if (t.bRepeat)
+                {
+                    t.pcmPos = 0;
+                }
+                else
+                {
+                    mtx_lock(&s->mtxAdd);
+                    ArrayPopAsLast(&s->aTracks, i);
+                    --i;
+                    mtx_unlock(&s->mtxAdd);
+                }
+            }
         }
 
         *dst++ = val[0];
