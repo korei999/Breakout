@@ -78,7 +78,7 @@ keyboardKeyHandler(
 #ifdef DEBUG
     if (key >= utils::size(controls::g_pressedKeys))
     {
-        LOG_WARN("key '%u' is too big?\n", key);
+        LOG_WARN("key '%u' is out of range\n", key);
         return;
     }
 #endif
@@ -159,13 +159,12 @@ pointerMotionHandler(
     [[maybe_unused]] wl_fixed_t surfaceY
 )
 {
-    auto s = (Client*)(data);
-
     frame::g_player.mouse.absX = wl_fixed_to_double(surfaceX);
     frame::g_player.mouse.absY = wl_fixed_to_double(surfaceY);
 
-    if (s->base.bHideCursor)
-        ClientHideCursor(s);
+    /*auto s = (Client*)(data);*/
+    /*if (s->base.bHideCursor)*/
+    /*    ClientHideCursor(s);*/
 }
 
 void

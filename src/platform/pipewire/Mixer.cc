@@ -5,7 +5,7 @@
 #include "frame.hh"
 
 #include <math.h>
-
+#include <emmintrin.h>
 
 namespace platform
 {
@@ -74,6 +74,8 @@ void
 MixerDestroy(Mixer* s)
 {
     mtx_destroy(&s->mtxAdd);
+    ArrayDestroy(&s->aTracks);
+    ArrayDestroy(&s->aBackgroundTracks);
 }
 
 void
@@ -161,37 +163,56 @@ onProcess(void* data)
         return;
     }
 
-    spa_buffer* buf = b->buffer;
-    s16* dst = (s16*)buf->datas[0].data;
+    auto pBuffData = b->buffer->datas[0];
+    s16* pDest = (s16*)pBuffData.data;
+    u32 itDest = 0;
 
-    if (!dst)
+    if (!pDest)
     {
         LOG_WARN("dst == nullptr\n");
         return;
     }
 
     u32 stride = sizeof(s16) * s->channels;
-    u32 nFrames = buf->datas[0].maxsize / stride;
+    u32 nFrames = pBuffData.maxsize / stride;
     if (b->requested) nFrames = SPA_MIN(b->requested, (u64)nFrames);
 
     if (nFrames > 1024*4) nFrames = 1024*4; /* limit to arbitrary number */
 
     s->lastNFrames = nFrames;
 
-    for (u32 i = 0; i < nFrames; i++)
+    for (u32 i = 0; i < nFrames / 4; i++)
     {
-        s16 val[2] {};
+        /*s16 val[4] {};*/
+        __m128i pv {};
 
         if (s->aBackgroundTracks.size > 0)
         {
             auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
             f32 vol = powf(t.volume, 3.0f);
 
-            if (t.pcmPos + 2 <= t.pcmSize)
+            if (t.pcmPos + 8 <= t.pcmSize)
             {
-                val[0] += t.pData[t.pcmPos + 0] * vol;
-                val[1] += t.pData[t.pcmPos + 1] * vol;
-                t.pcmPos += 2;
+                /*al[0] += t.pData[t.pcmPos + 0] * vol;*/
+                /*val[1] += t.pData[t.pcmPos + 1] * vol;*/
+                /*val[2] += t.pData[t.pcmPos + 2] * vol;*/
+                /*val[3] += t.pData[t.pcmPos + 3] * vol;*/
+
+                auto l = _mm_set_epi16(
+                    t.pData[t.pcmPos + 0] * vol,
+                    t.pData[t.pcmPos + 1] * vol,
+                    t.pData[t.pcmPos + 2] * vol,
+                    t.pData[t.pcmPos + 3] * vol,
+                    t.pData[t.pcmPos + 4] * vol,
+                    t.pData[t.pcmPos + 5] * vol,
+                    t.pData[t.pcmPos + 6] * vol,
+                    t.pData[t.pcmPos + 7] * vol
+                );
+
+                auto kek = _mm_add_epi16(pv, l);
+                pv = kek;
+
+                t.pcmPos += 8;
             }
             else
             {
@@ -202,40 +223,50 @@ onProcess(void* data)
             }
         }
 
-        for (u32 i = 0; i < s->aTracks.size; i++)
-        {
-            auto& t = s->aTracks[i];
-            f32 vol = powf(t.volume, 3.0f);
+        // for (u32 i = 0; i < s->aTracks.size; i++)
+        // {
+        //     auto& t = s->aTracks[i];
+        //     f32 vol = powf(t.volume, 3.0f);
 
-            if (t.pcmPos + 2 <= t.pcmSize)
-            {
-                val[0] += t.pData[t.pcmPos + 0] * vol;
-                val[1] += t.pData[t.pcmPos + 1] * vol;
-                t.pcmPos += 2;
-            }
-            else
-            {
-                if (t.bRepeat)
-                {
-                    t.pcmPos = 0;
-                }
-                else
-                {
-                    mtx_lock(&s->mtxAdd);
-                    ArrayPopAsLast(&s->aTracks, i);
-                    --i;
-                    mtx_unlock(&s->mtxAdd);
-                }
-            }
-        }
+        //     if (t.pcmPos + 4 <= t.pcmSize)
+        //     {
+        //         val[0] += t.pData[t.pcmPos + 0] * vol;
+        //         val[1] += t.pData[t.pcmPos + 1] * vol;
+        //         val[2] += t.pData[t.pcmPos + 2] * vol;
+        //         val[3] += t.pData[t.pcmPos + 3] * vol;
 
-        *dst++ = val[0];
-        *dst++ = val[1];
+        //         t.pcmPos += 4;
+        //     }
+        //     else
+        //     {
+        //         if (t.bRepeat)
+        //         {
+        //             t.pcmPos = 0;
+        //         }
+        //         else
+        //         {
+        //             mtx_lock(&s->mtxAdd);
+        //             ArrayPopAsLast(&s->aTracks, i);
+        //             --i;
+        //             mtx_unlock(&s->mtxAdd);
+        //         }
+        //     }
+        // }
+
+        /*pDest[itDest + 0] = val[0];*/
+        /*pDest[itDest + 1] = val[1];*/
+        /*pDest[itDest + 2] = val[2];*/
+        /*pDest[itDest + 3] = val[3];*/
+
+        /*pDest[itDest] = *(s16*)&pv;*/
+        _mm_store_si128((__m128i *)&pDest[itDest], pv);
+
+        itDest += 8;
     }
 
-    buf->datas[0].chunk->offset = 0;
-    buf->datas[0].chunk->stride = stride;
-    buf->datas[0].chunk->size = nFrames * stride;
+    pBuffData.chunk->offset = 0;
+    pBuffData.chunk->stride = stride;
+    pBuffData.chunk->size = nFrames * stride;
 
     pw_stream_queue_buffer(s->pStream, b);
 
