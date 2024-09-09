@@ -25,7 +25,8 @@ App* g_pApp;
 audio::Mixer* g_pMixer;
 
 controls::Player g_player {
-    .moveSpeed = 0.9,
+    .pos {0, 0, 0},
+    .speed = 0.9,
     .dir {},
     .mouse {.sens = 0.07},
 };
@@ -190,6 +191,13 @@ run()
     mainLoop();
 }
 
+template<typename T>
+inline decltype(T::pos)
+nextPos(const T& e)
+{
+    return e.pos + (e.dir * g_deltaTime * e.speed);
+}
+
 static void
 renderFPSCounter(Allocator* pAlloc)
 {
@@ -202,7 +210,6 @@ renderFPSCounter(Allocator* pAlloc)
     if (currTime >= s_prevTime + 1000.0)
     {
         String s = StringAlloc(pAlloc, s_textFPS.maxSize);
-        memset(s.pData, 0, s.size);
         snprintf(s.pData, s.size, "FPS: %u\nFrame time: %.3f ms", s_fpsCount, g_deltaTime);
 
         s_fpsCount = 0;
@@ -216,7 +223,7 @@ renderFPSCounter(Allocator* pAlloc)
 
 enum REFLECT_SIDE : s8 { NONE = -1, UP, RIGHT, DOWN, LEFT, ESIZE };
 
-inline REFLECT_SIDE
+static REFLECT_SIDE
 getReflectionSide(math::V2 tar)
 {
     constexpr math::V2 compass[] {
@@ -241,7 +248,7 @@ getReflectionSide(math::V2 tar)
     return bestMatch;
 }
 
-inline void
+static void
 procBlockHit()
 {
     bool bAddSound = false;
@@ -250,7 +257,7 @@ procBlockHit()
     {
         if (e.bDead) continue;
 
-        math::V2 center = g_ball.pos;
+        math::V2 center = nextPos(g_ball);
         math::V2 aabbHalfExtents(g_unit.x / 2, g_unit.y / 2);
         math::V2 aabbCenter = e.pos;
         math::V2 diff = center - e.pos;
@@ -260,38 +267,24 @@ procBlockHit()
         diff = closest - center;
         auto diffLen = math::V2Length(diff);
 
-        if (diffLen < g_ball.radius)
+        if (diffLen <= g_ball.radius)
         {
             auto side = getReflectionSide(diff);
 
             /* FIXME: sides are flipped */
-            if (side == REFLECT_SIDE::UP)
+            switch (side)
             {
-                /*COUT("UP\n");*/
-                f32 penetration = g_ball.radius - fabs(diff.y);
-                g_ball.pos.y -= (penetration + 10);
-                g_ball.dir.y = -g_ball.dir.y;
-            }
-            else if (side == REFLECT_SIDE::DOWN)
-            {
-                /*COUT("DOWN\n");*/
-                f32 penetration = g_ball.radius - fabs(diff.y);
-                g_ball.pos.y += (penetration + 10);
-                g_ball.dir.y = -g_ball.dir.y;
-            }
-            else if (side == REFLECT_SIDE::LEFT)
-            {
-                /*COUT("LEFT\n");*/
-                /*f32 penetration = g_ball.radius - fabs(diff.y);*/
-                /*g_ball.pos.x += (penetration);*/
-                g_ball.dir.x = -g_ball.dir.x;
-            }
-            else if (side == REFLECT_SIDE::RIGHT)
-            {
-                /*COUT("RIGHT\n");*/
-                /*f32 penetration = g_ball.radius - fabs(diff.y);*/
-                /*g_ball.pos.x -= (penetration);*/
-                g_ball.dir.x = -g_ball.dir.x;
+                default: break;
+            
+                case REFLECT_SIDE::UP:
+                case REFLECT_SIDE::DOWN:
+                    g_ball.dir.y = -g_ball.dir.y;
+                    break;
+            
+                case REFLECT_SIDE::LEFT:
+                case REFLECT_SIDE::RIGHT:
+                    g_ball.dir.x = -g_ball.dir.x;
+                    break;
             }
 
             if (e.color != game::BLOCK_COLOR::GRAY) e.bDead = true;
@@ -304,7 +297,7 @@ procBlockHit()
         audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 }
 
-inline void
+static void
 procPaddleHit()
 {
     const auto& bx = g_ball.pos.x;
@@ -324,7 +317,7 @@ procPaddleHit()
     }
 }
 
-inline void
+static void
 procOutOfBounds()
 {
     /* out of bounds */
@@ -332,9 +325,6 @@ procOutOfBounds()
     if (g_ball.pos.y <= 0.0f - g_unit.y) 
     {
         g_ball.bReleased = false;
-        /*g_ball.pos.y = 0.0f - g_unit.y + 4;*/
-        /*g_ball.dir.y = -g_ball.dir.y;*/
-        /*bAddSound = true;*/
     }
     else if (g_ball.pos.y >= HEIGHT - g_unit.y)
     {
@@ -370,6 +360,9 @@ mainLoop()
     g_unit.x = WIDTH / levelX / 2;
     g_unit.y = HEIGHT / levelY / 2;
 
+    /* place player to the center */
+    g_player.pos.x = WIDTH/2 - g_unit.x;
+
     for (u32 i = 0; i < levelY; i++)
     {
         for (u32 j = 0; j < levelX; j++)
@@ -390,10 +383,10 @@ mainLoop()
 
     audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.8f));
 
+    FixedAllocator alFrame (s_aFrameMem, sizeof(s_aFrameMem));
+
     while (g_pApp->bRunning || g_pMixer->bRunning) /* wait for mixer to stop also */
     {
-        FixedAllocator alFrame (s_aFrameMem, sizeof(s_aFrameMem));
-
         {
             AppProcEvents(g_pApp);
             updateDeltaTime();
@@ -433,7 +426,7 @@ mainLoop()
 
             /* player */
             {
-                g_player.pos += g_player.dir * g_player.moveSpeed * g_deltaTime;
+                g_player.pos = nextPos(g_player);
 
                 if (g_player.pos.x >= WIDTH - g_unit.x*2)
                 {
@@ -465,11 +458,11 @@ mainLoop()
             {
                 if (g_ball.bReleased)
                 {
-                    g_ball.pos += V2Norm(g_ball.dir) * g_deltaTime * g_ball.speed;
-
                     procBlockHit();
                     procPaddleHit();
                     procOutOfBounds();
+                    g_ball.pos = nextPos(g_ball);
+
                 } else g_ball.pos = g_player.pos;
 
                 const auto& pos = g_ball.pos;

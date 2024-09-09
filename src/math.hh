@@ -193,6 +193,7 @@ V2 V2Clamp(const V2& x, const V2& min, const V2& max);
 V2 operator-(const V2& l, const V2& r);
 V3 operator-(const V3& l, const V3& r);
 V2 operator+(const V2& l, const V2& r);
+V2 operator+(const V2& l, f32 r);
 V3 operator+(const V3& l, const V3& r);
 V2 operator*(const V2& v, const f32 s);
 V3 operator*(const V3& v, const f32 s);
@@ -233,5 +234,25 @@ M4 QtRot(const Qt& q);
 Qt QtConj(const Qt& q);
 Qt operator*(const Qt& l, const Qt& r);
 Qt operator*=(Qt& l, const Qt& r);
+
+
+/* TODO: rewrite the whole library as header only */
+inline V2
+normalize(const V2& v)
+{
+    return V2Norm(v);
+}
+
+inline V3
+normalize(const V3& v)
+{
+    return V3Norm(v);
+}
+
+inline V4
+normalize(const V4& v)
+{
+    return V4Norm(v);
+}
 
 } /* namespace math */

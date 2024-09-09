@@ -40,7 +40,7 @@ struct Player
     math::V3 right {1, 0, 0};
     static constexpr math::V3 up {0, 1, 0};
 
-    f64 moveSpeed = 5.0;
+    f64 speed = 5.0;
     math::V3 dir {};
 
     Mouse mouse {};

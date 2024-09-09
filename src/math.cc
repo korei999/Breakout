@@ -151,6 +151,15 @@ operator+(const V2& l, const V2& r)
     };
 }
 
+V2
+operator+(const V2& l, f32 r)
+{
+    return {
+        l.x + r,
+        l.y + r
+    };
+}
+
 V3
 operator+(const V3& l, const V3& r)
 {
