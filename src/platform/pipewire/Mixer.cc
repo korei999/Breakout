@@ -237,6 +237,9 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
     }
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+
 __attribute__((target("avx2")))
 static void
 writeFrames(Mixer* s, void* pBuff, u32 nFrames)
@@ -338,6 +341,8 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
     }
 }
 
+#pragma clang diagnostic pop
+
 static void
 onProcess(void* data)
 {
@@ -378,13 +383,6 @@ onProcess(void* data)
     if (!frame::g_pApp->bRunning) pw_main_loop_quit(s->pLoop);
     /* set bRunning for the mixer outside */
 }
-
-
-// __attribute__ ((target ("default")))
-// static void
-// writeFramesSSE(Mixer* s, void* pBuff, u32 nFrames)
-// {
-// }
 
 [[maybe_unused]] static bool
 MixerEmpty(Mixer* s)

@@ -257,7 +257,7 @@ procBlockHit()
 
     for (auto& e : s_enemies)
     {
-        if (e.bDead) continue;
+        if (e.bDead || e.color == game::COLOR::INVISIBLE) continue;
 
         math::V2 center = nextPos(g_ball, true);
         math::V2 aabbHalfExtents(g_unit.x / 2 + 4, g_unit.y / 2 + 4);
@@ -271,7 +271,7 @@ procBlockHit()
 
         if (diffLen <= g_ball.radius)
         {
-            if (e.color != game::COLOR::GRAY) e.bDead = true;
+            if (e.color != game::COLOR::INVISIBLE) e.bDead = true;
 
             bAddSound = true;
 
@@ -379,6 +379,10 @@ mainLoop()
     /* place player to the center */
     g_player.pos.x = WIDTH/2 - g_unit.x;
 
+    /*ArrayPush(&s_enemies, {.color = game::COLOR::INVISIBLE});*/
+    /*ArrayPush(&s_enemies, {.color = game::COLOR::INVISIBLE});*/
+    /*ArrayPush(&s_enemies, {.color = game::COLOR::INVISIBLE});*/
+
     for (u32 i = 0; i < levelY; i++)
     {
         for (u32 j = 0; j < levelX; j++)
@@ -420,7 +424,7 @@ mainLoop()
             ShaderUse(&s_shSprite);
             for (auto& enemy : s_enemies)
             {
-                if (enemy.bDead) continue;
+                if (enemy.bDead || enemy.color == game::COLOR::INVISIBLE) continue;
 
                 math::V3 pos {enemy.pos.x, enemy.pos.y, 0.0f};
 
