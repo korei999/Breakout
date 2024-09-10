@@ -112,16 +112,16 @@ procKeys()
 static void
 PlayerProcMovements(game::Player* s)
 {
-    s->dir = {0.0f, 0.0f, 0.0f};
+    s->dir = {};
 
     if (g_pressedKeys[KEY_A])
     {
-        s->dir = {-1.0f, 0.0f, 0.0f};
+        s->dir = {-1.0f, 0.0f};
     }
 
     if (g_pressedKeys[KEY_D])
     {
-        s->dir = {1.0f, 0.0f, 0.0f};
+        s->dir = {1.0f, 0.0f};
     }
 
     if (g_pressedKeys[KEY_LEFTALT])
@@ -135,16 +135,16 @@ PlayerProcMovements(game::Player* s)
     }
 }
 
-void 
-PlayerUpdateView(game::Player* s)
+void
+updateView()
 {
-    // s->view = math::M4LookAt(s->pos, s->pos + s->front, s->up);
+    g_camera.view = math::M4LookAt(g_camera.pos, g_camera.pos + g_camera.front, g_camera.up);
 }
 
-void 
-PlayerUpdateProj(game::Player* s, f32 fov, f32 aspect, f32 near, f32 far)
+void
+updateProj(game::Player* s, f32 fov, f32 aspect, f32 near, f32 far)
 {
-    // s->proj = math::M4Pers(fov, aspect, near, far);
+    g_camera.proj = math::M4Pers(fov, aspect, near, far);
 }
 
 } /* namespace controls */

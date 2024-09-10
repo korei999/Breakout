@@ -200,6 +200,12 @@ operator*(const V2& v, const f32 s)
     };
 }
 
+V2&
+operator*=(V2& v, const f32 s)
+{
+    return v = v * s;
+}
+
 V3
 operator*(const V3& v, const f32 s)
 {
@@ -207,6 +213,16 @@ operator*(const V3& v, const f32 s)
         v.x * s,
         v.y * s,
         v.z * s
+    };
+}
+
+
+V2
+operator/(const V2& v, const f32 s)
+{
+    return {
+        v.x / s,
+        v.y / s
     };
 }
 
@@ -222,6 +238,12 @@ operator/(const V3& v, const f32 s)
 
 V3&
 operator/=(V3& v, const f32 s)
+{
+    return v = v / s;
+}
+
+V2&
+operator/=(V2& v, const f32 s)
 {
     return v = v / s;
 }

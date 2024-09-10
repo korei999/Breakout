@@ -13,6 +13,10 @@ inline void* DefaultAlloc(DefaultAllocator* s, u64 mCount, u64 mSize);
 inline void* DefaultRealloc(DefaultAllocator* s, void* p, u64 mCount, u64 mSize);
 inline void DefaultFree(DefaultAllocator* s, void* p);
 
+inline void* alloc(DefaultAllocator* s, u64 mCount, u64 mSize) { return DefaultAlloc(s, mCount, mSize); }
+inline void* realloc(DefaultAllocator* s, void* p, u64 mCount, u64 mSize) { return DefaultRealloc(s, p, mCount, mSize); }
+inline void free(DefaultAllocator* s, void* p) { DefaultFree(s, p); }
+
 inline const AllocatorInterface __DefaultAllocatorVTable {
     .alloc = (decltype(AllocatorInterface::alloc))DefaultAlloc,
     .realloc = (decltype(AllocatorInterface::realloc))DefaultRealloc,

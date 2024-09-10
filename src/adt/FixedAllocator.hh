@@ -22,8 +22,11 @@ struct FixedAllocator
 
 constexpr void* FixedAllocatorAlloc(FixedAllocator* s, u64 mCount, u64 mSize);
 constexpr void* FixedAllocatorRealloc(FixedAllocator* s, void* p, u64 mCount, u64 mSize);
-constexpr void FixedAllocatorFree([[maybe_unused]] FixedAllocator* s, [[maybe_unused]] void* p);
+constexpr void FixedAllocatorFree(FixedAllocator* s, void* p);
 constexpr void FixedAllocatorReset(FixedAllocator* s);
+
+inline void* alloc(FixedAllocator* s, u64 mCount, u64 mSize) { return FixedAllocatorAlloc(s, mCount, mSize); }
+inline void* realloc(FixedAllocator* s, void* p, u64 mCount, u64 mSize) { return FixedAllocatorRealloc(s, p, mCount, mSize); }
 
 constexpr void*
 FixedAllocatorAlloc(FixedAllocator* s, u64 mCount, u64 mSize)

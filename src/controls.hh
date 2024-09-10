@@ -44,8 +44,8 @@ struct Camera
 
 void procMouse();
 void procKeys();
-void PlayerUpdateView(game::Player* s);
-void PlayerUpdateProj(game::Player* s, f32 fov, f32 aspect, f32 near, f32 far);
+void updateView();
+void updateProj(game::Player* s, f32 fov, f32 aspect, f32 near, f32 far);
 
 void procKeysOnce(u32 key, u32 pressed);
 

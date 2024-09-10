@@ -43,7 +43,8 @@ static int s_fpsCount = 0;
 static u8 s_aFrameMem[SIZE_8K] {};
 static AllocatorPool<Arena, ASSET_MAX_COUNT> s_apAssets;
 
-static Array<game::Entity> s_enemies(AllocatorPoolGet(&s_apAssets, SIZE_8K));
+static Array<game::Entity> s_aEnemies(AllocatorPoolGet(&s_apAssets, SIZE_8K));
+static Array<game::Entity*> s_aPEntities(AllocatorPoolGet(&s_apAssets, SIZE_8K));
 
 static Shader s_shTex;
 static Shader s_shBitMap;
@@ -65,16 +66,16 @@ static Plain s_plain;
 static Ubo s_uboProjView;
 
 game::Player g_player {
-    .pos {0, 0, 0},
-    .speed = 0.9,
+    .base {},
+    .speed = 0.5,
     .dir {},
 };
 
 game::Ball g_ball {
+    .base {},
     .bReleased = false,
     .speed = 0.8f,
     .radius = 22.0f,
-    .pos = g_player.pos,
     .dir {},
 };
 
@@ -102,7 +103,7 @@ prepareDraw()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 
-    math::V4 gray = {colors::black, 1.0f};
+    math::V4 gray = {colors::get(colors::IDX::BLACK), 1.0f};
     glClearColor(gray.r, gray.g, gray.b, gray.a);
 
     g_uiHeight = (g_uiWidth * (f32)g_pApp->wHeight) / (f32)g_pApp->wWidth;
@@ -187,17 +188,15 @@ run()
 
     AppEnableRelativeMode(g_pApp);
 
-    /*g_player.idxEntity = game::GetNextEntityIdx(&s_enemies);*/
-
     mainLoop();
 }
 
 template<typename T>
-inline decltype(T::pos)
+inline math::V2
 nextPos(const T& e, bool bNormalizeDir)
 {
     auto dir = bNormalizeDir ? math::normalize(e.dir) : e.dir;
-    return e.pos + (dir * g_deltaTime * e.speed);
+    return e.base.pos + (dir * (g_deltaTime * e.speed));
 }
 
 static void
@@ -221,6 +220,35 @@ renderFPSCounter(Allocator* pAlloc)
     }
 
     TextDraw(&s_textFPS);
+}
+
+static void
+renderEntities(Array<game::Entity*>* s)
+{
+    ShaderUse(&s_shSprite);
+    GLuint idxLastTex = 0;
+
+    for (auto& e : *s)
+    {
+        if (e->bDead || e->eColor == game::COLOR::INVISIBLE) continue;
+
+        math::V3 pos {e->pos.x, e->pos.y, 0.0f};
+
+        math::M4 tm;
+        tm = math::M4Iden();
+        tm = M4Translate(tm, {pos.x + e->xOff, pos.y + e->yOff, 0.0f});
+        tm = M4Scale(tm, {g_unit.x * e->width, g_unit.y * e->height, 1.0f});
+
+        if (idxLastTex != e->texIdx)
+        {
+            idxLastTex = e->texIdx;
+            TextureBind(e->texIdx, GL_TEXTURE0);
+        }
+
+        ShaderSetM4(&s_shSprite, "uModel", tm);
+        ShaderSetV3(&s_shSprite, "uColor", game::blockColorToV3(e->eColor));
+        PlainDraw(&s_plain);
+    }
 }
 
 enum REFLECT_SIDE : s8 { NONE = -1, UP, RIGHT, DOWN, LEFT, ESIZE };
@@ -255,9 +283,9 @@ procBlockHit()
 {
     bool bAddSound = false;
 
-    for (auto& e : s_enemies)
+    for (auto& e : s_aEnemies)
     {
-        if (e.bDead || e.color == game::COLOR::INVISIBLE) continue;
+        if (e.bDead || e.eColor == game::COLOR::INVISIBLE) continue;
 
         math::V2 center = nextPos(g_ball, true);
         math::V2 aabbHalfExtents(g_unit.x / 2 + 4, g_unit.y / 2 + 4);
@@ -271,7 +299,7 @@ procBlockHit()
 
         if (diffLen <= g_ball.radius)
         {
-            if (e.color != game::COLOR::INVISIBLE) e.bDead = true;
+            if (e.eColor != game::COLOR::INVISIBLE) e.bDead = true;
 
             bAddSound = true;
 
@@ -316,15 +344,15 @@ procBlockHit()
 static void
 procPaddleHit()
 {
-    const auto& bx = g_ball.pos.x;
-    const auto& by = g_ball.pos.y;
-    const auto& px = g_player.pos.x;
-    const auto& py = g_player.pos.y;
+    const auto& bx = g_ball.base.pos.x;
+    const auto& by = g_ball.base.pos.y;
+    const auto& px = g_player.base.pos.x;
+    const auto& py = g_player.base.pos.y;
 
     if (bx >= px - g_unit.x*2.0 && bx <= px + g_unit.x*2.0 &&
         by >= py - g_unit.y && by <= py - g_unit.y + g_unit.y/2)
     {
-        g_ball.pos.y = (py - g_unit.y + g_unit.y/2) + 4;
+        g_ball.base.pos.y = (py - g_unit.y + g_unit.y/2) + 4;
         audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 
         g_ball.dir.y = 1.0f;
@@ -338,25 +366,25 @@ procOutOfBounds()
 {
     /* out of bounds */
     bool bAddSound = false;
-    if (g_ball.pos.y <= 0.0f - g_unit.y) 
+    if (g_ball.base.pos.y <= 0.0f - g_unit.y) 
     {
         g_ball.bReleased = false;
     }
-    else if (g_ball.pos.y >= HEIGHT - g_unit.y)
+    else if (g_ball.base.pos.y >= HEIGHT - g_unit.y)
     {
-        g_ball.pos.y = HEIGHT - g_unit.y - 4;
+        g_ball.base.pos.y = HEIGHT - g_unit.y - 4;
         g_ball.dir.y = -1.0f;
         bAddSound = true;
     }
-    else if (g_ball.pos.x <= 0.0f - g_unit.x)
+    else if (g_ball.base.pos.x <= 0.0f - g_unit.x)
     {
-        g_ball.pos.x = -g_unit.x + 4;
+        g_ball.base.pos.x = -g_unit.x + 4;
         g_ball.dir.x = -g_ball.dir.x;
         bAddSound = true;
     }
-    else if (g_ball.pos.x >= WIDTH - g_unit.x)
+    else if (g_ball.base.pos.x >= WIDTH - g_unit.x)
     {
-        g_ball.pos.x = WIDTH - g_unit.x - 4;
+        g_ball.base.pos.x = WIDTH - g_unit.x - 4;
         g_ball.dir.x = -g_ball.dir.x;
         bAddSound = true;
     }
@@ -377,11 +405,7 @@ mainLoop()
     g_unit.y = HEIGHT / levelY / 2;
 
     /* place player to the center */
-    g_player.pos.x = WIDTH/2 - g_unit.x;
-
-    /*ArrayPush(&s_enemies, {.color = game::COLOR::INVISIBLE});*/
-    /*ArrayPush(&s_enemies, {.color = game::COLOR::INVISIBLE});*/
-    /*ArrayPush(&s_enemies, {.color = game::COLOR::INVISIBLE});*/
+    g_player.base.pos.x = WIDTH/2 - g_unit.x;
 
     for (u32 i = 0; i < levelY; i++)
     {
@@ -389,17 +413,37 @@ mainLoop()
         {
             if (level[i][j] != s8(game::COLOR::INVISIBLE))
             {
-                ArrayPush(&s_enemies, {
+                ArrayPush(&s_aEnemies, {
                     .pos = {g_unit.x*2*j, (HEIGHT - g_unit.y*2) - g_unit.y*2*i},
+                    .width = 1.0f,
+                    .height = 1.0f,
+                    .xOff = 0.0f,
+                    .yOff = 0.0f,
                     .shaderIdx = 0,
                     .modelIdx = 0,
-                    .texIdx = 0,
-                    .color = game::COLOR(level[i][j]),
+                    .texIdx = s_tBox.id,
+                    .eColor = game::COLOR(level[i][j]),
                     .bDead = false
                 });
+
+                ArrayPush(&s_aPEntities, &ArrayLast(&s_aEnemies));
             }
         }
     }
+
+    g_player.base.texIdx = s_tPaddle.id;
+    g_player.base.width = 2.0f;
+    g_player.base.height = 1.0f;
+    g_player.base.xOff = -g_unit.x;
+    g_player.base.eColor = game::COLOR::TEAL;
+
+    g_ball.base.eColor = game::COLOR::ORANGERED;
+    g_ball.base.texIdx = s_tBall.id;
+    g_ball.base.width = 1.0f;
+    g_ball.base.height = 1.0f;
+
+    ArrayPush(&s_aPEntities, &g_player.base);
+    ArrayPush(&s_aPEntities, &g_ball.base);
 
     audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
 
@@ -419,53 +463,23 @@ mainLoop()
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             UboBufferData(&s_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
 
-            /* enemies */
-            TextureBind(&s_tBox, GL_TEXTURE0);
-            ShaderUse(&s_shSprite);
-            for (auto& enemy : s_enemies)
-            {
-                if (enemy.bDead || enemy.color == game::COLOR::INVISIBLE) continue;
-
-                math::V3 pos {enemy.pos.x, enemy.pos.y, 0.0f};
-
-                math::M4 tm;
-                tm = math::M4Iden();
-                tm = M4Translate(tm, pos);
-                tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
-
-                ShaderSetM4(&s_shSprite, "uModel", tm);
-                ShaderSetV3(&s_shSprite, "uColor", game::blockColorToV3(enemy.color));
-                PlainDraw(&s_plain);
-            }
-
             /* player */
             {
-                g_player.pos = nextPos(g_player, false);
+                g_player.base.pos = nextPos(g_player, false);
+                g_player.base.pos = nextPos(g_player, false);
 
-                if (g_player.pos.x >= WIDTH - g_unit.x*2)
+                if (g_player.base.pos.x >= WIDTH - g_unit.x*2)
                 {
-                    g_player.pos.x = WIDTH - g_unit.x*2;
+                    g_player.base.pos.x = WIDTH - g_unit.x*2;
                     g_player.dir = {};
                 }
-                else if (g_player.pos.x <= 0)
+                else if (g_player.base.pos.x <= 0)
                 {
-                    g_player.pos.x = 0;
+                    g_player.base.pos.x = 0;
                     g_player.dir = {};
                 }
 
-                const auto& pos = g_player.pos;
-
-                math::M4 tm;
-                tm = math::M4Iden();
-                tm = M4Translate(tm, {pos.x - g_unit.x, pos.y, 10.0f});
-
-                tm = M4Scale(tm, {g_unit.x*2, g_unit.y, 1.0f});
-
-                ShaderUse(&s_shSprite);
-                TextureBind(&s_tPaddle, GL_TEXTURE0);
-                ShaderSetM4(&s_shSprite, "uModel", tm);
-                ShaderSetV3(&s_shSprite, "uColor", colors::teal);
-                PlainDraw(&s_plain);
+                const auto& pos = g_player.base.pos;
             }
 
             /* ball */
@@ -475,24 +489,19 @@ mainLoop()
                     procBlockHit();
                     procPaddleHit();
                     procOutOfBounds();
-                    g_ball.pos = nextPos(g_ball, true);
+                    g_ball.base.pos = nextPos(g_ball, true);
 
-                } else g_ball.pos = g_player.pos;
+                } else g_ball.base.pos = g_player.base.pos;
 
-                const auto& pos = g_ball.pos;
+                const auto& pos = g_ball.base.pos;
 
                 math::M4 tm;
                 tm = math::M4Iden();
                 tm = M4Translate(tm, {pos.x, pos.y, 10.0f});
                 tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
-
-                ShaderUse(&s_shSprite);
-                TextureBind(&s_tBall, GL_TEXTURE0);
-                ShaderSetM4(&s_shSprite, "uModel", tm);
-                ShaderSetV3(&s_shSprite, "uColor", colors::tomato);
-                PlainDraw(&s_plain);
             }
 
+            renderEntities(&s_aPEntities);
             renderFPSCounter(&alFrame.base);
         }
 

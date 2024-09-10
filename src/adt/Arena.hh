@@ -53,6 +53,9 @@ inline void ArenaFree([[maybe_unused]] Arena* s, [[maybe_unused]] void* p);
 inline void ArenaReset(Arena* s);
 inline void ArenaFreeAll(Arena* s);
 
+inline void* alloc(Arena* s, u64 mCount, u64 mSize) { return ArenaAlloc(s, mCount, mSize); }
+inline void* realloc(Arena* s, void* p, u64 mCount, u64 mSize) { return ArenaRealloc(s, p, mCount, mSize); }
+
 inline ArenaBlock* __ArenaAllocatorNewBlock(Arena* s, u64 size);
 
 inline ArenaBlock*

@@ -40,7 +40,7 @@ void TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei widt
 void
 TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GLint magFilter, GLint minFilter)
 {
-    call_once(&g_onceFlagAllTextures, []{ mtx_init(&g_mtxAllTextures, mtx_plain); });
+    call_once(&g_onceFlagAllTextures, +[]{ mtx_init(&g_mtxAllTextures, mtx_plain); });
 
 #ifdef TEXTURE
     LOG_OK("loading '%.*s' texture...\n", path.size, path._pData);
@@ -89,6 +89,13 @@ TextureBind(Texture* s, GLint glTex)
 {
     glActiveTexture(glTex);
     glBindTexture(GL_TEXTURE_2D, s->id);
+}
+
+void
+TextureBind(GLuint id, GLint glTex)
+{
+    glActiveTexture(glTex);
+    glBindTexture(GL_TEXTURE_2D, id);
 }
 
 void

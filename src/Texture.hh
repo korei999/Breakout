@@ -77,6 +77,7 @@ struct CubeMapProjections
 };
 
 void TextureBind(Texture* s, GLint glTex);
+void TextureBind(GLuint id, GLint glTex);
 void TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GLint magFilter = GL_NEAREST, GLint minFilter = GL_NEAREST_MIPMAP_NEAREST);
 void TextureDestroy(Texture* s);
 TextureFramebuffer TexFramebufferCreate(const GLsizei width, const GLsizei height);

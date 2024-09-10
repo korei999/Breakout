@@ -5,143 +5,290 @@
 
 namespace colors
 {
-    constexpr math::V3 maroon(0.501961f, 0.0f, 0.0f);
-    constexpr math::V3 darkRed(0.545098f, 0.0f, 0.0f);
-    constexpr math::V3 brown(0.647059f, 0.164706f, 0.164706f);
-    constexpr math::V3 firebrick(0.698039f, 0.133333f, 0.133333f);
-    constexpr math::V3 crimson(0.862745f, 0.0784314f, 0.235294f);
-    constexpr math::V3 red(1.0f, 0.0f, 0.0f);
-    constexpr math::V3 tomato(1.0f, 0.388235f, 0.278431f);
-    constexpr math::V3 coral(1.0f, 0.498039f, 0.313726f);
-    constexpr math::V3 indianRed(0.803922f, 0.360784f, 0.360784f);
-    constexpr math::V3 lightCoral(0.941176f, 0.501961f, 0.501961f);
-    constexpr math::V3 darkSalmon(0.913725f, 0.588235f, 0.478431f);
-    constexpr math::V3 salmon(0.980392f, 0.501961f, 0.447059f);
-    constexpr math::V3 lightSalmon(1.0f, 0.627451f, 0.478431f);
-    constexpr math::V3 orangeRed(1.0f, 0.270588f, 0.0f);
-    constexpr math::V3 darkOrange(1.0f, 0.54902f, 0.0f);
-    constexpr math::V3 orange(1.0f, 0.647059f, 0.0f);
-    constexpr math::V3 gold(1.0f, 0.843137f, 0.0f);
-    constexpr math::V3 darkGoldenRod(0.721569f, 0.52549f, 0.0431373f);
-    constexpr math::V3 goldenRod(0.854902f, 0.647059f, 0.12549f);
-    constexpr math::V3 paleGoldenRod(0.933333f, 0.909804f, 0.666667f);
-    constexpr math::V3 darkKhaki(0.741176f, 0.717647f, 0.419608f);
-    constexpr math::V3 khaki(0.941176f, 0.901961f, 0.54902f);
-    constexpr math::V3 olive(0.501961f, 0.501961f, 0.0f);
-    constexpr math::V3 yellow(1.0f, 1.0f, 0.0f);
-    constexpr math::V3 yellowGreen(0.603922f, 0.803922f, 0.196078f);
-    constexpr math::V3 darkOliveGreen(0.333333f, 0.419608f, 0.184314f);
-    constexpr math::V3 oliveDrab(0.419608f, 0.556863f, 0.137255f);
-    constexpr math::V3 lawnGreen(0.486275f, 0.988235f, 0.0f);
-    constexpr math::V3 chartReuse(0.498039f, 1.0f, 0.0f);
-    constexpr math::V3 greenYellow(0.678431f, 1.0f, 0.184314f);
-    constexpr math::V3 darkGreen(0.0f, 0.392157f, 0.0f);
-    constexpr math::V3 green(0.0f, 0.501961f, 0.0f);
-    constexpr math::V3 forestGreen(0.133333f, 0.545098f, 0.133333f);
-    constexpr math::V3 lime(0.0f, 1.0f, 0.0f);
-    constexpr math::V3 limeGreen(0.196078f, 0.803922f, 0.196078f);
-    constexpr math::V3 lightGreen(0.564706f, 0.933333f, 0.564706f);
-    constexpr math::V3 paleGreen(0.596078f, 0.984314f, 0.596078f);
-    constexpr math::V3 darkSeaGreen(0.560784f, 0.737255f, 0.560784f);
-    constexpr math::V3 mediumSpringGreen(0.0f, 0.980392f, 0.603922f);
-    constexpr math::V3 springGreen(0.0f, 1.0f, 0.498039f);
-    constexpr math::V3 seaGreen(0.180392f, 0.545098f, 0.341176f);
-    constexpr math::V3 mediumAquaMarine(0.4f, 0.803922f, 0.666667f);
-    constexpr math::V3 mediumSeaGreen(0.235294f, 0.701961f, 0.443137f);
-    constexpr math::V3 lightSeaGreen(0.12549f, 0.698039f, 0.666667f);
-    constexpr math::V3 darkSlateGray(0.184314f, 0.309804f, 0.309804f);
-    constexpr math::V3 teal(0.0f, 0.501961f, 0.501961f);
-    constexpr math::V3 darkCyan(0.0f, 0.545098f, 0.545098f);
-    constexpr math::V3 aqua(0.0f, 1.0f, 1.0f);
-    constexpr math::V3 cyan(0.0f, 1.0f, 1.0f);
-    constexpr math::V3 lightCyan(0.878431f, 1.0f, 1.0f);
-    constexpr math::V3 darkTurquoise(0.0f, 0.807843f, 0.819608f);
-    constexpr math::V3 turquoise(0.25098f, 0.878431f, 0.815686f);
-    constexpr math::V3 mediumTurquoise(0.282353f, 0.819608f, 0.8f);
-    constexpr math::V3 paleTurquoise(0.686275f, 0.933333f, 0.933333f);
-    constexpr math::V3 aquamarine(0.498039f, 1.0f, 0.831373f);
-    constexpr math::V3 powderBlue(0.690196f, 0.878431f, 0.901961f);
-    constexpr math::V3 cadetBlue(0.372549f, 0.619608f, 0.627451f);
-    constexpr math::V3 steelBlue(0.27451f, 0.509804f, 0.705882f);
-    constexpr math::V3 cornflowerBlue(0.392157f, 0.584314f, 0.929412f);
-    constexpr math::V3 deepSkyBlue(0.0f, 0.74902f, 1.0f);
-    constexpr math::V3 dodgerBlue(0.117647f, 0.564706f, 1.0f);
-    constexpr math::V3 lightBlue(0.678431f, 0.847059f, 0.901961f);
-    constexpr math::V3 skyBlue(0.529412f, 0.807843f, 0.921569f);
-    constexpr math::V3 lightSkyBlue(0.529412f, 0.807843f, 0.980392f);
-    constexpr math::V3 midnightBlue(0.0980392f, 0.0980392f, 0.439216f);
-    constexpr math::V3 navy(0.0f, 0.0f, 0.501961f);
-    constexpr math::V3 darkBlue(0.0f, 0.0f, 0.545098f);
-    constexpr math::V3 mediumBlue(0.0f, 0.0f, 0.803922f);
-    constexpr math::V3 blue(0.0f, 0.0f, 1.0f);
-    constexpr math::V3 royalBlue(0.254902f, 0.411765f, 0.882353f);
-    constexpr math::V3 blueViolet(0.541176f, 0.168627f, 0.886275f);
-    constexpr math::V3 indigo(0.294118f, 0.0f, 0.509804f);
-    constexpr math::V3 darkSlateBlue(0.282353f, 0.239216f, 0.545098f);
-    constexpr math::V3 slateBlue(0.415686f, 0.352941f, 0.803922f);
-    constexpr math::V3 mediumSlateBlue(0.482353f, 0.407843f, 0.933333f);
-    constexpr math::V3 mediumPurple(0.576471f, 0.439216f, 0.858824f);
-    constexpr math::V3 darkMagenta(0.545098f, 0.0f, 0.545098f);
-    constexpr math::V3 darkViolet(0.580392f, 0.0f, 0.827451f);
-    constexpr math::V3 darkOrchid(0.6f, 0.196078f, 0.8f);
-    constexpr math::V3 mediumOrchid(0.729412f, 0.333333f, 0.827451f);
-    constexpr math::V3 purple(0.501961f, 0.0f, 0.501961f);
-    constexpr math::V3 thistle(0.847059f, 0.74902f, 0.847059f);
-    constexpr math::V3 plum(0.866667f, 0.627451f, 0.866667f);
-    constexpr math::V3 violet(0.933333f, 0.509804f, 0.933333f);
-    constexpr math::V3 magenta(1.0f, 0.0f, 1.0f);
-    constexpr math::V3 orchid(0.854902f, 0.439216f, 0.839216f);
-    constexpr math::V3 mediumVioletRed(0.780392f, 0.0823529f, 0.521569f);
-    constexpr math::V3 paleVioletRed(0.858824f, 0.439216f, 0.576471f);
-    constexpr math::V3 deepPink(1.0f, 0.0784314f, 0.576471f);
-    constexpr math::V3 hotPink(1.0f, 0.411765f, 0.705882f);
-    constexpr math::V3 lightPink(1.0f, 0.713726f, 0.756863f);
-    constexpr math::V3 pink(1.0f, 0.752941f, 0.796078f);
-    constexpr math::V3 antiqueWhite(0.980392f, 0.921569f, 0.843137f);
-    constexpr math::V3 beige(0.960784f, 0.960784f, 0.862745f);
-    constexpr math::V3 bisque(1.0f, 0.894118f, 0.768627f);
-    constexpr math::V3 blanchedAlmond(1.0f, 0.921569f, 0.803922f);
-    constexpr math::V3 wheat(0.960784f, 0.870588f, 0.701961f);
-    constexpr math::V3 cornSilk(1.0f, 0.972549f, 0.862745f);
-    constexpr math::V3 lemonChiffon(1.0f, 0.980392f, 0.803922f);
-    constexpr math::V3 lightGoldenRodYellow(0.980392f, 0.980392f, 0.823529f);
-    constexpr math::V3 lightYellow(1.0f, 1.0f, 0.878431f);
-    constexpr math::V3 saddleBrown(0.545098f, 0.270588f, 0.0745098f);
-    constexpr math::V3 sienna(0.627451f, 0.321569f, 0.176471f);
-    constexpr math::V3 chocolate(0.823529f, 0.411765f, 0.117647f);
-    constexpr math::V3 peru(0.803922f, 0.521569f, 0.247059f);
-    constexpr math::V3 sandyBrown(0.956863f, 0.643137f, 0.376471f);
-    constexpr math::V3 burlyWood(0.870588f, 0.721569f, 0.529412f);
-    constexpr math::V3 tan(0.823529f, 0.705882f, 0.54902f);
-    constexpr math::V3 rosyBrown(0.737255f, 0.560784f, 0.560784f);
-    constexpr math::V3 moccasin(1.0f, 0.894118f, 0.709804f);
-    constexpr math::V3 navajoWhite(1.0f, 0.870588f, 0.678431f);
-    constexpr math::V3 peachPuff(1.0f, 0.854902f, 0.72549f);
-    constexpr math::V3 mistyRose(1.0f, 0.894118f, 0.882353f);
-    constexpr math::V3 lavenderBlush(1.0f, 0.941176f, 0.960784f);
-    constexpr math::V3 linen(0.980392f, 0.941176f, 0.901961f);
-    constexpr math::V3 oldLace(0.992157f, 0.960784f, 0.901961f);
-    constexpr math::V3 papayaWhip(1.0f, 0.937255f, 0.835294f);
-    constexpr math::V3 seaShell(1.0f, 0.960784f, 0.933333f);
-    constexpr math::V3 mintCream(0.960784f, 1.0f, 0.980392f);
-    constexpr math::V3 slateGray(0.439216f, 0.501961f, 0.564706f);
-    constexpr math::V3 lightSlateGray(0.466667f, 0.533333f, 0.6f);
-    constexpr math::V3 lightSteelBlue(0.690196f, 0.768627f, 0.870588f);
-    constexpr math::V3 lavender(0.901961f, 0.901961f, 0.980392f);
-    constexpr math::V3 floralWhite(1.0f, 0.980392f, 0.941176f);
-    constexpr math::V3 aliceBlue(0.941176f, 0.972549f, 1.0f);
-    constexpr math::V3 ghostWhite(0.972549f, 0.972549f, 1.0f);
-    constexpr math::V3 honeydew(0.941176f, 1.0f, 0.941176f);
-    constexpr math::V3 ivory(1.0f, 1.0f, 0.941176f);
-    constexpr math::V3 azure(0.941176f, 1.0f, 1.0f);
-    constexpr math::V3 snow(1.0f, 0.980392f, 0.980392f);
-    constexpr math::V3 black(0.0f, 0.0f, 0.0f);
-    constexpr math::V3 dimGrey(0.411765f, 0.411765f, 0.411765f);
-    constexpr math::V3 grey(0.501961f, 0.501961f, 0.501961f);
-    constexpr math::V3 darkGrey(0.662745f, 0.662745f, 0.662745f);
-    constexpr math::V3 silver(0.752941f, 0.752941f, 0.752941f);
-    constexpr math::V3 lightGrey(0.827451f, 0.827451f, 0.827451f);
-    constexpr math::V3 gainsboro(0.862745f, 0.862745f, 0.862745f);
-    constexpr math::V3 whiteSmoke(0.960784f, 0.960784f, 0.960784f);
-    constexpr math::V3 white(1.0f, 1.0f, 1.0f);
+    enum class IDX : int
+    {
+        MAROON,
+        DARKRED,
+        BROWN,
+        FIREBRICK,
+        CRIMSON,
+        RED,
+        TOMATO,
+        CORAL,
+        INDIANRED,
+        LIGHTCORAL,
+        DARKSALMON,
+        SALMON,
+        LIGHTSALMON,
+        ORANGERED,
+        DARKORANGE,
+        ORANGE,
+        GOLD,
+        DARKGOLDENROD,
+        GOLDENROD,
+        PALEGOLDENROD,
+        DARKKHAKI,
+        KHAKI,
+        OLIVE,
+        YELLOW,
+        YELLOWGREEN,
+        DARKOLIVEGREEN,
+        OLIVEDRAB,
+        LAWNGREEN,
+        CHARTREUSE,
+        GREENYELLOW,
+        DARKGREEN,
+        GREEN,
+        FORESTGREEN,
+        LIME,
+        LIMEGREEN,
+        LIGHTGREEN,
+        PALEGREEN,
+        DARKSEAGREEN,
+        MEDIUMSPRINGGREEN,
+        SPRINGGREEN,
+        SEAGREEN,
+        MEDIUMAQUAMARINE,
+        MEDIUMSEAGREEN,
+        LIGHTSEAGREEN,
+        DARKSLATEGRAY,
+        TEAL,
+        DARKCYAN,
+        AQUA,
+        CYAN,
+        LIGHTCYAN,
+        DARKTURQUOISE,
+        TURQUOISE,
+        MEDIUMTURQUOISE,
+        PALETURQUOISE,
+        AQUAMARINE,
+        POWDERBLUE,
+        CADETBLUE,
+        STEELBLUE,
+        CORNFLOWERBLUE,
+        DEEPSKYBLUE,
+        DODGERBLUE,
+        LIGHTBLUE,
+        SKYBLUE,
+        LIGHTSKYBLUE,
+        MIDNIGHTBLUE,
+        NAVY,
+        DARKBLUE,
+        MEDIUMBLUE,
+        BLUE,
+        ROYALBLUE,
+        BLUEVIOLET,
+        INDIGO,
+        DARKSLATEBLUE,
+        SLATEBLUE,
+        MEDIUMSLATEBLUE,
+        MEDIUMPURPLE,
+        DARKMAGENTA,
+        DARKVIOLET,
+        DARKORCHID,
+        MEDIUMORCHID,
+        PURPLE,
+        THISTLE,
+        PLUM,
+        VIOLET,
+        MAGENTA,
+        ORCHID,
+        MEDIUMVIOLETRED,
+        PALEVIOLETRED,
+        DEEPPINK,
+        HOTPINK,
+        LIGHTPINK,
+        PINK,
+        ANTIQUEWHITE,
+        BEIGE,
+        BISQUE,
+        BLANCHEDALMOND,
+        WHEAT,
+        CORNSILK,
+        LEMONCHIFFON,
+        LIGHTGOLDENRODYELLOW,
+        LIGHTYELLOW,
+        SADDLEBROWN,
+        SIENNA,
+        CHOCOLATE,
+        PERU,
+        SANDYBROWN,
+        BURLYWOOD,
+        TAN,
+        ROSYBROWN,
+        MOCCASIN,
+        NAVAJOWHITE,
+        PEACHPUFF,
+        MISTYROSE,
+        LAVENDERBLUSH,
+        LINEN,
+        OLDLACE,
+        PAPAYAWHIP,
+        SEASHELL,
+        MINTCREAM,
+        SLATEGRAY,
+        LIGHTSLATEGRAY,
+        LIGHTSTEELBLUE,
+        LAVENDER,
+        FLORALWHITE,
+        ALICEBLUE,
+        GHOSTWHITE,
+        HONEYDEW,
+        IVORY,
+        AZURE,
+        SNOW,
+        BLACK,
+        DIMGREY,
+        GREY,
+        DARKGREY,
+        SILVER,
+        LIGHTGREY,
+        GAINSBORO,
+        WHITESMOKE,
+        WHITE
+    };
+
+    constexpr math::V3 map[] {
+        math::V3(0.501961f, 0.0f, 0.0f),
+        math::V3(0.545098f, 0.0f, 0.0f),
+        math::V3(0.647059f, 0.164706f, 0.164706f),
+        math::V3(0.698039f, 0.133333f, 0.133333f),
+        math::V3(0.862745f, 0.0784314f, 0.235294f),
+        math::V3(1.0f, 0.0f, 0.0f),
+        math::V3(1.0f, 0.388235f, 0.278431f),
+        math::V3(1.0f, 0.498039f, 0.313726f),
+        math::V3(0.803922f, 0.360784f, 0.360784f),
+        math::V3(0.941176f, 0.501961f, 0.501961f),
+        math::V3(0.913725f, 0.588235f, 0.478431f),
+        math::V3(0.980392f, 0.501961f, 0.447059f),
+        math::V3(1.0f, 0.627451f, 0.478431f),
+        math::V3(1.0f, 0.270588f, 0.0f),
+        math::V3(1.0f, 0.54902f, 0.0f),
+        math::V3(1.0f, 0.647059f, 0.0f),
+        math::V3(1.0f, 0.843137f, 0.0f),
+        math::V3(0.721569f, 0.52549f, 0.0431373f),
+        math::V3(0.854902f, 0.647059f, 0.12549f),
+        math::V3(0.933333f, 0.909804f, 0.666667f),
+        math::V3(0.741176f, 0.717647f, 0.419608f),
+        math::V3(0.941176f, 0.901961f, 0.54902f),
+        math::V3(0.501961f, 0.501961f, 0.0f),
+        math::V3(1.0f, 1.0f, 0.0f),
+        math::V3(0.603922f, 0.803922f, 0.196078f),
+        math::V3(0.333333f, 0.419608f, 0.184314f),
+        math::V3(0.419608f, 0.556863f, 0.137255f),
+        math::V3(0.486275f, 0.988235f, 0.0f),
+        math::V3(0.498039f, 1.0f, 0.0f),
+        math::V3(0.678431f, 1.0f, 0.184314f),
+        math::V3(0.0f, 0.392157f, 0.0f),
+        math::V3(0.0f, 0.501961f, 0.0f),
+        math::V3(0.133333f, 0.545098f, 0.133333f),
+        math::V3(0.0f, 1.0f, 0.0f),
+        math::V3(0.196078f, 0.803922f, 0.196078f),
+        math::V3(0.564706f, 0.933333f, 0.564706f),
+        math::V3(0.596078f, 0.984314f, 0.596078f),
+        math::V3(0.560784f, 0.737255f, 0.560784f),
+        math::V3(0.0f, 0.980392f, 0.603922f),
+        math::V3(0.0f, 1.0f, 0.498039f),
+        math::V3(0.180392f, 0.545098f, 0.341176f),
+        math::V3(0.4f, 0.803922f, 0.666667f),
+        math::V3(0.235294f, 0.701961f, 0.443137f),
+        math::V3(0.12549f, 0.698039f, 0.666667f),
+        math::V3(0.184314f, 0.309804f, 0.309804f),
+        math::V3(0.0f, 0.501961f, 0.501961f),
+        math::V3(0.0f, 0.545098f, 0.545098f),
+        math::V3(0.0f, 1.0f, 1.0f),
+        math::V3(0.0f, 1.0f, 1.0f),
+        math::V3(0.878431f, 1.0f, 1.0f),
+        math::V3(0.0f, 0.807843f, 0.819608f),
+        math::V3(0.25098f, 0.878431f, 0.815686f),
+        math::V3(0.282353f, 0.819608f, 0.8f),
+        math::V3(0.686275f, 0.933333f, 0.933333f),
+        math::V3(0.498039f, 1.0f, 0.831373f),
+        math::V3(0.690196f, 0.878431f, 0.901961f),
+        math::V3(0.372549f, 0.619608f, 0.627451f),
+        math::V3(0.27451f, 0.509804f, 0.705882f),
+        math::V3(0.392157f, 0.584314f, 0.929412f),
+        math::V3(0.0f, 0.74902f, 1.0f),
+        math::V3(0.117647f, 0.564706f, 1.0f),
+        math::V3(0.678431f, 0.847059f, 0.901961f),
+        math::V3(0.529412f, 0.807843f, 0.921569f),
+        math::V3(0.529412f, 0.807843f, 0.980392f),
+        math::V3(0.0980392f, 0.0980392f, 0.439216f),
+        math::V3(0.0f, 0.0f, 0.501961f),
+        math::V3(0.0f, 0.0f, 0.545098f),
+        math::V3(0.0f, 0.0f, 0.803922f),
+        math::V3(0.0f, 0.0f, 1.0f),
+        math::V3(0.254902f, 0.411765f, 0.882353f),
+        math::V3(0.541176f, 0.168627f, 0.886275f),
+        math::V3(0.294118f, 0.0f, 0.509804f),
+        math::V3(0.282353f, 0.239216f, 0.545098f),
+        math::V3(0.415686f, 0.352941f, 0.803922f),
+        math::V3(0.482353f, 0.407843f, 0.933333f),
+        math::V3(0.576471f, 0.439216f, 0.858824f),
+        math::V3(0.545098f, 0.0f, 0.545098f),
+        math::V3(0.580392f, 0.0f, 0.827451f),
+        math::V3(0.6f, 0.196078f, 0.8f),
+        math::V3(0.729412f, 0.333333f, 0.827451f),
+        math::V3(0.501961f, 0.0f, 0.501961f),
+        math::V3(0.847059f, 0.74902f, 0.847059f),
+        math::V3(0.866667f, 0.627451f, 0.866667f),
+        math::V3(0.933333f, 0.509804f, 0.933333f),
+        math::V3(1.0f, 0.0f, 1.0f),
+        math::V3(0.854902f, 0.439216f, 0.839216f),
+        math::V3(0.780392f, 0.0823529f, 0.521569f),
+        math::V3(0.858824f, 0.439216f, 0.576471f),
+        math::V3(1.0f, 0.0784314f, 0.576471f),
+        math::V3(1.0f, 0.411765f, 0.705882f),
+        math::V3(1.0f, 0.713726f, 0.756863f),
+        math::V3(1.0f, 0.752941f, 0.796078f),
+        math::V3(0.980392f, 0.921569f, 0.843137f),
+        math::V3(0.960784f, 0.960784f, 0.862745f),
+        math::V3(1.0f, 0.894118f, 0.768627f),
+        math::V3(1.0f, 0.921569f, 0.803922f),
+        math::V3(0.960784f, 0.870588f, 0.701961f),
+        math::V3(1.0f, 0.972549f, 0.862745f),
+        math::V3(1.0f, 0.980392f, 0.803922f),
+        math::V3(0.980392f, 0.980392f, 0.823529f),
+        math::V3(1.0f, 1.0f, 0.878431f),
+        math::V3(0.545098f, 0.270588f, 0.0745098f),
+        math::V3(0.627451f, 0.321569f, 0.176471f),
+        math::V3(0.823529f, 0.411765f, 0.117647f),
+        math::V3(0.803922f, 0.521569f, 0.247059f),
+        math::V3(0.956863f, 0.643137f, 0.376471f),
+        math::V3(0.870588f, 0.721569f, 0.529412f),
+        math::V3(0.823529f, 0.705882f, 0.54902f),
+        math::V3(0.737255f, 0.560784f, 0.560784f),
+        math::V3(1.0f, 0.894118f, 0.709804f),
+        math::V3(1.0f, 0.870588f, 0.678431f),
+        math::V3(1.0f, 0.854902f, 0.72549f),
+        math::V3(1.0f, 0.894118f, 0.882353f),
+        math::V3(1.0f, 0.941176f, 0.960784f),
+        math::V3(0.980392f, 0.941176f, 0.901961f),
+        math::V3(0.992157f, 0.960784f, 0.901961f),
+        math::V3(1.0f, 0.937255f, 0.835294f),
+        math::V3(1.0f, 0.960784f, 0.933333f),
+        math::V3(0.960784f, 1.0f, 0.980392f),
+        math::V3(0.439216f, 0.501961f, 0.564706f),
+        math::V3(0.466667f, 0.533333f, 0.6f),
+        math::V3(0.690196f, 0.768627f, 0.870588f),
+        math::V3(0.901961f, 0.901961f, 0.980392f),
+        math::V3(1.0f, 0.980392f, 0.941176f),
+        math::V3(0.941176f, 0.972549f, 1.0f),
+        math::V3(0.972549f, 0.972549f, 1.0f),
+        math::V3(0.941176f, 1.0f, 0.941176f),
+        math::V3(1.0f, 1.0f, 0.941176f),
+        math::V3(0.941176f, 1.0f, 1.0f),
+        math::V3(1.0f, 0.980392f, 0.980392f),
+        math::V3(0.0f, 0.0f, 0.0f),
+        math::V3(0.411765f, 0.411765f, 0.411765f),
+        math::V3(0.501961f, 0.501961f, 0.501961f),
+        math::V3(0.662745f, 0.662745f, 0.662745f),
+        math::V3(0.752941f, 0.752941f, 0.752941f),
+        math::V3(0.827451f, 0.827451f, 0.827451f),
+        math::V3(0.862745f, 0.862745f, 0.862745f),
+        math::V3(0.960784f, 0.960784f, 0.960784f),
+        math::V3(1.0f, 1.0f, 1.0f),
+    };
+
+    constexpr math::V3 get(IDX e) { return map[int(e)]; }
 };

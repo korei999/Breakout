@@ -14,6 +14,9 @@ inline void* ChunkAlloc(ChunkAllocator* s, u64 _ignored, u64 __ignored);
 inline void ChunkFree(ChunkAllocator* s, void* p);
 inline void ChunkFreeAll(ChunkAllocator* s);
 
+inline void* alloc(ChunkAllocator* s, u64 mCount, u64 mSize) { return ChunkAlloc(s, mCount, mSize); }
+inline void free(ChunkAllocator* s, void* p) { ChunkFree(s, p); }
+
 struct ChunkAllocatorNode
 {
     ChunkAllocatorNode* next;

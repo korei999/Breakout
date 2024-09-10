@@ -63,4 +63,7 @@ AtomicArenaFreeAll(AtomicArena* s)
     mtx_destroy(&s->mtx);
 }
 
+inline void* alloc(AtomicArena* s, u64 mCount, u64 mSize) { return AtomicArenaAlloc(s, mCount, mSize); }
+inline void* realloc(AtomicArena* s, void* p, u64 mCount, u64 mSize) { return AtomicArenaRealloc(s, p, mCount, mSize); }
+
 } /* namespace adt */
