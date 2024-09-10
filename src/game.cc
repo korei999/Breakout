@@ -12,11 +12,13 @@
 #include "frame.hh"
 #include "parser/Wave.hh"
 
+#include <stdio.h>
+
 namespace game
 {
 static AllocatorPool<Arena, ASSET_MAX_COUNT> s_apAssets;
 
-static Array<game::Entity> s_aEnemies(AllocatorPoolGet(&s_apAssets, SIZE_8K));
+static Array<Entity> s_aEnemies(AllocatorPoolGet(&s_apAssets, SIZE_8K));
 
 static Shader s_shFontBitMap;
 static Shader s_shSprite;
@@ -33,7 +35,7 @@ static Plain s_plain;
 
 static Text s_textFPS;
 
-Array<game::Entity*> g_aPEntities(AllocatorPoolGet(&s_apAssets, SIZE_8K));
+Array<Entity*> g_aPEntities(AllocatorPoolGet(&s_apAssets, SIZE_8K));
 
 Player g_player {
     .base {},
@@ -45,7 +47,7 @@ Ball g_ball {
     .base {},
     .bReleased = false,
     .speed = 0.8f,
-    .radius = 22.0f,
+    .radius = 0.8f,
     .dir {},
 };
 
@@ -145,7 +147,7 @@ procBlockHit()
 
     for (auto& e : s_aEnemies)
     {
-        if (e.bDead || e.eColor == game::COLOR::INVISIBLE) continue;
+        if (e.bDead || e.eColor == COLOR::INVISIBLE) continue;
 
         math::V2 center = nextPos(g_ball, true);
         math::V2 aabbHalfExtents(frame::g_unit.x / 2 + 4, frame::g_unit.y / 2 + 4);
@@ -157,9 +159,9 @@ procBlockHit()
         diff = closest - center;
         auto diffLen = math::V2Length(diff);
 
-        if (diffLen <= g_ball.radius)
+        if (diffLen <= frame::g_unit.x * g_ball.radius)
         {
-            if (e.eColor != game::COLOR::INVISIBLE) e.bDead = true;
+            if (e.eColor != COLOR::INVISIBLE) e.bDead = true;
 
             bAddSound = true;
 
@@ -256,7 +258,7 @@ procOutOfBounds()
 void
 loadLevel()
 {
-    const auto& level = game::g_level1;
+    const auto& level = LEVEL1.aTiles;
 
     const int levelY = int(utils::size(level));
     const int levelX = int(sizeof(level) / levelY);
@@ -271,7 +273,7 @@ loadLevel()
     {
         for (u32 j = 0; j < levelX; j++)
         {
-            if (level[i][j] != s8(game::COLOR::INVISIBLE))
+            if (level[i][j] != s8(COLOR::INVISIBLE))
             {
                 ArrayPush(&s_aEnemies, {
                     .pos = {frame::g_unit.x*2*j, (frame::HEIGHT - frame::g_unit.y*2) - frame::g_unit.y*2*i},
@@ -281,7 +283,7 @@ loadLevel()
                     .yOff = 0.0f,
                     .shaderIdx = 0,
                     .texIdx = s_tBox.id,
-                    .eColor = game::COLOR(level[i][j]),
+                    .eColor = COLOR(level[i][j]),
                     .bDead = false
                 });
 
@@ -294,9 +296,9 @@ loadLevel()
     g_player.base.width = 2.0f;
     g_player.base.height = 1.0f;
     g_player.base.xOff = -frame::g_unit.x;
-    g_player.base.eColor = game::COLOR::TEAL;
+    g_player.base.eColor = COLOR::TEAL;
 
-    g_ball.base.eColor = game::COLOR::ORANGERED;
+    g_ball.base.eColor = COLOR::ORANGERED;
     g_ball.base.texIdx = s_tBall.id;
     g_ball.base.width = 1.0f;
     g_ball.base.height = 1.0f;
@@ -325,8 +327,6 @@ updateGame()
             g_player.base.pos.x = 0;
             g_player.dir = {};
         }
-
-        const auto& pos = g_player.base.pos;
     }
 
     /* ball */
@@ -379,9 +379,9 @@ drawEntities()
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
 
-    for (auto& e : game::g_aPEntities)
+    for (auto& e : g_aPEntities)
     {
-        if (e->bDead || e->eColor == game::COLOR::INVISIBLE) continue;
+        if (e->bDead || e->eColor == COLOR::INVISIBLE) continue;
 
         math::M4 tm = math::M4Iden();
         tm = M4Translate(tm, {e->pos.x + e->xOff, e->pos.y + e->yOff, 0.0f});
@@ -394,7 +394,7 @@ drawEntities()
         }
 
         ShaderSetM4(&s_shSprite, "uModel", tm);
-        ShaderSetV3(&s_shSprite, "uColor", game::blockColorToV3(e->eColor));
+        ShaderSetV3(&s_shSprite, "uColor", blockColorToV3(e->eColor));
         PlainDraw(&s_plain);
     }
 }
