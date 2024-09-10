@@ -2,18 +2,16 @@
 
 #include "adt/logs.hh"
 #include "adt/utils.hh"
-#include "frame.hh"
+#include "app.hh"
 
-#include <math.h>
 #include <emmintrin.h>
 #include <immintrin.h>
+#include <math.h>
 
 namespace platform
 {
 namespace pipewire
 {
-
-[[maybe_unused]] constexpr f64 M_PI_M2 = M_PI + M_PI;
 
 static void MixerRunThread(Mixer* s, int argc, char** argv);
 static void onProcess(void* data);
@@ -380,7 +378,7 @@ onProcess(void* data)
 
     pw_stream_queue_buffer(s->pStream, b);
 
-    if (!frame::g_pApp->bRunning) pw_main_loop_quit(s->pLoop);
+    if (!app::g_pApp->bRunning) pw_main_loop_quit(s->pLoop);
     /* set bRunning for the mixer outside */
 }
 

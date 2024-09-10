@@ -1,8 +1,9 @@
-#include <ctype.h>
-
 #include "Lexer.hh"
+
 #include "adt/file.hh"
 #include "adt/logs.hh"
+
+#include <ctype.h>
 
 using namespace adt;
 

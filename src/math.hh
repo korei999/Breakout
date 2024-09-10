@@ -1,12 +1,12 @@
 #pragma once
 
-#include <math.h>
-
 #include "adt/types.hh"
 
 #ifdef LOGS
     #include "adt/String.hh"
 #endif
+
+#include <math.h>
 
 using namespace adt;
 

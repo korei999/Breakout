@@ -1,7 +1,8 @@
 #include "Shader.hh"
-#include "adt/logs.hh"
+
 #include "adt/Arena.hh"
 #include "adt/file.hh"
+#include "adt/logs.hh"
 
 Array<Shader> g_aAllShaders;
 

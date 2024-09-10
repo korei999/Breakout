@@ -1,3 +1,5 @@
+#include "input.hh"
+
 #include "Client.hh"
 #include "adt/logs.hh"
 #include "adt/utils.hh"

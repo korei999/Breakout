@@ -1,4 +1,5 @@
 #include "adt/Arena.hh"
+#include "app.hh"
 #include "frame.hh"
 
 using namespace adt;
@@ -15,16 +16,18 @@ main(int argc, char* argv[])
     platform::pipewire::Mixer mixer(&alMixer.base);
     platform::wayland::Client app("Breakout");
 
-    platform::wayland::ClientInit(&app);
-    platform::pipewire::MixerInit(&mixer, argc, argv);
+    WindowInit(&app);
+    audio::MixerInit(&mixer, argc, argv);
 
-    frame::g_pApp = &app.base;
-    frame::g_pMixer = &mixer.base;
+    app::g_pApp = &app.base;
+    app::g_pMixer = &mixer.base;
 
     frame::run();
 
-    platform::pipewire::MixerDestroy(&mixer);
-    platform::wayland::ClientDestroy(&app);
+    audio::MixerDestroy(&mixer);
+    WindowDestroy(&app);
+
+    ArenaFreeAll(&alMixer);
 }
 
 #elif _WIN32
@@ -48,6 +51,8 @@ WinMain([[maybe_unused]] HINSTANCE instance,
 
     platform::win32::MixerDestroy(&mixer);
     platform::win32::WindowDestroy(&app);
+
+    ArenaFreeAll(&alMixer);
 }
 
     #ifdef DEBUG

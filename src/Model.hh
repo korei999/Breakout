@@ -1,11 +1,11 @@
 #pragma once
 
-#include <limits.h>
-
 #include "gltf/gltf.hh"
 #include "math.hh"
 #include "Shader.hh"
 #include "Texture.hh"
+
+#include <limits.h>
 
 using namespace adt;
 

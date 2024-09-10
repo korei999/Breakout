@@ -10,6 +10,13 @@ using namespace adt;
 namespace game
 {
 
+constexpr u32 ASSET_MAX_COUNT = 512;
+
+enum REFLECT_SIDE : s8
+{
+    NONE = -1, UP, RIGHT, DOWN, LEFT, ESIZE
+};
+
 enum class STATE : u8
 {
     ACTIVE,
@@ -40,7 +47,6 @@ struct Entity
     f32 xOff;
     f32 yOff;
     u16 shaderIdx;
-    u16 modelIdx;
     u16 texIdx;
     game::COLOR eColor;
     bool bDead;

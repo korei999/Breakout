@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 199309L
 
 #include "Client.hh"
+
 #include "adt/Arena.hh"
 #include "adt/Array.hh"
 #include "adt/logs.hh"
@@ -252,24 +253,24 @@ static const wl_registry_listener registryListener {
 
 Client::Client(String name)
 {
-    static AppInterface vTable {
-        .init = (decltype(AppInterface::init))ClientInit,
-        .disableRelativeMode = (decltype(AppInterface::disableRelativeMode))ClientDisableRelativeMode,
-        .enableRelativeMode = (decltype(AppInterface::enableRelativeMode))ClientEnableRelativeMode,
-        .togglePointerRelativeMode = (decltype(AppInterface::togglePointerRelativeMode))ClientTogglePointerRelativeMode,
-        .toggleFullscreen = (decltype(AppInterface::toggleFullscreen))ClientToggleFullscreen,
-        .hideCursor = (decltype(AppInterface::hideCursor))ClientHideCursor,
-        .setCursorImage = (decltype(AppInterface::setCursorImage))ClientSetCursorImage,
-        .setFullscreen = (decltype(AppInterface::setFullscreen))ClientSetFullscreen,
-        .unsetFullscreen = (decltype(AppInterface::unsetFullscreen))ClientUnsetFullscreen,
-        .bindGlContext = (decltype(AppInterface::bindGlContext))ClientBindGlContext,
-        .unbindGlContext = (decltype(AppInterface::unbindGlContext))ClientUnbindGlContext,
-        .setSwapInterval = (decltype(AppInterface::setSwapInterval))ClientSetSwapInterval,
-        .toggleVSync = (decltype(AppInterface::toggleVSync))ClientToggleVSync,
-        .swapBuffers = (decltype(AppInterface::swapBuffers))ClientSwapBuffers,
-        .procEvents = (decltype(AppInterface::procEvents))ClientProcEvents,
-        .showWindow = (decltype(AppInterface::showWindow))ClientShowWindow,
-        .destroy = (decltype(AppInterface::destroy))ClientDestroy,
+    static WindowInterface vTable {
+        .init = (decltype(WindowInterface::init))ClientInit,
+        .disableRelativeMode = (decltype(WindowInterface::disableRelativeMode))ClientDisableRelativeMode,
+        .enableRelativeMode = (decltype(WindowInterface::enableRelativeMode))ClientEnableRelativeMode,
+        .togglePointerRelativeMode = (decltype(WindowInterface::togglePointerRelativeMode))ClientTogglePointerRelativeMode,
+        .toggleFullscreen = (decltype(WindowInterface::toggleFullscreen))ClientToggleFullscreen,
+        .hideCursor = (decltype(WindowInterface::hideCursor))ClientHideCursor,
+        .setCursorImage = (decltype(WindowInterface::setCursorImage))ClientSetCursorImage,
+        .setFullscreen = (decltype(WindowInterface::setFullscreen))ClientSetFullscreen,
+        .unsetFullscreen = (decltype(WindowInterface::unsetFullscreen))ClientUnsetFullscreen,
+        .bindGlContext = (decltype(WindowInterface::bindGlContext))ClientBindGlContext,
+        .unbindGlContext = (decltype(WindowInterface::unbindGlContext))ClientUnbindGlContext,
+        .setSwapInterval = (decltype(WindowInterface::setSwapInterval))ClientSetSwapInterval,
+        .toggleVSync = (decltype(WindowInterface::toggleVSync))ClientToggleVSync,
+        .swapBuffers = (decltype(WindowInterface::swapBuffers))ClientSwapBuffers,
+        .procEvents = (decltype(WindowInterface::procEvents))ClientProcEvents,
+        .showWindow = (decltype(WindowInterface::showWindow))ClientShowWindow,
+        .destroy = (decltype(WindowInterface::destroy))ClientDestroy,
     };
 
     base = {};
@@ -385,6 +386,8 @@ ClientInit(Client* s)
     wl_display_roundtrip(s->display);
 
     ArenaFreeAll(&arena);
+
+    s->base.bRunning = true;
 }
 
 void

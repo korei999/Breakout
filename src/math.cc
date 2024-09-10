@@ -1,7 +1,8 @@
-#include <stdio.h>
-
 #include "math.hh"
+
 #include "adt/utils.hh"
+
+#include <stdio.h>
 
 namespace math
 {

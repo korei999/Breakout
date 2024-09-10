@@ -1,8 +1,10 @@
-#include <math.h>
+#include "controls.hh"
 
 #include "adt/logs.hh"
-#include "controls.hh"
+#include "app.hh"
 #include "frame.hh"
+
+#include <math.h>
 
 #ifdef __linux__
     #include <linux/input-event-codes.h>
@@ -53,20 +55,20 @@ procKeysOnce(u32 key, u32 pressed)
         case KEY_GRAVE:
             if (pressed)
             {
-                frame::g_pApp->bPaused = !frame::g_pApp->bPaused;
-                if (frame::g_pApp->bPaused) LOG_WARN("paused: %d\n", frame::g_pApp->bPaused);
+                app::g_pApp->bPaused = !app::g_pApp->bPaused;
+                if (app::g_pApp->bPaused) LOG_WARN("paused: %d\n", app::g_pApp->bPaused);
             }
             break;
 
         case KEY_Q:
-            if (pressed) AppTogglePointerRelativeMode(frame::g_pApp);
+            if (pressed) WindowTogglePointerRelativeMode(app::g_pApp);
             break;
 
         case KEY_ESC:
         case KEY_CAPSLOCK:
             if (pressed)
             {
-                frame::g_pApp->bRunning = false;
+                app::g_pApp->bRunning = false;
 
 #ifdef _WIN32
                 /* FIXME: implement mixer on windows */
@@ -82,11 +84,11 @@ procKeysOnce(u32 key, u32 pressed)
             break;
 
         case KEY_F:
-            if (pressed) AppToggleFullscreen(frame::g_pApp);
+            if (pressed) WindowToggleFullscreen(app::g_pApp);
             break;
 
         case KEY_V:
-            if (pressed) AppToggleVSync(frame::g_pApp);
+            if (pressed) WindowToggleVSync(app::g_pApp);
             break;
 
         case KEY_SPACE:

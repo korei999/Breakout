@@ -1,19 +1,19 @@
-#include <stdio.h>
-
-#include "adt/AllocatorPool.hh"
-#include "adt/Arena.hh"
-#include "adt/ThreadPool.hh"
-#include "adt/utils.hh"
-#include "adt/FixedAllocator.hh"
+#include "frame.hh"
 
 #include "Model.hh"
 #include "Shader.hh"
 #include "Text.hh"
+#include "app.hh"
 #include "colors.hh"
-#include "frame.hh"
+#include "controls.hh"
 #include "game.hh"
 #include "math.hh"
 #include "parser/Wave.hh"
+
+#include "adt/AllocatorPool.hh"
+#include "adt/Arena.hh"
+#include "adt/FixedAllocator.hh"
+#include "adt/ThreadPool.hh"
 
 using namespace adt;
 
@@ -22,10 +22,7 @@ namespace frame
 
 static void mainLoop();
 
-App* g_pApp;
-audio::Mixer* g_pMixer;
-
-Pair<f32, f32> g_unit;
+Pair<f32, f32> g_unit; /* draw size unit */
 
 f32 g_fov = 90.0f;
 f32 g_uiWidth = 192.0f * 0.75;
@@ -90,13 +87,13 @@ updateDeltaTime()
 void
 prepareDraw()
 {
-    AppBindGlContext(g_pApp);
-    AppShowWindow(g_pApp);
+    WindowBindGlContext(app::g_pApp);
+    WindowShowWindow(app::g_pApp);
 
 #ifdef DEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(gl::debugCallback, g_pApp);
+    glDebugMessageCallback(gl::debugCallback, app::g_pApp);
 #endif
 
     /*glEnable(GL_CULL_FACE);*/
@@ -106,7 +103,7 @@ prepareDraw()
     math::V4 gray = {colors::get(colors::IDX::BLACK), 1.0f};
     glClearColor(gray.r, gray.g, gray.b, gray.a);
 
-    g_uiHeight = (g_uiWidth * (f32)g_pApp->wHeight) / (f32)g_pApp->wWidth;
+    g_uiHeight = (g_uiWidth * (f32)app::g_pApp->wHeight) / (f32)app::g_pApp->wWidth;
 
     s_plain = Plain(GL_STATIC_DRAW);
 
@@ -138,7 +135,7 @@ prepareDraw()
     ThreadPoolStart(&tp);
 
     /* unbind before creating threads */
-    AppUnbindGlContext(g_pApp);
+    WindowUnbindGlContext(app::g_pApp);
 
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
@@ -159,20 +156,19 @@ prepareDraw()
     ThreadPoolWait(&tp);
 
     /* restore context after assets are loaded */
-    AppBindGlContext(g_pApp);
+    WindowBindGlContext(app::g_pApp);
 
     ThreadPoolDestroy(&tp);
     ArenaFreeAll(&allocScope);
 
-    AppSetSwapInterval(g_pApp, 1);
-    AppSetFullscreen(g_pApp);
+    WindowSetSwapInterval(app::g_pApp, 1);
+    WindowSetFullscreen(app::g_pApp);
 }
 
 void
 run()
 {
-    g_pApp->bRunning = true;
-    AppSetCursorImage(g_pApp, "default");
+    WindowSetCursorImage(app::g_pApp, "default");
 
     s_prevTime = utils::timeNowS();
 
@@ -181,12 +177,12 @@ run()
     updateDeltaTime();
 
     /* proc once to get events */
-    AppSwapBuffers(g_pApp);
+    WindowSwapBuffers(app::g_pApp);
     controls::procMouse();
     controls::procKeys();
-    AppProcEvents(g_pApp);
+    WindowProcEvents(app::g_pApp);
 
-    AppEnableRelativeMode(g_pApp);
+    WindowEnableRelativeMode(app::g_pApp);
 
     mainLoop();
 }
@@ -336,7 +332,7 @@ procBlockHit()
     }
 
     if (bAddSound)
-        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
+        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 }
 
 static void
@@ -351,7 +347,7 @@ procPaddleHit()
         by >= py - g_unit.y && by <= py - g_unit.y + g_unit.y/2)
     {
         g_ball.base.pos.y = (py - g_unit.y + g_unit.y/2) + 4;
-        audio::MixerAdd(g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
+        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 
         g_ball.dir.y = 1.0f;
         if (math::V2Length(g_player.dir) > 0.0f)
@@ -388,7 +384,7 @@ procOutOfBounds()
     }
 
     if (bAddSound)
-        audio::MixerAdd( g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
+        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 }
 
 static void
@@ -418,7 +414,6 @@ mainLoop()
                     .xOff = 0.0f,
                     .yOff = 0.0f,
                     .shaderIdx = 0,
-                    .modelIdx = 0,
                     .texIdx = s_tBox.id,
                     .eColor = game::COLOR(level[i][j]),
                     .bDead = false
@@ -443,21 +438,21 @@ mainLoop()
     ArrayPush(&s_aPEntities, &g_player.base);
     ArrayPush(&s_aPEntities, &g_ball.base);
 
-    audio::MixerAddBackground(g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
+    audio::MixerAddBackground(app::g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
 
     FixedAllocator alFrame (s_aFrameMem, sizeof(s_aFrameMem));
 
-    while (g_pApp->bRunning || g_pMixer->bRunning) /* wait for mixer to stop also */
+    while (app::g_pApp->bRunning || app::g_pMixer->bRunning) /* wait for mixer to stop also */
     {
         {
-            AppProcEvents(g_pApp);
+            WindowProcEvents(app::g_pApp);
             updateDeltaTime();
             controls::procKeys();
 
             controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, g_pApp->wWidth, g_pApp->wHeight);
+            glViewport(0, 0, app::g_pApp->wWidth, app::g_pApp->wHeight);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             UboBufferData(&s_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
 
@@ -503,7 +498,7 @@ mainLoop()
             renderFPSCounter(&alFrame.base);
         }
 
-        AppSwapBuffers(g_pApp);
+        WindowSwapBuffers(app::g_pApp);
 
         s_fpsCount++;
         FixedAllocatorReset(&alFrame);

@@ -43,6 +43,8 @@ add_executable(
     src/Texture.cc
     src/Model.cc
     src/Text.cc
+    src/game.cc
+    src/app.cc
     # ThirdParty/mimalloc/src/static.c
 )
 

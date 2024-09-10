@@ -10,7 +10,7 @@
 #include "wayland-protocols/relative-pointer-unstable-v1.h"
 #include "wayland-protocols/xdg-shell.h"
 
-#include "App.hh"
+#include "Window.hh"
 
 #include "adt/types.hh"
 
@@ -23,7 +23,7 @@ namespace wayland
 
 struct Client
 {
-    App base;
+    Window base;
     wl_display* display {};
     wl_registry* registry {};
 
@@ -78,8 +78,26 @@ void ClientUnbindGlContext(Client* s);
 void ClientSetSwapInterval(Client* s, int interval);
 void ClientToggleVSync(Client* s);
 void ClientSwapBuffers(Client* s);
-void ClientProcEvents([[maybe_unused]] Client* s);
-void ClientShowWindow([[maybe_unused]] Client* s);
+void ClientProcEvents(Client* s);
+void ClientShowWindow(Client* s);
 
 } /* namespace wayland */
 } /* namespace platform */
+
+inline void WindowInit(platform::wayland::Client* s) { ClientInit(s); }
+inline void WindowDisableRelativeMode(platform::wayland::Client* s) { ClientDisableRelativeMode(s); }
+inline void WindowEnableRelativeMode(platform::wayland::Client* s) { ClientEnableRelativeMode(s); }
+inline void WindowTogglePointerRelativeMode(platform::wayland::Client* s) { ClientTogglePointerRelativeMode(s); }
+inline void WindowToggleFullscreen(platform::wayland::Client* s) { ClientToggleFullscreen(s); }
+inline void WindowHideCursor(platform::wayland::Client* s) { ClientHideCursor(s); }
+inline void WindowSetCursorImage(platform::wayland::Client* s, String cursorType) { ClientSetCursorImage(s, cursorType); }
+inline void WindowSetFullscreen(platform::wayland::Client* s) { ClientSetFullscreen(s); }
+inline void WindowUnsetFullscreen(platform::wayland::Client* s) { ClientUnsetFullscreen(s); }
+inline void WindowBindGlContext(platform::wayland::Client* s) { ClientBindGlContext(s); }
+inline void WindowUnbindGlContext(platform::wayland::Client* s) { ClientUnbindGlContext(s); }
+inline void WindowSetSwapInterval(platform::wayland::Client* c, int interval) { ClientSetSwapInterval(c, interval); }
+inline void WindowToggleVSync(platform::wayland::Client* s) { ClientToggleVSync(s); }
+inline void WindowSwapBuffers(platform::wayland::Client* s) { ClientSwapBuffers(s); }
+inline void WindowProcEvents(platform::wayland::Client* s) { ClientProcEvents(s); }
+inline void WindowShowWindow(platform::wayland::Client* s) { ClientShowWindow(s); }
+inline void WindowDestroy(platform::wayland::Client* s) { ClientDestroy(s); }

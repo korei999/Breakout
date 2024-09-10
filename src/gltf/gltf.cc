@@ -1,6 +1,7 @@
+#include "gltf.hh"
+
 #include "adt/file.hh"
 #include "adt/logs.hh"
-#include "gltf.hh"
 
 namespace gltf
 {

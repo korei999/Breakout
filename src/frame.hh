@@ -1,10 +1,6 @@
 #pragma once
 
-#include "App.hh"
 #include "adt/Pair.hh"
-#include "adt/Queue.hh"
-#include "audio.hh"
-#include "controls.hh"
 #include "game.hh"
 
 using namespace adt;
@@ -16,9 +12,6 @@ constexpr u32 ASSET_MAX_COUNT = 512;
 
 constexpr f32 WIDTH = 1000.0f;
 constexpr f32 HEIGHT = 1000.0f;
-
-extern App* g_pApp;
-extern audio::Mixer* g_pMixer;
 
 extern game::Player g_player;
 extern game::Ball g_ball;

@@ -1,12 +1,13 @@
-#include <immintrin.h>
-
-#include "App.hh"
 #include "Texture.hh"
+
+#include "Window.hh"
 #include "adt/Arena.hh"
 #include "adt/HashMap.hh"
 #include "adt/logs.hh"
-#include "frame.hh"
+#include "app.hh"
 #include "parser/Bin.hh"
+
+#include <immintrin.h>
 
 /* Bitmap file format
  *
@@ -102,7 +103,7 @@ void
 TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter)
 {
     mtx_lock(&gl::mtxGlContext);
-    AppBindGlContext(frame::g_pApp);
+    WindowBindGlContext(app::g_pApp);
 
     glGenTextures(1, &s->id);
     glBindTexture(GL_TEXTURE_2D, s->id);
@@ -121,7 +122,7 @@ TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GL
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, pData);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    AppUnbindGlContext(frame::g_pApp);
+    WindowUnbindGlContext(app::g_pApp);
     mtx_unlock(&gl::mtxGlContext);
 }
 

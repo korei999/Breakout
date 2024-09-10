@@ -1,10 +1,11 @@
 #include "Model.hh"
+
 #include "adt/AtomicArena.hh"
 #include "adt/ThreadPool.hh"
 #include "adt/file.hh"
 #include "adt/logs.hh"
 #include "adt/utils.hh"
-#include "frame.hh"
+#include "app.hh"
 
 void
 ModelLoad(Model* s, String path, GLint drawMode, GLint texMode)
@@ -28,7 +29,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     for (u32 i = 0; i < a.aBuffers.size; i++)
     {
         mtx_lock(&gl::mtxGlContext);
-        AppBindGlContext(frame::g_pApp);
+        WindowBindGlContext(app::g_pApp);
 
         GLuint b;
         glGenBuffers(1, &b);
@@ -37,7 +38,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         ArrayPush(&aBufferMap, b);
 
-        AppUnbindGlContext(frame::g_pApp);
+        WindowUnbindGlContext(app::g_pApp);
         mtx_unlock(&gl::mtxGlContext);
     }
 
@@ -113,7 +114,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             nMesh.mode = mode;
 
             mtx_lock(&gl::mtxGlContext);
-            AppBindGlContext(frame::g_pApp);
+            WindowBindGlContext(app::g_pApp);
 
             glGenVertexArrays(1, &nMesh.meshData.vao);
             glBindVertexArray(nMesh.meshData.vao);
@@ -178,7 +179,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             }
 
             glBindVertexArray(0);
-            AppUnbindGlContext(frame::g_pApp);
+            WindowUnbindGlContext(app::g_pApp);
             mtx_unlock(&gl::mtxGlContext);
 
             /* load textures */

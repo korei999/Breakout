@@ -53,3 +53,13 @@ struct Mixer
 
 } /* namespace pipewire */
 } /* namespace platform */
+
+namespace audio
+{
+
+inline void MixerInit(platform::pipewire::Mixer* s, int argc, char** argv) { platform::pipewire::MixerInit(s, argc, argv); }
+inline void MixerDestroy(platform::pipewire::Mixer* s) { platform::pipewire::MixerDestroy(s); }
+inline void MixerAdd(platform::pipewire::Mixer* s, Track t) { platform::pipewire::MixerAdd(s, t); }
+inline void MixerAddBackground(platform::pipewire::Mixer* s, Track t) { platform::pipewire::MixerAddBackground(s, t); }
+
+} /* namespace audio */

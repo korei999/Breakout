@@ -1,7 +1,8 @@
+#include "Text.hh"
+
 #include "adt/Arena.hh"
 #include "adt/Array.hh"
 #include "frame.hh"
-#include "Text.hh"
 
 static Array<TextCharQuad> TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
 static void TextGenMesh(Text* s, int xOrigin, int yOrigin, GLint drawMode);
