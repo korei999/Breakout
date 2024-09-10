@@ -291,4 +291,25 @@ namespace colors
     };
 
     constexpr math::V3 get(IDX e) { return map[int(e)]; }
+
+    constexpr math::V4
+    hexToV4(int hex)
+    {
+        return {
+            ((hex >> 24) & 0xff) / 255.0f,
+            ((hex >> 16) & 0xff) / 255.0f,
+            ((hex >> 8 ) & 0xff) / 255.0f,
+            ((hex)       & 0xff) / 255.0f
+        };
+    }
+
+    constexpr math::V3
+    hexToV3(int hex)
+    {
+        return {
+            ((hex >> 16) & 0xff) / 255.0f,
+            ((hex >> 8 ) & 0xff) / 255.0f,
+            ((hex)       & 0xff) / 255.0f
+        };
+    }
 };

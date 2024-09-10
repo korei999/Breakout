@@ -84,25 +84,9 @@ updateDeltaTime()
     g_lastFrameTime = g_currTime;
 }
 
-void
-prepareDraw()
+static void
+loadThings()
 {
-    WindowBindGlContext(app::g_pApp);
-    WindowShowWindow(app::g_pApp);
-
-#ifdef DEBUG
-    glEnable(GL_DEBUG_OUTPUT);
-    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(gl::debugCallback, app::g_pApp);
-#endif
-
-    /*glEnable(GL_CULL_FACE);*/
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-
-    math::V4 gray = {colors::get(colors::IDX::BLACK), 1.0f};
-    glClearColor(gray.r, gray.g, gray.b, gray.a);
-
     g_uiHeight = (g_uiWidth * (f32)app::g_pApp->wHeight) / (f32)app::g_pApp->wWidth;
 
     s_plain = Plain(GL_STATIC_DRAW);
@@ -172,7 +156,23 @@ run()
 
     s_prevTime = utils::timeNowS();
 
-    prepareDraw();
+    WindowBindGlContext(app::g_pApp);
+    WindowShowWindow(app::g_pApp);
+
+#ifdef DEBUG
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(gl::debugCallback, app::g_pApp);
+#endif
+
+    /*glEnable(GL_CULL_FACE);*/
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+
+    math::V4 gray = {colors::get(colors::IDX::BLACK), 1.0f};
+    glClearColor(gray.r, gray.g, gray.b, gray.a);
+
+    loadThings();
     updateDeltaTime(); /* reset delta time before drawing */
     updateDeltaTime();
 
@@ -196,12 +196,13 @@ nextPos(const T& e, bool bNormalizeDir)
 }
 
 static void
-renderFPSCounter(Allocator* pAlloc)
+drawFPSCounter(Allocator* pAlloc)
 {
     math::M4 proj = math::M4Ortho(0.0f, g_uiWidth, 0.0f, g_uiHeight, -1.0f, 1.0f);
     ShaderUse(&s_shBitMap);
     TextureBind(&s_tAsciiMap, GL_TEXTURE0);
     ShaderSetM4(&s_shBitMap, "uProj", proj);
+    ShaderSetV4(&s_shBitMap, "uColor", {colors::hexToV4(0xeeeeeeff), 1.0f});
 
     f64 currTime = utils::timeNowMS();
     if (currTime >= s_prevTime + 1000.0)
@@ -219,17 +220,16 @@ renderFPSCounter(Allocator* pAlloc)
 }
 
 static void
-renderEntities(Array<game::Entity*>* s)
+drawEntities()
 {
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
 
-    for (auto& e : *s)
+    for (auto& e : s_aPEntities)
     {
         if (e->bDead || e->eColor == game::COLOR::INVISIBLE) continue;
 
-        math::M4 tm;
-        tm = math::M4Iden();
+        math::M4 tm = math::M4Iden();
         tm = M4Translate(tm, {e->pos.x + e->xOff, e->pos.y + e->yOff, 0.0f});
         tm = M4Scale(tm, {g_unit.x * e->width, g_unit.y * e->height, 1.0f});
 
@@ -388,7 +388,49 @@ procOutOfBounds()
 }
 
 static void
-mainLoop()
+updateGame()
+{
+    /* player */
+    {
+        g_player.base.pos = nextPos(g_player, false);
+        g_player.base.pos = nextPos(g_player, false);
+
+        if (g_player.base.pos.x >= WIDTH - g_unit.x*2)
+        {
+            g_player.base.pos.x = WIDTH - g_unit.x*2;
+            g_player.dir = {};
+        }
+        else if (g_player.base.pos.x <= 0)
+        {
+            g_player.base.pos.x = 0;
+            g_player.dir = {};
+        }
+
+        const auto& pos = g_player.base.pos;
+    }
+
+    /* ball */
+    {
+        if (g_ball.bReleased)
+        {
+            procBlockHit();
+            procPaddleHit();
+            procOutOfBounds();
+            g_ball.base.pos = nextPos(g_ball, true);
+
+        } else g_ball.base.pos = g_player.base.pos;
+
+        const auto& pos = g_ball.base.pos;
+
+        math::M4 tm;
+        tm = math::M4Iden();
+        tm = M4Translate(tm, {pos.x, pos.y, 10.0f});
+        tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
+    }
+}
+
+static void
+loadLevel()
 {
     const auto& level = game::g_level1;
 
@@ -398,7 +440,7 @@ mainLoop()
     g_unit.x = WIDTH / levelX / 2;
     g_unit.y = HEIGHT / levelY / 2;
 
-    /* place player to the center */
+    /* place player in the middle */
     g_player.base.pos.x = WIDTH/2 - g_unit.x;
 
     for (u32 i = 0; i < levelY; i++)
@@ -437,6 +479,12 @@ mainLoop()
 
     ArrayPush(&s_aPEntities, &g_player.base);
     ArrayPush(&s_aPEntities, &g_ball.base);
+}
+
+static void
+mainLoop()
+{
+    loadLevel();
 
     audio::MixerAddBackground(app::g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
 
@@ -444,64 +492,24 @@ mainLoop()
 
     while (app::g_pApp->bRunning || app::g_pMixer->bRunning) /* wait for mixer to stop also */
     {
-        {
-            WindowProcEvents(app::g_pApp);
-            updateDeltaTime();
-            controls::procKeys();
+        WindowProcEvents(app::g_pApp);
+        updateDeltaTime();
+        controls::procKeys();
 
-            controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
+        controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
 
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, app::g_pApp->wWidth, app::g_pApp->wHeight);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            UboBufferData(&s_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, app::g_pApp->wWidth, app::g_pApp->wHeight);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        UboBufferData(&s_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
 
-            /* player */
-            {
-                g_player.base.pos = nextPos(g_player, false);
-                g_player.base.pos = nextPos(g_player, false);
+        updateGame();
+        drawEntities();
+        drawFPSCounter(&alFrame.base);
 
-                if (g_player.base.pos.x >= WIDTH - g_unit.x*2)
-                {
-                    g_player.base.pos.x = WIDTH - g_unit.x*2;
-                    g_player.dir = {};
-                }
-                else if (g_player.base.pos.x <= 0)
-                {
-                    g_player.base.pos.x = 0;
-                    g_player.dir = {};
-                }
-
-                const auto& pos = g_player.base.pos;
-            }
-
-            /* ball */
-            {
-                if (g_ball.bReleased)
-                {
-                    procBlockHit();
-                    procPaddleHit();
-                    procOutOfBounds();
-                    g_ball.base.pos = nextPos(g_ball, true);
-
-                } else g_ball.base.pos = g_player.base.pos;
-
-                const auto& pos = g_ball.base.pos;
-
-                math::M4 tm;
-                tm = math::M4Iden();
-                tm = M4Translate(tm, {pos.x, pos.y, 10.0f});
-                tm = M4Scale(tm, {g_unit.x, g_unit.y, 1.0f});
-            }
-
-            renderEntities(&s_aPEntities);
-            renderFPSCounter(&alFrame.base);
-        }
-
-        WindowSwapBuffers(app::g_pApp);
-
-        s_fpsCount++;
         FixedAllocatorReset(&alFrame);
+        WindowSwapBuffers(app::g_pApp);
+        s_fpsCount++;
     }
 
 #ifndef NDEBUG

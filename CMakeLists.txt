@@ -123,7 +123,7 @@ message(STATUS "CMAKE_SOURCE_DIR: '${CMAKE_SOURCE_DIR}'")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(LINUX_PKGS REQUIRED gl egl glesv2 wayland-client wayland-egl wayland-cursor libpipewire-0.3)
+    pkg_check_modules(LINUX_PKGS REQUIRED gl egl wayland-client wayland-egl wayland-cursor libpipewire-0.3)
     include_directories(BEFORE ${LINUX_PKGS_INCLUDE_DIRS})
     target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC ${LINUX_PKGS_LIBRARIES})
 

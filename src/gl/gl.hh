@@ -3,7 +3,9 @@
 #include <threads.h>
 
 #ifdef __linux__
-#include <GLES3/gl32.h>
+// #include <GLES3/gl32.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/glcorearb.h>
 #elif _WIN32
 #include "../platform/win32/glad.h"
 #endif

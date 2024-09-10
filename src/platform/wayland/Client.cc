@@ -329,10 +329,14 @@ ClientInit(Client* s)
         LOG_FATAL("failed to initialize EGL\n");
     EGLD();
 
+    /* Default is GLES */
+    if (!eglBindAPI(EGL_OPENGL_API))
+        LOG_FATAL("eglBindAPI(EGL_OPENGL_API) failed\n");
+
     LOG_OK("egl: major: %d, minor: %d\n", major, minor);
 
     EGLint count;
-    EGLD(eglGetConfigs(s->eglDisplay, nullptr, 0, &count));
+    EGLD( eglGetConfigs(s->eglDisplay, nullptr, 0, &count) );
 
     EGLint configAttribs[] = {
         EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -342,7 +346,9 @@ ClientInit(Client* s)
         // EGL_ALPHA_SIZE, 8, /* KDE makes window transparent even in fullscreen */
         EGL_DEPTH_SIZE, 24,
         EGL_STENCIL_SIZE, 8,
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT_KHR,
+        EGL_CONFORMANT, EGL_OPENGL_BIT,
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+        // EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT_KHR,
         // EGL_MIN_SWAP_INTERVAL, 0,
         // EGL_MAX_SWAP_INTERVAL, 1,
         // EGL_SAMPLE_BUFFERS, 1,
@@ -360,7 +366,10 @@ ClientInit(Client* s)
     EGLConfig eglConfig = configs[0];
 
     EGLint contextAttribs[] {
-        EGL_CONTEXT_CLIENT_VERSION, 3,
+        // EGL_CONTEXT_CLIENT_VERSION, 3,
+        EGL_CONTEXT_MAJOR_VERSION, 3,
+        EGL_CONTEXT_MINOR_VERSION, 3,
+        EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
 #ifdef DEBUG
         EGL_CONTEXT_OPENGL_DEBUG, EGL_TRUE,
 #endif

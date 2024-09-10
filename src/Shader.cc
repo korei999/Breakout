@@ -166,48 +166,49 @@ ShaderQueryActiveUniforms(Shader* s)
 void 
 ShaderSetM4(Shader* s, String name, const math::M4& m)
 {
-    GLint ul;
-    ul = glGetUniformLocation(s->id, name.pData);
+    GLint ul = glGetUniformLocation(s->id, name.pData);
     glUniformMatrix4fv(ul, 1, GL_FALSE, (GLfloat*)m.e);
 }
 
 void 
 ShaderSetM3(Shader* s, String name, const math::M3& m)
 {
-    GLint ul;
-    ul = glGetUniformLocation(s->id, name.pData);
+    GLint ul = glGetUniformLocation(s->id, name.pData);
     glUniformMatrix3fv(ul, 1, GL_FALSE, (GLfloat*)m.e);
 }
 
 void
 ShaderSetV3(Shader* s, String name, const math::V3& v)
 {
-    GLint ul;
-    ul = glGetUniformLocation(s->id, name.pData);
+    GLint ul = glGetUniformLocation(s->id, name.pData);
     glUniform3fv(ul, 1, (GLfloat*)v.e);
+}
+
+void
+ShaderSetV4(Shader* s, String name, const math::V4& v)
+{
+    GLint ul = glGetUniformLocation(s->id, name.pData);
+    glUniform4fv(ul, 1, (GLfloat*)v.e);
 }
 
 void
 ShaderSetI(Shader* s, String name, const GLint i)
 {
-    GLint ul;
-    ul = glGetUniformLocation(s->id, name.pData);
+    GLint ul = glGetUniformLocation(s->id, name.pData);
     glUniform1i(ul, i);
 }
 
 void
 ShaderSetF(Shader* s, String name, const f32 f)
 {
-    GLint ul;
-    ul = glGetUniformLocation(s->id, name.pData);
+    GLint ul = glGetUniformLocation(s->id, name.pData);
     glUniform1f(ul, f);
 }
 
 static GLuint
 ShaderLoadOne(GLenum type, String path)
 {
-    GLuint shader;
-    shader = glCreateShader(type);
+    GLuint shader = glCreateShader(type);
     if (!shader)
         return 0;
 
