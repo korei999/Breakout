@@ -43,9 +43,7 @@ static AllocatorPool<Arena, ASSET_MAX_COUNT> s_apAssets;
 static Array<game::Entity> s_aEnemies(AllocatorPoolGet(&s_apAssets, SIZE_8K));
 static Array<game::Entity*> s_aPEntities(AllocatorPoolGet(&s_apAssets, SIZE_8K));
 
-static Shader s_shTex;
 static Shader s_shBitMap;
-static Shader s_shColor;
 static Shader s_shSprite;
 
 static Texture s_tAsciiMap(AllocatorPoolGet(&s_apAssets, SIZE_1M));
@@ -94,13 +92,8 @@ loadThings()
     g_aAllShaders = {AllocatorPoolGet(&s_apAssets, SIZE_1K)};
     g_aAllTextures = {AllocatorPoolGet(&s_apAssets, SIZE_1K)};
 
-    ShaderLoad(&s_shTex, "shaders/simpleTex.vert", "shaders/simpleTex.frag");
-    ShaderLoad(&s_shColor, "shaders/simpleUB.vert", "shaders/simple.frag");
     ShaderLoad(&s_shBitMap, "shaders/font/font.vert", "shaders/font/font.frag");
     ShaderLoad(&s_shSprite, "shaders/2d/sprite.vert", "shaders/2d/sprite.frag");
-
-    ShaderUse(&s_shTex);
-    ShaderSetI(&s_shTex, "tex0", 0);
 
     ShaderUse(&s_shBitMap);
     ShaderSetI(&s_shBitMap, "tex0", 0);
@@ -109,8 +102,7 @@ loadThings()
     ShaderSetI(&s_shSprite, "tex0", 0);
 
     UboCreateBuffer(&s_uboProjView, sizeof(math::M4)*2, GL_DYNAMIC_DRAW);
-    UboBindShader(&s_uboProjView, &s_shTex, "ubProjView", 0);
-    UboBindShader(&s_uboProjView, &s_shColor, "ubProjView", 0);
+    UboBindShader(&s_uboProjView, &s_shSprite, "ubProjView", 0);
 
     s_textFPS = Text("", 40, 0, 0, GL_DYNAMIC_DRAW);
 
