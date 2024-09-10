@@ -232,11 +232,9 @@ renderEntities(Array<game::Entity*>* s)
     {
         if (e->bDead || e->eColor == game::COLOR::INVISIBLE) continue;
 
-        math::V3 pos {e->pos.x, e->pos.y, 0.0f};
-
         math::M4 tm;
         tm = math::M4Iden();
-        tm = M4Translate(tm, {pos.x + e->xOff, pos.y + e->yOff, 0.0f});
+        tm = M4Translate(tm, {e->pos.x + e->xOff, e->pos.y + e->yOff, 0.0f});
         tm = M4Scale(tm, {g_unit.x * e->width, g_unit.y * e->height, 1.0f});
 
         if (idxLastTex != e->texIdx)
