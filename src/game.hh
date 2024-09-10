@@ -3,6 +3,8 @@
 #include "adt/types.hh"
 #include "colors.hh"
 
+#include <assert.h>
+
 using namespace adt;
 
 namespace game
@@ -77,6 +79,8 @@ blockColorToV3(COLOR col)
         IDX::TEAL,
         IDX::ORANGERED
     };
+
+    assert(col < COLOR::ESIZE);
 
     return colors::get(map[int(col)]);
 }
