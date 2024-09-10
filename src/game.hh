@@ -1,5 +1,6 @@
 #pragma once
 
+#include "adt/Array.hh"
 #include "adt/types.hh"
 #include "colors.hh"
 
@@ -68,6 +69,13 @@ struct Ball
     math::V2 dir;
 };
 
+void loadThings();
+void loadLevel();
+void updateGame();
+void drawFPSCounter(Allocator* pAlloc);
+void drawEntities();
+void cleanup();
+
 constexpr math::V3
 blockColorToV3(COLOR col)
 {
@@ -117,6 +125,8 @@ constexpr s8 g_level1[][15] {
     { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
 };
 
-
+extern Player g_player;
+extern Ball g_ball;
+extern Array<game::Entity*> g_aPEntities;
 
 } /* namespace game */

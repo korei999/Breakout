@@ -95,8 +95,8 @@ procKeysOnce(u32 key, u32 pressed)
             {
                 if (!pressed) break;
 
-                frame::g_ball.bReleased = !frame::g_ball.bReleased;
-                frame::g_ball.dir = math::V3(0.0f, 1.0f, 0.0f) + frame::g_player.dir * 0.25f;
+                game::g_ball.bReleased = !game::g_ball.bReleased;
+                game::g_ball.dir = math::V3(0.0f, 1.0f, 0.0f) + game::g_player.dir * 0.25f;
             }
             break;
 
@@ -108,7 +108,7 @@ procKeysOnce(u32 key, u32 pressed)
 void
 procKeys()
 {
-    PlayerProcMovements(&frame::g_player);
+    PlayerProcMovements(&game::g_player);
 }
 
 static void
