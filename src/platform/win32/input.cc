@@ -1,6 +1,7 @@
 #include "input.hh"
 #include "adt/logs.hh"
-#include "../../frame.hh"
+#include "controls.hh" 
+#include "app.hh"
 
 #define WIN32_LEAN_AND_MEAN 1
 #include <windowsx.h>
@@ -146,7 +147,7 @@ int asciiToLinuxKeyCodes[300] {
 /* https://gist.github.com/luluco250/ac79d72a734295f167851ffdb36d77ee */
 
 void
-registerRawMouseDevice(Window* pApp, bool on)
+registerRawMouseDevice(Win32Window* pApp, bool on)
 {
     DWORD flag = on ? RIDEV_NOLEGACY : RIDEV_REMOVE;
 
@@ -165,7 +166,7 @@ registerRawMouseDevice(Window* pApp, bool on)
 }
 
 void
-registerRawKBDevice(Window* pApp, bool on)
+registerRawKBDevice(Win32Window* pApp, bool on)
 {
     DWORD flag = on ? RIDEV_NOLEGACY : RIDEV_REMOVE;
 
@@ -217,13 +218,13 @@ exitFullscreen(HWND hwnd, int windowX, int windowY, int windowedWidth, int windo
 LRESULT CALLBACK
 windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    Window* pApp = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    Win32Window* pApp = (Win32Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
     switch (msg)
     {
         case WM_DESTROY:
             pApp->base.bRunning = false;
-            frame::g_pMixer->bRunning = false;
+            app::g_pMixer->bRunning = false;
             return 0;
 
         case WM_SIZE:
@@ -261,8 +262,8 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case WM_MOUSEMOVE:
             {
-                frame::g_player.mouse.absX = GET_X_LPARAM(lParam);
-                frame::g_player.mouse.absY = GET_Y_LPARAM(lParam);
+                controls::g_mouse.absX = GET_X_LPARAM(lParam);
+                controls::g_mouse.absY = GET_Y_LPARAM(lParam);
             }
             break;
 
@@ -274,8 +275,8 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
                 if (raw->header.dwType == RIM_TYPEMOUSE)
                 {
-                    frame::g_player.mouse.relX += raw->data.mouse.lLastX;
-                    frame::g_player.mouse.relY += raw->data.mouse.lLastY;
+                    controls::g_mouse.relX += raw->data.mouse.lLastX;
+                    controls::g_mouse.relY += raw->data.mouse.lLastY;
                 }
             }
             break;

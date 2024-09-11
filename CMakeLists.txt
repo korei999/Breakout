@@ -181,7 +181,7 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
         PRIVATE
         src/platform/win32/glad.cc
         src/platform/win32/input.cc
-        src/platform/win32/Window.cc
+        src/platform/win32/Win32Window.cc
         src/platform/win32/Mixer.cc
     )
 endif()

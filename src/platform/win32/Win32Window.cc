@@ -1,4 +1,4 @@
-#include "Window.hh"
+#include "Win32Window.hh"
 #include "input.hh"
 #include "adt/logs.hh"
 #include "gl/gl.hh"
@@ -93,43 +93,43 @@ getWglFunctions(void)
     DestroyWindow(dummy);
 }
 
-Window::Window(String sName, HINSTANCE hInstance)
+Win32Window::Win32Window(String sName, HINSTANCE hInstance)
 {
-    static AppInterface vTable {
-        .init = (decltype(AppInterface::init))WindowInit,
-        .disableRelativeMode = (decltype(AppInterface::disableRelativeMode))WindowDisableRelativeMode,
-        .enableRelativeMode = (decltype(AppInterface::enableRelativeMode))WindowEnableRelativeMode,
-        .togglePointerRelativeMode = (decltype(AppInterface::togglePointerRelativeMode))WindowTogglePointerRelativeMode,
-        .toggleFullscreen = (decltype(AppInterface::toggleFullscreen))WindowToggleFullscreen,
-        .hideCursor = (decltype(AppInterface::hideCursor))WindowHideCursor,
-        .setCursorImage = (decltype(AppInterface::setCursorImage))WindowSetCursorImage,
-        .setFullscreen = (decltype(AppInterface::setFullscreen))WindowSetFullscreen,
-        .unsetFullscreen = (decltype(AppInterface::unsetFullscreen))WindowUnsetFullscreen,
-        .bindGlContext = (decltype(AppInterface::bindGlContext))WindowBindGlContext,
-        .unbindGlContext = (decltype(AppInterface::unbindGlContext))WindowUnbindGlContext,
-        .setSwapInterval = (decltype(AppInterface::setSwapInterval))WindowSetSwapInterval,
-        .toggleVSync = (decltype(AppInterface::toggleVSync))WindowToggleVSync,
-        .swapBuffers = (decltype(AppInterface::swapBuffers))WindowSwapBuffers,
-        .procEvents = (decltype(AppInterface::procEvents))WindowProcEvents,
-        .showWindow = (decltype(AppInterface::showWindow))WindowShowWindow,
-        .destroy = (decltype(AppInterface::destroy))WindowDestroy,
+    static WindowInterface vTable {
+        .init = (decltype(WindowInterface::init))Win32Init,
+        .disableRelativeMode = (decltype(WindowInterface::disableRelativeMode))Win32DisableRelativeMode,
+        .enableRelativeMode = (decltype(WindowInterface::enableRelativeMode))Win32EnableRelativeMode,
+        .togglePointerRelativeMode = (decltype(WindowInterface::togglePointerRelativeMode))Win32TogglePointerRelativeMode,
+        .toggleFullscreen = (decltype(WindowInterface::toggleFullscreen))Win32ToggleFullscreen,
+        .hideCursor = (decltype(WindowInterface::hideCursor))Win32HideCursor,
+        .setCursorImage = (decltype(WindowInterface::setCursorImage))Win32SetCursorImage,
+        .setFullscreen = (decltype(WindowInterface::setFullscreen))Win32SetFullscreen,
+        .unsetFullscreen = (decltype(WindowInterface::unsetFullscreen))Win32UnsetFullscreen,
+        .bindGlContext = (decltype(WindowInterface::bindGlContext))Win32BindGlContext,
+        .unbindGlContext = (decltype(WindowInterface::unbindGlContext))Win32UnbindGlContext,
+        .setSwapInterval = (decltype(WindowInterface::setSwapInterval))Win32SetSwapInterval,
+        .toggleVSync = (decltype(WindowInterface::toggleVSync))Win32ToggleVSync,
+        .swapBuffers = (decltype(WindowInterface::swapBuffers))Win32SwapBuffers,
+        .procEvents = (decltype(WindowInterface::procEvents))Win32ProcEvents,
+        .showWindow = (decltype(WindowInterface::showWindow))Win32ShowWindow,
+        .destroy = (decltype(WindowInterface::destroy))Win32Destroy,
     };
 
     this->base.pVTable = {&vTable};
 
     this->base.sName = sName;
     this->hInstance = hInstance;
-    WindowInit(this);
+    Win32Init(this);
 }
 
 
 void
-WindowDestroy([[maybe_unused]] Window* s)
+Win32Destroy([[maybe_unused]] Win32Window* s)
 {
 }
 
 void
-WindowInit(Window* s)
+Win32Init(Win32Window* s)
 {
     getWglFunctions();
 
@@ -225,56 +225,56 @@ WindowInit(Window* s)
 
     if (!gladLoadGL()) LOG_FATAL("gladLoadGL failed\n");
 
-    WindowUnbindGlContext(s);
+    Win32UnbindGlContext(s);
 
     s->base.bPointerRelativeMode = false;
     s->base.bPaused = false;
 }
 
 void
-WindowDisableRelativeMode(Window* s)
+Win32DisableRelativeMode(Win32Window* s)
 {
     s->base.bPointerRelativeMode = false;
     input::registerRawMouseDevice(s, false);
 }
 
 void
-WindowEnableRelativeMode(Window* s)
+Win32EnableRelativeMode(Win32Window* s)
 {
     s->base.bPointerRelativeMode = true;
     input::registerRawMouseDevice(s, true);
 }
 
 void
-WindowTogglePointerRelativeMode(Window* s)
+Win32TogglePointerRelativeMode(Win32Window* s)
 {
     s->base.bPointerRelativeMode = !s->base.bPointerRelativeMode;
-    s->base.bPointerRelativeMode ? WindowEnableRelativeMode(s) : WindowDisableRelativeMode(s);
+    s->base.bPointerRelativeMode ? Win32EnableRelativeMode(s) : Win32DisableRelativeMode(s);
     LOG_OK("relative mode: %d\n", s->base.bPointerRelativeMode);
 }
 
 void
-WindowToggleFullscreen(Window* s)
+Win32ToggleFullscreen(Win32Window* s)
 {
     s->base.bFullscreen = !s->base.bFullscreen;
-    s->base.bFullscreen ? WindowSetFullscreen(s) : WindowUnsetFullscreen(s);
+    s->base.bFullscreen ? Win32SetFullscreen(s) : Win32UnsetFullscreen(s);
     LOG_OK("fullscreen: %d\n", s->base.bPointerRelativeMode);
 }
 
 void 
-WindowHideCursor([[maybe_unused]] Window* s)
+Win32HideCursor([[maybe_unused]] Win32Window* s)
 {
     /* TODO: */
 }
 
 void 
-WindowSetCursorImage([[maybe_unused]] Window* s, [[maybe_unused]] String cursorType)
+Win32SetCursorImage([[maybe_unused]] Win32Window* s, [[maybe_unused]] String cursorType)
 {
     /* TODO: */
 }
 
 void 
-WindowSetFullscreen(Window* s) 
+Win32SetFullscreen(Win32Window* s) 
 {
     s->base.bFullscreen = true;
 
@@ -288,7 +288,7 @@ WindowSetFullscreen(Window* s)
 }
 
 void
-WindowUnsetFullscreen(Window* s)
+Win32UnsetFullscreen(Win32Window* s)
 {
     s->base.bFullscreen = false;
 
@@ -296,26 +296,26 @@ WindowUnsetFullscreen(Window* s)
 }
 
 void 
-WindowBindGlContext(Window* s)
+Win32BindGlContext(Win32Window* s)
 {
     wglMakeCurrent(s->hDeviceContext, s->hGlContext);
 }
 
 void 
-WindowUnbindGlContext([[maybe_unused]] Window* s)
+Win32UnbindGlContext([[maybe_unused]] Win32Window* s)
 {
     wglMakeCurrent(nullptr, nullptr);
 }
 
 void
-WindowSetSwapInterval(Window* s, int interval)
+Win32SetSwapInterval(Win32Window* s, int interval)
 {
     s->base.swapInterval = interval;
     wglSwapIntervalEXT(interval);
 }
 
 void 
-WindowToggleVSync(Window* s)
+Win32ToggleVSync(Win32Window* s)
 {
     s->base.swapInterval = !s->base.swapInterval;
     wglSwapIntervalEXT(s->base.swapInterval);
@@ -323,13 +323,13 @@ WindowToggleVSync(Window* s)
 }
 
 void
-WindowSwapBuffers(Window* s)
+Win32SwapBuffers(Win32Window* s)
 {
     if (!SwapBuffers(s->hDeviceContext)) LOG_WARN("SwapBuffers(dc): failed\n");
 }
 
 void 
-WindowProcEvents(Window* s)
+Win32ProcEvents(Win32Window* s)
 {
     MSG msg;
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -350,7 +350,7 @@ WindowProcEvents(Window* s)
 }
 
 void
-WindowShowWindow(Window* s)
+Win32ShowWindow(Win32Window* s)
 {
     ShowWindow(s->hWindow, SW_SHOWDEFAULT);
 }

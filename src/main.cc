@@ -32,7 +32,7 @@ main(int argc, char* argv[])
 
 #elif _WIN32
     #include "platform/win32/Mixer.hh"
-    #include "platform/win32/Window.hh"
+    #include "platform/win32/Win32Window.hh"
 
 int WINAPI
 WinMain([[maybe_unused]] HINSTANCE instance,
@@ -42,15 +42,15 @@ WinMain([[maybe_unused]] HINSTANCE instance,
 {
     platform::win32::Mixer mixer(&alMixer.base);
     platform::win32::MixerInit(&mixer, {}, {});
-    platform::win32::Window app("Breakout", instance);
+    platform::win32::Win32Window app("Breakout", instance);
 
-    frame::g_pMixer = &mixer.base;
-    frame::g_pApp = &app.base;
+    app::g_pMixer = &mixer.base;
+    app::g_pApp = &app.base;
 
     frame::run();
 
     platform::win32::MixerDestroy(&mixer);
-    platform::win32::WindowDestroy(&app);
+    platform::win32::Win32Destroy(&app);
 
     ArenaFreeAll(&alMixer);
 }

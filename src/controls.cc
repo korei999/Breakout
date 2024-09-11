@@ -2,13 +2,14 @@
 
 #include "adt/logs.hh"
 #include "app.hh"
-#include "frame.hh"
 
 #include <math.h>
 
 #ifdef __linux__
     #include <linux/input-event-codes.h>
 #elif _WIN32
+    #undef near
+    #undef far
 #endif
 
 namespace controls
@@ -72,7 +73,7 @@ procKeysOnce(u32 key, u32 pressed)
 
 #ifdef _WIN32
                 /* FIXME: implement mixer on windows */
-                frame::g_pMixer->bRunning = false;
+                app::g_pMixer->bRunning = false;
 #endif
 
                 LOG_OK("quit...\n");

@@ -325,7 +325,7 @@ loadLevel()
                     .yOff = 0.0f,
                     .zOff = 0.0f,
                     .shaderIdx = 0,
-                    .texIdx = s_tBox.id,
+                    .texIdx = u16(s_tBox.id),
                     .eColor = COLOR(at(i, j)),
                     .bDead = false,
                     .bRemoveAfterDraw = false,
