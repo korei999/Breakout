@@ -124,13 +124,15 @@ template<typename T>
 inline void
 ArraySwapWithLast(Array<T>* s, u32 i)
 {
-    utils::swap(s->pData[i], s->pData[s->size - 1]);
+    utils::swap(&s->pData[i], &s->pData[s->size - 1]);
 }
 
 template<typename T>
 inline void
 ArrayPopAsLast(Array<T>* s, u32 i)
 {
+    /*ArraySwapWithLast(s, i);*/
+    /*ArrayPop(s);*/
     s->pData[i] = s->pData[--s->size];
 }
 

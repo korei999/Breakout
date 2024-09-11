@@ -70,8 +70,8 @@ run()
     updateDeltaTime(); /* reset delta time before drawing */
     updateDeltaTime();
 
-    game::loadThings();
-    game::loadLevel(game::lvl1);
+    game::loadAssets();
+    game::loadLevel();
 
     /* proc once to get events */
     WindowSwapBuffers(app::g_pApp);

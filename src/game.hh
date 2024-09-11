@@ -47,10 +47,12 @@ struct Entity
     f32 height;
     f32 xOff;
     f32 yOff;
+    f32 zOff;
     u16 shaderIdx;
     u16 texIdx;
     game::COLOR eColor;
     bool bDead;
+    bool bRemoveAfterDraw;
 };
 
 struct Player
@@ -76,8 +78,8 @@ struct Level
     s8* aTiles;
 };
 
-void loadThings();
-void loadLevel(const Level& lvl);
+void loadAssets();
+void loadLevel();
 void updateGame();
 void drawFPSCounter(Allocator* pAlloc);
 void drawEntities();
@@ -106,6 +108,14 @@ blockColorToV3(COLOR col)
     return colors::get(map[int(col)]);
 }
 
+constexpr s8 LEVEL_ONE_BLOCK[5][10] {
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 8, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+};
+
 constexpr s8 LEVEL0[5][10] {
     {4, 5, 6, 1, 2, 3, 4, 5, 6, 7},
     {1, 2, 3, 4, 5, 6, 1, 2, 3, 4},
@@ -127,13 +137,19 @@ constexpr s8 LEVEL1[10][15] {
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
-const inline Level lvl0 {
+const inline Level g_lvlOneBlock {
+    .width = 10,
+    .height = 5,
+    .aTiles = (s8*)LEVEL_ONE_BLOCK
+};
+
+const inline Level g_lvl0 {
     .width = 10,
     .height = 5,
     .aTiles = (s8*)LEVEL0
 };
 
-const inline Level lvl1 {
+const inline Level g_lvl1 {
     .width = 15,
     .height = 10,
     .aTiles = (s8*)LEVEL1
