@@ -67,10 +67,11 @@ run()
 
     UboCreateBuffer(&g_uboProjView, sizeof(math::M4)*2, GL_DYNAMIC_DRAW);
 
-    game::loadThings();
-
     updateDeltaTime(); /* reset delta time before drawing */
     updateDeltaTime();
+
+    game::loadThings();
+    game::loadLevel(game::lvl1);
 
     /* proc once to get events */
     WindowSwapBuffers(app::g_pApp);
@@ -94,8 +95,6 @@ nextPos(const T& e, bool bNormalizeDir)
 static void
 mainLoop()
 {
-    game::loadLevel();
-
     FixedAllocator alFrame (s_aFrameMem, sizeof(s_aFrameMem));
 
     while (app::g_pApp->bRunning || app::g_pMixer->bRunning) /* wait for mixer to stop also */

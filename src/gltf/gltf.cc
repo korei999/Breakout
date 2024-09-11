@@ -62,7 +62,7 @@ static String
 accessorTypeToString(enum ACCESSOR_TYPE t)
 {
     const char* ss[] {
-        "SCALAR", "VEC2", "VEC3", "VEC4", /*MAT2, Unused*/ "MAT3", "MAT4"
+        "SCALAR", "VEC2", "VEC3", "VEC4", /* MAT2, Unused */ "MAT3", "MAT4"
     };
     return ss[(int)(t)];
 }

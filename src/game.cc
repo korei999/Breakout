@@ -4,6 +4,7 @@
 #include "Shader.hh"
 #include "Text.hh"
 #include "Texture.hh"
+#include "Window.hh"
 #include "adt/AllocatorPool.hh"
 #include "adt/Arena.hh"
 #include "adt/ThreadPool.hh"
@@ -16,6 +17,7 @@
 
 namespace game
 {
+
 static AllocatorPool<Arena, ASSET_MAX_COUNT> s_apAssets;
 
 static Array<Entity> s_aEnemies(AllocatorPoolGet(&s_apAssets, SIZE_8K));
@@ -256,12 +258,16 @@ procOutOfBounds()
 }
 
 void
-loadLevel()
+loadLevel(const Level& lvl)
 {
-    const auto& level = LEVEL1.aTiles;
+    const auto& l = lvl.aTiles;
 
-    const int levelY = int(utils::size(level));
-    const int levelX = int(sizeof(level) / levelY);
+    auto at = [&](int y, int x) -> s8& {
+        return l[y*lvl.width + x];
+    };
+
+    const u32 levelY = lvl.height;
+    const u32 levelX = lvl.width;
 
     frame::g_unit.x = frame::WIDTH / levelX / 2;
     frame::g_unit.y = frame::HEIGHT / levelY / 2;
@@ -269,11 +275,14 @@ loadLevel()
     /* place player in the middle */
     g_player.base.pos.x = frame::WIDTH/2 - frame::g_unit.x;
 
+    ArraySetSize(&s_aEnemies, 0);
+    ArraySetSize(&g_aPEntities, 0);
+
     for (u32 i = 0; i < levelY; i++)
     {
         for (u32 j = 0; j < levelX; j++)
         {
-            if (level[i][j] != s8(COLOR::INVISIBLE))
+            if (at(i, j) != s8(COLOR::INVISIBLE))
             {
                 ArrayPush(&s_aEnemies, {
                     .pos = {frame::g_unit.x*2*j, (frame::HEIGHT - frame::g_unit.y*2) - frame::g_unit.y*2*i},
@@ -283,7 +292,7 @@ loadLevel()
                     .yOff = 0.0f,
                     .shaderIdx = 0,
                     .texIdx = s_tBox.id,
-                    .eColor = COLOR(level[i][j]),
+                    .eColor = COLOR(at(i, j)),
                     .bDead = false
                 });
 
