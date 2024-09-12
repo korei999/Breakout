@@ -253,11 +253,11 @@ ModelProcScenes(Model* s)
         {
             auto& a = json::getArray(pNodes);
             for (auto& el : a)
-                ArrayPush(&s->aScenes, {(u32)json::getLong(&el)});
+                VecPush(&s->aScenes, {(u32)json::getLong(&el)});
         }
         else
         {
-            ArrayPush(&s->aScenes, {0});
+            VecPush(&s->aScenes, {0});
             break;
         }
     }
@@ -285,7 +285,7 @@ ModelProcBuffers(Model* s)
             aBin = file::load(s->pAlloc, sNewPath);
         }
 
-        ArrayPush(&s->aBuffers, {
+        VecPush(&s->aBuffers, {
             .byteLength = (u32)(json::getLong(pByteLength)),
             .uri = svUri,
             .aBin = aBin
@@ -310,7 +310,7 @@ ModelProcBufferViews(Model* s)
         auto pByteStride = json::searchObject(obj, "byteStride");
         auto pTarget = json::searchObject(obj, "target");
 
-        ArrayPush(&s->aBufferViews, {
+        VecPush(&s->aBufferViews, {
             .buffer = (u32)(json::getLong(pBuffer)),
             .byteOffset = pByteOffset ? (u32)(json::getLong(pByteOffset)) : 0,
             .byteLength = (u32)(json::getLong(pByteLength)),
@@ -342,7 +342,7 @@ ModelProcAccessors(Model* s)
  
         enum ACCESSOR_TYPE type = stringToAccessorType(json::getString(pType));
  
-        ArrayPush(&s->aAccessors, {
+        VecPush(&s->aAccessors, {
             .bufferView = pBufferView ? (u32)(json::getLong(pBufferView)) : 0,
             .byteOffset = pByteOffset ? (u32)(json::getLong(pByteOffset)) : 0,
             .componentType = (COMPONENT_TYPE)(json::getLong(pComponentType)),
@@ -366,7 +366,7 @@ ModelProcMeshes(Model* s)
         auto pPrimitives = json::searchObject(obj, "primitives");
         if (!pPrimitives) LOG_FATAL("'primitives' field is required\n");
  
-        Array<Primitive> aPrimitives(s->pAlloc);
+        Vec<Primitive> aPrimitives(s->pAlloc);
         auto pName = json::searchObject(obj, "name");
         auto name = pName ? json::getString(pName) : "";
  
@@ -386,7 +386,7 @@ ModelProcMeshes(Model* s)
             auto pMode = json::searchObject(op, "mode");
             auto pMaterial = json::searchObject(op, "material");
  
-            ArrayPush(&aPrimitives, {
+            VecPush(&aPrimitives, {
                 .attributes {
                     .NORMAL = pNORMAL ? static_cast<decltype(Primitive::attributes.NORMAL)>(json::getLong(pNORMAL)) : NPOS,
                     .POSITION = pPOSITION ? static_cast<decltype(Primitive::attributes.POSITION)>(json::getLong(pPOSITION)) : NPOS,
@@ -399,7 +399,7 @@ ModelProcMeshes(Model* s)
             });
         }
  
-        ArrayPush(&s->aMeshes, {.aPrimitives = aPrimitives, .svName = name});
+        VecPush(&s->aMeshes, {.aPrimitives = aPrimitives, .svName = name});
     }
 }
 
@@ -417,7 +417,7 @@ ModelProcTexures(Model* s)
         auto pSource = json::searchObject(obj, "source");
         auto pSampler = json::searchObject(obj, "sampler");
 
-        ArrayPush(&s->aTextures, {
+        VecPush(&s->aTextures, {
             .source = pSource ? (u32)(json::getLong(pSource)) : NPOS,
             .sampler = pSampler ? (u32)(json::getLong(pSampler)) : NPOS
         });
@@ -466,7 +466,7 @@ ModelProcMaterials(Model* s)
             normTexInfo.index = json::getLong(pIndex);
         }
 
-        ArrayPush(&s->aMaterials, {
+        VecPush(&s->aMaterials, {
             .pbrMetallicRoughness {
                 .baseColorTexture = texInfo,
             },
@@ -488,7 +488,7 @@ ModelProcImages(Model *s)
 
         auto pUri = json::searchObject(obj, "uri");
         if (pUri)
-            ArrayPush(&s->aImages, {json::getString(pUri)});
+            VecPush(&s->aImages, {json::getString(pUri)});
     }
 }
 
@@ -515,7 +515,7 @@ ModelProcNodes(Model* s)
             auto& arrChil = json::getArray(pChildren);
             for (auto& c : arrChil)
 
-            ArrayPush(&nNode.children, (u32)(json::getLong(&c)));
+            VecPush(&nNode.children, (u32)(json::getLong(&c)));
         }
 
         auto pMatrix = json::searchObject(obj, "matrix");
@@ -549,7 +549,7 @@ ModelProcNodes(Model* s)
             nNode.scale = ut.VEC3;
         }
 
-        ArrayPush(&s->aNodes, nNode);
+        VecPush(&s->aNodes, nNode);
     }
 }
 

@@ -3,7 +3,7 @@
 #include "Client.hh"
 
 #include "adt/Arena.hh"
-#include "adt/Array.hh"
+#include "adt/Vec.hh"
 #include "adt/logs.hh"
 #include "input.hh"
 
@@ -357,8 +357,8 @@ ClientInit(Client* s)
     };
 
     EGLint n = 0;
-    Array<EGLConfig> configs(&arena.base, count);
-    ArraySetSize(&configs, count);
+    Vec<EGLConfig> configs(&arena.base, count);
+    VecSetSize(&configs, count);
     EGLD( eglChooseConfig(s->eglDisplay, configAttribs, configs.pData, count, &n) );
     if (n == 0)
         LOG_FATAL("Failed to choose an EGL config\n");

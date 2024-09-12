@@ -25,7 +25,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     auto& a = s->modelData;;
 
     /* load buffers first */
-    Array<GLuint> aBufferMap(s->pAlloc);
+    Vec<GLuint> aBufferMap(s->pAlloc);
     for (u32 i = 0; i < a.aBuffers.size; i++)
     {
         mtx_lock(&gl::mtxGlContext);
@@ -36,7 +36,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         glBindBuffer(GL_ARRAY_BUFFER, b);
         glBufferData(GL_ARRAY_BUFFER, a.aBuffers[i].byteLength, a.aBuffers[i].aBin.pData, drawMode);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        ArrayPush(&aBufferMap, b);
+        VecPush(&aBufferMap, b);
 
         WindowUnbindGlContext(app::g_pApp);
         mtx_unlock(&gl::mtxGlContext);
@@ -47,8 +47,8 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     ThreadPoolStart(&tp);
 
     /* preload texures */
-    Array<Texture> aTex((Allocator*)&atAl, a.aImages.size);
-    ArraySetSize(&aTex, a.aImages.size);
+    Vec<Texture> aTex((Allocator*)&atAl, a.aImages.size);
+    VecSetSize(&aTex, a.aImages.size);
 
     for (u32 i = 0; i < a.aImages.size; i++)
     {
@@ -91,7 +91,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
     for (auto& mesh : a.aMeshes)
     {
-        Array<Mesh> aNMeshes(s->pAlloc);
+        Vec<Mesh> aNMeshes(s->pAlloc);
 
         for (auto& primitive : mesh.aPrimitives)
         {
@@ -210,15 +210,15 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                 }
             }
 
-            ArrayPush(&aNMeshes, nMesh);
+            VecPush(&aNMeshes, nMesh);
         }
-        ArrayPush(&s->aaMeshes, aNMeshes);
+        VecPush(&s->aaMeshes, aNMeshes);
     }
 
-    s->aTmIdxs = Array<int>(s->pAlloc, math::sq(s->modelData.aNodes.size));
-    s->aTmCounters = Array<int>(s->pAlloc, s->modelData.aNodes.size);
-    ArraySetSize(&s->aTmIdxs, math::sq(s->modelData.aNodes.size)); /* 2d map */
-    ArraySetSize(&s->aTmCounters, s->modelData.aNodes.size);
+    s->aTmIdxs = Vec<int>(s->pAlloc, math::sq(s->modelData.aNodes.size));
+    s->aTmCounters = Vec<int>(s->pAlloc, s->modelData.aNodes.size);
+    VecSetSize(&s->aTmIdxs, math::sq(s->modelData.aNodes.size)); /* 2d map */
+    VecSetSize(&s->aTmCounters, s->modelData.aNodes.size);
 
     auto& aNodes = s->modelData.aNodes;
     auto at = [&](int r, int c) -> int {

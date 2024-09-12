@@ -20,7 +20,7 @@ namespace game
 
 static AllocatorPool<Arena, ASSET_MAX_COUNT> s_apAssets;
 
-static Array<Entity> s_aBlocks(AllocatorPoolGet(&s_apAssets, SIZE_8K));
+static Vec<Entity> s_aBlocks(AllocatorPoolGet(&s_apAssets, SIZE_8K));
 
 static Shader s_shFontBitMap;
 static Shader s_shSprite;
@@ -37,7 +37,7 @@ static Plain s_plain;
 
 static Text s_textFPS;
 
-Array<Entity*> g_aPEntities(AllocatorPoolGet(&s_apAssets, SIZE_8K));
+Vec<Entity*> g_aPEntities(AllocatorPoolGet(&s_apAssets, SIZE_8K));
 
 Player g_player {
     .base {},
@@ -308,8 +308,8 @@ loadLevel()
     /* place player in the middle */
     g_player.base.pos.x = frame::WIDTH/2 - frame::g_unit.x;
 
-    ArraySetSize(&s_aBlocks, 0);
-    ArraySetSize(&g_aPEntities, 0);
+    VecSetSize(&s_aBlocks, 0);
+    VecSetSize(&g_aPEntities, 0);
 
     for (u32 i = 0; i < levelY; i++)
     {
@@ -317,7 +317,7 @@ loadLevel()
         {
             if (at(i, j) != s8(COLOR::INVISIBLE))
             {
-                ArrayPush(&s_aBlocks, {
+                VecPush(&s_aBlocks, {
                     .pos = tilePosToFramePos(i, j),
                     .width = 1.0f,
                     .height = 1.0f,
@@ -331,7 +331,7 @@ loadLevel()
                     .bRemoveAfterDraw = false,
                 });
 
-                ArrayPush(&g_aPEntities, &ArrayLast(&s_aBlocks));
+                VecPush(&g_aPEntities, &VecLast(&s_aBlocks));
             }
         }
     }
@@ -352,8 +352,8 @@ loadLevel()
     g_ball.base.zOff = 10.0f;
     g_ball.base.bRemoveAfterDraw = false;
 
-    ArrayPush(&g_aPEntities, &g_player.base);
-    ArrayPush(&g_aPEntities, &g_ball.base);
+    VecPush(&g_aPEntities, &g_player.base);
+    VecPush(&g_aPEntities, &g_ball.base);
 
     audio::MixerAddBackground(app::g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
 }
@@ -451,7 +451,7 @@ drawEntities()
         // if (e->bRemoveAfterDraw)
         // {
         //     ::free(e);
-        //     ArrayPopAsLast(&g_aPEntities, i);
+        //     VecPopAsLast(&g_aPEntities, i);
         //     i--;
         // }
     }

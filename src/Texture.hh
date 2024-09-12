@@ -1,14 +1,14 @@
 #pragma once
 
 #include "adt/Allocator.hh"
-#include "adt/Array.hh"
+#include "adt/Vec.hh"
 #include "adt/String.hh"
 #include "gl/gl.hh"
 #include "math.hh"
 
 struct Texture;
 
-extern Array<Texture> g_aAllTextures;
+extern Vec<Texture> g_aAllTextures;
 
 enum TEX_TYPE : s8
 {
@@ -18,7 +18,7 @@ enum TEX_TYPE : s8
 
 struct TextureData
 {
-    Array<u8> aData;
+    Vec<u8> aData;
     u32 width;
     u32 height;
     u16 bitDepth;

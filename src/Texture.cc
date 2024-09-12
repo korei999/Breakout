@@ -31,7 +31,7 @@
  *	DATA:	X	Pixels
  */
 
-Array<Texture> g_aAllTextures;
+Vec<Texture> g_aAllTextures;
 HashMap<GLuint> g_mapAllTextures;
 mtx_t g_mtxAllTextures;
 once_flag g_onceFlagAllTextures = ONCE_FLAG_INIT;
@@ -55,13 +55,13 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
     s->texPath = path;
     s->type = type;
 
-    Array<u8> pixels = img.aData;
+    Vec<u8> pixels = img.aData;
 
     TextureSet(s, pixels.pData, texMode, img.format, img.width, img.height, magFilter, minFilter);
 
     mtx_lock(&g_mtxAllTextures);
     /* TODO: insert in the map also */
-    ArrayPush(&g_aAllTextures, *s);
+    VecPush(&g_aAllTextures, *s);
     mtx_unlock(&g_mtxAllTextures);
 
     s->width = img.width;
@@ -306,7 +306,7 @@ loadBMP(Allocator* pAlloc, String path, bool flip)
 #ifdef TEXTURE
     LOG_OK("nPixels: %u, byteDepth: %u, format: %d\n", nPixels, byteDepth, format);
 #endif
-    Array<u8> pixels(pAlloc, nPixels * byteDepth);
+    Vec<u8> pixels(pAlloc, nPixels * byteDepth);
 
     parser::BinSetPos(&p, imageDataAddress);
 

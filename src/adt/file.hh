@@ -1,7 +1,6 @@
 #pragma once
 
 #include "String.hh"
-#include "Array.hh"
 #include "logs.hh"
 
 namespace adt

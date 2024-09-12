@@ -121,21 +121,21 @@ static void
 parseObject(Parser* s, Object* pNode)
 {
     pNode->tagVal.tag = TAG::OBJECT;
-    pNode->tagVal.val.o = adt::Array<Object> (s->pAlloc, 1);
+    pNode->tagVal.val.o = adt::Vec<Object> (s->pAlloc, 1);
     auto& aObjs = getObject(pNode);
 
     for (; s->tCurr.type != Token::RBRACE; next(s))
     {
         expect(s, Token::IDENT, ADT_FILE, __LINE__);
         Object ob {.svKey = s->tCurr.sLiteral, .tagVal = {}};
-        adt::ArrayPush(&aObjs, ob);
+        adt::VecPush(&aObjs, ob);
 
         /* skip identifier and ':' */
         next(s);
         expect(s, Token::ASSIGN, ADT_FILE, __LINE__);
         next(s);
 
-        parseNode(s, &adt::ArrayLast(&aObjs));
+        parseNode(s, &adt::VecLast(&aObjs));
 
         if (s->tCurr.type != Token::COMMA)
         {
@@ -151,37 +151,37 @@ static void
 parseArray(Parser* s, Object* pNode)
 {
     pNode->tagVal.tag = TAG::ARRAY;
-    pNode->tagVal.val.a = adt::Array<Object> (s->pAlloc, 1);
+    pNode->tagVal.val.a = adt::Vec<Object> (s->pAlloc, 1);
     auto& aTVs = getArray(pNode);
 
     /* collect each key/value pair inside array */
     for (; s->tCurr.type != Token::RBRACKET; next(s))
     {
-        adt::ArrayPush(&aTVs, {});
+        adt::VecPush(&aTVs, {});
 
         switch (s->tCurr.type)
         {
             default:
             case Token::IDENT:
-                parseIdent(s, &adt::ArrayLast(&aTVs).tagVal);
+                parseIdent(s, &adt::VecLast(&aTVs).tagVal);
                 break;
 
             case Token::NULL_:
-                parseNull(s, &adt::ArrayLast(&aTVs).tagVal);
+                parseNull(s, &adt::VecLast(&aTVs).tagVal);
                 break;
 
             case Token::TRUE_:
             case Token::FALSE_:
-                parseBool(s, &adt::ArrayLast(&aTVs).tagVal);
+                parseBool(s, &adt::VecLast(&aTVs).tagVal);
                 break;
 
             case Token::NUMBER:
-                parseNumber(s, &adt::ArrayLast(&aTVs).tagVal);
+                parseNumber(s, &adt::VecLast(&aTVs).tagVal);
                 break;
 
             case Token::LBRACE:
                 next(s);
-                parseObject(s, &adt::ArrayLast(&aTVs));
+                parseObject(s, &adt::VecLast(&aTVs));
                 break;
         }
 

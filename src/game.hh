@@ -1,6 +1,6 @@
 #pragma once
 
-#include "adt/Array.hh"
+#include "adt/Vec.hh"
 #include "adt/types.hh"
 #include "colors.hh"
 
@@ -157,6 +157,6 @@ const inline Level g_lvl1 {
 
 extern Player g_player;
 extern Ball g_ball;
-extern Array<game::Entity*> g_aPEntities;
+extern Vec<game::Entity*> g_aPEntities;
 
 } /* namespace game */

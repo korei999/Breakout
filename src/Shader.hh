@@ -1,13 +1,13 @@
 #pragma once
 
-#include "adt/Array.hh"
+#include "adt/Vec.hh"
 #include "math.hh"
 #include "gl/gl.hh"
 #include "adt/String.hh"
 
 struct Shader;
 
-extern Array<Shader> g_aAllShaders;
+extern Vec<Shader> g_aAllShaders;
 
 struct Shader
 {

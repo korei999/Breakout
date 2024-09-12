@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Array.hh"
+#include "Vec.hh"
 #include "hash.hh"
 
 namespace adt
@@ -29,7 +29,7 @@ template<typename T>
 struct HashMap
 {
     Allocator* pAlloc;
-    Array<Bucket<T>> aBuckets;
+    Vec<Bucket<T>> aBuckets;
     f32 maxLoadFactor;
     u32 bucketCount = 0;
 
@@ -153,7 +153,7 @@ template<typename T>
 inline void
 HashMapDestroy(HashMap<T>* s)
 {
-    ArrayDestroy(&s->aBuckets);
+    VecDestroy(&s->aBuckets);
 }
 
 } /* namespace adt */

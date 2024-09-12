@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Allocator.hh"
-#include "Array.hh"
+#include "Vec.hh"
 #include "utils.hh"
 
 namespace adt
@@ -10,7 +10,7 @@ namespace adt
 template<typename T>
 struct Heap
 {
-    Array<T> a {};
+    Vec<T> a {};
 
     Heap() = default;
     Heap(Allocator* pA, u32 prealloc = SIZE_MIN)
@@ -27,18 +27,18 @@ template<typename T> inline void HeapMinBubbleDown(Heap<T>* s, u32 i);
 template<typename T> inline void HeapMaxBubbleDown(Heap<T>* s, u32 i);
 template<typename T> inline void HeapPushMin(Heap<T>* s, const T& x);
 template<typename T> inline void HeapPushMax(Heap<T>* s, const T& x);
-template<typename T> inline Heap<T> HeapMinFromArray(Allocator* pA, const Array<T>& a);
-template<typename T> inline Heap<T> HeapMaxFromArray(Allocator* pA, const Array<T>& a);
+template<typename T> inline Heap<T> HeapMinFromVec(Allocator* pA, const Vec<T>& a);
+template<typename T> inline Heap<T> HeapMaxFromVec(Allocator* pA, const Vec<T>& a);
 template<typename T> [[nodiscard]] inline T HeapMinExtract(Heap<T>* s);
 template<typename T> [[nodiscard]] inline T HeapMaxExtract(Heap<T>* s);
-template<typename T> inline void HeapMinSort(Allocator* pA, Array<T>* a);
-template<typename T> inline void HeapMaxSort(Allocator* pA, Array<T>* a);
+template<typename T> inline void HeapMinSort(Allocator* pA, Vec<T>* a);
+template<typename T> inline void HeapMaxSort(Allocator* pA, Vec<T>* a);
 
 template<typename T>
 inline void
 HeapDestroy(Heap<T>* s)
 {
-    ArrayDestroy(&s->a);
+    VecDestroy(&s->a);
 }
 
 inline u32
@@ -94,7 +94,7 @@ inline void
 HeapMinBubbleDown(Heap<T>* s, u32 i)
 {
     long smallest, left, right;
-    Array<T>& a = s->a;
+    Vec<T>& a = s->a;
 
 again:
     left = HeapLeftI(i);
@@ -120,7 +120,7 @@ inline void
 HeapMaxBubbleDown(Heap<T>* s, u32 i)
 {
     long largest, left, right;
-    Array<T>& a = s->a;
+    Vec<T>& a = s->a;
 
 again:
     left = HeapLeftI(i);
@@ -145,7 +145,7 @@ template<typename T>
 inline void
 HeapPushMin(Heap<T>* s, const T& x)
 {
-    ArrayPush(&s->a, x);
+    VecPush(&s->a, x);
     HeapMinBubbleUp(s, s->a.size - 1);
 }
 
@@ -153,13 +153,13 @@ template<typename T>
 inline void
 HeapPushMax(Heap<T>* s, const T& x)
 {
-    ArrayPush(&s->a, x);
+    VecPush(&s->a, x);
     HeapMaxBubbleUp(s, s->a.size - 1);
 }
 
 template<typename T>
 inline Heap<T>
-HeapMinFromArray(Allocator* pA, const Array<T>& a)
+HeapMinFromVec(Allocator* pA, const Vec<T>& a)
 {
     Heap<T> q (pA, a.cap);
     q.a.size = a.size;
@@ -173,7 +173,7 @@ HeapMinFromArray(Allocator* pA, const Array<T>& a)
 
 template<typename T>
 inline Heap<T>
-HeapMaxFromArray(Allocator* pA, const Array<T>& a)
+HeapMaxFromVec(Allocator* pA, const Vec<T>& a)
 {
     Heap<T> q (pA, a.cap);
     q.a.size = a.size;
@@ -193,7 +193,7 @@ HeapMinExtract(Heap<T>* s)
     assert(s->a.size > 0 && "empty heap");
 
     utils::swap(&s->a[0], &s->a[s->a.size - 1]);
-    T min = *ArrayPop(&s->a);
+    T min = *VecPop(&s->a);
     HeapMinBubbleDown(s, 0);
 
     return min;
@@ -207,7 +207,7 @@ HeapMaxExtract(Heap<T>* s)
     assert(s->a.size > 0 && "empty heap");
 
     utils::swap(&s->a[0], &s->a[s->a.size - 1]);
-    T max = *ArrayPop(&s->a);
+    T max = *VecPop(&s->a);
     HeapMaxBubbleDown(s, 0);
 
     return max;
@@ -215,9 +215,9 @@ HeapMaxExtract(Heap<T>* s)
 
 template<typename T>
 inline void
-HeapMinSort(Allocator* pA, Array<T>* a)
+HeapMinSort(Allocator* pA, Vec<T>* a)
 {
-    Heap<T> s = HeapMinFromArray(pA, *a);
+    Heap<T> s = HeapMinFromVec(pA, *a);
 
     for (u32 i = 0; i < a->size; i++)
         a->pData[i] = HeapMinExtract(&s);
@@ -227,9 +227,9 @@ HeapMinSort(Allocator* pA, Array<T>* a)
 
 template<typename T>
 inline void
-HeapMaxSort(Allocator* pA, Array<T>* a)
+HeapMaxSort(Allocator* pA, Vec<T>* a)
 {
-    Heap<T> s = HeapMaxFromArray(pA, *a);
+    Heap<T> s = HeapMaxFromVec(pA, *a);
 
     for (u32 i = 0; i < a->size; i++)
         a->pData[i] = HeapMaxExtract(&s);

@@ -4,7 +4,7 @@
 #include "adt/file.hh"
 #include "adt/logs.hh"
 
-Array<Shader> g_aAllShaders;
+Vec<Shader> g_aAllShaders;
 
 static GLuint ShaderLoadOne(GLenum type, String path);
 
@@ -45,7 +45,7 @@ ShaderLoad(Shader* s, String vertexPath, String fragmentPath)
     glDeleteShader(vertex);
     glDeleteShader(fragment);
 
-    ArrayPush(&g_aAllShaders, *s);
+    VecPush(&g_aAllShaders, *s);
 }
 
 void

@@ -48,7 +48,7 @@ struct Queue
     {
         Queue* s = nullptr;
         int i = 0;
-        int counter = 0;
+        int counter = 0; /* inc each iteration */
 
         It(Queue* _s, int _i, int _counter) : s{_s}, i{_i}, counter{_counter} {}
 
@@ -63,7 +63,7 @@ struct Queue
             return {s, i, counter};
         }
 
-        It operator++(int) { It tmp = *this; *this++; return tmp; }
+        It operator++(int) { It tmp = *this; ++(*this); return tmp; }
 
         It
         operator--()
@@ -73,7 +73,7 @@ struct Queue
             return {s, i, counter};
         }
 
-        It operator--(int) { It tmp = *this; *this--; return tmp; }
+        It operator--(int) { It tmp = *this; --(*this); return tmp; }
 
         friend bool operator==(const It& l, const It& r) { return l.counter == r.counter; }
         friend bool operator!=(const It& l, const It& r) { return l.counter != r.counter; }
@@ -84,10 +84,10 @@ struct Queue
     It rbegin() { return {this, QueueLastI(this), 0}; }
     It rend() { return {this, {}, this->size}; }
 
-    const It begin() const { return {this, QueueFirstI(this), 0}; }
-    const It end() const { return {this, {}, this->size}; }
-    const It rbegin() const { return {this, QueueLastI(this), 0}; }
-    const It rend() const { return {this, {}, this->size}; }
+    const It begin() const { return begin(); }
+    const It end() const { return end(); }
+    const It rbegin() const { return rbegin(); }
+    const It rend() const { return rend(); }
 };
 
 template<typename T>

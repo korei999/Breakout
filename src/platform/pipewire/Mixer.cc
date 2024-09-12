@@ -73,8 +73,8 @@ void
 MixerDestroy(Mixer* s)
 {
     mtx_destroy(&s->mtxAdd);
-    ArrayDestroy(&s->aTracks);
-    ArrayDestroy(&s->aBackgroundTracks);
+    VecDestroy(&s->aTracks);
+    VecDestroy(&s->aBackgroundTracks);
 }
 
 void
@@ -82,7 +82,7 @@ MixerAdd(Mixer* s, audio::Track t)
 {
     mtx_lock(&s->mtxAdd);
 
-    if (s->aTracks.size < audio::MAX_TRACK_COUNT) ArrayPush(&s->aTracks, t);
+    if (s->aTracks.size < audio::MAX_TRACK_COUNT) VecPush(&s->aTracks, t);
     else LOG_WARN("MAX_TRACK_COUNT(%u) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
 
     mtx_unlock(&s->mtxAdd);
@@ -93,7 +93,7 @@ MixerAddBackground(Mixer* s, audio::Track t)
 {
     mtx_lock(&s->mtxAdd);
 
-    if (s->aTracks.size < audio::MAX_TRACK_COUNT) ArrayPush(&s->aBackgroundTracks, t);
+    if (s->aTracks.size < audio::MAX_TRACK_COUNT) VecPush(&s->aBackgroundTracks, t);
     else LOG_WARN("MAX_TRACK_COUNT(%u) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
 
     mtx_unlock(&s->mtxAdd);
@@ -222,7 +222,7 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
                 else
                 {
                     mtx_lock(&s->mtxAdd);
-                    ArrayPopAsLast(&s->aTracks, i);
+                    VecPopAsLast(&s->aTracks, i);
                     --i;
                     mtx_unlock(&s->mtxAdd);
                 }
@@ -326,7 +326,7 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
                 else
                 {
                     mtx_lock(&s->mtxAdd);
-                    ArrayPopAsLast(&s->aTracks, i);
+                    VecPopAsLast(&s->aTracks, i);
                     --i;
                     mtx_unlock(&s->mtxAdd);
                 }

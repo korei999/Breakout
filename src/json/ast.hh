@@ -1,7 +1,7 @@
 #pragma once
 
 #include "adt/String.hh"
-#include "adt/Array.hh"
+#include "adt/Vec.hh"
 
 namespace json
 {
@@ -35,8 +35,8 @@ union Val
     adt::String sv;
     long l;
     double d;
-    adt::Array<Object> a;
-    adt::Array<Object> o;
+    adt::Vec<Object> a;
+    adt::Vec<Object> o;
     bool b;
 };
 

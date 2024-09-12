@@ -91,7 +91,7 @@ struct Node
 {
     String name;
     u32 camera;
-    Array<u32> children;
+    Vec<u32> children;
     math::M4 matrix = math::M4Iden();
     u32 mesh = NPOS; /* The index of the mesh in this node. */
     math::V3 translation {};
@@ -172,7 +172,7 @@ struct Primitive
  * This geometry data is given by references to accessor objects that contain the data of vertex attributes. */
 struct Mesh
 {
-    Array<Primitive> aPrimitives; /* REQUIRED */
+    Vec<Primitive> aPrimitives; /* REQUIRED */
     String svName;
 };
 
@@ -227,15 +227,15 @@ struct Model
     String sGenerator;
     String sVersion;
     u32 defaultSceneIdx;
-    Array<Scene> aScenes;
-    Array<Buffer> aBuffers;
-    Array<BufferView> aBufferViews;
-    Array<Accessor> aAccessors;
-    Array<Mesh> aMeshes;
-    Array<Texture> aTextures;
-    Array<Material> aMaterials;
-    Array<Image> aImages;
-    Array<Node> aNodes;
+    Vec<Scene> aScenes;
+    Vec<Buffer> aBuffers;
+    Vec<BufferView> aBufferViews;
+    Vec<Accessor> aAccessors;
+    Vec<Mesh> aMeshes;
+    Vec<Texture> aTextures;
+    Vec<Material> aMaterials;
+    Vec<Image> aImages;
+    Vec<Node> aNodes;
 
     Model(Allocator* p)
         : pAlloc(p),

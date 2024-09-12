@@ -7,23 +7,11 @@
 
 #ifdef __linux__
     #include <sys/sysinfo.h>
+
     #define getLogicalCoresCount() get_nprocs()
 #elif _WIN32
     #include <windows.h>
     #include <sysinfoapi.h>
-
-    #ifdef min
-        #undef min
-    #endif
-    #ifdef max
-        #undef max
-    #endif
-    #ifdef near
-        #undef near
-    #endif
-    #ifdef far
-        #undef far
-    #endif
 
 inline DWORD
 getLogicalCoresCountWIN32()
@@ -34,8 +22,6 @@ getLogicalCoresCountWIN32()
 }
 
     #define getLogicalCoresCount() getLogicalCoresCountWIN32()
-#else
-    #define getLogicalCoresCount() 4
 
     #ifdef min
         #undef min
@@ -49,6 +35,8 @@ getLogicalCoresCountWIN32()
     #ifdef far
         #undef far
     #endif
+#else
+    #define getLogicalCoresCount() 4
 #endif
 
 namespace adt

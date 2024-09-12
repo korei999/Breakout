@@ -78,10 +78,10 @@ struct Model
 {
     Allocator* pAlloc;
     String sSavedPath;
-    Array<Array<Mesh>> aaMeshes;
+    Vec<Vec<Mesh>> aaMeshes;
     gltf::Model modelData;
-    Array<int> aTmIdxs; /* parents map */
-    Array<int> aTmCounters; /* map's sizes */
+    Vec<int> aTmIdxs; /* parents map */
+    Vec<int> aTmCounters; /* map's sizes */
 
     Model(Allocator* p) : pAlloc(p), aaMeshes(p), modelData(p), aTmIdxs(p), aTmCounters(p) {}
 

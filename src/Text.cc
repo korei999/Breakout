@@ -1,10 +1,10 @@
 #include "Text.hh"
 
 #include "adt/Arena.hh"
-#include "adt/Array.hh"
+#include "adt/Vec.hh"
 #include "frame.hh"
 
-static Array<TextCharQuad> TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
+static Vec<TextCharQuad> TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
 static void TextGenMesh(Text* s, int xOrigin, int yOrigin, GLint drawMode);
 
 Text::Text(String s, u64 size, int x, int y, GLint drawMode)
@@ -39,10 +39,10 @@ TextGenMesh(Text* s, int xOrigin, int yOrigin, GLint drawMode)
     ArenaFreeAll(&allocScope);
 }
 
-static Array<TextCharQuad>
+static Vec<TextCharQuad>
 TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin)
 {
-    Array<TextCharQuad> aQuads(pAlloc, size);
+    Vec<TextCharQuad> aQuads(pAlloc, size);
     memset(aQuads.pData, 0, sizeof(TextCharQuad) * size);
 
     /* 16/16 bitmap aka extended ascii */
@@ -77,7 +77,7 @@ TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, 
             continue;
         }
 
-        ArrayPush(&aQuads, {
+        VecPush(&aQuads, {
              0.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,     x0, y0, /* tl */
              0.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,     x1, y1, /* bl */
              2.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,     x2, y2, /* br */
@@ -108,7 +108,7 @@ TextUpdate(Text* s, Allocator* pAlloc, String str, int x, int y)
     glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(f32) * 4 * 6, aQuads.pData);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    ArrayDestroy(&aQuads);
+    VecDestroy(&aQuads);
 }
 
 void

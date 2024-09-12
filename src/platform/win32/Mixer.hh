@@ -11,7 +11,7 @@
 #include <threads.h>
 
 #include "audio.hh"
-#include "adt/Array.hh"
+#include "adt/Vec.hh"
 
 namespace platform
 {
@@ -39,9 +39,9 @@ struct Mixer
     IXAudio2SourceVoice* pSourceVoice = nullptr;
 
     mtx_t mtxAdd {};
-    Array<audio::Track> aTracks {};
+    Vec<audio::Track> aTracks {};
     u32 currentBackgroundTrackIdx = 0;
-    Array<audio::Track> aBackgroundTracks {};
+    Vec<audio::Track> aBackgroundTracks {};
 
     thrd_t threadLoop {};
 
