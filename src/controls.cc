@@ -5,13 +5,6 @@
 
 #include <math.h>
 
-#ifdef __linux__
-    #include <linux/input-event-codes.h>
-#elif _WIN32
-    #undef near
-    #undef far
-#endif
-
 namespace controls
 {
 

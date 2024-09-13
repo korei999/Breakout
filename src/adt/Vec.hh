@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Allocator.hh"
-#include "adt/utils.hh"
+#include "utils.hh"
 
 #include <assert.h>
 
