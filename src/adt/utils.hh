@@ -23,8 +23,8 @@ namespace utils
 {
 
 template<typename T> constexpr void swap(T* l, T* r);
-[[nodiscard]] constexpr auto& max(const auto& l, const auto& r);
-[[nodiscard]] constexpr auto& min(const auto& l, const auto& r);
+constexpr auto& max(const auto& l, const auto& r);
+constexpr auto& min(const auto& l, const auto& r);
 template<typename T> constexpr u64 size(const T& a);
 template<typename T> constexpr bool odd(const T& a);
 template<typename T> constexpr bool even(const T& a);
@@ -35,7 +35,7 @@ template<typename T> constexpr int partition(T a[], int l, int h);
 template<typename T> constexpr void qSort(T a[], int l, int h);
 template<typename T> constexpr void qSort(T* a);
 template<typename T> constexpr void copy(T* pDest, T* pSrc, u64 size); /* memcpy with size * sizeof(T) */
-template<typename T> [[nodiscard]] constexpr T clamp(const T& x, const T& _min, const T& _max);
+template<typename T> constexpr T clamp(const T& x, const T& _min, const T& _max);
 
 template<typename T>
 constexpr void
@@ -61,6 +61,7 @@ min(const auto& l, const auto& r)
 }
 
 template<typename T>
+[[nodiscard]]
 constexpr u64
 size(const T& a)
 {
@@ -68,6 +69,7 @@ size(const T& a)
 }
 
 template<typename T>
+[[nodiscard]]
 constexpr bool
 odd(const T& a)
 {
@@ -75,6 +77,7 @@ odd(const T& a)
 }
 
 template<typename T>
+[[nodiscard]]
 constexpr bool
 even(const T& a)
 {
@@ -83,12 +86,14 @@ even(const T& a)
 
 /* negative is l < r, positive if l > r, 0 if l == r */
 template<typename T>
+[[nodiscard]]
 constexpr s64
 compare(const T& l, const T& r)
 {
     return l - r;
 }
 
+[[nodiscard]]
 inline f64
 timeNowMS()
 {
@@ -110,6 +115,7 @@ timeNowMS()
 #endif
 }
 
+[[nodiscard]]
 inline f64
 timeNowS()
 {
@@ -117,6 +123,7 @@ timeNowS()
 }
 
 template<typename T>
+[[nodiscard]]
 constexpr int
 partition(T a[], int l, int h)
 {

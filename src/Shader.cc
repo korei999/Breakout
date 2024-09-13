@@ -214,8 +214,10 @@ ShaderLoadOne(GLenum type, String path)
 
     Arena al(SIZE_8K);
 
-    String src = file::load(&al.base, path);
-    const char* srcData = src.pData;
+    Result<String> src = file::load(&al.base, path);
+    if (!src) LOG_FATAL("error opening shader file: '%.*s'\n", path.size, path.pData);
+
+    const char* srcData = src.data.pData;
 
     glShaderSource(shader, 1, &srcData, nullptr);
     glCompileShader(shader);

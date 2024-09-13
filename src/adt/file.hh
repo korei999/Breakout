@@ -2,16 +2,18 @@
 
 #include "String.hh"
 #include "logs.hh"
+#include "Result.hh"
 
 namespace adt
 {
 namespace file
 {
 
-inline String load(Allocator* pAlloc, String path);
+inline Result<String> load(Allocator* pAlloc, String path);
 inline String replacePathEnding(Allocator* pAlloc, String path, String sEnding);
 
-inline String
+[[nodiscard]]
+inline Result<String>
 load(Allocator* pAlloc, String path)
 {
     String ret;
@@ -33,9 +35,11 @@ load(Allocator* pAlloc, String path)
     }
     else LOG_WARN("ret(%p): Error opening '%.*s' file\n", pf, path.size, path.pData);
 
+    free(pAlloc, sn.pData);
     return ret;
 }
 
+[[nodiscard]]
 inline String
 replacePathEnding(Allocator* pAlloc, String path, String sEnding)
 {

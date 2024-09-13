@@ -13,7 +13,10 @@ namespace json
 void
 LexerLoadFile(Lexer* s, adt::String path)
 {
-    s->sFile = file::load(s->pAlloc, path);
+    Result<String> rs = file::load(s->pAlloc, path);
+    if (!rs) LOG_FATAL("error opening file: '%.*s'\n", path.size, path.pData);
+
+    s->sFile = rs.data;
     s->pos = 0;
 }
 

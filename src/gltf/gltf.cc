@@ -276,13 +276,20 @@ ModelProcBuffers(Model* s)
         if (!pByteLength) LOG_FATAL("'byteLength' field is required\n");
 
         String svUri;
+        Result<String> rsBin;
         String aBin;
 
         if (pUri)
         {
             svUri = json::getString(pUri);
             auto sNewPath = file::replacePathEnding(s->pAlloc, s->parser.sName, svUri);
-            aBin = file::load(s->pAlloc, sNewPath);
+
+            rsBin = file::load(s->pAlloc, sNewPath);
+            if (!rsBin) LOG_WARN("error opening file: '%.*s'\n", sNewPath.size, sNewPath.pData);
+            else
+            {
+                aBin = rsBin.data;
+            }
         }
 
         VecPush(&s->aBuffers, {
