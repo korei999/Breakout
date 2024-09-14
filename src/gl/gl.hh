@@ -5,10 +5,13 @@
 #ifdef __linux__
 // #include <GLES3/gl32.h>
 #define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
 #include <GL/glcorearb.h>
 #elif _WIN32
 #include "../platform/win32/glad.h"
 #endif
+
+#if 0
 
 #ifdef DEBUG
     #define D(C)                                                                                                       \
@@ -47,6 +50,8 @@
         }
 #else
     #define D(C) C;
+#endif
+
 #endif
 
 namespace gl

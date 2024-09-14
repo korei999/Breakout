@@ -428,7 +428,7 @@ drawEntities()
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
 
-    for (u32 i = 0; i < g_aPEntities.size; i++)
+    ADT_VEC_FOREACH_I(&g_aPEntities, i)
     {
         auto* e = g_aPEntities[i];
 

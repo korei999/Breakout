@@ -8,8 +8,8 @@
 namespace adt
 {
 
-#define ADT_ARRAY_FOREACH_I(A, I) for (u32 I = 0; I < (A)->size; I++)
-#define ADT_ARRAY_FOREACH_I_REV(A, I) for (long I = (A)->size - 1; I >= 0 ; I--)
+#define ADT_VEC_FOREACH_I(A, I) for (u32 I = 0; I < (A)->size; I++)
+#define ADT_VEC_FOREACH_I_REV(A, I) for (u32 I = (A)->size - 1; I != -1U ; I--)
 
 /* Dynamic array (aka Vector) */
 template<typename T>
@@ -27,8 +27,8 @@ struct Vec
           size {0},
           cap {capacity} {}
 
-    T& operator[](u32 i) { assert(i < size && "out of range access"); return pData[i]; }
-    const T& operator[](u32 i) const { assert(i < size && "out of range access"); return pData[i]; }
+    T& operator[](u32 i)             { assert(i < size && "out of range vec access"); return pData[i]; }
+    const T& operator[](u32 i) const { assert(i < size && "out of range vec access"); return pData[i]; }
 
     struct It
     {
@@ -74,7 +74,7 @@ template<typename T>
 inline void
 VecPush(Vec<T>* s, const T& data)
 {
-    assert(s->cap > 0 && "uninitialized array push");
+    assert(s->cap > 0 && "uninitialized vec push");
 
     if (s->size >= s->cap)
         VecGrow(s, s->cap * 2);
@@ -108,7 +108,7 @@ template<typename T>
 inline T*
 VecPop(Vec<T>* s)
 {
-    assert(s->size > 0 && "popping from the empty array");
+    assert(s->size > 0 && "popping from an empty vec");
     return &s->pData[--s->size];
 }
 
