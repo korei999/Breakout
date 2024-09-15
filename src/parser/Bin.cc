@@ -10,7 +10,7 @@ BinLoadFile(Bin* s, String path)
     s->sPath = StringAlloc(s->pAlloc, path);
     s->pos = 0;
 
-    Result<String> rs = file::load(s->pAlloc, path);
+    Option<String> rs = file::load(s->pAlloc, path);
     if (!rs) LOG_FATAL("error opening file: '%.*s'\n", path.size, path.pData);
 
     s->sFile = rs.data;

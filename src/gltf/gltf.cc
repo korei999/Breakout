@@ -276,7 +276,7 @@ ModelProcBuffers(Model* s)
         if (!pByteLength) LOG_FATAL("'byteLength' field is required\n");
 
         String svUri;
-        Result<String> rsBin;
+        Option<String> rsBin;
         String aBin;
 
         if (pUri)

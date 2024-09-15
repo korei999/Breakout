@@ -2,18 +2,18 @@
 
 #include "String.hh"
 #include "logs.hh"
-#include "Result.hh"
+#include "Option.hh"
 
 namespace adt
 {
 namespace file
 {
 
-inline Result<String> load(Allocator* pAlloc, String path);
+inline Option<String> load(Allocator* pAlloc, String path);
 inline String replacePathEnding(Allocator* pAlloc, String path, String sEnding);
 
 [[nodiscard]]
-inline Result<String>
+inline Option<String>
 load(Allocator* pAlloc, String path)
 {
     String ret;

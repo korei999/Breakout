@@ -4,14 +4,14 @@ namespace adt
 {
 
 template<typename T>
-struct Result
+struct Option
 {
     bool bHasValue = false;
     T data;
 
-    constexpr Result() = default;
+    constexpr Option() = default;
 
-    constexpr Result(const T& x)
+    constexpr Option(const T& x)
     {
         bHasValue = true;
         data = x;
