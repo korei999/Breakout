@@ -41,7 +41,7 @@ enum class HASH_CODES : u64
     MAT4 = hashFNV("MAT4")
 };
 
-#ifdef GLTF
+#ifdef D_GLTF
 
 static String
 getTargetString(enum TARGET t)
@@ -217,8 +217,8 @@ ModelProcJSONObjs(Model* s)
         }
     }
 
-#ifdef GLTF
-    LOG_OK("GLTF: '%.*s'\n", parser.sName.size, this->parser.sName.pData);
+#ifdef D_GLTF
+    LOG_OK("D_GLTF: '%.*s'\n", parser.sName.size, this->parser.sName.pData);
     auto check = [](String sv, json::Object* p) -> void {
         String s = p ? p->svKey : "(null)";
         CERR("\t%.*s: '%.*s'\n", sv.size, sv.data(), s.size, s.pData);

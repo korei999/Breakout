@@ -3,6 +3,7 @@
 #include "String.hh"
 
 #include <assert.h>
+#include <stdio.h>
 #include <math.h>
 
 namespace adt
@@ -136,6 +137,36 @@ toString(char* pBuf, u32 bufSize, f64 x)
     StringAppend(&sInt, sReal);
 
     return sInt;
+}
+
+inline void printOne(FILE* pf, const f64& a)           { fprintf(pf, "%g", a); }
+inline void printOne(FILE* pf, const f32& a)           { fprintf(pf, "%g", a); }
+inline void printOne(FILE* pf, const char& a)          { fprintf(pf, "%c", a); }
+inline void printOne(FILE* pf, const int& a)           { fprintf(pf, "%d", a); }
+inline void printOne(FILE* pf, const long& a)          { fprintf(pf, "%ld", a); }
+inline void printOne(FILE* pf, const unsigned& a)      { fprintf(pf, "%u", a); }
+inline void printOne(FILE* pf, const unsigned long& a) { fprintf(pf, "%lu", a); }
+inline void printOne(FILE* pf, const String& a)        { fprintf(pf, "%.*s", a.size, a.pData); }
+
+template<typename T>
+inline void fprint(FILE* pf, const T& arg)
+{
+    printOne(pf, arg);
+}
+
+template<typename T, typename... Types>
+inline void
+fprint(FILE* pf, const T& first, const Types&... rest)
+{
+    fprint(pf, first);
+    fprint(pf, rest...);
+}
+
+template<typename T, typename... Types>
+inline void
+print(const T& first, const Types&... rest)
+{
+    fprint(stdout, first, rest...);
 }
 
 } /* namespace format */

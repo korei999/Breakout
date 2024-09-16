@@ -525,7 +525,6 @@ M3Transpose(const M3& m)
     };
 }
 
-#ifdef LOGS
 String
 M4ToString(Allocator* pAlloc, const M4& m, String prefix)
 {
@@ -565,7 +564,6 @@ V4ToString(Allocator* pAlloc, const V4& v, String prefix)
 
     return r;
 }
-#endif
 
 M3
 M3Inverse(const M3& m)

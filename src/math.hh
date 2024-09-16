@@ -1,11 +1,8 @@
 #pragma once
 
-#include "adt/types.hh"
+#include "adt/String.hh"
 
-#ifdef LOGS
-    #include "adt/String.hh"
-#endif
-
+#include <stdio.h>
 #include <math.h>
 
 using namespace adt;
@@ -152,11 +149,9 @@ union Qt
     constexpr Qt(V3 _v, f32 _s) : x(_v.x), y(_v.y), z(_v.z), s(_s) {}
 };
 
-#ifdef LOGS
 String M4ToString(Allocator* pAlloc, const M4& m, String prefix);
 String M3ToString(Allocator* pAlloc, const M3& m, String prefix);
 String M4ToString(Allocator* pAlloc, const M4& m, String prefix);
-#endif
 
 constexpr M4
 M4Iden()
@@ -264,3 +259,65 @@ normalize(const V4& v)
 }
 
 } /* namespace math */
+
+namespace adt
+{
+namespace format
+{
+
+inline void
+printOne(FILE* pf, const math::V2& a)
+{
+    fprintf(pf, "%.3f, %.3f\n", a.x, a.y);
+}
+
+inline void
+printOne(FILE* pf, const math::V3& a)
+{
+    fprintf(pf, "%.3f, %.3f, %.3f\n", a.x, a.y, a.z);
+}
+
+inline void
+printOne(FILE* pf, const math::V4& a)
+{
+    fprintf(pf, "%.3f, %.3f, %.3f, %.3f\n", a.x, a.y, a.z, a.w);
+}
+
+inline void
+printOne(FILE* pf, const math::Qt& a)
+{
+    fprintf(pf, "%.3f, %.3f, %.3f, %.3f\n", a.x, a.y, a.z, a.s);
+}
+
+inline void
+printOne(FILE* pf, const math::M3& a)
+{
+    fprintf(
+        pf,
+        "%.3f, %.3f, %.3f\n"
+        "%.3f, %.3f, %.3f\n"
+        "%.3f, %.3f, %.3f\n",
+        a.e[0][0], a.e[0][1], a.e[0][2],
+        a.e[1][0], a.e[1][1], a.e[1][2],
+        a.e[2][0], a.e[2][1], a.e[2][2]
+    );
+}
+
+inline void
+printOne(FILE* pf, const math::M4& a)
+{
+    fprintf(
+        pf,
+        "%.3f, %.3f, %.3f, %.3f\n"
+        "%.3f, %.3f, %.3f, %.3f\n"
+        "%.3f, %.3f, %.3f, %.3f\n"
+        "%.3f, %.3f, %.3f, %.3f\n",
+        a.e[0][0], a.e[0][1], a.e[0][2], a.e[0][3],
+        a.e[1][0], a.e[1][1], a.e[1][2], a.e[1][3],
+        a.e[2][0], a.e[2][1], a.e[2][2], a.e[2][3],
+        a.e[3][0], a.e[3][1], a.e[3][2], a.e[3][3]
+    );
+}
+
+} /* namespace adt */
+} /* namespace format */

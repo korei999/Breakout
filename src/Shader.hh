@@ -18,14 +18,56 @@ struct Shader
     Shader(String vertShaderPath, String geomShaderPath, String fragShaderPath);
 };
 
-void ShaderSetM3(Shader* s, String name, const math::M3& m);
-void ShaderSetM4(Shader* s, String name, const math::M4& m);
-void ShaderSetV3(Shader* s, String name, const math::V3& v);
-void ShaderSetV4(Shader* s, String name, const math::V4& v);
-void ShaderSetI(Shader* s, String name, const GLint i);
-void ShaderSetF(Shader* s, String name, const f32 f);
 void ShaderLoad(Shader* s, String vertexPath, String fragmentPath);
 void ShaderLoad(Shader* s, String vertexPath, String geometryPath, String fragmentPath);
-void ShaderUse(Shader* s);
 void ShaderQueryActiveUniforms(Shader* s);
 void ShaderDestroy(Shader* s);
+
+inline void
+ShaderUse(Shader* s)
+{
+    glUseProgram(s->id);
+}
+
+inline void 
+ShaderSetM3(Shader* s, String name, const math::M3& m)
+{
+    GLint ul = glGetUniformLocation(s->id, name.pData);
+    glUniformMatrix3fv(ul, 1, GL_FALSE, (GLfloat*)m.e);
+}
+
+inline void 
+ShaderSetM4(Shader* s, String name, const math::M4& m)
+{
+    GLint ul = glGetUniformLocation(s->id, name.pData);
+    glUniformMatrix4fv(ul, 1, GL_FALSE, (GLfloat*)m.e);
+}
+
+inline void
+ShaderSetV3(Shader* s, String name, const math::V3& v)
+{
+    GLint ul = glGetUniformLocation(s->id, name.pData);
+    glUniform3fv(ul, 1, (GLfloat*)v.e);
+}
+
+inline void
+ShaderSetV4(Shader* s, String name, const math::V4& v)
+{
+    GLint ul = glGetUniformLocation(s->id, name.pData);
+    glUniform4fv(ul, 1, (GLfloat*)v.e);
+}
+
+inline void
+ShaderSetI(Shader* s, String name, const GLint i)
+{
+    GLint ul = glGetUniformLocation(s->id, name.pData);
+    glUniform1i(ul, i);
+}
+
+
+inline void
+ShaderSetF(Shader* s, String name, const f32 f)
+{
+    GLint ul = glGetUniformLocation(s->id, name.pData);
+    glUniform1f(ul, f);
+}

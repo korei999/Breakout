@@ -43,7 +43,7 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
 {
     call_once(&g_onceFlagAllTextures, +[]{ mtx_init(&g_mtxAllTextures, mtx_plain); });
 
-#ifdef TEXTURE
+#ifdef D_TEXTURE
     LOG_OK("loading '%.*s' texture...\n", path.size, path._pData);
 #endif
 
@@ -67,7 +67,7 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
     s->width = img.width;
     s->height = img.height;
 
-#ifdef TEXTURE
+#ifdef D_TEXTURE
     LOG_OK("%.*s: id: %d, texMode: %d\n", path.size, path._pData, _id, texMode);
 #endif
 
@@ -263,25 +263,25 @@ loadBMP(Allocator* pAlloc, String path, bool flip)
     parser::BinSkipBytes(&p, 8);
     imageDataAddress = parser::BinRead32(&p);
 
-#ifdef TEXTURE
+#ifdef D_TEXTURE
     LOG_OK("imageDataAddress: %u\n", imageDataAddress);
 #endif
 
     parser::BinSkipBytes(&p, 4);
     width = parser::BinRead32(&p);
     height = parser::BinRead32(&p);
-#ifdef TEXTURE
+#ifdef D_TEXTURE
     LOG_OK("width: %d, height: %d\n", width, height);
 #endif
 
     [[maybe_unused]] auto colorPlane = parser::BinRead16(&p);
-#ifdef TEXTURE
+#ifdef D_TEXTURE
     LOG_OK("colorPlane: %d\n", colorPlane);
 #endif
 
     GLint format = GL_RGB;
     bitDepth = parser::BinRead16(&p);
-#ifdef TEXTURE
+#ifdef D_TEXTURE
     LOG_OK("bitDepth: %u\n", bitDepth);
 #endif
 
@@ -303,7 +303,7 @@ loadBMP(Allocator* pAlloc, String path, bool flip)
     bitDepth = 32; /* use RGBA anyway */
     nPixels = width * height;
     byteDepth = bitDepth / 8;
-#ifdef TEXTURE
+#ifdef D_TEXTURE
     LOG_OK("nPixels: %u, byteDepth: %u, format: %d\n", nPixels, byteDepth, format);
 #endif
     Vec<u8> pixels(pAlloc, nPixels * byteDepth);

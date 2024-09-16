@@ -136,6 +136,7 @@ StringAlloc(Allocator* p, const char* str, u32 size)
     char* pData = (char*)alloc(p, size + 1, sizeof(char));
     for (u32 i = 0; i < size; i++)
         pData[i] = str[i];
+    pData[size] = '\0';
 
     return {pData, size};
 }

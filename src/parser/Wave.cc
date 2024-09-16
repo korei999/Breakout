@@ -73,7 +73,7 @@ WaveParse(Wave* s)
     s->pPcmData = reinterpret_cast<s16*>(&s->bin.sFile[s->bin.pos]);
     s->pcmSize = subchunk2Size / sizeof(s16);
 
-#ifdef WAVE
+#ifdef D_WAVE
     LOG_OK("'%.*s':\n", s->bin.sPath.size, s->bin.sPath.pData);
     LOG_OK("ckID: '%.*s'\n", ckID.size, ckID.pData);
     LOG_OK("ckSize: %u\n", ckSize);

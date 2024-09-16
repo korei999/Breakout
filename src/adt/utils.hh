@@ -22,21 +22,6 @@ namespace adt
 namespace utils
 {
 
-template<typename T> constexpr void swap(T* l, T* r);
-constexpr auto& max(const auto& l, const auto& r);
-constexpr auto& min(const auto& l, const auto& r);
-template<typename T> constexpr u64 size(const T& a);
-template<typename T> constexpr bool odd(const T& a);
-template<typename T> constexpr bool even(const T& a);
-template<typename T> constexpr s64 compare(const T& l, const T& r);
-inline f64 timeNowMS();
-inline f64 timeNowS();
-template<typename T> constexpr int partition(T a[], int l, int h);
-template<typename T> constexpr void qSort(T a[], int l, int h);
-template<typename T> constexpr void qSort(T* a);
-template<typename T> constexpr void copy(T* pDest, T* pSrc, u64 size); /* memcpy with size * sizeof(T) */
-template<typename T> constexpr T clamp(const T& x, const T& _min, const T& _max);
-
 template<typename T>
 constexpr void
 swap(T* l, T* r)

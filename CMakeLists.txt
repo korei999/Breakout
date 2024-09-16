@@ -38,8 +38,8 @@ add_executable(
     src/json/Lexer.cc
     src/json/Parser.cc
     src/gltf/gltf.cc
-    src/parser/Bin.cc
     src/parser/Wave.cc
+    src/parser/TTF.cc
     src/Texture.cc
     src/Model.cc
     src/Text.cc
@@ -52,23 +52,22 @@ if (CMAKE_BUILD_TYPE MATCHES "Release" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
     set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY WIN32_EXECUTABLE TRUE)
 endif()
 
-if (FPS_COUNTER)
-    add_definitions("-DFPS_COUNTER")
-endif()
 if (LOGS)
     add_definitions("-DLOGS")
 endif()
-if (MODEL)
-    add_definitions("-DMODEL")
+
+# debug logs defines
+if (D_TTF)
+    add_definitions("-DD_TTF")
 endif()
-if (GLTF)
-    add_definitions("-DGLTF")
+if (D_GLTF)
+    add_definitions("-DD_GLTF")
 endif()
-if (TEXTURE)
-    add_definitions("-DTEXTURE")
+if (D_TEXTURE)
+    add_definitions("-DD_TEXTURE")
 endif()
-if (WAVE)
-    add_definitions("-DWAVE")
+if (D_WAVE)
+    add_definitions("-DD_WAVE")
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Asan")

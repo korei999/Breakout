@@ -101,12 +101,6 @@ ShaderDestroy(Shader* s)
 }
 
 void
-ShaderUse(Shader* s)
-{
-    glUseProgram(s->id);
-}
-
-void
 ShaderQueryActiveUniforms(Shader* s)
 {
     GLint maxUniformLen;
@@ -161,48 +155,6 @@ ShaderQueryActiveUniforms(Shader* s)
         }
         LOG_OK("\tuniformName: '%s', type: '%.*s'\n", uniformName, (int)typeName.size, typeName.pData);
     }
-}
-
-void 
-ShaderSetM4(Shader* s, String name, const math::M4& m)
-{
-    GLint ul = glGetUniformLocation(s->id, name.pData);
-    glUniformMatrix4fv(ul, 1, GL_FALSE, (GLfloat*)m.e);
-}
-
-void 
-ShaderSetM3(Shader* s, String name, const math::M3& m)
-{
-    GLint ul = glGetUniformLocation(s->id, name.pData);
-    glUniformMatrix3fv(ul, 1, GL_FALSE, (GLfloat*)m.e);
-}
-
-void
-ShaderSetV3(Shader* s, String name, const math::V3& v)
-{
-    GLint ul = glGetUniformLocation(s->id, name.pData);
-    glUniform3fv(ul, 1, (GLfloat*)v.e);
-}
-
-void
-ShaderSetV4(Shader* s, String name, const math::V4& v)
-{
-    GLint ul = glGetUniformLocation(s->id, name.pData);
-    glUniform4fv(ul, 1, (GLfloat*)v.e);
-}
-
-void
-ShaderSetI(Shader* s, String name, const GLint i)
-{
-    GLint ul = glGetUniformLocation(s->id, name.pData);
-    glUniform1i(ul, i);
-}
-
-void
-ShaderSetF(Shader* s, String name, const f32 f)
-{
-    GLint ul = glGetUniformLocation(s->id, name.pData);
-    glUniform1f(ul, f);
 }
 
 static GLuint
