@@ -58,7 +58,7 @@ Ball g_ball {
 void
 loadAssets()
 {
-    parser::TTFLoad(&s_fLiberation, "/usr/share/fonts/liberation-mono/LiberationMono-Regular.ttf");
+    parser::TTFLoad(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pApp->wHeight) / (f32)app::g_pApp->wWidth;
 
