@@ -109,7 +109,7 @@ template<typename T>
 inline T*
 VecPop(Vec<T>* s)
 {
-    assert(s->size > 0 && "popping from an empty vec");
+    assert(s->size > 0 && "empty vec pop");
     return &s->pData[--s->size];
 }
 

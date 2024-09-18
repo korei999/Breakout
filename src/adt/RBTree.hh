@@ -548,7 +548,7 @@ RBDestroy(RBTree<T>* s)
         return false;
     };
 
-    RBTraverse({}, s->pRoot, pfnFree, s, RB_ORDER::POST);
+    RBTraverse(nullptr, s->pRoot, pfnFree, s, RB_ORDER::POST);
 }
 
 } /* namespace adt */

@@ -432,10 +432,8 @@ drawEntities()
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
 
-    ADT_VEC_FOREACH_I(&g_aPEntities, i)
+    for (Entity* e : g_aPEntities)
     {
-        auto* e = g_aPEntities[i];
-
         if (e->bDead || e->eColor == COLOR::INVISIBLE) continue;
 
         math::M4 tm = math::M4Iden();
@@ -451,13 +449,6 @@ drawEntities()
         ShaderSetM4(&s_shSprite, "uModel", tm);
         ShaderSetV3(&s_shSprite, "uColor", blockColorToV3(e->eColor));
         PlainDraw(&s_plain);
-
-        // if (e->bRemoveAfterDraw)
-        // {
-        //     ::free(e);
-        //     VecPopAsLast(&g_aPEntities, i);
-        //     i--;
-        // }
     }
 }
 
