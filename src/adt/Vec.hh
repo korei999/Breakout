@@ -21,7 +21,7 @@ struct Vec
     u32 cap = 0;
 
     Vec() = default;
-    Vec(Allocator* pA, u32 capacity = SIZE_MIN)
+    Vec(Allocator* pA, u32 capacity = 1)
         : pAlloc {pA},
           pData {(T*)alloc(pA, capacity, sizeof(T))},
           size {0},
@@ -68,6 +68,7 @@ template<typename T> inline T* VecPop(Vec<T>* s);
 template<typename T> inline void VecSetSize(Vec<T>* s, u32 size);
 template<typename T> inline void VecSwapWithLast(Vec<T>* s, u32 i);
 template<typename T> inline void VecPopAsLast(Vec<T>* s, u32 i);
+template<typename T> inline u32 VecGetIdx(const Vec<T>& s, T* x);
 template<typename T> inline void VecDestroy(Vec<T>* s);
 
 template<typename T>
@@ -134,6 +135,13 @@ inline void
 VecPopAsLast(Vec<T>* s, u32 i)
 {
     s->pData[i] = s->pData[--s->size];
+}
+
+template<typename T>
+inline u32
+VecGetIdx(const Vec<T>& s, T* x)
+{
+    return u32(x - s.pData);
 }
 
 template<typename T>

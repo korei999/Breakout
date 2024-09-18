@@ -68,6 +68,7 @@ inline const char* _LOG_SEV_STR[] = {
             }                                                                                                          \
         } while (0)
 
+    #define LOG(...) _LOG(_LOG_SEV_OK, __VA_ARGS__)
     #define LOG_OK(...) _LOG(_LOG_SEV_OK, __VA_ARGS__)
     #define LOG_GOOD(...) _LOG(_LOG_SEV_GOOD, __VA_ARGS__)
     #define LOG_WARN(...) _LOG(_LOG_SEV_WARN, __VA_ARGS__)
@@ -75,40 +76,13 @@ inline const char* _LOG_SEV_STR[] = {
     #define LOG_FATAL(...) _LOG(_LOG_SEV_FATAL, __VA_ARGS__)
 #else
     #define _LOG (void)0
+    #define LOG(...) (void)0
     #define LOG_OK(...) (void)0
     #define LOG_GOOD(...) (void)0
     #define LOG_WARN(...) (void)0
     #define LOG_BAD(...) (void)0
     #define LOG_FATAL(...) (void)0
 #endif
-
-#if 1
-
-    #define _LG(SEV, ...)                                                                                              \
-        do                                                                                                             \
-        {                                                                                                              \
-            assert(SEV >= 0 && SEV < _LOG_SEV_ENUM_SIZE && "wrong _LOG_SEV*");                                         \
-            CERR("(%s%s, %d): ", _LOG_SEV_STR[SEV], ADT_FILE, __LINE__);                                               \
-            format::fprint(stderr, __VA_ARGS__);                                                                       \
-            switch (SEV)                                                                                               \
-            {                                                                                                          \
-                default:                                                                                               \
-                    break;                                                                                             \
-                case _LOG_SEV_BAD:                                                                                     \
-                    exit(int(SEV));                                                                                    \
-                case _LOG_SEV_FATAL:                                                                                   \
-                    abort();                                                                                           \
-            }                                                                                                          \
-        } while (0)
-
-    #define LG_OK(...) _LG(_LOG_SEV_OK, __VA_ARGS__)
-    #define LG_GOOD(...) _LG(_LOG_SEV_GOOD, __VA_ARGS__)
-    #define LG_WARN(...) _LG(_LOG_SEV_WARN, __VA_ARGS__)
-    #define LG_BAD(...) _LG(_LOG_SEV_BAD, __VA_ARGS__)
-    #define LG_FATAL(...) _LG(_LOG_SEV_FATAL, __VA_ARGS__)
-
-#endif
-
 
 /* TODO: */
 // #ifdef _WIN32

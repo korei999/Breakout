@@ -11,7 +11,7 @@
 #include "app.hh"
 #include "audio.hh"
 #include "frame.hh"
-#include "parser/TTF.hh"
+#include "parser/ttf.hh"
 #include "parser/Wave.hh"
 
 #include <stdio.h>
@@ -37,7 +37,7 @@ static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_apAssets, SIZE_1M * 35));
 static Plain s_plain;
 
 static Text s_textFPS;
-static parser::TTF s_fLiberation(AllocatorPoolGet(&s_apAssets, SIZE_1K * 320));
+static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_apAssets, SIZE_1K * 500));
 
 Vec<Entity*> g_aPEntities(AllocatorPoolGet(&s_apAssets, SIZE_8K));
 
@@ -58,7 +58,7 @@ Ball g_ball {
 void
 loadAssets()
 {
-    parser::TTFLoad(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
+    parser::ttf::FontLoad(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pApp->wHeight) / (f32)app::g_pApp->wWidth;
 

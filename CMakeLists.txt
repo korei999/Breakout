@@ -39,7 +39,7 @@ add_executable(
     src/json/Parser.cc
     src/gltf/gltf.cc
     src/parser/Wave.cc
-    src/parser/TTF.cc
+    src/parser/ttf.cc
     src/Texture.cc
     src/Model.cc
     src/Text.cc

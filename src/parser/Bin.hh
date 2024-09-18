@@ -12,35 +12,47 @@ namespace parser
 template <typename T>
 ADT_NO_UB
 constexpr T
-readTypeBytes(String vec, u32 at)
+readTypeBytes(String s, u32 at)
 {
-    return *(T*)(&vec[at]);
+    return *(T*)(&s[at]);
 }
 
 constexpr u16
 swapBytes(u16 x)
 {
+#if defined __clang__ || __GNUC__
+    return __builtin_bswap16(x);
+#else
     return ((x & 0x00ff) << 4*2) | ((x & 0xff00) >> 4*2);
+#endif
 }
 
 constexpr u32
 swapBytes(u32 x)
 {
+#if defined __clang__ || __GNUC__
+    return __builtin_bswap32(x);
+#else
     return ((x & 0x000000ff) << 4*6) |
            ((x & 0x0000ff00) << 4*2) |
            ((x & 0x00ff0000) >> 4*2) |
            ((x & 0xff000000) >> 4*6);
+#endif
 }
 
 constexpr u64
 swapBytes(u64 x)
 {
+#if defined __clang__ || __GNUC__
+    return __builtin_bswap64(x);
+#else
     return ((x & 0x0000'0000'00ffLU) << 4*10) |
            ((x & 0x0000'0000'ff00LU) << 4*6)  |
            ((x & 0x0000'00ff'0000LU) << 4*2)  |
            ((x & 0x0000'ff00'0000LU) >> 4*2)  |
            ((x & 0x00ff'0000'0000LU) >> 4*6)  |
            ((x & 0xff00'0000'0000LU) >> 4*10);
+#endif
 }
 
 struct Bin
