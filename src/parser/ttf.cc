@@ -97,6 +97,8 @@ cmapRead(Font* s, u32 at)
     cmap.aSubtables = Vec<CMAPEncodingSubtable>(s->p.pAlloc, cmap.numberSubtables);
     VecSetSize(&cmap.aSubtables, cmap.numberSubtables);
 
+    LOG("\t\tversion: %#x, numberSubtables: %u\n", cmap.version, cmap.numberSubtables);
+
     for (auto& st : cmap.aSubtables)
     {
         st.platformID = BinRead16Rev(&s->p);
@@ -119,6 +121,11 @@ cmapRead(Font* s, u32 at)
 }
 
 static void
+procSimpleGlyph(Font* s)
+{
+}
+
+static void
 glyfRead(Font* s, u32 at)
 {
     u32 savedPos = s->p.pos;
@@ -138,7 +145,14 @@ glyfRead(Font* s, u32 at)
         g.numberOfContours, g.xMin, g.yMin, g.xMax, g.yMax
     );
 
-    // TODO: complete
+    if (g.numberOfContours >= 0)
+    {
+        procSimpleGlyph(s);
+    }
+    else
+    {
+        // TODO:
+    }
 
     s->p.pos = savedPos;
 }
@@ -269,6 +283,8 @@ locaRead(Font* s, u32 at)
     s->p.pos = at;
 
     s->locaOffset = at;
+    auto& l = s->loca;
+
 
     s->p.pos = savedPos;
 }
@@ -280,6 +296,40 @@ maxpRead(Font* s, u32 at)
     s->p.pos = at;
 
     s->maxpOffset = at;
+    auto& m = s->maxp;
+
+    m.version.l = BinRead16Rev(&s->p);
+    m.version.r = BinRead16Rev(&s->p);
+    m.numGlyphs = BinRead16Rev(&s->p);
+    m.maxPoints = BinRead16Rev(&s->p);
+    m.maxContours = BinRead16Rev(&s->p);
+    m.maxComponentPoints = BinRead16Rev(&s->p);
+    m.maxComponentContours = BinRead16Rev(&s->p);
+    m.maxZones = BinRead16Rev(&s->p);
+    m.maxTwilightPoints = BinRead16Rev(&s->p);
+    m.maxStorage = BinRead16Rev(&s->p);
+    m.maxFunctionDefs = BinRead16Rev(&s->p);
+    m.maxInstructionDefs = BinRead16Rev(&s->p);
+    m.maxStackElements = BinRead16Rev(&s->p);
+    m.maxSizeofInstruction = BinRead16Rev(&s->p);
+    m.maxComponentElements = BinRead16Rev(&s->p);
+    m.maxComponentDepth = BinRead16Rev(&s->p);
+
+#ifdef D_TTF
+    LOG(
+        "\t\tversion: (%d, %d), numGlyphs: %u, maxPoints: %u, maxContours: %u\n"
+        "\t\t\tmaxComponentPoints: %u, maxComponentContours: %u, maxZones: %u\n"
+        "\t\t\tmaxTwilightPoints: %u, maxStorage: %u, maxFunctionDefs: %u\n"
+        "\t\t\tmaxInstructionDefs: %u, maxStackElements: %u, maxSizeofInstruction: %u\n"
+        "\t\t\tmaxComponentElements: %u, maxComponentDepth: %u\n",
+        m.version.l, m.version.r, m.numGlyphs, m.maxPoints, m.maxContours,
+        m.maxComponentPoints, m.maxComponentContours, m.maxZones,
+        m.maxTwilightPoints, m.maxStorage, m.maxFunctionDefs,
+        m.maxInstructionDefs, m.maxStackElements, m.maxSizeofInstruction,
+        m.maxComponentElements, m.maxComponentDepth
+    );
+
+#endif
 
     s->p.pos = savedPos;
 }
@@ -313,15 +363,15 @@ nameRead(Font* s, u32 at)
         String sLanguage = languageIDToString(nr.languageID);
 
 #ifdef D_TTF
-        LOG(
-            "\t\t(%u): platformID: %u(%.*s), platformSpecificID: %u(%.*s)\n"
-            "\t\t\tlanguageID: %u(%.*s)\n"
-            "\t\t\tnameID: %u, length: %u, offset: %u\n",
-            VecGetIdx(n.aNameRecords, &nr), nr.platformID, sPlatformID.size, sPlatformID.pData,
-            nr.platformSpecificID, sPlatformSpecificID.size, sPlatformSpecificID.pData,
-            nr.languageID, sLanguage.size, sLanguage.pData,
-            nr.nameID, nr.length, nr.offset
-        );
+        // LOG(
+        //     "\t\t(%u): platformID: %u(%.*s), platformSpecificID: %u(%.*s)\n"
+        //     "\t\t\tlanguageID: %u(%.*s)\n"
+        //     "\t\t\tnameID: %u, length: %u, offset: %u\n",
+        //     VecGetIdx(n.aNameRecords, &nr), nr.platformID, sPlatformID.size, sPlatformID.pData,
+        //     nr.platformSpecificID, sPlatformSpecificID.size, sPlatformSpecificID.pData,
+        //     nr.languageID, sLanguage.size, sLanguage.pData,
+        //     nr.nameID, nr.length, nr.offset
+        // );
 #endif
     }
 
@@ -350,69 +400,69 @@ FontParse(Font* s)
 {
     if (s->p.sFile.size == 0) LOG_FATAL("unable to parse empty file\n");
 
-    u32 sfntVersion = BinRead32Rev(&s->p);
-    u16 numTables = BinRead16Rev(&s->p);
-    u16 searchRange = BinRead16Rev(&s->p);
-    u16 entrySelector = BinRead16Rev(&s->p);
-    u16 rangeShift = BinRead16Rev(&s->p);
+    auto& td = s->tableDirectory;
 
-    if (sfntVersion != 0x00010000 && sfntVersion != 0x4f54544f)
-        LOG_FATAL("Unable to read this ('%.*s') ttf header: sfntVersion: %u'\n", s->p.sPath.size, s->p.sPath.pData, sfntVersion);
+    td.sfntVersion = BinRead32Rev(&s->p);
+    td.numTables = BinRead16Rev(&s->p);
+    td.searchRange = BinRead16Rev(&s->p);
+    td.entrySelector = BinRead16Rev(&s->p);
+    td.rangeShift = BinRead16Rev(&s->p);
+
+    if (td.sfntVersion != 0x00010000 && td.sfntVersion != 0x4f54544f)
+        LOG_FATAL("Unable to read this ('%.*s') ttf header: sfntVersion: %u'\n", s->p.sPath.size, s->p.sPath.pData, td.sfntVersion);
 
 #ifdef D_TTF
-    u16 _searchRangeCheck = pow(2, floor(log2(numTables))) * 16;
-    assert(searchRange == _searchRangeCheck);
+    u16 _searchRangeCheck = pow(2, floor(log2(td.numTables))) * 16;
+    assert(td.searchRange == _searchRangeCheck);
 
-    u16 _entrySelectorCheck = (u16)floor(log2(numTables));
-    assert(entrySelector == _entrySelectorCheck);
+    u16 _entrySelectorCheck = (u16)floor(log2(td.numTables));
+    assert(td.entrySelector == _entrySelectorCheck);
 
-    u16 _rangeShiftCheck = numTables*16 - searchRange;
-    assert(rangeShift == _rangeShiftCheck);
+    u16 _rangeShiftCheck = td.numTables*16 - td.searchRange;
+    assert(td.rangeShift == _rangeShiftCheck);
 
     LOG_GOOD(
         "sfntVersion: %u, numTables: %u, searchRange: %u, entrySelector: %u, rangeShift: %u\n",
-        sfntVersion, numTables, searchRange, entrySelector, rangeShift
+        td.sfntVersion, td.numTables, td.searchRange, td.entrySelector, td.rangeShift
     );
 #endif
 
-    s->aTableDirectories = Vec<TableDirectory>(s->p.pAlloc, numTables); 
-    VecSetSize(&s->aTableDirectories, numTables);
-
-    for (u32 i = 0; i < numTables; i++)
+    td.aTableRecords = Vec<TableRecord>(s->p.pAlloc, td.numTables); 
+    VecSetSize(&td.aTableRecords, td.numTables);
+    for (auto& r : s->tableDirectory.aTableRecords)
     {
-        auto& t = s->aTableDirectories[i];
-
-        t.tableTag = BinReadString(&s->p, 4);
-        t.checkSum = BinRead32Rev(&s->p);
-        t.offset = BinRead32Rev(&s->p);
-        t.length = BinRead32Rev(&s->p);
+        r.tableTag = BinReadString(&s->p, 4);
+        r.checkSum = BinRead32Rev(&s->p);
+        r.offset = BinRead32Rev(&s->p);
+        r.length = BinRead32Rev(&s->p);
 
 #ifdef D_TTF
         LOG(
             "(%u): tableTag: '%.*s'(%u), checkSum: %u, offset: %u, length: %u\n",
-            i, t.tableTag.size, t.tableTag.pData, *(u32*)(t.tableTag.pData), t.checkSum, t.offset, t.length
+            VecGetIdx(s->tableDirectory.aTableRecords, &r),
+            r.tableTag.size, r.tableTag.pData, *(u32*)(r.tableTag.pData), r.checkSum, r.offset, r.length
         );
 #endif
 
         /* get required tables */
-        if (t.tableTag == "cmap")
-            cmapRead(s, t.offset);
-        else if (t.tableTag == "glyf")
-            glyfRead(s, t.offset);
-        else if (t.tableTag == "head")
-            headRead(s, t.offset);
-        else if (t.tableTag == "hhea")
-            hheaRead(s, t.offset);
-        else if (t.tableTag == "hmtx")
-            hmtxRead(s, t.offset);
-        else if (t.tableTag == "loca")
-            locaRead(s, t.offset);
-        else if (t.tableTag == "maxp")
-            maxpRead(s, t.offset);
-        else if (t.tableTag == "name")
-            nameRead(s, t.offset);
-        else if (t.tableTag == "post")
-            postRead(s, t.offset);
+        if (r.tableTag == "cmap")
+            cmapRead(s, r.offset);
+        else if (r.tableTag == "glyf")
+            glyfRead(s, r.offset);
+        else if (r.tableTag == "head")
+            headRead(s, r.offset);
+        else if (r.tableTag == "hhea")
+            hheaRead(s, r.offset);
+        else if (r.tableTag == "hmtx")
+            hmtxRead(s, r.offset);
+        else if (r.tableTag == "loca")
+            locaRead(s, r.offset);
+        else if (r.tableTag == "maxp")
+            maxpRead(s, r.offset);
+        else if (r.tableTag == "name")
+            nameRead(s, r.offset);
+        else if (r.tableTag == "post")
+            postRead(s, r.offset);
     }
 }
 

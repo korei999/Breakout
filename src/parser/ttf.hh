@@ -34,12 +34,28 @@ using Offset24 = u24; /* 24-bit offset to a table, same as uint24, NULL offset =
 using Offset32 = u32; /* Long offset to a table, same as uint32, NULL offset = 0x00000000 */
 using Version16Dot16 = struct { u16 maj; u16 min; }; /*Packed 32-bit value with major and minor version numbers. */
 
-struct TableDirectory
+struct TableRecord
 {
     String tableTag {}; /* instead of TTF_Tag */
     u32 checkSum {};
     Offset32 offset {};
     u32 length {};
+};
+
+struct TableDirectory
+{
+    u32 sfntVersion; /* 0x00010000 or 0x4F54544F ('OTTO') */
+    u16 numTables; /* Number of tables. */
+    u16 searchRange; /* Maximum power of 2 less than or equal to numTables,
+                      * times 16 ((2**floor(log2(numTables))) * 16, where “**” is an exponentiation operator). */
+    u16 entrySelector; /* Log2 of the maximum power of 2 less than or equal to numTables (log2(searchRange/16),
+                        * which is equal to floor(log2(numTables))). */
+    u16 rangeShift; /* numTables times 16, minus searchRange ((numTables * 16) - searchRange). */
+    Vec<TableRecord> aTableRecords;
+};
+
+struct Kern
+{
 };
 
 struct CMAPEncodingSubtable
@@ -346,6 +362,21 @@ struct Loca
 
 struct Maxp
 {
+    Fixed version; /* 0x00010000 (1.0) */
+    u16 numGlyphs; /* the number of glyphs in the font */
+    u16 maxPoints; /* points in non-compound glyph */
+    u16 maxContours; /* contours in non-compound glyph */
+    u16 maxComponentPoints; /* points in compound glyph */
+    u16 maxComponentContours; /* contours in compound glyph*/
+    u16 maxZones; /* set to 2 */
+    u16 maxTwilightPoints; /* points used in Twilight Zone (Z0) */
+    u16 maxStorage; /* number of Storage Area locations */
+    u16 maxFunctionDefs; /* number of FDEFs */
+    u16 maxInstructionDefs; /* number of IDEFs */
+    u16 maxStackElements; /* maximum stack depth */
+    u16 maxSizeofInstruction; /* byte count for glyph instructions */
+    u16 maxComponentElements; /* number of glyphs referenced at top level */
+    u16 maxComponentDepth; /* levels of recursion, set to 0 if font has only simple glyphs */
 };
 
 /* https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6name.html */
@@ -381,9 +412,10 @@ struct Post
 struct Font
 {
     Bin p {};
+    TableDirectory tableDirectory;
     Cmap cmap {};
-    Vec<TableDirectory> aTableDirectories {};
     Glyph glyph {};
+    Kern kern {};
     Head head {};
     Hhea hhea {};
     Hmtx hmtx {};

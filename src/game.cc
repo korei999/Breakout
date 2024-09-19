@@ -58,7 +58,7 @@ Ball g_ball {
 void
 loadAssets()
 {
-    parser::ttf::FontLoad(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
+    parser::ttf::FontLoad(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pApp->wHeight) / (f32)app::g_pApp->wWidth;
 
