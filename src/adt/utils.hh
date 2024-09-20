@@ -2,6 +2,7 @@
 
 #ifdef __linux__
     #include <time.h>
+    #include <unistd.h>
 #elif _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN 1
@@ -105,6 +106,16 @@ inline f64
 timeNowS()
 {
     return timeNowMS() / 1000.0;
+}
+
+inline void
+sleepMS(f64 ms)
+{
+#ifdef __linux__
+    usleep(ms * 1000.0);
+#elif _WIN32
+    Sleep(ms);
+#endif
 }
 
 template<typename T>

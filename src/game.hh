@@ -12,6 +12,7 @@ namespace game
 {
 
 constexpr u32 ASSET_MAX_COUNT = 512;
+constexpr f64 SLEEP_TIME_MS = 1.0;
 
 enum REFLECT_SIDE : s8
 {
@@ -80,7 +81,7 @@ struct Level
 
 void loadAssets();
 void loadLevel();
-void updateGame();
+void updateState();
 void drawFPSCounter(Allocator* pAlloc);
 void drawEntities();
 void cleanup();

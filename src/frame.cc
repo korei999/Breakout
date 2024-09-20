@@ -17,29 +17,41 @@ static void mainLoop();
 
 Pair<f32, f32> g_unit; /* draw size unit */
 
-f32 g_fov = 90.0f;
 f32 g_uiWidth = 192.0f * 0.75;
 f32 g_uiHeight; /* set in prepareDraw */
 
 f64 g_currTime = 0.0;
 f64 g_deltaTime = 0.0;
+f64 g_lastDeltaTime = 0.0;
+
+f64 g_currDrawTime = 0.0;
+f64 g_frameTime = 0.0;
 f64 g_lastFrameTime = 0.0;
 
-f64 g_prevTime;
+f64 g_prevTime = 0.0;
 int g_fpsCount = 0;
 
 Ubo g_uboProjView;
 
 static Pair<f32, f32> s_aspect(16.0f, 9.0f);
 
-static u8 s_aFrameMem[SIZE_8K] {};
+static u8 s_aFrameMemGame[SIZE_8K] {};
+static u8 s_aFrameMemDraw[SIZE_8K] {};
 
-static void
+inline void
 updateDeltaTime()
 {
     g_currTime = utils::timeNowMS();
-    g_deltaTime = g_currTime - g_lastFrameTime;
-    g_lastFrameTime = g_currTime;
+    g_deltaTime = g_currTime - g_lastDeltaTime;
+    g_lastDeltaTime = g_currTime;
+}
+
+inline void
+updateDrawTime()
+{
+    g_currDrawTime = utils::timeNowMS();
+    g_frameTime = g_currDrawTime - g_lastFrameTime;
+    g_lastFrameTime = g_currDrawTime;
 }
 
 void
@@ -69,6 +81,8 @@ run()
 
     updateDeltaTime(); /* reset delta time before drawing */
     updateDeltaTime();
+    updateDrawTime();
+    updateDrawTime();
 
     game::loadAssets();
     game::loadLevel();
@@ -84,20 +98,12 @@ run()
     mainLoop();
 }
 
-template<typename T>
-inline math::V2
-nextPos(const T& e, bool bNormalizeDir)
+static int
+gameStateLoop([[maybe_unused]] void* pArg)
 {
-    auto dir = bNormalizeDir ? math::normalize(e.dir) : e.dir;
-    return e.base.pos + (dir * (g_deltaTime * e.speed));
-}
+    FixedAllocator alFrame (s_aFrameMemGame, sizeof(s_aFrameMemGame));
 
-static void
-mainLoop()
-{
-    FixedAllocator alFrame (s_aFrameMem, sizeof(s_aFrameMem));
-
-    while (app::g_pApp->bRunning || app::g_pMixer->bRunning) /* wait for mixer to stop also */
+    while (app::g_pApp->bRunning || app::g_pMixer->bRunning)
     {
         WindowProcEvents(app::g_pApp);
         updateDeltaTime();
@@ -105,13 +111,34 @@ mainLoop()
 
         controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
 
+        game::updateState();
+
+        FixedAllocatorReset(&alFrame);
+
+        utils::sleepMS(game::SLEEP_TIME_MS);
+    }
+
+    return thrd_success;
+}
+
+static void
+mainLoop()
+{
+    FixedAllocator alFrame (s_aFrameMemDraw, sizeof(s_aFrameMemGame));
+
+    thrd_t thrdUpdatePhysics;
+    thrd_create(&thrdUpdatePhysics, gameStateLoop, nullptr);
+
+    while (app::g_pApp->bRunning || app::g_pMixer->bRunning)
+    {
+        updateDrawTime();
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, app::g_pApp->wWidth, app::g_pApp->wHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         UboBufferData(&g_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
 
-        game::updateGame();
         game::drawEntities();
         game::drawFPSCounter(&alFrame.base);
 
@@ -119,6 +146,8 @@ mainLoop()
         WindowSwapBuffers(app::g_pApp);
         g_fpsCount++;
     }
+
+    thrd_join(thrdUpdatePhysics, nullptr);
 
 #ifndef NDEBUG
     UboDestroy(&g_uboProjView);

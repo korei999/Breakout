@@ -363,7 +363,7 @@ loadLevel()
 }
 
 void
-updateGame()
+updateState()
 {
     /* player */
     {
@@ -415,7 +415,8 @@ drawFPSCounter(Allocator* pAlloc)
     if (currTime >= frame::g_prevTime + 1000.0)
     {
         String s = StringAlloc(pAlloc, s_textFPS.maxSize);
-        snprintf(s.pData, s.size, "FPS: %u\nFrame time: %.3f ms", frame::g_fpsCount, frame::g_deltaTime);
+        memset(s.pData, 0, s.size);
+        snprintf(s.pData, s.size, "FPS: %u\nFrame time: %.3f ms", frame::g_fpsCount, frame::g_frameTime);
 
         frame::g_fpsCount = 0;
         frame::g_prevTime = currTime;

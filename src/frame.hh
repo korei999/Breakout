@@ -15,12 +15,15 @@ constexpr f32 HEIGHT = 1000.0f;
 
 extern Pair<f32, f32> g_unit;
 
-extern f32 g_fov;
 extern f32 g_uiWidth;
 extern f32 g_uiHeight;
 
 extern f64 g_currTime;
 extern f64 g_deltaTime;
+extern f64 g_lastDeltaTime;
+
+extern f64 g_currDrawTime;
+extern f64 g_frameTime;
 extern f64 g_lastFrameTime;
 
 extern f64 g_prevTime;
