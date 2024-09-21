@@ -49,20 +49,20 @@ procKeysOnce(u32 key, u32 pressed)
         case KEY_GRAVE:
             if (pressed)
             {
-                app::g_pApp->bPaused = !app::g_pApp->bPaused;
-                if (app::g_pApp->bPaused) LOG_WARN("paused: %d\n", app::g_pApp->bPaused);
+                app::g_pWindow->bPaused = !app::g_pWindow->bPaused;
+                if (app::g_pWindow->bPaused) LOG_WARN("paused: %d\n", app::g_pWindow->bPaused);
             }
             break;
 
         case KEY_Q:
-            if (pressed) WindowTogglePointerRelativeMode(app::g_pApp);
+            if (pressed) WindowTogglePointerRelativeMode(app::g_pWindow);
             break;
 
         case KEY_ESC:
         case KEY_CAPSLOCK:
             if (pressed)
             {
-                app::g_pApp->bRunning = false;
+                app::g_pWindow->bRunning = false;
 
 #ifdef _WIN32
                 /* FIXME: implement mixer on windows */
@@ -78,11 +78,11 @@ procKeysOnce(u32 key, u32 pressed)
             break;
 
         case KEY_F:
-            if (pressed) WindowToggleFullscreen(app::g_pApp);
+            if (pressed) WindowToggleFullscreen(app::g_pWindow);
             break;
 
         case KEY_V:
-            if (pressed) WindowToggleVSync(app::g_pApp);
+            if (pressed) WindowToggleVSync(app::g_pWindow);
             break;
 
         case KEY_SPACE:

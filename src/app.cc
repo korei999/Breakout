@@ -3,7 +3,7 @@
 namespace app
 {
 
-Window* g_pApp;
+Window* g_pWindow;
 audio::Mixer* g_pMixer;
 
 } /* namespace app */

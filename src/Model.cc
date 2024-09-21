@@ -29,7 +29,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     for (u32 i = 0; i < a.aBuffers.size; i++)
     {
         mtx_lock(&gl::mtxGlContext);
-        WindowBindGlContext(app::g_pApp);
+        WindowBindGlContext(app::g_pWindow);
 
         GLuint b;
         glGenBuffers(1, &b);
@@ -38,7 +38,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         VecPush(&aBufferMap, b);
 
-        WindowUnbindGlContext(app::g_pApp);
+        WindowUnbindGlContext(app::g_pWindow);
         mtx_unlock(&gl::mtxGlContext);
     }
 
@@ -114,7 +114,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             nMesh.mode = mode;
 
             mtx_lock(&gl::mtxGlContext);
-            WindowBindGlContext(app::g_pApp);
+            WindowBindGlContext(app::g_pWindow);
 
             glGenVertexArrays(1, &nMesh.meshData.vao);
             glBindVertexArray(nMesh.meshData.vao);
@@ -179,7 +179,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             }
 
             glBindVertexArray(0);
-            WindowUnbindGlContext(app::g_pApp);
+            WindowUnbindGlContext(app::g_pWindow);
             mtx_unlock(&gl::mtxGlContext);
 
             /* load textures */

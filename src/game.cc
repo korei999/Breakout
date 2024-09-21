@@ -19,27 +19,27 @@
 namespace game
 {
 
-static AllocatorPool<Arena, ASSET_MAX_COUNT> s_apAssets;
+static AllocatorPool<Arena, ASSET_MAX_COUNT> s_assetArenas;
 
-static Vec<Entity> s_aBlocks(AllocatorPoolGet(&s_apAssets, SIZE_8K));
+static Vec<Entity> s_aBlocks(AllocatorPoolGet(&s_assetArenas, SIZE_8K));
 
 static Shader s_shFontBitMap;
 static Shader s_shSprite;
 
-static Texture s_tAsciiMap(AllocatorPoolGet(&s_apAssets, SIZE_1M));
-static Texture s_tBox(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
-static Texture s_tBall(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
-static Texture s_tPaddle(AllocatorPoolGet(&s_apAssets, SIZE_1K * 100));
+static Texture s_tAsciiMap(AllocatorPoolGet(&s_assetArenas, SIZE_1M));
+static Texture s_tBox(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
+static Texture s_tBall(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
+static Texture s_tPaddle(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
 
-static parser::Wave s_sndBeep(AllocatorPoolGet(&s_apAssets, SIZE_1K * 400));
-static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_apAssets, SIZE_1M * 35));
+static parser::Wave s_sndBeep(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 400));
+static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_assetArenas, SIZE_1M * 35));
 
 static Plain s_plain;
 
 static Text s_textFPS;
-static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_apAssets, SIZE_1K * 500));
+static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
 
-Vec<Entity*> g_aPEntities(AllocatorPoolGet(&s_apAssets, SIZE_8K));
+Vec<Entity*> g_aPEntities(AllocatorPoolGet(&s_assetArenas, SIZE_8K));
 
 Player g_player {
     .base {},
@@ -60,12 +60,12 @@ loadAssets()
 {
     parser::ttf::FontLoad(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");
 
-    frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pApp->wHeight) / (f32)app::g_pApp->wWidth;
+    frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
     s_plain = Plain(GL_STATIC_DRAW);
 
-    g_aAllShaders = {AllocatorPoolGet(&s_apAssets, SIZE_1K)};
-    g_aAllTextures = {AllocatorPoolGet(&s_apAssets, SIZE_1K)};
+    g_aAllShaders = {AllocatorPoolGet(&s_assetArenas, SIZE_1K)};
+    g_aAllTextures = {AllocatorPoolGet(&s_assetArenas, SIZE_1K)};
 
     ShaderLoad(&s_shFontBitMap, "shaders/font/font.vert", "shaders/font/font.frag");
     ShaderUse(&s_shFontBitMap);
@@ -83,7 +83,7 @@ loadAssets()
     ThreadPoolStart(&tp);
 
     /* unbind before creating threads */
-    WindowUnbindGlContext(app::g_pApp);
+    WindowUnbindGlContext(app::g_pWindow);
 
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
@@ -104,13 +104,13 @@ loadAssets()
     ThreadPoolWait(&tp);
 
     /* restore context after assets are loaded */
-    WindowBindGlContext(app::g_pApp);
+    WindowBindGlContext(app::g_pWindow);
 
     ThreadPoolDestroy(&tp);
     ArenaFreeAll(&allocScope);
 
-    WindowSetSwapInterval(app::g_pApp, 1);
-    WindowSetFullscreen(app::g_pApp);
+    WindowSetSwapInterval(app::g_pWindow, 1);
+    WindowSetFullscreen(app::g_pWindow);
 }
 
 template<typename T>
@@ -146,8 +146,8 @@ getReflectionSide(math::V2 tar)
     return bestMatch;
 }
 
-void
-procBlockHit()
+static void
+blockHit()
 {
     namespace f = frame;
 
@@ -175,7 +175,7 @@ procBlockHit()
         if (bx >= ex - f::g_unit.x - 4 && bx <= ex + f::g_unit.x + 4 &&
             by >= ey - f::g_unit.y - 4 && by <= ey + f::g_unit.y + 4)
         {
-            if (b.eColor != COLOR::INVISIBLE) b.bDead = true;
+            if (b.eColor != COLOR::INVISIBLE && b.eColor != COLOR::DIMGRAY) b.bDead = true;
 
             bAddSound = true;
 
@@ -227,18 +227,18 @@ procBlockHit()
         audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 }
 
-void
-procPaddleHit()
+static void
+paddleHit()
 {
     const auto& bx = g_ball.base.pos.x;
     const auto& by = g_ball.base.pos.y;
     const auto& px = g_player.base.pos.x;
     const auto& py = g_player.base.pos.y;
 
-    if (bx >= px - frame::g_unit.x*2.0 && bx <= px + frame::g_unit.x*2.0 &&
-        by >= py - frame::g_unit.y && by <= py - frame::g_unit.y + frame::g_unit.y/2)
+    if (bx >= px - frame::g_unit.x*2.0f && bx <= px + frame::g_unit.x*2.0f &&
+        by >= py - frame::g_unit.y && by <= py - frame::g_unit.y + frame::g_unit.y/2.0f)
     {
-        g_ball.base.pos.y = (py - frame::g_unit.y + frame::g_unit.y/2) + 4;
+        g_ball.base.pos.y = (py - frame::g_unit.y + frame::g_unit.y/2.0f) + 4.0f;
         audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 
         g_ball.dir.y = 1.0f;
@@ -248,7 +248,7 @@ procPaddleHit()
 }
 
 static void
-procOutOfBounds()
+outOfBounds()
 {
     namespace f = frame;
 
@@ -256,11 +256,11 @@ procOutOfBounds()
     bool bAddSound = false;
     if (g_ball.base.pos.y <= 0.0f - f::g_unit.y) 
     {
-        /*g_ball.bReleased = false;*/
+        g_ball.bReleased = false;
 
-        g_ball.base.pos.y = 0.0f - f::g_unit.y;
-        g_ball.dir.y = 1.0f;
-        bAddSound = true;
+        // g_ball.base.pos.y = 0.0f - f::g_unit.y;
+        // g_ball.dir.y = 1.0f;
+        // bAddSound = true;
     }
     else if (g_ball.base.pos.y >= f::HEIGHT - f::g_unit.y)
     {
@@ -285,11 +285,10 @@ procOutOfBounds()
         audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 }
 
-static inline math::V2
-tilePosToFramePos(u32 x, u32 y)
+inline math::V2
+tilePosToImagePos(u32 x, u32 y)
 {
     namespace f = frame;
-
     return {f::g_unit.x*2 * y, (f::HEIGHT - f::g_unit.y*2) - f::g_unit.y*2 * x};
 }
 
@@ -322,7 +321,7 @@ loadLevel()
             if (at(i, j) != s8(COLOR::INVISIBLE))
             {
                 VecPush(&s_aBlocks, {
-                    .pos = tilePosToFramePos(i, j),
+                    .pos = tilePosToImagePos(i, j),
                     .width = 1.0f,
                     .height = 1.0f,
                     .xOff = 0.0f,
@@ -386,9 +385,9 @@ updateState()
     {
         if (g_ball.bReleased)
         {
-            procBlockHit();
-            procPaddleHit();
-            procOutOfBounds();
+            blockHit();
+            paddleHit();
+            outOfBounds();
             g_ball.base.pos = nextPos(g_ball, true);
 
         } else g_ball.base.pos = g_player.base.pos;
@@ -415,10 +414,10 @@ drawFPSCounter(Allocator* pAlloc)
     if (currTime >= frame::g_prevTime + 1000.0)
     {
         String s = StringAlloc(pAlloc, s_textFPS.maxSize);
-        memset(s.pData, 0, s.size);
-        snprintf(s.pData, s.size, "FPS: %u\nFrame time: %.3f ms", frame::g_fpsCount, frame::g_frameTime);
+        utils::fill(s.pData, '\0', s.size);
+        snprintf(s.pData, s.size, "FPS: %u\nFrame time: %.3f ms", frame::g_nfps, frame::g_frameTime);
 
-        frame::g_fpsCount = 0;
+        frame::g_nfps = 0;
         frame::g_prevTime = currTime;
 
         TextUpdate(&s_textFPS, pAlloc, s, 0, 0);
@@ -464,7 +463,7 @@ cleanup()
     for (auto& t : g_aAllTextures)
         TextureDestroy(&t);
 
-    for (auto& a : s_apAssets.aAllocators)
+    for (auto& a : s_assetArenas.aAllocators)
         ArenaFreeAll(&a);
 }
 

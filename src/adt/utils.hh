@@ -159,10 +159,17 @@ qSort(T* a)
 }
 
 template<typename T>
-constexpr void
+inline void
 copy(T* pDest, T* pSrc, u64 size)
 {
     memcpy(pDest, pSrc, size * sizeof(T));
+}
+
+template<typename T>
+inline void
+fill(T* pData, T x, u64 size)
+{
+    memset(pData, x, size * sizeof(pData));
 }
 
 template<typename T>

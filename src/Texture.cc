@@ -103,7 +103,7 @@ void
 TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter)
 {
     mtx_lock(&gl::mtxGlContext);
-    WindowBindGlContext(app::g_pApp);
+    WindowBindGlContext(app::g_pWindow);
 
     glGenTextures(1, &s->id);
     glBindTexture(GL_TEXTURE_2D, s->id);
@@ -122,7 +122,7 @@ TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GL
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, pData);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    WindowUnbindGlContext(app::g_pApp);
+    WindowUnbindGlContext(app::g_pWindow);
     mtx_unlock(&gl::mtxGlContext);
 }
 

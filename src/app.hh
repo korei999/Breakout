@@ -6,7 +6,7 @@
 namespace app
 {
 
-extern Window* g_pApp;
+extern Window* g_pWindow;
 extern audio::Mixer* g_pMixer;
 
 } /* namespace app */

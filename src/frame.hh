@@ -27,7 +27,7 @@ extern f64 g_frameTime;
 extern f64 g_lastFrameTime;
 
 extern f64 g_prevTime;
-extern int g_fpsCount;
+extern int g_nfps;
 
 extern Ubo g_uboProjView;
 

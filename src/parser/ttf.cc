@@ -472,5 +472,16 @@ FontDestroy(Font* s)
     // TODO:
 }
 
+u32
+FontGetGlyphOffset(Font* s, u32 idx)
+{
+    const auto f = s->p.sFile;
+    u32 offset = 0, old = 0;
+
+    if (s->head.indexToLocFormat == 1)
+    {
+    }
+}
+
 } /* namespace ttf */
 } /* namespace parser */

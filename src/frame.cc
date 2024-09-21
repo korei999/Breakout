@@ -29,7 +29,7 @@ f64 g_frameTime = 0.0;
 f64 g_lastFrameTime = 0.0;
 
 f64 g_prevTime = 0.0;
-int g_fpsCount = 0;
+int g_nfps = 0;
 
 Ubo g_uboProjView;
 
@@ -38,7 +38,7 @@ static Pair<f32, f32> s_aspect(16.0f, 9.0f);
 static u8 s_aFrameMemGame[SIZE_8K] {};
 static u8 s_aFrameMemDraw[SIZE_8K] {};
 
-inline void
+static void
 updateDeltaTime()
 {
     g_currTime = utils::timeNowMS();
@@ -46,7 +46,7 @@ updateDeltaTime()
     g_lastDeltaTime = g_currTime;
 }
 
-inline void
+static void
 updateDrawTime()
 {
     g_currDrawTime = utils::timeNowMS();
@@ -57,17 +57,17 @@ updateDrawTime()
 void
 run()
 {
-    WindowSetCursorImage(app::g_pApp, "default");
+    WindowSetCursorImage(app::g_pWindow, "default");
 
     g_prevTime = utils::timeNowS();
 
-    WindowBindGlContext(app::g_pApp);
-    WindowShowWindow(app::g_pApp);
+    WindowBindGlContext(app::g_pWindow);
+    WindowShowWindow(app::g_pWindow);
 
 #ifdef DEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(gl::debugCallback, app::g_pApp);
+    glDebugMessageCallback(gl::debugCallback, app::g_pWindow);
 #endif
 
     /*glEnable(GL_CULL_FACE);*/
@@ -88,24 +88,24 @@ run()
     game::loadLevel();
 
     /* proc once to get events */
-    WindowSwapBuffers(app::g_pApp);
+    WindowSwapBuffers(app::g_pWindow);
     controls::procMouse();
     controls::procKeys();
-    WindowProcEvents(app::g_pApp);
+    WindowProcEvents(app::g_pWindow);
 
-    WindowEnableRelativeMode(app::g_pApp);
+    WindowEnableRelativeMode(app::g_pWindow);
 
     mainLoop();
 }
 
 static int
-gameStateLoop([[maybe_unused]] void* pArg)
+gameStateLoop([[maybe_unused]] void* pNull)
 {
     FixedAllocator alFrame (s_aFrameMemGame, sizeof(s_aFrameMemGame));
 
-    while (app::g_pApp->bRunning || app::g_pMixer->bRunning)
+    while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
-        WindowProcEvents(app::g_pApp);
+        WindowProcEvents(app::g_pWindow);
         updateDeltaTime();
         controls::procKeys();
 
@@ -129,12 +129,12 @@ mainLoop()
     thrd_t thrdUpdatePhysics;
     thrd_create(&thrdUpdatePhysics, gameStateLoop, nullptr);
 
-    while (app::g_pApp->bRunning || app::g_pMixer->bRunning)
+    while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
         updateDrawTime();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, app::g_pApp->wWidth, app::g_pApp->wHeight);
+        glViewport(0, 0, app::g_pWindow->wWidth, app::g_pWindow->wHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         UboBufferData(&g_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
@@ -143,13 +143,13 @@ mainLoop()
         game::drawFPSCounter(&alFrame.base);
 
         FixedAllocatorReset(&alFrame);
-        WindowSwapBuffers(app::g_pApp);
-        g_fpsCount++;
+        WindowSwapBuffers(app::g_pWindow);
+        g_nfps++;
     }
 
     thrd_join(thrdUpdatePhysics, nullptr);
 
-#ifndef NDEBUG
+#ifdef DEBUG
     UboDestroy(&g_uboProjView);
     game::cleanup();
 #endif

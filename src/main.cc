@@ -19,15 +19,17 @@ main(int argc, char* argv[])
     WindowInit(&app);
     audio::MixerInit(&mixer, argc, argv);
 
-    app::g_pApp = &app.base;
+    app::g_pWindow = &app.base;
     app::g_pMixer = &mixer.base;
 
     frame::run();
 
+#ifdef DEBUG
     audio::MixerDestroy(&mixer);
     WindowDestroy(&app);
 
     ArenaFreeAll(&alMixer);
+#endif
 }
 
 #elif _WIN32
@@ -49,10 +51,12 @@ WinMain([[maybe_unused]] HINSTANCE instance,
 
     frame::run();
 
+#ifdef DEBUG
     platform::win32::MixerDestroy(&mixer);
     platform::win32::Win32Destroy(&app);
 
     ArenaFreeAll(&alMixer);
+#endif
 }
 
     #ifdef DEBUG
