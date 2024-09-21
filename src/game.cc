@@ -19,7 +19,7 @@
 namespace game
 {
 
-static AllocatorPool<Arena, ASSET_MAX_COUNT> s_assetArenas;
+static AllocatorPool<Arena> s_assetArenas(10);
 
 static Vec<Entity> s_aBlocks(AllocatorPoolGet(&s_assetArenas, SIZE_8K));
 
@@ -463,8 +463,10 @@ cleanup()
     for (auto& t : g_aAllTextures)
         TextureDestroy(&t);
 
-    for (auto& a : s_assetArenas.aAllocators)
+    for (auto& a : s_assetArenas.lAllocators)
         ArenaFreeAll(&a);
+
+    AllocatorPoolFreeAll(&s_assetArenas);
 }
 
 } /* namespace game */

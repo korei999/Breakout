@@ -2,28 +2,46 @@
 
 #include <assert.h>
 
+#include "List.hh"
 #include "Allocator.hh"
+#include "ChunkAllocator.hh"
+
+#include <stddef.h>
 
 namespace adt
 {
 
-template<typename A, u32 MAX>
+template<typename A>
 struct AllocatorPool
 {
-    A aAllocators[MAX];
+    ChunkAllocator al;
+    List<A> lAllocators;
     u32 size;
-    u32 cap;
 
-    AllocatorPool() : size (0), cap (MAX) {}
+    constexpr AllocatorPool(u32 pre) : al(sizeof(ListNode<A>), sizeof(ListNode<A>) * pre), lAllocators(&al.base), size(0) {}
 };
 
-template<typename A, u32 MAX>
-Allocator*
-AllocatorPoolGet(AllocatorPool<A, MAX>* s, u32 size)
+template<typename A>
+inline Allocator*
+AllocatorPoolGet(AllocatorPool<A>* s, u32 size)
 {
-    assert(s->size < s->cap && "size reached cap");
-    s->aAllocators[s->size++] = A (size);
-    return &s->aAllocators[s->size - 1].base;
+    auto* pA = ListPushBack(&s->lAllocators, A(size));
+    return (Allocator*)(&pA->data);
+}
+
+template<typename A>
+inline void
+AllocatorPoolGiveBack(AllocatorPool<A>* s, Allocator* p)
+{
+    auto* pNode = (ListNode<A>*)((u8*)(p) - offsetof(ListNode<A>, data));
+    ListRemove(&s->lAllocators, pNode);
+}
+
+template<typename A>
+inline void
+AllocatorPoolFreeAll(AllocatorPool<A>* s)
+{
+    ChunkFreeAll(&s->al);
 }
 
 } /* namespace adt */
