@@ -56,7 +56,7 @@ struct ThreadPool
     u32 threadCount = 0;
     cnd_t cndQ, cndWait;
     mtx_t mtxQ, mtxWait;
-    std::atomic<int> activeTaskCount;
+    std::atomic<int> atActiveTaskCount;
     bool bDone = false;
 
     ThreadPool() = default;
@@ -71,7 +71,7 @@ inline void ThreadPoolWait(ThreadPool* s);
 
 inline
 ThreadPool::ThreadPool(Allocator* p, u32 _threadCount)
-    : qTasks(p, _threadCount), threadCount(_threadCount), activeTaskCount(0), bDone(false)
+    : qTasks(p, _threadCount), threadCount(_threadCount), atActiveTaskCount(0), bDone(false)
 {
     /*QueueResize(&qTasks, _threadCount);*/
     pThreads = (thrd_t*)alloc(p, _threadCount, sizeof(thrd_t));
@@ -100,11 +100,11 @@ __ThreadPoolLoop(void* p)
                 return thrd_success;
 
             task = *QueuePopFront(&s->qTasks);
-            s->activeTaskCount++; /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */
+            s->atActiveTaskCount++; /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */
         }
 
         task.pfn(task.pArgs);
-        s->activeTaskCount--;
+        s->atActiveTaskCount--;
 
         if (!ThreadPoolBusy(s))
             cnd_signal(&s->cndWait);
@@ -127,7 +127,7 @@ ThreadPoolBusy(ThreadPool* s)
     bool ret = !QueueEmpty(&s->qTasks);
     mtx_unlock(&s->mtxQ);
 
-    return ret || s->activeTaskCount > 0;
+    return ret || s->atActiveTaskCount > 0;
 }
 
 inline void

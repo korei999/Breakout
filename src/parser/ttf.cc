@@ -110,7 +110,7 @@ cmapRead(Font* s, u32 at)
 
         LOG(
             "\t\t(%u): platformID: %u(%.*s), platformSpecificID: %u(%.*s), offset(%u)\n",
-            VecGetIdx(cmap.aSubtables, &st),
+            VecGetIdx(&cmap.aSubtables, &st),
             st.platformID, sPlatformID.size, sPlatformID.pData,
             st.platformSpecificID, sPlatformSpecificID.size, sPlatformSpecificID.pData,
             st.offset
@@ -439,7 +439,7 @@ FontParse(Font* s)
 #ifdef D_TTF
         LOG(
             "(%u): tableTag: '%.*s'(%u), checkSum: %u, offset: %u, length: %u\n",
-            VecGetIdx(s->tableDirectory.aTableRecords, &r),
+            VecGetIdx(&s->tableDirectory.aTableRecords, &r),
             r.tableTag.size, r.tableTag.pData, *(u32*)(r.tableTag.pData), r.checkSum, r.offset, r.length
         );
 #endif

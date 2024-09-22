@@ -69,7 +69,7 @@ template<typename T> inline void VecSetSize(Vec<T>* s, u32 size);
 template<typename T> inline void VecSetCap(Vec<T>* s, u32 cap);
 template<typename T> inline void VecSwapWithLast(Vec<T>* s, u32 i);
 template<typename T> inline void VecPopAsLast(Vec<T>* s, u32 i);
-template<typename T> inline u32 VecGetIdx(const Vec<T>& s, T* x);
+template<typename T> inline u32 VecGetIdx(const Vec<T>* s, T* x);
 template<typename T> inline T& VecAt(Vec<T>* s, u32 at); /* assert 'at < cap' instead of 'at < size' */
 template<typename T> inline void VecDestroy(Vec<T>* s);
 
@@ -151,9 +151,9 @@ VecPopAsLast(Vec<T>* s, u32 i)
 
 template<typename T>
 inline u32
-VecGetIdx(const Vec<T>& s, T* x)
+VecGetIdx(const Vec<T>* s, T* x)
 {
-    return u32(x - s.pData);
+    return u32(x - s->pData);
 }
 
 template<typename T>
