@@ -12,6 +12,7 @@
 #include "frame.hh"
 #include "parser/ttf.hh"
 #include "parser/Wave.hh"
+#include "adt/defer.hh"
 
 #include <stdio.h>
 
@@ -78,8 +79,11 @@ loadAssets()
     s_textFPS = Text("", 40, 0, 0, GL_DYNAMIC_DRAW);
 
     Arena allocScope(SIZE_1K);
-    ThreadPool tp(&allocScope.base, 1);
+    defer(ArenaFreeAll(&allocScope));
+
+    ThreadPool tp(&allocScope.base);
     ThreadPoolStart(&tp);
+    defer(ThreadPoolDestroy(&tp));
 
     /* unbind before creating threads */
     WindowUnbindGlContext(app::g_pWindow);
@@ -104,9 +108,6 @@ loadAssets()
 
     /* restore context after assets are loaded */
     WindowBindGlContext(app::g_pWindow);
-
-    ThreadPoolDestroy(&tp);
-    ArenaFreeAll(&allocScope);
 
     WindowSetSwapInterval(app::g_pWindow, 1);
     WindowSetFullscreen(app::g_pWindow);

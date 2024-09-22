@@ -33,7 +33,7 @@ template<typename A>
 inline void
 AllocatorPoolGiveBack(AllocatorPool<A>* s, Allocator* p)
 {
-    auto* pNode = (ListNode<A>*)((u8*)(p) - offsetof(ListNode<A>, data));
+    auto* pNode = (ListNode<A>*)((u8*)p - offsetof(ListNode<A>, data));
     freeAll(pNode->data);
     ListRemove(&s->lAllocators, pNode);
 }

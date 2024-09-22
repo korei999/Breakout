@@ -1,9 +1,10 @@
 #pragma once
 
+#include "Queue.hh"
+#include "defer.hh"
+
 #include <atomic>
 #include <threads.h>
-
-#include "Queue.hh"
 
 #ifdef __linux__
     #include <sys/sysinfo.h>
@@ -61,8 +62,7 @@ struct ThreadPool
     bool bDone = false;
 
     ThreadPool() = default;
-    ThreadPool(Allocator* p, u32 _threadCount);
-    ThreadPool(Allocator* p) : ThreadPool(p, getLogicalCoresCount()) {}
+    ThreadPool(Allocator* p, u32 _threadCount = getLogicalCoresCount());
 };
 
 inline void ThreadPoolStart(ThreadPool* s);
@@ -93,20 +93,16 @@ __ThreadPoolLoop(void* p)
         ThreadPoolTask task;
         {
             mtx_lock(&s->mtxQ);
+            defer(mtx_unlock(&s->mtxQ));
 
             while (QueueEmpty(&s->qTasks) && !s->bDone)
                 cnd_wait(&s->cndQ, &s->mtxQ);
 
             if (s->bDone)
-            {
-                mtx_unlock(&s->mtxQ);
                 return thrd_success;
-            }
 
             task = *QueuePopFront(&s->qTasks);
             s->activeTaskCount++; /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */
-
-            mtx_unlock(&s->mtxQ);
         }
 
         task.pfn(task.pArgs);

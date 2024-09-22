@@ -3,6 +3,7 @@
 #include "String.hh"
 #include "logs.hh"
 #include "Option.hh"
+#include "defer.hh"
 
 namespace adt
 {
@@ -16,6 +17,8 @@ load(Allocator* pAlloc, String path)
     Option<String> ret {};
 
     auto sn = StringAlloc(pAlloc, path);
+    defer(free(pAlloc, sn.pData));
+
     FILE* pf = fopen(sn.pData, "rb");
     if (pf)
     {
@@ -31,8 +34,6 @@ load(Allocator* pAlloc, String path)
         fclose(pf);
     }
     else LOG_WARN("ret(%p): Error opening '%.*s' file\n", pf, path.size, path.pData);
-
-    free(pAlloc, sn.pData);
 
     return ret;
 }
