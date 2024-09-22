@@ -481,6 +481,8 @@ FontGetGlyphOffset(Font* s, u32 idx)
     if (s->head.indexToLocFormat == 1)
     {
     }
+
+    return 0;
 }
 
 } /* namespace ttf */

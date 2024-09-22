@@ -1,5 +1,10 @@
 #pragma once
 
+#include "audio.hh"
+#include "adt/Vec.hh"
+
+#include <xaudio2.h>
+
 #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN 1
 #endif
@@ -7,11 +12,11 @@
     #define NOMINMAX
 #endif
 #include <windows.h>
-#include <xaudio2.h>
+#undef near
+#undef far
+
 #include <threads.h>
 
-#include "audio.hh"
-#include "adt/Vec.hh"
 
 namespace platform
 {
@@ -51,3 +56,13 @@ struct Mixer
 
 } /* namespace win32 */
 } /* namespace platform */
+
+namespace audio
+{
+
+inline void MixerInit(platform::win32::Mixer* s, int argc, char** argv) { platform::win32::MixerInit(s, argc, argv); }
+inline void MixerDestroy(platform::win32::Mixer* s) { platform::win32::MixerDestroy(s); }
+inline void MixerAdd(platform::win32::Mixer* s, audio::Track t) { platform::win32::MixerAdd(s, t); }
+inline void MixerAddBackground(platform::win32::Mixer* s, audio::Track t) { platform::win32::MixerAddBackground(s, t); }
+
+} /* namespace audio */

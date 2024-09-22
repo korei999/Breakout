@@ -13,7 +13,7 @@ namespace math
 constexpr f64 PI = 3.14159265358979323846;
 constexpr f32 PI_F = f32(PI);
 constexpr f64 EPS = 0.000001;
-constexpr f32 EPS_F = 0.00001;
+constexpr f32 EPS_F = 0.00001f;
 
 constexpr f64 toDeg(f64 x) { return x * 180.0 / PI; }
 constexpr f64 toRad(f64 x) { return x * PI / 180.0; }

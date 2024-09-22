@@ -11,7 +11,7 @@ namespace adt
 namespace format
 {
 
-constexpr u32
+inline u32
 digitCount(s64 x)
 {
     return u32(log10(x)) + 1;
@@ -19,7 +19,7 @@ digitCount(s64 x)
 
 /* https://stackoverflow.com/a/54481936 */
 
-constexpr u32
+inline u32
 digitCount(f64 x)
 {
     int digits = 0;
@@ -59,7 +59,7 @@ digitCount(f64 x)
 inline String
 toString(char* pBuf, [[maybe_unused]] u32 bufSize, s64 x)
 {
-    s64 absX = abs(x);
+    s64 absX = llabs(x);
     s64 digits = s64(digitCount(absX));
     bool bPositive = x > 0 ? true : false;
     s64 i;
@@ -128,7 +128,7 @@ inline String
 toString(char* pBuf, u32 bufSize, f64 x)
 {
     s64 intPart = s64(x);
-    f32 realPart = abs(x) - abs(intPart);
+    f32 realPart = fabs(x) - llabs(intPart);
     s64 realPartInt = realPart * pow(10, digitCount(x));
 
     String sInt = toString(pBuf, bufSize, intPart);

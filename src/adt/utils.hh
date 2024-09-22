@@ -4,13 +4,15 @@
     #include <time.h>
     #include <unistd.h>
 #elif _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-    #define WIN32_LEAN_AND_MEAN 1
-#endif
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN 1
+    #endif
     #ifndef NOMINMAX
-    #define NOMINMAX
-#endif
+        #define NOMINMAX
+    #endif
     #include <windows.h>
+    #undef near
+    #undef far
     #include <sysinfoapi.h>
 #endif
 

@@ -6,6 +6,13 @@
 #define WIN32_LEAN_AND_MEAN 1
 #include <windowsx.h>
 
+#ifdef near
+    #undef near
+#endif
+#ifdef far
+    #undef far
+#endif
+
 namespace platform
 {
 namespace win32
@@ -224,7 +231,7 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         case WM_DESTROY:
             pApp->base.bRunning = false;
-            app::g_pMixer->bRunning = false;
+            app::g_pMixer->base.bRunning = false;
             return 0;
 
         case WM_SIZE:

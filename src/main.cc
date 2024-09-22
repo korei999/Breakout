@@ -47,7 +47,7 @@ WinMain([[maybe_unused]] HINSTANCE instance,
     platform::win32::Win32Window app("Breakout", instance);
 
     app::g_pMixer = &mixer;
-    app::g_pApp = &app;
+    app::g_pWindow = &app;
 
     frame::run();
 

@@ -11,6 +11,8 @@
     #define getLogicalCoresCount() get_nprocs()
 #elif _WIN32
     #include <windows.h>
+    #undef near
+    #undef far
     #include <sysinfoapi.h>
 
 inline DWORD

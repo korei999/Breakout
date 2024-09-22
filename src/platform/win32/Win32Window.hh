@@ -3,12 +3,17 @@
 #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN 1
 #endif
-    #ifndef NOMINMAX
+
+#ifndef NOMINMAX
     #define NOMINMAX
 #endif
+
 #include <windows.h>
+#undef near
+#undef far
 
 #include "Window.hh"
+
 
 namespace platform
 {
