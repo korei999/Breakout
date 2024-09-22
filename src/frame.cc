@@ -102,11 +102,10 @@ run()
 static int
 gameStateLoop([[maybe_unused]] void* pNull)
 {
-    FixedAllocator alFrame(s_aFrameMemGame, sizeof(s_aFrameMemGame));
+    FixedAllocator alFrame (s_aFrameMemGame, sizeof(s_aFrameMemGame));
 
     while (app::g_pWindow->base.bRunning || app::g_pMixer->base.bRunning)
     {
-        WindowProcEvents(app::g_pWindow);
         updateDeltaTime();
         controls::procKeys();
 
@@ -122,16 +121,18 @@ gameStateLoop([[maybe_unused]] void* pNull)
     return thrd_success;
 }
 
-static int
-redrawLoop([[maybe_unused]] void* pNull)
+static void
+mainLoop()
 {
-    FixedAllocator alFrame(s_aFrameMemDraw, sizeof(s_aFrameMemDraw));
+    FixedAllocator alFrame (s_aFrameMemDraw, sizeof(s_aFrameMemGame));
 
-    WindowBindGlContext(app::g_pWindow);
-    defer(WindowUnbindGlContext(app::g_pWindow));
+    thrd_t thrdUpdatePhysics;
+    thrd_create(&thrdUpdatePhysics, gameStateLoop, nullptr);
+    defer(thrd_join(thrdUpdatePhysics, nullptr));
 
     while (app::g_pWindow->base.bRunning || app::g_pMixer->base.bRunning)
     {
+        WindowProcEvents(app::g_pWindow);
         updateDrawTime();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -147,22 +148,6 @@ redrawLoop([[maybe_unused]] void* pNull)
         WindowSwapBuffers(app::g_pWindow);
         g_nfps++;
     }
-
-    return thrd_success;
-}
-
-static void
-mainLoop()
-{
-    WindowUnbindGlContext(app::g_pWindow);
-
-    thrd_t thrdRedraw;
-    thrd_create(&thrdRedraw, redrawLoop, nullptr);
-
-    gameStateLoop(nullptr);
-
-    thrd_join(thrdRedraw, nullptr);
-    WindowBindGlContext(app::g_pWindow);
 
 #ifdef DEBUG
     UboDestroy(&g_uboProjView);
