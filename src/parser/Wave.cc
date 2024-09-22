@@ -43,7 +43,7 @@ WaveParse(Wave* s)
     String data {};
     if (subchunk2ID != "data")
     {
-        /* naively skip metadata */
+        /* skip metadata */
         String __data {};
         while (__data != "data" && s->bin.pos + 4 < s->bin.sFile.size)
         {

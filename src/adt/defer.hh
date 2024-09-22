@@ -24,11 +24,11 @@ deferFunc(F f)
 
 } /* namespace adt */
 
-#define ADT_DEFER_1(x, y) x##y
+#define ADT_DEFER_1(x, y) x##y##__
 #define ADT_DEFER_2(x, y) ADT_DEFER_1(x, y)
 #define ADT_DEFER_3(x) ADT_DEFER_2(x, __COUNTER__)
 
-#define adtDefer(code) auto ADT_DEFER_3(__defer__) = adt::deferFunc([&] { code; })
+#define adtDefer(code) auto ADT_DEFER_3(__defer) = adt::deferFunc([&] { code; })
 
 #ifndef ADT_DEFER_ONLY
     #define defer(code) adtDefer(code)

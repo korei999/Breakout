@@ -3,8 +3,9 @@
 #include "Queue.hh"
 #include "defer.hh"
 
-#include <atomic>
 #include <threads.h>
+
+#include <atomic>
 
 #ifdef __linux__
     #include <sys/sysinfo.h>
@@ -12,20 +13,6 @@
     #define getLogicalCoresCount() get_nprocs()
 #elif _WIN32
     #include <windows.h>
-    #undef near
-    #undef far
-    #include <sysinfoapi.h>
-
-inline DWORD
-getLogicalCoresCountWIN32()
-{
-    SYSTEM_INFO info;
-    GetSystemInfo(&info);
-    return info.dwNumberOfProcessors;
-}
-
-    #define getLogicalCoresCount() getLogicalCoresCountWIN32()
-
     #ifdef min
         #undef min
     #endif
@@ -38,6 +25,17 @@ getLogicalCoresCountWIN32()
     #ifdef far
         #undef far
     #endif
+    #include <sysinfoapi.h>
+
+inline DWORD
+getLogicalCoresCountWIN32()
+{
+    SYSTEM_INFO info;
+    GetSystemInfo(&info);
+    return info.dwNumberOfProcessors;
+}
+
+    #define getLogicalCoresCount() getLogicalCoresCountWIN32()
 #else
     #define getLogicalCoresCount() 4
 #endif
@@ -58,7 +56,7 @@ struct ThreadPool
     u32 threadCount = 0;
     cnd_t cndQ, cndWait;
     mtx_t mtxQ, mtxWait;
-    std::atomic<int> activeTaskCount {};
+    std::atomic<int> activeTaskCount;
     bool bDone = false;
 
     ThreadPool() = default;
@@ -73,7 +71,7 @@ inline void ThreadPoolWait(ThreadPool* s);
 
 inline
 ThreadPool::ThreadPool(Allocator* p, u32 _threadCount)
-    : qTasks (p, _threadCount), threadCount (_threadCount), activeTaskCount (0), bDone (false)
+    : qTasks(p, _threadCount), threadCount(_threadCount), activeTaskCount(0), bDone(false)
 {
     /*QueueResize(&qTasks, _threadCount);*/
     pThreads = (thrd_t*)alloc(p, _threadCount, sizeof(thrd_t));
