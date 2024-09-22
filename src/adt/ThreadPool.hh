@@ -7,10 +7,13 @@
 
 #include <atomic>
 
+namespace adt
+{
+
 #ifdef __linux__
     #include <sys/sysinfo.h>
 
-    #define getLogicalCoresCount() get_nprocs()
+    #define ADT_GET_NCORES() get_nprocs()
 #elif _WIN32
     #include <windows.h>
     #ifdef min
@@ -35,15 +38,12 @@ getLogicalCoresCountWIN32()
     return info.dwNumberOfProcessors;
 }
 
-    #define getLogicalCoresCount() getLogicalCoresCountWIN32()
+    #define ADT_GET_NCORES() getLogicalCoresCountWIN32()
 #else
-    #define getLogicalCoresCount() 4
+    #define ADT_GET_NCORES() 4
 #endif
 
-namespace adt
-{
-
-struct ThreadPoolTask
+struct ThreadTask
 {
     thrd_start_t pfn;
     void* pArgs;
@@ -51,7 +51,7 @@ struct ThreadPoolTask
 
 struct ThreadPool
 {
-    Queue<ThreadPoolTask> qTasks {};
+    Queue<ThreadTask> qTasks {};
     thrd_t* pThreads = nullptr;
     u32 threadCount = 0;
     cnd_t cndQ, cndWait;
@@ -60,12 +60,12 @@ struct ThreadPool
     bool bDone = false;
 
     ThreadPool() = default;
-    ThreadPool(Allocator* p, u32 _threadCount = getLogicalCoresCount());
+    ThreadPool(Allocator* p, u32 _threadCount = ADT_GET_NCORES());
 };
 
 inline void ThreadPoolStart(ThreadPool* s);
 inline bool ThreadPoolBusy(ThreadPool* s);
-inline void ThreadPoolSubmit(ThreadPool* s, ThreadPoolTask task);
+inline void ThreadPoolSubmit(ThreadPool* s, ThreadTask task);
 inline void ThreadPoolSubmit(ThreadPool* s, thrd_start_t pfnTask, void* pArgs);
 inline void ThreadPoolWait(ThreadPool* s);
 
@@ -88,7 +88,7 @@ __ThreadPoolLoop(void* p)
 
     while (!s->bDone)
     {
-        ThreadPoolTask task;
+        ThreadTask task;
         {
             mtx_lock(&s->mtxQ);
             defer(mtx_unlock(&s->mtxQ));
@@ -131,7 +131,7 @@ ThreadPoolBusy(ThreadPool* s)
 }
 
 inline void
-ThreadPoolSubmit(ThreadPool* s, ThreadPoolTask task)
+ThreadPoolSubmit(ThreadPool* s, ThreadTask task)
 {
     mtx_lock(&s->mtxQ);
     QueuePushBack(&s->qTasks, task);
