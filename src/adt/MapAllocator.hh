@@ -37,9 +37,14 @@ MapAllocatorAlloc(MapAllocator* s, u64 mCount, u64 mSize)
 inline void*
 MapAllocatorRealloc(MapAllocator* s, void* p, u64 mCount, u64 mSize)
 {
-    HashMapRemove(&s->mAllocations, p);
     void* r = ::reallocarray(p, mCount, mSize);
-    HashMapInsert(&s->mAllocations, r);
+
+    if (p != r)
+    {
+        HashMapRemove(&s->mAllocations, p);
+        HashMapInsert(&s->mAllocations, r);
+    }
+
     return r;
 }
 
