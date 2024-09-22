@@ -378,7 +378,7 @@ onProcess(void* data)
 
     pw_stream_queue_buffer(s->pStream, b);
 
-    if (!app::g_pWindow->bRunning) pw_main_loop_quit(s->pLoop);
+    if (!app::g_pWindow->base.bRunning) pw_main_loop_quit(s->pLoop);
     /* set bRunning for the mixer outside */
 }
 

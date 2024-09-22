@@ -103,7 +103,7 @@ gameStateLoop([[maybe_unused]] void* pNull)
 {
     FixedAllocator alFrame (s_aFrameMemGame, sizeof(s_aFrameMemGame));
 
-    while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
+    while (app::g_pWindow->base.bRunning || app::g_pMixer->base.bRunning)
     {
         WindowProcEvents(app::g_pWindow);
         updateDeltaTime();
@@ -129,12 +129,12 @@ mainLoop()
     thrd_t thrdUpdatePhysics;
     thrd_create(&thrdUpdatePhysics, gameStateLoop, nullptr);
 
-    while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
+    while (app::g_pWindow->base.bRunning || app::g_pMixer->base.bRunning)
     {
         updateDrawTime();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, app::g_pWindow->wWidth, app::g_pWindow->wHeight);
+        glViewport(0, 0, app::g_pWindow->base.wWidth, app::g_pWindow->base.wHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         UboBufferData(&g_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);

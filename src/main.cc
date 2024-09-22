@@ -14,19 +14,19 @@ int
 main(int argc, char* argv[])
 {
     platform::pipewire::Mixer mixer(&alMixer.base);
-    platform::wayland::Client app("Breakout");
+    platform::wayland::Client window("Breakout");
 
-    WindowInit(&app);
+    WindowInit(&window);
     audio::MixerInit(&mixer, argc, argv);
 
-    app::g_pWindow = &app.base;
-    app::g_pMixer = &mixer.base;
+    app::g_pWindow = &window;
+    app::g_pMixer = &mixer;
 
     frame::run();
 
 #ifdef DEBUG
     audio::MixerDestroy(&mixer);
-    WindowDestroy(&app);
+    WindowDestroy(&window);
 
     ArenaFreeAll(&alMixer);
 #endif
@@ -46,8 +46,8 @@ WinMain([[maybe_unused]] HINSTANCE instance,
     platform::win32::MixerInit(&mixer, {}, {});
     platform::win32::Win32Window app("Breakout", instance);
 
-    app::g_pMixer = &mixer.base;
-    app::g_pApp = &app.base;
+    app::g_pMixer = &mixer;
+    app::g_pApp = &app;
 
     frame::run();
 

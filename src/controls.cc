@@ -49,8 +49,8 @@ procKeysOnce(u32 key, u32 pressed)
         case KEY_GRAVE:
             if (pressed)
             {
-                app::g_pWindow->bPaused = !app::g_pWindow->bPaused;
-                if (app::g_pWindow->bPaused) LOG_WARN("paused: %d\n", app::g_pWindow->bPaused);
+                app::g_pWindow->base.bPaused = !app::g_pWindow->base.bPaused;
+                if (app::g_pWindow->base.bPaused) LOG_WARN("paused: %d\n", app::g_pWindow->base.bPaused);
             }
             break;
 
@@ -62,7 +62,7 @@ procKeysOnce(u32 key, u32 pressed)
         case KEY_CAPSLOCK:
             if (pressed)
             {
-                app::g_pWindow->bRunning = false;
+                app::g_pWindow->base.bRunning = false;
 
 #ifdef _WIN32
                 /* FIXME: implement mixer on windows */
