@@ -3,7 +3,7 @@
 #include "audio.hh"
 #include "adt/Vec.hh"
 
-#include <xaudio2.h>
+// #include <xaudio2.h>
 
 #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN 1
@@ -40,8 +40,8 @@ inline const audio::MixerInterface __XAudio2MixerVTable {
 struct Mixer
 {
     audio::Mixer base;
-    IXAudio2* pXAudio2 = nullptr;
-    IXAudio2SourceVoice* pSourceVoice = nullptr;
+    /*IXAudio2* pXAudio2 = nullptr;*/
+    /*IXAudio2SourceVoice* pSourceVoice = nullptr;*/
 
     mtx_t mtxAdd {};
     Vec<audio::Track> aTracks {};

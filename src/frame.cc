@@ -122,14 +122,13 @@ gameStateLoop([[maybe_unused]] void* pNull)
     return thrd_success;
 }
 
-static void
-mainLoop()
+static int
+redrawLoop([[maybe_unused]] void* pNull)
 {
     FixedAllocator alFrame (s_aFrameMemDraw, sizeof(s_aFrameMemGame));
 
-    thrd_t thrdUpdatePhysics;
-    thrd_create(&thrdUpdatePhysics, gameStateLoop, nullptr);
-    defer(thrd_join(thrdUpdatePhysics, nullptr));
+    WindowBindGlContext(app::g_pWindow);
+    defer(WindowUnbindGlContext(app::g_pWindow));
 
     while (app::g_pWindow->base.bRunning || app::g_pMixer->base.bRunning)
     {
@@ -148,6 +147,22 @@ mainLoop()
         WindowSwapBuffers(app::g_pWindow);
         g_nfps++;
     }
+
+    return thrd_success;
+}
+
+static void
+mainLoop()
+{
+    WindowUnbindGlContext(app::g_pWindow);
+
+    thrd_t thrdRedraw;
+    thrd_create(&thrdRedraw, redrawLoop, nullptr);
+
+    gameStateLoop(nullptr);
+
+    thrd_join(thrdRedraw, nullptr);
+    WindowBindGlContext(app::g_pWindow);
 
 #ifdef DEBUG
     UboDestroy(&g_uboProjView);
