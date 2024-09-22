@@ -1,5 +1,6 @@
 #include "frame.hh"
 
+#include "adt/defer.hh"
 #include "app.hh"
 #include "colors.hh"
 #include "controls.hh"
@@ -128,6 +129,7 @@ mainLoop()
 
     thrd_t thrdUpdatePhysics;
     thrd_create(&thrdUpdatePhysics, gameStateLoop, nullptr);
+    defer(thrd_join(thrdUpdatePhysics, nullptr));
 
     while (app::g_pWindow->base.bRunning || app::g_pMixer->base.bRunning)
     {
@@ -146,8 +148,6 @@ mainLoop()
         WindowSwapBuffers(app::g_pWindow);
         g_nfps++;
     }
-
-    thrd_join(thrdUpdatePhysics, nullptr);
 
 #ifdef DEBUG
     UboDestroy(&g_uboProjView);

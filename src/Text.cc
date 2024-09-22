@@ -3,6 +3,7 @@
 #include "adt/Arena.hh"
 #include "adt/Vec.hh"
 #include "frame.hh"
+#include "adt/defer.hh"
 
 static Vec<TextCharQuad> TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
 static void TextGenMesh(Text* s, int xOrigin, int yOrigin, GLint drawMode);
@@ -17,6 +18,7 @@ static void
 TextGenMesh(Text* s, int xOrigin, int yOrigin, GLint drawMode)
 {
     Arena allocScope(SIZE_1M);
+    defer(ArenaFreeAll(&allocScope));
 
     auto aQuads = TextUpdateBuffer(s, &allocScope.base, s->str, s->maxSize, xOrigin, yOrigin);
 
@@ -35,8 +37,6 @@ TextGenMesh(Text* s, int xOrigin, int yOrigin, GLint drawMode)
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), (void*)(2 * sizeof(f32)));
 
     glBindVertexArray(0);
-
-    ArenaFreeAll(&allocScope);
 }
 
 static Vec<TextCharQuad>
@@ -102,13 +102,12 @@ TextUpdate(Text* s, Allocator* pAlloc, String str, int x, int y)
     assert(str.size <= s->maxSize);
 
     s->str = str;
-    auto aQuads = TextUpdateBuffer(s, pAlloc, str, s->maxSize, x, y);
+    Vec<TextCharQuad> aQuads = TextUpdateBuffer(s, pAlloc, str, s->maxSize, x, y);
+    defer(VecDestroy(&aQuads));
 
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(f32) * 4 * 6, aQuads.pData);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    VecDestroy(&aQuads);
 }
 
 void

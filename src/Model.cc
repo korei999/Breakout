@@ -29,7 +29,10 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     for (u32 i = 0; i < a.aBuffers.size; i++)
     {
         mtx_lock(&gl::mtxGlContext);
+        defer(mtx_unlock(&gl::mtxGlContext));
+
         WindowBindGlContext(app::g_pWindow);
+        defer(WindowUnbindGlContext(app::g_pWindow));
 
         GLuint b;
         glGenBuffers(1, &b);
@@ -37,14 +40,16 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         glBufferData(GL_ARRAY_BUFFER, a.aBuffers[i].byteLength, a.aBuffers[i].aBin.pData, drawMode);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         VecPush(&aBufferMap, b);
-
-        WindowUnbindGlContext(app::g_pWindow);
-        mtx_unlock(&gl::mtxGlContext);
     }
 
     AtomicArena atAl(SIZE_1M * 10);
     ThreadPool tp((Allocator*)&atAl);
     ThreadPoolStart(&tp);
+
+    defer(
+        ThreadPoolDestroy(&tp);
+        AtomicArenaFreeAll(&atAl);
+    );
 
     /* preload texures */
     Vec<Texture> aTex((Allocator*)&atAl, a.aImages.size);
@@ -231,9 +236,6 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         for (auto& ch : node.children)
             s->aTmIdxs[at(ch, s->aTmCounters[ch]++)] = i; /* give each children it's parent's idx's */
     }
-
-    ThreadPoolDestroy(&tp);
-    AtomicArenaFreeAll(&atAl);
 }
 
 void
@@ -263,10 +265,12 @@ ModelDraw(Model* s, enum DRAW flags, Shader* sh, String svUniform, String svUnif
             if (e.triangleCount != NPOS)
                 glDrawArrays(GLenum(e.mode), 0, e.triangleCount);
             else
-                glDrawElements(GLenum(e.mode),
-                               e.meshData.eboSize,
-                               GLenum(e.indType),
-                               nullptr);
+                glDrawElements(
+                    GLenum(e.mode),
+                    e.meshData.eboSize,
+                    GLenum(e.indType),
+                    nullptr
+                );
         }
     }
 }
@@ -328,10 +332,12 @@ ModelDrawGraph(
                 if (e.triangleCount != NPOS)
                     glDrawArrays(GLenum(e.mode), 0, e.triangleCount);
                 else
-                    glDrawElements(GLenum(e.mode),
-                                   e.meshData.eboSize,
-                                   GLenum(e.indType),
-                                   nullptr);
+                    glDrawElements(
+                        GLenum(e.mode),
+                        e.meshData.eboSize,
+                        GLenum(e.indType),
+                        nullptr
+                    );
             }
         }
     }
