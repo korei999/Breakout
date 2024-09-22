@@ -18,7 +18,7 @@ struct AllocatorPool
     List<A> lAllocators;
     u32 size;
 
-    constexpr AllocatorPool(u32 pre) : al(sizeof(ListNode<A>), sizeof(ListNode<A>) * pre), lAllocators(&al.base), size(0) {}
+    constexpr AllocatorPool(u32 pre) : al(sizeof(ListNode<A>), sizeof(ListNode<A>) * pre), lAllocators(&al.base), size {0} {}
 };
 
 template<typename A>
@@ -34,6 +34,7 @@ inline void
 AllocatorPoolGiveBack(AllocatorPool<A>* s, Allocator* p)
 {
     auto* pNode = (ListNode<A>*)((u8*)(p) - offsetof(ListNode<A>, data));
+    freeAll(pNode->data);
     ListRemove(&s->lAllocators, pNode);
 }
 
@@ -41,6 +42,9 @@ template<typename A>
 inline void
 AllocatorPoolFreeAll(AllocatorPool<A>* s)
 {
+    for (auto& a : s->lAllocators)
+        freeAll(&a);
+
     ChunkFreeAll(&s->al);
 }
 

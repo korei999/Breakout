@@ -310,6 +310,8 @@ loadLevel()
     /* place player in the middle */
     g_player.base.pos.x = frame::WIDTH/2 - frame::g_unit.x;
 
+    VecSetCap(&s_aBlocks, levelY*levelX);
+    VecSetCap(&g_aPEntities, levelY*levelX);
     VecSetSize(&s_aBlocks, 0);
     VecSetSize(&g_aPEntities, 0);
 
@@ -461,9 +463,6 @@ cleanup()
 
     for (auto& t : g_aAllTextures)
         TextureDestroy(&t);
-
-    for (auto& a : s_assetArenas.lAllocators)
-        ArenaFreeAll(&a);
 
     AllocatorPoolFreeAll(&s_assetArenas);
 }

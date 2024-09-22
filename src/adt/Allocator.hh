@@ -23,6 +23,7 @@ struct AllocatorInterface
     void* (*alloc)(Allocator* s, u64 mCount, u64 mSize);
     void* (*realloc)(Allocator* s, void* p, u64 mCount, u64 mSize);
     void (*free)(Allocator* s, void* p);
+    void (*freeAll)(Allocator* s);
 };
 
 struct Allocator
@@ -34,5 +35,6 @@ struct Allocator
 ADT_NO_UB constexpr void* alloc(Allocator* s, u64 mCount, u64 mSize) { return s->pVTable->alloc(s, mCount, mSize); }
 ADT_NO_UB constexpr void* realloc(Allocator* s, void* p, u64 mCount, u64 mSize) { return s->pVTable->realloc(s, p, mCount, mSize); }
 ADT_NO_UB constexpr void free(Allocator* s, void* p) { s->pVTable->free(s, p); }
+ADT_NO_UB constexpr void freeAll(Allocator* s) { s->pVTable->freeAll(s); }
 
 } /* namespace adt */

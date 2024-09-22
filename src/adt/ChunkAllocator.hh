@@ -145,7 +145,8 @@ ChunkFreeAll(ChunkAllocator* s)
 inline const AllocatorInterface __CunkAllocatorVTable {
     .alloc = decltype(AllocatorInterface::alloc)(ChunkAlloc),
     .realloc = decltype(AllocatorInterface::realloc)(__ChunkRealloc),
-    .free = decltype(AllocatorInterface::free)(ChunkFree)
+    .free = decltype(AllocatorInterface::free)(ChunkFree),
+    .freeAll = decltype(AllocatorInterface::freeAll)(ChunkFreeAll),
 };
 
 inline

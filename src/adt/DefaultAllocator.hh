@@ -2,50 +2,62 @@
 
 #include "Allocator.hh"
 
+#include <assert.h>
 #include <stdlib.h>
 
 namespace adt
 {
 
-struct DefaultAllocator;
+struct OsAllocator;
 
-inline void* DefaultAlloc(DefaultAllocator* s, u64 mCount, u64 mSize);
-inline void* DefaultRealloc(DefaultAllocator* s, void* p, u64 mCount, u64 mSize);
-inline void DefaultFree(DefaultAllocator* s, void* p);
+inline void* OsAlloc(OsAllocator* s, u64 mCount, u64 mSize);
+inline void* OsRealloc(OsAllocator* s, void* p, u64 mCount, u64 mSize);
+inline void OsFree(OsAllocator* s, void* p);
+inline void __OsFreeAll(OsAllocator* s);
 
-inline void* alloc(DefaultAllocator* s, u64 mCount, u64 mSize) { return DefaultAlloc(s, mCount, mSize); }
-inline void* realloc(DefaultAllocator* s, void* p, u64 mCount, u64 mSize) { return DefaultRealloc(s, p, mCount, mSize); }
-inline void free(DefaultAllocator* s, void* p) { DefaultFree(s, p); }
+inline void* alloc(OsAllocator* s, u64 mCount, u64 mSize) { return OsAlloc(s, mCount, mSize); }
+inline void* realloc(OsAllocator* s, void* p, u64 mCount, u64 mSize) { return OsRealloc(s, p, mCount, mSize); }
+inline void free(OsAllocator* s, void* p) { OsFree(s, p); }
+inline void freeAll(OsAllocator* s) { __OsFreeAll(s); }
 
-inline const AllocatorInterface __DefaultAllocatorVTable {
-    .alloc = (decltype(AllocatorInterface::alloc))DefaultAlloc,
-    .realloc = (decltype(AllocatorInterface::realloc))DefaultRealloc,
-    .free = (decltype(AllocatorInterface::free))DefaultFree
+inline const AllocatorInterface __OsAllocatorVTable {
+    .alloc = (decltype(AllocatorInterface::alloc))OsAlloc,
+    .realloc = (decltype(AllocatorInterface::realloc))OsRealloc,
+    .free = (decltype(AllocatorInterface::free))OsFree,
+    .freeAll = (decltype(AllocatorInterface::freeAll))__OsFreeAll,
 };
 
-struct DefaultAllocator
+struct OsAllocator
 {
     Allocator base {};
 
-    DefaultAllocator() : base {&__DefaultAllocatorVTable} {}
+    constexpr OsAllocator() : base {&__OsAllocatorVTable} {}
 };
 
 inline void*
-DefaultAlloc([[maybe_unused]] DefaultAllocator* s, u64 mCount, u64 mSize)
+OsAlloc([[maybe_unused]] OsAllocator* s, u64 mCount, u64 mSize)
 {
     return ::calloc(mCount, mSize);
 }
 
 inline void*
-DefaultRealloc([[maybe_unused]] DefaultAllocator* s, void* p, u64 mCount, u64 mSize)
+OsRealloc([[maybe_unused]] OsAllocator* s, void* p, u64 mCount, u64 mSize)
 {
     return ::reallocarray(p, mCount, mSize);
 }
 
 inline void
-DefaultFree([[maybe_unused]] DefaultAllocator* s, void* p)
+OsFree([[maybe_unused]] OsAllocator* s, void* p)
 {
     ::free(p);
 }
+
+inline void
+__OsFreeAll([[maybe_unused]] OsAllocator* s)
+{
+    assert(false && "OsAllocator: no 'freeAll()' method");
+}
+
+inline OsAllocator in_OsAllocator {};
 
 } /* namespace adt */

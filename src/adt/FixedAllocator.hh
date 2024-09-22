@@ -23,10 +23,13 @@ struct FixedAllocator
 constexpr void* FixedAllocatorAlloc(FixedAllocator* s, u64 mCount, u64 mSize);
 constexpr void* FixedAllocatorRealloc(FixedAllocator* s, void* p, u64 mCount, u64 mSize);
 constexpr void FixedAllocatorFree(FixedAllocator* s, void* p);
+constexpr void FixedAllocatorFreeAll(FixedAllocator* s, void* p);
 constexpr void FixedAllocatorReset(FixedAllocator* s);
 
 inline void* alloc(FixedAllocator* s, u64 mCount, u64 mSize) { return FixedAllocatorAlloc(s, mCount, mSize); }
 inline void* realloc(FixedAllocator* s, void* p, u64 mCount, u64 mSize) { return FixedAllocatorRealloc(s, p, mCount, mSize); }
+inline void free(FixedAllocator* s, void* p) { return FixedAllocatorFree(s, p); }
+inline void freeAll(FixedAllocator* s, void* p) { return FixedAllocatorFreeAll(s, p); }
 
 constexpr void*
 FixedAllocatorAlloc(FixedAllocator* s, u64 mCount, u64 mSize)
@@ -68,7 +71,13 @@ FixedAllocatorRealloc(FixedAllocator* s, void* p, u64 mCount, u64 mSize)
 constexpr void
 FixedAllocatorFree([[maybe_unused]] FixedAllocator* s, [[maybe_unused]] void* p)
 {
-    /* not needed since stack memory should be used as a buffer */
+    /* outside buffer is used */
+}
+
+constexpr void
+FixedAllocatorFreeAll([[maybe_unused]] FixedAllocator* s, [[maybe_unused]] void* p)
+{
+    /* outside buffer is used */
 }
 
 constexpr void
@@ -80,7 +89,8 @@ FixedAllocatorReset(FixedAllocator* s)
 inline const AllocatorInterface __FixedAllocatorVTable {
     .alloc = decltype(AllocatorInterface::alloc)(FixedAllocatorAlloc),
     .realloc = decltype(AllocatorInterface::realloc)(FixedAllocatorRealloc),
-    .free = decltype(AllocatorInterface::free)(FixedAllocatorFree)
+    .free = decltype(AllocatorInterface::free)(FixedAllocatorFree),
+    .freeAll = decltype(AllocatorInterface::freeAll)(FixedAllocatorFreeAll),
 };
 
 constexpr FixedAllocator::FixedAllocator(void* pMemory, u64 capacity)

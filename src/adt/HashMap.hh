@@ -1,12 +1,29 @@
 #pragma once
 
 #include "Vec.hh"
+#include "adt/logs.hh"
 #include "hash.hh"
 
 namespace adt
 {
 
 constexpr f32 HASHMAP_DEFAULT_LOAD_FACTOR = 0.5;
+
+template<typename T> struct Bucket;
+template<typename T> struct HashMapRet;
+template<typename T> struct HashMap;
+
+template<typename T> inline u32 HashMapFirstI(HashMap<T>* s);
+template<typename T> inline u32 HashMapNextI(HashMap<T>* s, u32 i);
+template<typename T> inline f32 HashMapLoadFactor(HashMap<T>* s);
+template<typename T> inline HashMapRet<T> HashMapInsert(HashMap<T>* s, const T& value);
+template<typename T> inline HashMapRet<T> HashMapSearch(HashMap<T>* s, const T& value);
+template<typename T> inline void HashMapRemove(HashMap<T>*s, u32 i);
+template<typename T> inline void HashMapRemove(HashMap<T>*s, const T& x);
+template<typename T> inline HashMapRet<T> HashMapTryInsert(HashMap<T>* s, const T& value);
+template<typename T> inline void HashMapDestroy(HashMap<T>* s);
+
+template<typename T> inline void __HashMapRehash(HashMap<T>* s, u32 size);
 
 template<typename T>
 struct Bucket
@@ -41,16 +58,60 @@ struct HashMap
 
     Bucket<T>& operator[](u32 i) { return aBuckets[i]; }
     const Bucket<T>& operator[](u32 i) const { return aBuckets[i]; }
+
+    struct It
+    {
+        HashMap* s {};
+        u32 i = 0;
+
+        It(HashMap* _s, u32 _i) : s {_s}, i {_i} {}
+
+        T& operator*() { return s->aBuckets.pData[i].data; }
+        T* operator->() { return &s->aBuckets.pData[i].data; }
+
+        It operator++()
+        {
+            i = HashMapNextI(s, i);
+            return {s, i};
+        }
+        It operator++(int) { T* tmp = s++; return tmp; }
+
+        friend constexpr bool operator==(const It& l, const It& r) { return l.i == r.i; }
+        friend constexpr bool operator!=(const It& l, const It& r) { return l.i != r.i; }
+    };
+
+    It begin() { return {this, HashMapFirstI(this)}; }
+    It end() { return {this, NPOS}; }
+
+    const It begin() const { return begin(); }
+    const It end() const { return end(); }
 };
 
-template<typename T> inline f32 HashMapLoadFactor(HashMap<T>* s);
-template<typename T> inline HashMapRet<T> HashMapInsert(HashMap<T>* s, const T& value);
-template<typename T> inline HashMapRet<T> HashMapSearch(HashMap<T>* s, const T& value);
-template<typename T> inline void HashMapRemove(HashMap<T>*s, u32 i);
-template<typename T> inline HashMapRet<T> HashMapTryInsert(HashMap<T>* s, const T& value);
-template<typename T> inline void HashMapDestroy(HashMap<T>* s);
+template<typename T>
+inline u32
+HashMapFirstI(HashMap<T>* s)
+{
+    u32 i = 0;
+    while (i < s->aBuckets.cap && !s->aBuckets.pData[i].bOccupied)
+        i++;
 
-template<typename T> inline void __HashMapRehash(HashMap<T>* s, u32 size);
+    if (i >= s->aBuckets.cap) i = NPOS;
+
+    return i;
+}
+
+template<typename T>
+inline u32
+HashMapNextI(HashMap<T>* s, u32 i)
+{
+    ++i;
+    while (i < s->aBuckets.cap && !s->aBuckets.pData[i].bOccupied)
+        i++;
+
+    if (i >= s->aBuckets.cap) i = NPOS;
+
+    return i;
+}
 
 template<typename T>
 inline f32
@@ -124,6 +185,16 @@ HashMapRemove(HashMap<T>*s, u32 i)
 {
     s->aBuckets[i].bDeleted = true;
     s->aBuckets[i].bOccupied = false;
+
+    s->bucketCount--;
+}
+
+template<typename T>
+inline void
+HashMapRemove(HashMap<T>*s, const T& x)
+{
+    auto f = HashMapSearch(s, x);
+    HashMapRemove(s, f.idx);
 }
 
 template<typename T>

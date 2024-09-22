@@ -55,6 +55,8 @@ inline void ArenaFreeAll(Arena* s);
 
 inline void* alloc(Arena* s, u64 mCount, u64 mSize) { return ArenaAlloc(s, mCount, mSize); }
 inline void* realloc(Arena* s, void* p, u64 mCount, u64 mSize) { return ArenaRealloc(s, p, mCount, mSize); }
+inline void free(Arena* s, void* p) { ArenaFree(s, p); }
+inline void freeAll(Arena* s) { ArenaFreeAll(s); }
 
 inline ArenaBlock* __ArenaAllocatorNewBlock(Arena* s, u64 size);
 
@@ -183,7 +185,8 @@ ArenaFreeAll(Arena* s)
 inline const AllocatorInterface __ArenaAllocatorVTable {
     .alloc = decltype(AllocatorInterface::alloc)(ArenaAlloc),
     .realloc = decltype(AllocatorInterface::realloc)(ArenaRealloc),
-    .free = decltype(AllocatorInterface::free)(ArenaFree)
+    .free = decltype(AllocatorInterface::free)(ArenaFree),
+    .freeAll = decltype(AllocatorInterface::freeAll)(ArenaFreeAll),
 };
 
 inline 
