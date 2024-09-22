@@ -102,7 +102,7 @@ run()
 static int
 gameStateLoop([[maybe_unused]] void* pNull)
 {
-    FixedAllocator alFrame (s_aFrameMemGame, sizeof(s_aFrameMemGame));
+    FixedAllocator alFrame(s_aFrameMemGame, sizeof(s_aFrameMemGame));
 
     while (app::g_pWindow->base.bRunning || app::g_pMixer->base.bRunning)
     {
@@ -125,7 +125,7 @@ gameStateLoop([[maybe_unused]] void* pNull)
 static int
 redrawLoop([[maybe_unused]] void* pNull)
 {
-    FixedAllocator alFrame (s_aFrameMemDraw, sizeof(s_aFrameMemGame));
+    FixedAllocator alFrame(s_aFrameMemDraw, sizeof(s_aFrameMemDraw));
 
     WindowBindGlContext(app::g_pWindow);
     defer(WindowUnbindGlContext(app::g_pWindow));
