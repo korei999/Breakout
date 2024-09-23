@@ -190,7 +190,7 @@ headRead(Font* s, u32 at)
 
     LOG(
         "\t\tversion: (%d, %d), fontRevision: (%d, %d), checkSumAdjustment: %u\n"
-        "\t\t\tmagicNumber: %#x, flags: %#x, unitsPerEm: %u, created: %lu, modified: %lu\n"
+        "\t\t\tmagicNumber: %#x, flags: %#x, unitsPerEm: %u, created: %lld, modified: %lld\n"
         "\t\t\txMin: %d, yMin: %d, xMax: %d, yMax: %d, macStyle: %u, lowestRecPPEM: %u\n"
         "\t\t\tfontDirectionHint: %d, indexToLocFormat: %d, glyphDataFormat: %d\n",
         h.version.l, h.version.r, h.fontRevision.l, h.fontRevision.r, h.checkSumAdjustment,
