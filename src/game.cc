@@ -60,7 +60,7 @@ loadAssets()
 {
     parser::ttf::FontLoad(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");
 
-    frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->base.wHeight) / (f32)app::g_pWindow->base.wWidth;
+    frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
     s_plain = Plain(GL_STATIC_DRAW);
 

@@ -13,6 +13,12 @@
     #include <windows.h>
     #undef near
     #undef far
+    #undef NEAR
+    #undef FAR
+    #undef min
+    #undef max
+    #undef MIN
+    #undef MAX
     #include <sysinfoapi.h>
 #endif
 

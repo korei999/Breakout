@@ -3,12 +3,12 @@
 #include <threads.h>
 
 #ifdef __linux__
-// #include <GLES3/gl32.h>
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#include <GL/glcorearb.h>
+    #define GL_GLEXT_PROTOTYPES
+    #include <GL/gl.h>
+    #include <GL/glcorearb.h>
 #elif _WIN32
-#include "../platform/win32/glad.h"
+    #include "../platform/win32/glad.h"
+    #undef APIENTRY
 #endif
 
 #if 0
@@ -60,12 +60,14 @@ namespace gl
 extern GLenum lastErrorCode;
 extern mtx_t mtxGlContext;
 
-void debugCallback(GLenum source,
-                   GLenum type,
-                   GLuint id,
-                   GLenum severity,
-                   GLsizei length,
-                   const GLchar* message,
-                   const void* user);
+void debugCallback(
+    GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar* message,
+    const void* user
+);
 
 } /* namespace gl */
