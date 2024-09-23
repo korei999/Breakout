@@ -17,13 +17,15 @@ Arena alMixer(SIZE_1M);
     #include "platform/pipewire/Mixer.hh"
 
 int
-main(int argc, char* argv[])
+main(int argc, char** argv)
 {
+    app::g_argc = argc, app::g_argv = argv;
+
     platform::pipewire::Mixer mixer(&alMixer.base);
     platform::wayland::Client window("Breakout");
 
     WindowInit(&window);
-    audio::MixerInit(&mixer, argc, argv);
+    audio::MixerInit(&mixer);
 
     app::g_pWindow = &window.base;
     app::g_pMixer = &mixer.base;

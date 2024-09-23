@@ -33,7 +33,7 @@ const pw_stream_events Mixer::s_streamEvents {
 };
 
 void
-MixerInit(Mixer* s, int argc, char** argv)
+MixerInit(Mixer* s)
 {
     s->base.bRunning = true;
     s->base.bMuted = false;
@@ -54,8 +54,8 @@ MixerInit(Mixer* s, int argc, char** argv)
 
     static Args a {
         .s = s,
-        .argc = argc,
-        .argv = argv
+        .argc = app::g_argc,
+        .argv = app::g_argv
     };
 
     auto fnp = +[](void* arg) -> int {
@@ -378,7 +378,7 @@ onProcess(void* data)
 
     pw_stream_queue_buffer(s->pStream, b);
 
-    if (!app::g_pWindow->base.bRunning) pw_main_loop_quit(s->pLoop);
+    if (!app::g_pWindow->bRunning) pw_main_loop_quit(s->pLoop);
     /* set bRunning for the mixer outside */
 }
 

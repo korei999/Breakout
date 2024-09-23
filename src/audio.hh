@@ -16,7 +16,7 @@ struct Track;
 
 struct MixerInterface
 {
-    void (*init)(Mixer* s, int argc, char** argv);
+    void (*init)(Mixer* s);
     void (*destroy)(Mixer*);
     void (*add)(Mixer*, Track);
     void (*addBackground)(Mixer*, Track);
@@ -41,7 +41,7 @@ struct Mixer
     f32 volume = 0.5f;
 };
 
-ADT_NO_UB constexpr void MixerInit(Mixer* s, int argc, char** argv) { s->pVTable->init(s, argc, argv); }
+ADT_NO_UB constexpr void MixerInit(Mixer* s) { s->pVTable->init(s); }
 ADT_NO_UB constexpr void MixerDestroy(Mixer* s) { s->pVTable->destroy(s); }
 ADT_NO_UB constexpr void MixerAdd(Mixer* s, Track t) { s->pVTable->add(s, t); }
 ADT_NO_UB constexpr void MixerAddBackground(Mixer* s, Track t) { s->pVTable->addBackground(s, t); }
