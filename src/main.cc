@@ -64,8 +64,10 @@ WinMain([[maybe_unused]] HINSTANCE instance,
 
     #ifdef DEBUG
 int
-main()
+main(int argc, char** argv)
 {
+    app::g_argc = argc, app::g_argv = argv;
+
     return WinMain(GetModuleHandle(NULL), NULL, GetCommandLineA(), SW_SHOWNORMAL);
 }
     #endif

@@ -4,7 +4,7 @@ namespace app
 {
 
 int g_argc = 0;
-char** g_argv;
+char** g_argv = nullptr;
 
 audio::Mixer* g_pMixer;
 Window* g_pWindow;
