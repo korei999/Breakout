@@ -96,8 +96,7 @@ __ThreadPoolLoop(void* p)
             while (QueueEmpty(&s->qTasks) && !s->bDone)
                 cnd_wait(&s->cndQ, &s->mtxQ);
 
-            if (s->bDone)
-                return thrd_success;
+            if (s->bDone) return thrd_success;
 
             task = *QueuePopFront(&s->qTasks);
             s->atActiveTaskCount++; /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */

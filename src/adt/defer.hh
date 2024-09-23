@@ -5,21 +5,21 @@
 namespace adt
 {
 
-template<typename F>
-struct Defer
+template<typename CLOSURE>
+class Defer
 {
-    Defer(F f) : onScopeExit(f) {}
-    ~Defer() { onScopeExit(); }
+    CLOSURE onScopeExit;
 
-private:
-    F onScopeExit;
+public:
+    Defer(CLOSURE f) : onScopeExit(f) {}
+    ~Defer() { onScopeExit(); }
 };
 
-template<typename F>
-Defer<F>
-deferFunc(F f)
+template<typename CLOSURE>
+Defer<CLOSURE>
+deferFunc(CLOSURE f)
 {
-    return Defer<F>(f);
+    return Defer<CLOSURE>(f);
 }
 
 } /* namespace adt */
@@ -28,7 +28,7 @@ deferFunc(F f)
 #define ADT_DEFER_2(x, y) ADT_DEFER_1(x, y)
 #define ADT_DEFER_3(x) ADT_DEFER_2(x, __COUNTER__)
 
-#define adtDefer(code) auto ADT_DEFER_3(__defer) = adt::deferFunc([&] { code; })
+#define adtDefer(code) auto ADT_DEFER_3(__clDefer) = adt::deferFunc([&] { code; })
 
 #ifndef ADT_DEFER_ONLY
     #define defer(code) adtDefer(code)
