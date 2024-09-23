@@ -16,24 +16,22 @@ load(Allocator* pAlloc, String path)
 {
     Option<String> ret {};
 
-    auto sn = StringAlloc(pAlloc, path);
-    defer(free(pAlloc, sn.pData));
-
-    FILE* pf = fopen(sn.pData, "rb");
-    if (pf)
+    FILE* pf = fopen(path.pData, "rb");
+    if (!pf)
     {
-        fseek(pf, 0, SEEK_END);
-        long size = ftell(pf) + 1;
-        rewind(pf);
-
-        ret.data.pData = (char*)alloc(pAlloc, size, sizeof(char));
-        ret.data.size = size - 1;
-        fread(ret.data.pData, 1, ret.data.size, pf);
-        ret.bHasValue = true;
-
-        fclose(pf);
+        LOG_WARN("ret(%p): Error opening '%.*s' file\n", pf, path.size, path.pData);
+        return ret;
     }
-    else LOG_WARN("ret(%p): Error opening '%.*s' file\n", pf, path.size, path.pData);
+    defer(fclose(pf));
+
+    fseek(pf, 0, SEEK_END);
+    long size = ftell(pf) + 1;
+    rewind(pf);
+
+    ret.data.pData = (char*)alloc(pAlloc, size, sizeof(char));
+    ret.data.size = size - 1;
+    fread(ret.data.pData, 1, ret.data.size, pf);
+    ret.bHasValue = true;
 
     return ret;
 }

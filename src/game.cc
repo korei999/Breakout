@@ -79,11 +79,12 @@ loadAssets()
     s_textFPS = Text("", 40, 0, 0, GL_DYNAMIC_DRAW);
 
     Arena allocScope(SIZE_1K);
-    defer(ArenaFreeAll(&allocScope));
-
     ThreadPool tp(&allocScope.base);
+    defer(
+        ThreadPoolDestroy(&tp);
+        ArenaFreeAll(&allocScope);
+    );
     ThreadPoolStart(&tp);
-    defer(ThreadPoolDestroy(&tp));
 
     /* unbind before creating threads */
     WindowUnbindGlContext(app::g_pWindow);
