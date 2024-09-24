@@ -1,3 +1,4 @@
+#include "adt/defer.hh"
 #define _POSIX_C_SOURCE 199309L
 
 #include "Client.hh"
@@ -306,6 +307,7 @@ void
 ClientInit(Client* s)
 {
     Arena arena(SIZE_8K);
+    defer(ArenaFreeAll(&arena));
 
     if ((s->display = wl_display_connect(nullptr)))
         LOG_OK("wayland display connected\n");
@@ -393,8 +395,6 @@ ClientInit(Client* s)
 
     wl_surface_commit(s->surface);
     wl_display_roundtrip(s->display);
-
-    ArenaFreeAll(&arena);
 
     s->base.bRunning = true;
 }

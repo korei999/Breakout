@@ -2,7 +2,7 @@
 
 #include "Window.hh"
 #include "adt/Arena.hh"
-#include "adt/HashMap.hh"
+#include "adt/OsAllocator.hh"
 #include "adt/logs.hh"
 #include "app.hh"
 #include "parser/Bin.hh"
@@ -32,16 +32,38 @@
  */
 
 Vec<Texture> g_aAllTextures;
-HashMap<GLuint> g_mapAllTextures;
-mtx_t g_mtxAllTextures;
-once_flag g_onceFlagAllTextures = ONCE_FLAG_INIT;
+HashMap<TextureHash> g_mAllTexturesIdxs;
+
+static mtx_t s_mtxAllTextures;
+static once_flag s_onceFlagAllTextures = ONCE_FLAG_INIT;
 
 void TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter);
 
 void
 TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GLint magFilter, GLint minFilter)
 {
-    call_once(&g_onceFlagAllTextures, +[]{ mtx_init(&g_mtxAllTextures, mtx_plain); });
+    call_once(&s_onceFlagAllTextures, +[]{
+        mtx_init(&s_mtxAllTextures, mtx_plain);
+        g_aAllTextures = {&in_OsAllocator.base};
+        g_mAllTexturesIdxs = {&in_OsAllocator.base};
+    });
+
+    u32 vecIdx = NPOS;
+
+    {
+        mtx_lock(&s_mtxAllTextures);
+        defer(mtx_unlock(&s_mtxAllTextures));
+
+        auto fTried = HashMapSearch(&g_mAllTexturesIdxs, {path});
+        if (fTried)
+        {
+            LOG_WARN("Rejecting duplicate texture: '%.*s'\n", path.size, path.pData);
+            return;
+        }
+
+        vecIdx = VecPush(&g_aAllTextures, *s);
+        HashMapInsert(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = vecIdx});
+    }
 
 #ifdef D_TEXTURE
     LOG_OK("loading '%.*s' texture...\n", path.size, path._pData);
@@ -50,6 +72,7 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
     if (s->id != 0) LOG_FATAL("id != 0: '%d'\n", s->id);
 
     Arena al(SIZE_1M * 5);
+    defer(ArenaFreeAll(&al));
     TextureData img = loadBMP(&al.base, path, flip);
 
     s->texPath = path;
@@ -59,19 +82,20 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
 
     TextureSet(s, VecData(&pixels), texMode, img.format, img.width, img.height, magFilter, minFilter);
 
-    mtx_lock(&g_mtxAllTextures);
-    /* TODO: insert in the map also */
-    VecPush(&g_aAllTextures, *s);
-    mtx_unlock(&g_mtxAllTextures);
-
     s->width = img.width;
     s->height = img.height;
+    
+    auto found = HashMapSearch(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = vecIdx});
+    if (found)
+    {
+        u32 idx = found.pData->vecIdx;
+        g_aAllTextures[idx] = *s;
+    }
+    else LOG_FATAL("Why didn't find?\n");
 
 #ifdef D_TEXTURE
     LOG_OK("%.*s: id: %d, texMode: %d\n", path.size, path._pData, _id, texMode);
 #endif
-
-    ArenaFreeAll(&al);
 }
 
 void
@@ -102,8 +126,12 @@ TextureBind(GLuint id, GLint glTex)
 void
 TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter)
 {
-    mtx_lock(&gl::mtxGlContext);
+    mtx_lock(&gl::g_mtxGlContext);
     WindowBindGlContext(app::g_pWindow);
+    defer(
+        WindowUnbindGlContext(app::g_pWindow);
+        mtx_unlock(&gl::g_mtxGlContext);
+    );
 
     glGenTextures(1, &s->id);
     glBindTexture(GL_TEXTURE_2D, s->id);
@@ -121,9 +149,6 @@ TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GL
     /* load image, create texture and generate mipmaps */
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, pData);
     glGenerateMipmap(GL_TEXTURE_2D);
-
-    WindowUnbindGlContext(app::g_pWindow);
-    mtx_unlock(&gl::mtxGlContext);
 }
 
 CubeMapProjections::CubeMapProjections(const math::M4& proj, const math::V3& pos)

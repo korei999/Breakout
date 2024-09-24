@@ -5,13 +5,13 @@
 namespace adt
 {
 
-template<typename CLOSURE_TYPE>
+template<typename CLOSURE>
 class Defer
 {
-    CLOSURE_TYPE onScopeExit;
+    CLOSURE onScopeExit;
 
 public:
-    Defer(CLOSURE_TYPE f) : onScopeExit(f) {}
+    Defer(CLOSURE f) : onScopeExit(f) {}
     ~Defer() { onScopeExit(); }
 };
 
@@ -22,8 +22,8 @@ public:
 #define ADT_DEFER_2(x, y) ADT_DEFER_1(x, y)
 #define ADT_DEFER_3(x) ADT_DEFER_2(x, __COUNTER__)
 
-#define adtDefer(code) auto ADT_DEFER_3(__clDefer) = adt::Defer([&]{ code; })
+#define ADT_DEFER(code) auto ADT_DEFER_3(__clDefer) = adt::Defer([&]{ code; })
 
 #ifndef ADT_DEFER_ONLY
-    #define defer(code) adtDefer(code)
+    #define defer(code) ADT_DEFER(code)
 #endif

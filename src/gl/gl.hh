@@ -57,8 +57,8 @@
 namespace gl
 {
 
-extern GLenum lastErrorCode;
-extern mtx_t mtxGlContext;
+extern GLenum g_lastErrorCode;
+extern mtx_t g_mtxGlContext;
 
 void debugCallback(
     GLenum source,

@@ -3,13 +3,43 @@
 #include "adt/Arena.hh"
 #include "adt/file.hh"
 #include "adt/logs.hh"
+#include "adt/OsAllocator.hh"
 
 Vec<Shader> g_aAllShaders;
 
 static GLuint ShaderLoadOne(GLenum type, String path);
+static mtx_t s_mtxAllShaders;
+static once_flag s_onceFlagAllShaders = ONCE_FLAG_INIT;
+
+static void loadVertFrag(Shader* s, String vertexPath, String fragmentPath);
+static void loadVertGeomFrag(Shader* s, String vertexPath, String geometryPath, String fragmentPath);
+
+static void
+addToMap()
+{
+    call_once(&s_onceFlagAllShaders, +[]{
+        g_aAllShaders = {&in_OsAllocator.base};
+    });
+
+    /* TODO: hash by something */
+}
 
 void
 ShaderLoad(Shader* s, String vertexPath, String fragmentPath)
+{
+    addToMap();
+    loadVertFrag(s, vertexPath, fragmentPath);
+}
+
+void
+ShaderLoad(Shader* s, String vertexPath, String geometryPath, String fragmentPath)
+{
+    addToMap();
+    loadVertGeomFrag(s, vertexPath, geometryPath, fragmentPath);
+}
+
+static void
+loadVertFrag(Shader* s, String vertexPath, String fragmentPath)
 {
     GLint linked;
     GLuint vertex = ShaderLoadOne(GL_VERTEX_SHADER, vertexPath);
@@ -48,9 +78,13 @@ ShaderLoad(Shader* s, String vertexPath, String fragmentPath)
     VecPush(&g_aAllShaders, *s);
 }
 
-void
-ShaderLoad(Shader* s, String vertexPath, String geometryPath, String fragmentPath)
+static void
+loadVertGeomFrag(Shader* s, String vertexPath, String geometryPath, String fragmentPath)
 {
+    call_once(&s_onceFlagAllShaders, +[]{
+        g_aAllShaders = {&in_OsAllocator.base};
+    });
+
     GLint linked;
     GLuint vertex = ShaderLoadOne(GL_VERTEX_SHADER, vertexPath);
     GLuint fragment = ShaderLoadOne(GL_FRAGMENT_SHADER, fragmentPath);

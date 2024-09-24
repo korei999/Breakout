@@ -67,7 +67,7 @@ VecGrow(VecBase<T>* s, Allocator* p, u32 size)
 }
 
 template<typename T>
-inline void
+inline u32
 VecPush(VecBase<T>* s, Allocator* p, const T& data)
 {
     assert(s->cap > 0 && "VecBase: uninitialized push");
@@ -75,6 +75,7 @@ VecPush(VecBase<T>* s, Allocator* p, const T& data)
     if (s->size >= s->cap) VecGrow(s, p, s->cap * 2);
 
     s->pData[s->size++] = data;
+    return s->size - 1;
 }
 
 template<typename T>
@@ -134,7 +135,7 @@ VecPopAsLast(VecBase<T>* s, u32 i)
 
 template<typename T>
 inline u32
-VecGetIdx(const VecBase<T>* s, T* x)
+VecIdx(const VecBase<T>* s, T* x)
 {
     return u32(x - s->pData);
 }
@@ -208,10 +209,10 @@ VecGrow(Vec<T>* s, u32 size)
 }
 
 template<typename T>
-inline void
+inline u32
 VecPush(Vec<T>* s, const T& data)
 {
-    VecPush(&s->base, s->pAlloc, data);
+    return VecPush(&s->base, s->pAlloc, data);
 }
 
 template<typename T>
@@ -265,9 +266,9 @@ VecPopAsLast(Vec<T>* s, u32 i)
 
 template<typename T>
 inline u32
-VecGetIdx(const Vec<T>* s, T* x)
+VecIdx(const Vec<T>* s, T* x)
 {
-    return VecBaseIdx(&s->base, x);
+    return VecIdx(&s->base, x);
 }
 
 template<typename T>

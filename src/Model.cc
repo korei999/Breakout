@@ -1,6 +1,6 @@
 #include "Model.hh"
 
-#include "adt/AtomicArena.hh"
+#include "adt/MutexArena.hh"
 #include "adt/ThreadPool.hh"
 #include "adt/file.hh"
 #include "adt/logs.hh"
@@ -24,15 +24,19 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     gltf::ModelLoad(&s->modelData, path);
     auto& a = s->modelData;;
 
+    MutexArena atmAl(SIZE_1M * 10);
+    defer(MutexArenaFreeAll(&atmAl));
+
     /* load buffers first */
-    Vec<GLuint> aBufferMap(s->pAlloc);
+    Vec<GLuint> aBufferMap(&atmAl.arena.base);
     for (u32 i = 0; i < VecSize(&a.aBuffers); i++)
     {
-        mtx_lock(&gl::mtxGlContext);
-        defer(mtx_unlock(&gl::mtxGlContext));
-
+        mtx_lock(&gl::g_mtxGlContext);
         WindowBindGlContext(app::g_pWindow);
-        defer(WindowUnbindGlContext(app::g_pWindow));
+        defer(
+            WindowUnbindGlContext(app::g_pWindow);
+            mtx_unlock(&gl::g_mtxGlContext);
+        );
 
         GLuint b;
         glGenBuffers(1, &b);
@@ -42,17 +46,12 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         VecPush(&aBufferMap, b);
     }
 
-    AtomicArena atAl(SIZE_1M * 10);
-    ThreadPool tp((Allocator*)&atAl);
+    ThreadPool tp(&atmAl.arena.base);
     ThreadPoolStart(&tp);
-
-    defer(
-        ThreadPoolDestroy(&tp);
-        AtomicArenaFreeAll(&atAl);
-    );
+    defer(ThreadPoolDestroy(&tp));
 
     /* preload texures */
-    Vec<Texture> aTex((Allocator*)&atAl, VecSize(&a.aImages));
+    Vec<Texture> aTex((Allocator*)&atmAl, VecSize(&a.aImages));
     VecSetSize(&aTex, VecSize(&a.aImages));
 
     for (u32 i = 0; i < VecSize(&a.aImages); i++)
@@ -72,10 +71,10 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             GLint texMode;
         };
 
-        auto* arg = (args*)AtomicArenaAlloc(&atAl, 1, sizeof(args));
+        auto* arg = (args*)MutexArenaAlloc(&atmAl, 1, sizeof(args));
         *arg = {
             .p = &aTex[i],
-            .pAlloc = &atAl.arena.base,
+            .pAlloc = &atmAl.arena.base,
             .path = file::replacePathEnding(s->pAlloc, path, uri),
             .type = TEX_TYPE::DIFFUSE,
             .flip = true,
@@ -118,7 +117,8 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
             nMesh.mode = mode;
 
-            mtx_lock(&gl::mtxGlContext);
+            /**********************************************/
+            mtx_lock(&gl::g_mtxGlContext);
             WindowBindGlContext(app::g_pWindow);
 
             glGenVertexArrays(1, &nMesh.meshData.vao);
@@ -135,8 +135,10 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                 /* TODO: figure out how to reuse VBO data for index buffer (possible?) */
                 glGenBuffers(1, &nMesh.meshData.ebo);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nMesh.meshData.ebo);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, bvInd.byteLength,
-                             &a.aBuffers[bvInd.buffer].aBin.pData[bvInd.byteOffset + accInd.byteOffset], drawMode);
+                glBufferData(
+                    GL_ELEMENT_ARRAY_BUFFER, bvInd.byteLength,
+                    &a.aBuffers[bvInd.buffer].aBin.pData[bvInd.byteOffset + accInd.byteOffset], drawMode
+                );
             }
             else
             {
@@ -153,13 +155,17 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
             /* positions */
             glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, v3Size, GLenum(accPos.componentType), GL_FALSE,
-                                  bvPos.byteStride, reinterpret_cast<void*>(bvPos.byteOffset + accPos.byteOffset));
+            glVertexAttribPointer(
+                0, v3Size, GLenum(accPos.componentType), GL_FALSE, bvPos.byteStride,
+                reinterpret_cast<void*>(bvPos.byteOffset + accPos.byteOffset)
+            );
 
             /* texture coords */
             glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, v2Size, GLenum(accTex.componentType), GL_FALSE,
-                                  bvTex.byteStride, reinterpret_cast<void*>(bvTex.byteOffset + accTex.byteOffset));
+            glVertexAttribPointer(
+                1, v2Size, GLenum(accTex.componentType), GL_FALSE, bvTex.byteStride,
+                reinterpret_cast<void*>(bvTex.byteOffset + accTex.byteOffset)
+            );
 
              /*normals */
             if (accNormIdx != NPOS)
@@ -168,8 +174,10 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                 auto& bvNorm = a.aBufferViews[accNorm.bufferView];
 
                 glEnableVertexAttribArray(2);
-                glVertexAttribPointer(2, v3Size, GLenum(accNorm.componentType), GL_FALSE,
-                                      bvNorm.byteStride, reinterpret_cast<void*>(accNorm.byteOffset + bvNorm.byteOffset));
+                glVertexAttribPointer(
+                    2, v3Size, GLenum(accNorm.componentType), GL_FALSE, bvNorm.byteStride,
+                    reinterpret_cast<void*>(accNorm.byteOffset + bvNorm.byteOffset)
+                );
             }
 
             /* tangents */
@@ -179,13 +187,16 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                 auto& bvTan = a.aBufferViews[accTan.bufferView];
 
                 glEnableVertexAttribArray(3);
-                glVertexAttribPointer(3, v3Size, GLenum(accTan.componentType), GL_FALSE,
-                                      bvTan.byteStride, reinterpret_cast<void*>(accTan.byteOffset + bvTan.byteOffset));
+                glVertexAttribPointer(
+                    3, v3Size, GLenum(accTan.componentType), GL_FALSE, bvTan.byteStride,
+                    reinterpret_cast<void*>(accTan.byteOffset + bvTan.byteOffset)
+                );
             }
 
             glBindVertexArray(0);
             WindowUnbindGlContext(app::g_pWindow);
-            mtx_unlock(&gl::mtxGlContext);
+            mtx_unlock(&gl::g_mtxGlContext);
+            /**************************************/
 
             /* load textures */
             if (accMatIdx != NPOS)
@@ -265,12 +276,14 @@ ModelDraw(Model* s, enum DRAW flags, Shader* sh, String svUniform, String svUnif
             if (e.triangleCount != NPOS)
                 glDrawArrays(GLenum(e.mode), 0, e.triangleCount);
             else
+            {
                 glDrawElements(
                     GLenum(e.mode),
                     e.meshData.eboSize,
                     GLenum(e.indType),
                     nullptr
                 );
+            }
         }
     }
 }
@@ -332,12 +345,14 @@ ModelDrawGraph(
                 if (e.triangleCount != NPOS)
                     glDrawArrays(GLenum(e.mode), 0, e.triangleCount);
                 else
+                {
                     glDrawElements(
                         GLenum(e.mode),
                         e.meshData.eboSize,
                         GLenum(e.indType),
                         nullptr
                     );
+                }
             }
         }
     }

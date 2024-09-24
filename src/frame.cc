@@ -36,8 +36,8 @@ Ubo g_uboProjView;
 
 static Pair<f32, f32> s_aspect(16.0f, 9.0f);
 
-static u8 s_aFrameMemGame[SIZE_8K] {};
-static u8 s_aFrameMemDraw[SIZE_8K] {};
+static u8 s_aFrameMemGame[SIZE_8K / 2] {};
+static u8 s_aFrameMemDraw[SIZE_8K / 2] {};
 
 static void
 updateDeltaTime()
@@ -85,6 +85,9 @@ run()
     updateDrawTime();
     updateDrawTime();
 
+    WindowSetSwapInterval(app::g_pWindow, 1);
+    WindowSetFullscreen(app::g_pWindow);
+
     game::loadAssets();
     game::loadLevel();
 
@@ -102,7 +105,7 @@ run()
 static int
 gameStateLoop([[maybe_unused]] void* pNull)
 {
-    FixedAllocator alFrame (s_aFrameMemGame, sizeof(s_aFrameMemGame));
+    FixedAllocator alFrame(s_aFrameMemGame, sizeof(s_aFrameMemGame));
 
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
@@ -124,7 +127,7 @@ gameStateLoop([[maybe_unused]] void* pNull)
 static void
 mainLoop()
 {
-    FixedAllocator alFrame (s_aFrameMemDraw, sizeof(s_aFrameMemGame));
+    FixedAllocator alFrame(s_aFrameMemDraw, sizeof(s_aFrameMemGame));
 
     thrd_t thrdUpdatePhysics;
     thrd_create(&thrdUpdatePhysics, gameStateLoop, nullptr);

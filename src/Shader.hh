@@ -9,6 +9,25 @@ struct Shader;
 
 extern Vec<Shader> g_aAllShaders;
 
+struct ShaderHash
+{
+    String sKey {};
+    GLuint vecIdx {};
+};
+
+inline bool
+operator==(const ShaderHash& l, const ShaderHash& r)
+{
+    return l.sKey == r.sKey;
+}
+
+template<>
+inline u64
+hash::func(const ShaderHash& x)
+{
+    return hash::func(x.sKey);
+}
+
 struct Shader
 {
     GLuint id = 0;

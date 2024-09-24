@@ -5,8 +5,8 @@
 namespace gl
 {
 
-GLenum lastErrorCode = 0;
-mtx_t mtxGlContext;
+GLenum g_lastErrorCode = 0;
+mtx_t g_mtxGlContext;
 
 #ifdef DEBUG
 

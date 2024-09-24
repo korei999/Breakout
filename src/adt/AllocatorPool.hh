@@ -14,18 +14,17 @@ namespace adt
 template<typename A>
 struct AllocatorPool
 {
-    ChunkAllocator al;
-    List<A> lAllocators;
-    u32 size;
+    ChunkAllocator al {};
+    ListBase<A> lAllocators {};
 
-    constexpr AllocatorPool(u32 pre) : al(sizeof(ListNode<A>), sizeof(ListNode<A>) * pre), lAllocators(&al.base), size {0} {}
+    constexpr AllocatorPool(u32 pre) : al(sizeof(ListNode<A>), sizeof(ListNode<A>) * pre) {}
 };
 
 template<typename A>
 inline Allocator*
 AllocatorPoolGet(AllocatorPool<A>* s, u32 size)
 {
-    auto* pA = ListPushBack(&s->lAllocators, A(size));
+    auto* pA = ListPushBack(&s->lAllocators, &s->al.base, A(size));
     return (Allocator*)(&pA->data);
 }
 

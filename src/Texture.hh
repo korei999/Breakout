@@ -1,14 +1,36 @@
 #pragma once
 
 #include "adt/Allocator.hh"
+#include "adt/HashMap.hh"
 #include "adt/Vec.hh"
 #include "adt/String.hh"
 #include "gl/gl.hh"
 #include "math.hh"
 
 struct Texture;
+struct TextureHash;
 
 extern Vec<Texture> g_aAllTextures;
+extern HashMap<TextureHash> g_mAllTexturesIdxs;
+
+struct TextureHash
+{
+    String sPathKey {};
+    GLuint vecIdx {};
+};
+
+inline bool
+operator==(const TextureHash& l, const TextureHash& r)
+{
+    return l.sPathKey == r.sPathKey;
+}
+
+template<>
+inline u64
+hash::func(const TextureHash& x)
+{
+    return hash::func(x.sPathKey);
+}
 
 enum TEX_TYPE : s8
 {

@@ -36,12 +36,8 @@ static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_assetArenas, SIZE_1M * 35));
 
 static Plain s_plain;
 
-static Model s_model(AllocatorPoolGet(&s_assetArenas, SIZE_1K));
-
 static Text s_textFPS;
 static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
-
-Vec<Entity*> g_apEntities(AllocatorPoolGet(&s_assetArenas, SIZE_8K));
 
 Player g_player {
     .base {},
@@ -66,9 +62,6 @@ loadAssets()
 
     s_plain = Plain(GL_STATIC_DRAW);
 
-    g_aAllShaders = {AllocatorPoolGet(&s_assetArenas, SIZE_1K)};
-    g_aAllTextures = {AllocatorPoolGet(&s_assetArenas, SIZE_1K)};
-
     ShaderLoad(&s_shFontBitMap, "shaders/font/font.vert", "shaders/font/font.frag");
     ShaderUse(&s_shFontBitMap);
     ShaderSetI(&s_shFontBitMap, "tex0", 0);
@@ -90,6 +83,7 @@ loadAssets()
 
     /* unbind before creating threads */
     WindowUnbindGlContext(app::g_pWindow);
+    defer(WindowBindGlContext(app::g_pWindow));
 
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
@@ -99,8 +93,6 @@ loadAssets()
     TexLoadArg argBall {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
 
-    ModelLoadArg argModel {&s_model, "test-assets/models/cube/gltf/cube.gltf", GL_STATIC_DRAW, GL_MIRRORED_REPEAT};
-
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argBeep);
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argUnatco);
 
@@ -109,15 +101,7 @@ loadAssets()
     ThreadPoolSubmit(&tp, TextureSubmit, &argBall);
     ThreadPoolSubmit(&tp, TextureSubmit, &argPaddle);
 
-    ThreadPoolSubmit(&tp, ModelSubmit, &argModel);
-
     ThreadPoolWait(&tp);
-
-    /* restore context after assets are loaded */
-    WindowBindGlContext(app::g_pWindow);
-
-    WindowSetSwapInterval(app::g_pWindow, 1);
-    WindowSetFullscreen(app::g_pWindow);
 }
 
 template<typename T>
@@ -318,9 +302,7 @@ loadLevel()
     g_player.base.pos.x = frame::WIDTH/2 - frame::g_unit.x;
 
     VecSetCap(&s_aBlocks, levelY*levelX);
-    VecSetCap(&g_apEntities, levelY*levelX);
     VecSetSize(&s_aBlocks, 0);
-    VecSetSize(&g_apEntities, 0);
 
     for (u32 i = 0; i < levelY; i++)
     {
@@ -341,8 +323,6 @@ loadLevel()
                     .bDead = false,
                     .bRemoveAfterDraw = false,
                 });
-
-                VecPush(&g_apEntities, &VecLast(&s_aBlocks));
             }
         }
     }
@@ -362,9 +342,6 @@ loadLevel()
     g_ball.base.height = 1.0f;
     g_ball.base.zOff = 10.0f;
     g_ball.base.bRemoveAfterDraw = false;
-
-    VecPush(&g_apEntities, &g_player.base);
-    VecPush(&g_apEntities, &g_ball.base);
 
     audio::MixerAddBackground(app::g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
 }
@@ -434,28 +411,49 @@ drawFPSCounter(Allocator* pAlloc)
     TextDraw(&s_textFPS);
 }
 
+template<typename T>
+static void
+drawPlayerOrBall(const T& e)
+{
+    math::M4 tm = math::M4Iden();
+    tm = M4Translate(tm, {
+        e.base.pos.x + e.base.xOff,
+        e.base.pos.y + e.base.yOff,
+        0.0f         + e.base.zOff
+    });
+    tm = M4Scale(tm, {frame::g_unit.x * e.base.width, frame::g_unit.y * e.base.height, 1.0f});
+    TextureBind(e.base.texIdx, GL_TEXTURE0);
+    ShaderSetM4(&s_shSprite, "uModel", tm);
+    ShaderSetV3(&s_shSprite, "uColor", blockColorToV3(e.base.eColor));
+    PlainDraw(&s_plain);
+}
+
 void
 drawEntities()
 {
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
 
-    for (Entity* e : g_apEntities)
+    drawPlayerOrBall(g_player);
+    drawPlayerOrBall(g_ball);
+
+    for (const auto& e: s_aBlocks)
     {
-        if (e->bDead || e->eColor == COLOR::INVISIBLE) continue;
+        if (e.bDead || e.eColor == COLOR::INVISIBLE) continue;
 
         math::M4 tm = math::M4Iden();
-        tm = M4Translate(tm, {e->pos.x + e->xOff, e->pos.y + e->yOff, 0.0f + e->zOff});
-        tm = M4Scale(tm, {frame::g_unit.x * e->width, frame::g_unit.y * e->height, 1.0f});
+        tm = math::M4Iden();
+        tm = M4Translate(tm, {e.pos.x + e.xOff, e.pos.y + e.yOff, 0.0f + e.zOff});
+        tm = M4Scale(tm, {frame::g_unit.x * e.width, frame::g_unit.y * e.height, 1.0f});
 
-        if (idxLastTex != e->texIdx)
+        if (idxLastTex != e.texIdx)
         {
-            idxLastTex = e->texIdx;
-            TextureBind(e->texIdx, GL_TEXTURE0);
+            idxLastTex = e.texIdx;
+            TextureBind(e.texIdx, GL_TEXTURE0);
         }
 
         ShaderSetM4(&s_shSprite, "uModel", tm);
-        ShaderSetV3(&s_shSprite, "uColor", blockColorToV3(e->eColor));
+        ShaderSetV3(&s_shSprite, "uColor", blockColorToV3(e.eColor));
         PlainDraw(&s_plain);
     }
 }
@@ -467,9 +465,12 @@ cleanup()
 
     for (auto& e : g_aAllShaders)
         ShaderDestroy(&e);
+    VecDestroy(&g_aAllShaders);
 
     for (auto& t : g_aAllTextures)
         TextureDestroy(&t);
+    VecDestroy(&g_aAllTextures);
+    HashMapDestroy(&g_mAllTexturesIdxs);
 
     AllocatorPoolFreeAll(&s_assetArenas);
 }
