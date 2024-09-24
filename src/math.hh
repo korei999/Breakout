@@ -182,7 +182,6 @@ QtIden()
 
 f32 V2Length(const V2& v);
 f32 V3Length(const V3& v);
-f32 V3Length(const V2& v);
 f32 V4Length(const V4& v);
 V2 V2Norm(const V2& v);
 V3 V3Norm(const V3& v); /* normilized (not length) */

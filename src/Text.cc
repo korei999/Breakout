@@ -27,7 +27,7 @@ TextGenMesh(Text* s, int xOrigin, int yOrigin, GLint drawMode)
 
     glGenBuffers(1, &s->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(f32) * 4 * 6, aQuads.pData, drawMode);
+    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(f32) * 4 * 6, VecData(&aQuads), drawMode);
 
     /* positions */
     glEnableVertexAttribArray(0);
@@ -43,7 +43,7 @@ static Vec<TextCharQuad>
 TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin)
 {
     Vec<TextCharQuad> aQuads(pAlloc, size);
-    memset(aQuads.pData, 0, sizeof(TextCharQuad) * size);
+    memset(VecData(&aQuads), 0, sizeof(TextCharQuad) * size);
 
     /* 16/16 bitmap aka extended ascii */
     auto getUV = [](int p) -> f32 {
@@ -91,7 +91,7 @@ TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, 
         xOff += 2.0f;
     }
 
-    s->vboSize = aQuads.size * 6; /* 6 vertices for 1 quad */
+    s->vboSize = VecSize(&aQuads) * 6; /* 6 vertices for 1 quad */
 
     return aQuads;
 }
@@ -106,7 +106,7 @@ TextUpdate(Text* s, Allocator* pAlloc, String str, int x, int y)
     defer(VecDestroy(&aQuads));
 
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(f32) * 4 * 6, aQuads.pData);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(f32) * 4 * 6, VecData(&aQuads));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 

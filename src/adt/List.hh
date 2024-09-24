@@ -16,15 +16,11 @@ struct ListNode
 };
 
 template<typename T>
-struct List
+struct ListBase
 {
-    Allocator* pAlloc {};
     ListNode<T>* pFirst {};
     ListNode<T>* pLast {};
     u32 size {};
-
-    List() = default;
-    List(Allocator* pA) : pAlloc {pA} {}
 
     struct It
     {
@@ -68,15 +64,15 @@ ListNodeAlloc(Allocator* pA, const T& x)
 
 template<typename T>
 constexpr ListNode<T>*
-ListPushBack(List<T>* s, const T& x)
+ListPushBack(ListBase<T>* s, Allocator* pA, const T& x)
 {
-    auto* pNew = ListNodeAlloc(s->pAlloc, x);
+    auto* pNew = ListNodeAlloc(pA, x);
     return ListPushBack(s, pNew);
 }
 
 template<typename T>
 constexpr ListNode<T>*
-ListPushBack(List<T>* s, ListNode<T>* pNew)
+ListPushBack(ListBase<T>* s, ListNode<T>* pNew)
 {
     if (!s->pFirst)
     {
@@ -98,7 +94,7 @@ done:
 
 template<typename T>
 constexpr void
-ListRemove(List<T>* s, ListNode<T>* p)
+ListRemove(ListBase<T>* s, ListNode<T>* p)
 {
     assert(p && s->size > 0);
 
@@ -123,6 +119,51 @@ ListRemove(List<T>* s, ListNode<T>* p)
     }
 
     s->size--;
+}
+
+template<typename T>
+constexpr void
+ListDestroy(ListBase<T>* s, Allocator* pA)
+{
+    ADT_LIST_FOREACH_SAFE(s, it, tmp)
+        free(pA, it);
+
+    s->pFirst = s->pLast = nullptr;
+}
+
+template<typename T>
+struct List
+{
+    ListBase<T> base {};
+    Allocator* pAlloc {};
+
+    List() = default;
+    List(Allocator* pA) : pAlloc(pA) {}
+
+    ListBase<T>::It begin() { return base.begin(); }
+    ListBase<T>::It end() { return base.end(); }
+    ListBase<T>::It rbegin() { return base.rbegin(); }
+    ListBase<T>::It rend() { return rend(); }
+
+    const ListBase<T>::It begin() const { return begin(); }
+    const ListBase<T>::It end() const { return end(); }
+    const ListBase<T>::It rbegin() const { return rbegin(); }
+    const ListBase<T>::It rend() const { return rend(); }
+};
+
+template<typename T>
+constexpr ListNode<T>*
+ListPushBack(List<T>* s, const T& x)
+{
+    auto* pNew = ListNodeAlloc(s->pAlloc, x);
+    return ListPushBack(&s->base, pNew);
+}
+
+template<typename T>
+constexpr void
+ListRemove(List<T>* s, ListNode<T>* p)
+{
+    ListRemove(&s->base, p);
     free(s->pAlloc, p);
 }
 
@@ -130,10 +171,7 @@ template<typename T>
 constexpr void
 ListDestroy(List<T>* s)
 {
-    ADT_LIST_FOREACH_SAFE(s, it, tmp)
-        free(s->pAlloc, it);
-
-    s->pFirst = s->pLast = nullptr;
+    ListDestroy(&s->base, s->pAlloc);
 }
 
 } /* namespace adt */

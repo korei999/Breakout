@@ -57,7 +57,7 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
 
     Vec<u8> pixels = img.aData;
 
-    TextureSet(s, pixels.pData, texMode, img.format, img.width, img.height, magFilter, minFilter);
+    TextureSet(s, VecData(&pixels), texMode, img.format, img.width, img.height, magFilter, minFilter);
 
     mtx_lock(&g_mtxAllTextures);
     /* TODO: insert in the map also */
@@ -229,7 +229,7 @@ SkyBoxCreate(String sFaces[6])
         TextureData tex = loadBMP(&al.base, sFaces[i], true);
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                      0, tex.format, tex.width, tex.height,
-                     0, tex.format, GL_UNSIGNED_BYTE, tex.aData.pData);
+                     0, tex.format, GL_UNSIGNED_BYTE, VecData(&tex.aData));
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -314,12 +314,12 @@ loadBMP(Allocator* pAlloc, String path, bool flip)
     {
         default:
         case GL_RGB:
-            flipCpyBGRtoRGBA(pixels.pData, (u8*)(&p[p.pos]), width, height, flip);
+            flipCpyBGRtoRGBA(VecData(&pixels), (u8*)(&p[p.pos]), width, height, flip);
             format = GL_RGBA;
             break;
 
         case GL_RGBA:
-            flipCpyBGRAtoRGBA(pixels.pData, (u8*)(&p[p.pos]), width, height, flip);
+            flipCpyBGRAtoRGBA(VecData(&pixels), (u8*)(&p[p.pos]), width, height, flip);
             break;
     }
 

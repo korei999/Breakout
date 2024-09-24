@@ -158,6 +158,6 @@ const inline Level g_lvl1 {
 
 extern Player g_player;
 extern Ball g_ball;
-extern Vec<game::Entity*> g_aPEntities;
+extern Vec<game::Entity*> g_apEntities;
 
 } /* namespace game */

@@ -26,7 +26,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
     /* load buffers first */
     Vec<GLuint> aBufferMap(s->pAlloc);
-    for (u32 i = 0; i < a.aBuffers.size; i++)
+    for (u32 i = 0; i < VecSize(&a.aBuffers); i++)
     {
         mtx_lock(&gl::mtxGlContext);
         defer(mtx_unlock(&gl::mtxGlContext));
@@ -52,10 +52,10 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     );
 
     /* preload texures */
-    Vec<Texture> aTex((Allocator*)&atAl, a.aImages.size);
-    VecSetSize(&aTex, a.aImages.size);
+    Vec<Texture> aTex((Allocator*)&atAl, VecSize(&a.aImages));
+    VecSetSize(&aTex, VecSize(&a.aImages));
 
-    for (u32 i = 0; i < a.aImages.size; i++)
+    for (u32 i = 0; i < VecSize(&a.aImages); i++)
     {
         auto uri = a.aImages[i].uri;
 
@@ -96,7 +96,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
     for (auto& mesh : a.aMeshes)
     {
-        Vec<Mesh> aNMeshes(s->pAlloc);
+        VecBase<Mesh> aNMeshes(s->pAlloc);
 
         for (auto& primitive : mesh.aPrimitives)
         {
@@ -215,22 +215,22 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                 }
             }
 
-            VecPush(&aNMeshes, nMesh);
+            VecPush(&aNMeshes, s->pAlloc, nMesh);
         }
-        VecPush(&s->aaMeshes, aNMeshes);
+        VecPush(&s->aaMeshes, s->pAlloc, aNMeshes);
     }
 
-    s->aTmIdxs = Vec<int>(s->pAlloc, math::sq(s->modelData.aNodes.size));
-    s->aTmCounters = Vec<int>(s->pAlloc, s->modelData.aNodes.size);
-    VecSetSize(&s->aTmIdxs, math::sq(s->modelData.aNodes.size)); /* 2d map */
-    VecSetSize(&s->aTmCounters, s->modelData.aNodes.size);
+    s->aTmIdxs = VecBase<int>(s->pAlloc, math::sq(VecSize(&s->modelData.aNodes)));
+    s->aTmCounters = VecBase<int>(s->pAlloc, VecSize(&s->modelData.aNodes));
+    VecSetSize(&s->aTmIdxs, s->pAlloc, math::sq(VecSize(&s->modelData.aNodes))); /* 2d map */
+    VecSetSize(&s->aTmCounters, s->pAlloc, VecSize(&s->modelData.aNodes));
 
     auto& aNodes = s->modelData.aNodes;
     auto at = [&](int r, int c) -> int {
-        return r*aNodes.size + c;
+        return r*VecSize(&aNodes) + c;
     };
 
-    for (int i = 0; i < (int)aNodes.size; i++)
+    for (int i = 0; i < (int)VecSize(&aNodes); i++)
     {
         auto& node = aNodes[i];
         for (auto& ch : node.children)
@@ -289,10 +289,10 @@ ModelDrawGraph(
     auto& aNodes = s->modelData.aNodes;
 
     auto at = [&](int r, int c) -> int {
-        return r*aNodes.size + c;
+        return r*VecSize(&aNodes) + c;
     };
 
-    for (int i = 0; i < (int)aNodes.size; i++)
+    for (int i = 0; i < (int)VecSize(&aNodes); i++)
     {
         auto& node = aNodes[i];
         if (node.mesh != NPOS)

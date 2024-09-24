@@ -206,8 +206,8 @@ relativePointerMotionHandler(
     [[maybe_unused]] wl_fixed_t dyUnaccel
 )
 {
-    controls::g_mouse.relX += wl_fixed_to_int(dxUnaccel);
-    controls::g_mouse.relY += wl_fixed_to_int(dyUnaccel);
+    controls::g_mouse.relX += wl_fixed_to_double(dxUnaccel);
+    controls::g_mouse.relY += wl_fixed_to_double(dyUnaccel);
 }
 
 } /* namespace input */

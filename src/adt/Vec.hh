@@ -11,19 +11,17 @@ namespace adt
 #define ADT_VEC_FOREACH_I(A, I) for (u32 I = 0; I < (A)->size; I++)
 #define ADT_VEC_FOREACH_I_REV(A, I) for (u32 I = (A)->size - 1; I != -1U ; I--)
 
-/* Dynamic array (aka Vector) */
+/* Dynamic array (aka Vector), use outside Allocator explicitly for each allocating operation */
 template<typename T>
-struct Vec
+struct VecBase
 {
-    Allocator* pAlloc = nullptr;
     T* pData = nullptr;
     u32 size = 0;
     u32 cap = 0;
 
-    Vec() = default;
-    Vec(Allocator* pA, u32 capacity = 1)
-        : pAlloc {pA},
-          pData {(T*)alloc(pA, capacity, sizeof(T))},
+    VecBase() = default;
+    VecBase(Allocator* p, u32 capacity = 1)
+        : pData {(T*)alloc(p, capacity, sizeof(T))},
           size {0},
           cap {capacity} {}
 
@@ -60,76 +58,61 @@ struct Vec
     const It rend() const { return rend(); }
 };
 
-template<typename T> inline void VecPush(Vec<T>* s, const T& data);
-template<typename T> inline void VecGrow(Vec<T>* s, u32 size);
-template<typename T> inline T& VecLast(Vec<T>* s);
-template<typename T> inline T& VecFirst(Vec<T>* s);
-template<typename T> inline T* VecPop(Vec<T>* s);
-template<typename T> inline void VecSetSize(Vec<T>* s, u32 size);
-template<typename T> inline void VecSetCap(Vec<T>* s, u32 cap);
-template<typename T> inline void VecSwapWithLast(Vec<T>* s, u32 i);
-template<typename T> inline void VecPopAsLast(Vec<T>* s, u32 i);
-template<typename T> inline u32 VecGetIdx(const Vec<T>* s, T* x);
-template<typename T> inline T& VecAt(Vec<T>* s, u32 at); /* assert 'at < cap' instead of 'at < size' */
-template<typename T> inline void VecDestroy(Vec<T>* s);
+template<typename T>
+inline void
+VecGrow(VecBase<T>* s, Allocator* p, u32 size)
+{
+    s->cap = size;
+    s->pData = (T*)realloc(p, s->pData, sizeof(T), size);
+}
 
 template<typename T>
 inline void
-VecPush(Vec<T>* s, const T& data)
+VecPush(VecBase<T>* s, Allocator* p, const T& data)
 {
-    assert(s->cap > 0 && "Vec: uninitialized push");
+    assert(s->cap > 0 && "VecBase: uninitialized push");
 
-    if (s->size >= s->cap)
-        VecGrow(s, s->cap * 2);
+    if (s->size >= s->cap) VecGrow(s, p, s->cap * 2);
 
     s->pData[s->size++] = data;
 }
 
 template<typename T>
-inline void
-VecGrow(Vec<T>* s, u32 size)
-{
-    s->cap = size;
-    s->pData = (T*)realloc(s->pAlloc, s->pData, sizeof(T), size);
-}
-
-template<typename T>
 inline T&
-VecLast(Vec<T>* s)
+VecLast(VecBase<T>* s)
 {
     return s->pData[s->size - 1];
 }
 
 template<typename T>
 inline T&
-VecFirst(Vec<T>* s)
+VecFirst(VecBase<T>* s)
 {
     return s->pData[0];
 }
 
 template<typename T>
 inline T*
-VecPop(Vec<T>* s)
+VecPop(VecBase<T>* s)
 {
-    assert(s->size > 0 && "Vec: empty pop");
+    assert(s->size > 0 && "VecBase: empty pop");
     return &s->pData[--s->size];
 }
 
 template<typename T>
 inline void
-VecSetSize(Vec<T>* s, u32 size)
+VecSetSize(VecBase<T>* s, Allocator* p, u32 size)
 {
-    if (s->size < size)
-        VecGrow(s, size);
+    if (s->size < size) VecGrow(s, p, size);
 
     s->size = size;
 }
 
 template<typename T>
 inline void
-VecSetCap(Vec<T>* s, u32 cap)
+VecSetCap(VecBase<T>* s, Allocator* p, u32 cap)
 {
-    s->pData = (T*)realloc(s->pAlloc, s->pData, cap, sizeof(T));
+    s->pData = (T*)realloc(p, s->pData, cap, sizeof(T));
     s->cap = cap;
 
     if (s->size > cap) s->size = cap;
@@ -137,38 +120,189 @@ VecSetCap(Vec<T>* s, u32 cap)
 
 template<typename T>
 inline void
-VecSwapWithLast(Vec<T>* s, u32 i)
+VecSwapWithLast(VecBase<T>* s, u32 i)
 {
     utils::swap(&s->pData[i], &s->pData[s->size - 1]);
 }
 
 template<typename T>
 inline void
-VecPopAsLast(Vec<T>* s, u32 i)
+VecPopAsLast(VecBase<T>* s, u32 i)
 {
     s->pData[i] = s->pData[--s->size];
 }
 
 template<typename T>
 inline u32
-VecGetIdx(const Vec<T>* s, T* x)
+VecGetIdx(const VecBase<T>* s, T* x)
 {
     return u32(x - s->pData);
 }
 
 template<typename T>
 inline T&
+VecAt(VecBase<T>* s, u32 at)
+{
+    assert(at < s->size && "VecBase: out of size range");
+    return s->pData[at];
+}
+
+template<typename T>
+inline void
+VecDestroy(VecBase<T>* s, Allocator* p)
+{
+    free(p, s->base.pData);
+}
+
+template<typename T>
+inline u32
+VecSize(const VecBase<T>* s)
+{
+    return s->size;
+}
+
+template<typename T>
+inline u32
+VecCap(const VecBase<T>* s)
+{
+    return s->cap;
+}
+
+template<typename T>
+inline T*
+VecData(VecBase<T>* s)
+{
+    return s->pData;
+}
+
+/* Dynamic array (aka Vector), with Allocator* stored */
+template<typename T>
+struct Vec
+{
+    VecBase<T> base {};
+    Allocator* pAlloc = nullptr;
+
+    Vec() = default;
+    Vec(Allocator* p, u32 _cap = 1)
+        : base(p, _cap), pAlloc(p) {}
+
+    T& operator[](u32 i) { return base[i]; }
+    const T& operator[](u32 i) const { return base[i]; }
+
+    VecBase<T>::It begin() { return base.begin(); }
+    VecBase<T>::It end() { return base.end(); }
+    VecBase<T>::It rbegin() { return base.rbegin(); }
+    VecBase<T>::It rend() { return rend(); }
+
+    const VecBase<T>::It begin() const { return begin(); }
+    const VecBase<T>::It end() const { return end(); }
+    const VecBase<T>::It rbegin() const { return rbegin(); }
+    const VecBase<T>::It rend() const { return rend(); }
+};
+
+template<typename T>
+inline void
+VecGrow(Vec<T>* s, u32 size)
+{
+    VecGrow(&s->base, s->pAlloc, size);
+}
+
+template<typename T>
+inline void
+VecPush(Vec<T>* s, const T& data)
+{
+    VecPush(&s->base, s->pAlloc, data);
+}
+
+template<typename T>
+inline T&
+VecLast(Vec<T>* s)
+{
+    return VecLast(&s->base);
+}
+
+template<typename T>
+inline T&
+VecFirst(Vec<T>* s)
+{
+    return VecFirst(&s->base);
+}
+
+template<typename T>
+inline T*
+VecPop(Vec<T>* s)
+{
+    return VecPop(&s->base);
+}
+
+template<typename T>
+inline void
+VecSetSize(Vec<T>* s, u32 size)
+{
+    VecSetSize(&s->base, s->pAlloc, size);
+}
+
+template<typename T>
+inline void
+VecSetCap(Vec<T>* s, u32 cap)
+{
+    VecSetCap(&s->base, s->pAlloc, cap);
+}
+
+template<typename T>
+inline void
+VecSwapWithLast(Vec<T>* s, u32 i)
+{
+    VecSwapWithLast(&s->base, i);
+}
+
+template<typename T>
+inline void
+VecPopAsLast(Vec<T>* s, u32 i)
+{
+    VecPopAsLast(&s->base, i);
+}
+
+template<typename T>
+inline u32
+VecGetIdx(const Vec<T>* s, T* x)
+{
+    return VecBaseIdx(&s->base, x);
+}
+
+template<typename T>
+inline T&
 VecAt(Vec<T>* s, u32 at)
 {
-    assert(at < s->cap && "Vec: out of capacity");
-    return s->pData[at];
+    return VecAt(&s->base, at);
 }
 
 template<typename T>
 inline void
 VecDestroy(Vec<T>* s)
 {
-    free(s->pAlloc, s->pData);
+    free(s->pAlloc, s->base.pData);
+}
+
+template<typename T>
+inline u32
+VecSize(const Vec<T>* s)
+{
+    return s->base.size;
+}
+
+template<typename T>
+inline u32
+VecCap(const Vec<T>* s)
+{
+    return s->base.cap;
+}
+
+template<typename T>
+inline T*
+VecData(Vec<T>* s)
+{
+    return s->base.pData;
 }
 
 } /* namespace adt */

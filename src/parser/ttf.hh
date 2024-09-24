@@ -3,6 +3,7 @@
 #include "Bin.hh"
 #include "adt/String.hh"
 #include "adt/Vec.hh"
+#include "adt/HashMap.hh"
 
 namespace parser
 {
@@ -36,11 +37,16 @@ using Version16Dot16 = struct { u16 maj; u16 min; }; /*Packed 32-bit value with 
 
 struct TableRecord
 {
-    String tableTag {}; /* instead of TTF_Tag */
+    String tag {}; /* instead of TTF_Tag */
     u32 checkSum {};
     Offset32 offset {};
     u32 length {};
 };
+
+inline bool operator==(const TableRecord& l, const TableRecord& r)
+{
+    return l.tag == r.tag;
+}
 
 struct TableDirectory
 {
@@ -51,7 +57,8 @@ struct TableDirectory
     u16 entrySelector; /* Log2 of the maximum power of 2 less than or equal to numTables (log2(searchRange/16),
                         * which is equal to floor(log2(numTables))). */
     u16 rangeShift; /* numTables times 16, minus searchRange ((numTables * 16) - searchRange). */
-    Vec<TableRecord> aTableRecords;
+    // Vec<TableRecord> aTableRecords;
+    HashMap<TableRecord> mTableRecords;
 };
 
 struct Kern
@@ -411,27 +418,29 @@ struct Post
 
 struct Font
 {
-    Bin p {};
+    Bin p;
     TableDirectory tableDirectory;
-    Cmap cmap {};
-    Glyph glyph {};
-    Kern kern {};
-    Head head {};
-    Hhea hhea {};
-    Hmtx hmtx {};
-    Loca loca {};
-    Maxp maxp {};
-    Name name {};
-    Post post {};
-    u32 cmapOffset {};
-    u32 glyphOffset {};
-    u32 headOffset {};
-    u32 hheaOffset {};
-    u32 hmtxOffset {};
-    u32 locaOffset {};
-    u32 maxpOffset {};
-    u32 nameOffset {};
-    u32 postOffset {};
+
+    /*Cmap cmap {};*/
+    /*Glyph glyph {};*/
+    /*Kern kern {};*/
+    /*Head head {};*/
+    /*Hhea hhea {};*/
+    /*Hmtx hmtx {};*/
+    /*Loca loca {};*/
+    /*Maxp maxp {};*/
+    /*Name name {};*/
+    /*Post post {};*/
+    /* keep offsets separately so tables are closer to the spec */
+    /*u32 cmapOffset {};*/
+    /*u32 glyphOffset {};*/
+    /*u32 headOffset {};*/
+    /*u32 hheaOffset {};*/
+    /*u32 hmtxOffset {};*/
+    /*u32 locaOffset {};*/
+    /*u32 maxpOffset {};*/
+    /*u32 nameOffset {};*/
+    /*u32 postOffset {};*/
 
     Font() = default;
     Font(Allocator* p) : p {p} {}
@@ -439,3 +448,10 @@ struct Font
 
 } /* namespace ttf */
 } /* namespace parser */
+
+template<>
+inline u64
+hash::func(const parser::ttf::TableRecord& x)
+{
+    return hash::func(x.tag);
+}

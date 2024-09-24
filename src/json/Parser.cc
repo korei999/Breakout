@@ -121,14 +121,14 @@ static void
 parseObject(Parser* s, Object* pNode)
 {
     pNode->tagVal.tag = TAG::OBJECT;
-    pNode->tagVal.val.o = adt::Vec<Object> (s->pAlloc, 1);
+    pNode->tagVal.val.o = adt::VecBase<Object>(s->pAlloc, 1);
     auto& aObjs = getObject(pNode);
 
     for (; s->tCurr.type != Token::RBRACE; next(s))
     {
         expect(s, Token::IDENT, ADT_FILE, __LINE__);
         Object ob {.svKey = s->tCurr.sLiteral, .tagVal = {}};
-        adt::VecPush(&aObjs, ob);
+        adt::VecPush(&aObjs, s->pAlloc, ob);
 
         /* skip identifier and ':' */
         next(s);
@@ -144,20 +144,20 @@ parseObject(Parser* s, Object* pNode)
         }
     }
 
-    if (aObjs.size == 0) next(s);
+    if (VecSize(&aObjs) == 0) next(s);
 }
 
 static void
 parseArray(Parser* s, Object* pNode)
 {
     pNode->tagVal.tag = TAG::ARRAY;
-    pNode->tagVal.val.a = adt::Vec<Object> (s->pAlloc, 1);
+    pNode->tagVal.val.a = adt::VecBase<Object>(s->pAlloc, 1);
     auto& aTVs = getArray(pNode);
 
     /* collect each key/value pair inside array */
     for (; s->tCurr.type != Token::RBRACKET; next(s))
     {
-        adt::VecPush(&aTVs, {});
+        adt::VecPush(&aTVs, s->pAlloc, {});
 
         switch (s->tCurr.type)
         {
@@ -192,7 +192,7 @@ parseArray(Parser* s, Object* pNode)
         }
     }
 
-    if (aTVs.size == 0) next(s);
+    if (VecSize(&aTVs) == 0) next(s);
 }
 
 static void
@@ -244,9 +244,9 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
 
                 COUT("%*s", depth, "");
                 COUT("%.*s%.*s%.*s%.*s{\n", q0.size, q0.pData, objName0.size, objName0.pData, q1.size, q1.pData, objName1.size, objName1.pData);
-                for (u32 i = 0; i < obj.size; i++)
+                for (u32 i = 0; i < VecSize(&obj); i++)
                 {
-                    adt::String slE = (i == obj.size - 1) ? "\n" : ",\n";
+                    adt::String slE = (i == VecSize(&obj) - 1) ? "\n" : ",\n";
                     ParserPrintNode(&obj[i], slE, depth + 2);
                 }
                 COUT("%*s", depth, "");
@@ -271,7 +271,7 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
 
                 COUT("%*s", depth, "");
 
-                if (arr.size == 0)
+                if (VecSize(&arr) == 0)
                 {
                     COUT("%.*s%.*s%.*s%.*s[", q0.size, q0.pData, arrName0.size, arrName0.pData, q1.size, q1.pData, arrName1.size, arrName1.pData);
                     COUT("]%.*s", (int)svEnd.size, svEnd.pData);
@@ -279,9 +279,9 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
                 }
 
                 COUT("%.*s%.*s%.*s%.*s[\n", q0.size, q0.pData, arrName0.size, arrName0.pData, q1.size, q1.pData, arrName1.size, arrName1.pData);
-                for (u32 i = 0; i < arr.size; i++)
+                for (u32 i = 0; i < VecSize(&arr); i++)
                 {
-                    adt::String slE = (i == arr.size - 1) ? "\n" : ",\n";
+                    adt::String slE = (i == VecSize(&arr) - 1) ? "\n" : ",\n";
 
                     switch (arr[i].tagVal.tag)
                     {
@@ -377,7 +377,7 @@ ParserTraverse(Parser*s, Object* pNode, bool (*pfn)(Object* p, void* args), void
             {
                 auto& obj = getObject(pNode);
 
-                for (u32 i = 0; i < obj.size; i++)
+                for (u32 i = 0; i < VecSize(&obj); i++)
                     ParserTraverse(s, &obj[i], pfn, args);
             }
             break;

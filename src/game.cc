@@ -36,10 +36,12 @@ static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_assetArenas, SIZE_1M * 35));
 
 static Plain s_plain;
 
+static Model s_model(AllocatorPoolGet(&s_assetArenas, SIZE_1K));
+
 static Text s_textFPS;
 static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
 
-Vec<Entity*> g_aPEntities(AllocatorPoolGet(&s_assetArenas, SIZE_8K));
+Vec<Entity*> g_apEntities(AllocatorPoolGet(&s_assetArenas, SIZE_8K));
 
 Player g_player {
     .base {},
@@ -97,6 +99,8 @@ loadAssets()
     TexLoadArg argBall {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
 
+    ModelLoadArg argModel {&s_model, "test-assets/models/cube/gltf/cube.gltf", GL_STATIC_DRAW, GL_MIRRORED_REPEAT};
+
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argBeep);
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argUnatco);
 
@@ -104,6 +108,8 @@ loadAssets()
     ThreadPoolSubmit(&tp, TextureSubmit, &argBox);
     ThreadPoolSubmit(&tp, TextureSubmit, &argBall);
     ThreadPoolSubmit(&tp, TextureSubmit, &argPaddle);
+
+    ThreadPoolSubmit(&tp, ModelSubmit, &argModel);
 
     ThreadPoolWait(&tp);
 
@@ -258,7 +264,6 @@ outOfBounds()
     if (g_ball.base.pos.y <= 0.0f - f::g_unit.y) 
     {
         g_ball.bReleased = false;
-
         // g_ball.base.pos.y = 0.0f - f::g_unit.y;
         // g_ball.dir.y = 1.0f;
         // bAddSound = true;
@@ -313,9 +318,9 @@ loadLevel()
     g_player.base.pos.x = frame::WIDTH/2 - frame::g_unit.x;
 
     VecSetCap(&s_aBlocks, levelY*levelX);
-    VecSetCap(&g_aPEntities, levelY*levelX);
+    VecSetCap(&g_apEntities, levelY*levelX);
     VecSetSize(&s_aBlocks, 0);
-    VecSetSize(&g_aPEntities, 0);
+    VecSetSize(&g_apEntities, 0);
 
     for (u32 i = 0; i < levelY; i++)
     {
@@ -337,7 +342,7 @@ loadLevel()
                     .bRemoveAfterDraw = false,
                 });
 
-                VecPush(&g_aPEntities, &VecLast(&s_aBlocks));
+                VecPush(&g_apEntities, &VecLast(&s_aBlocks));
             }
         }
     }
@@ -358,8 +363,8 @@ loadLevel()
     g_ball.base.zOff = 10.0f;
     g_ball.base.bRemoveAfterDraw = false;
 
-    VecPush(&g_aPEntities, &g_player.base);
-    VecPush(&g_aPEntities, &g_ball.base);
+    VecPush(&g_apEntities, &g_player.base);
+    VecPush(&g_apEntities, &g_ball.base);
 
     audio::MixerAddBackground(app::g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
 }
@@ -435,7 +440,7 @@ drawEntities()
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
 
-    for (Entity* e : g_aPEntities)
+    for (Entity* e : g_apEntities)
     {
         if (e->bDead || e->eColor == COLOR::INVISIBLE) continue;
 

@@ -6,7 +6,7 @@
 namespace json
 {
 
-enum class TAG
+enum class TAG : adt::u8
 {
     NULL_,
     STRING,
@@ -35,8 +35,8 @@ union Val
     adt::String sv;
     long l;
     double d;
-    adt::Vec<Object> a;
-    adt::Vec<Object> o;
+    adt::VecBase<Object> a;
+    adt::VecBase<Object> o;
     bool b;
 };
 

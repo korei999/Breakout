@@ -78,13 +78,12 @@ struct Model
 {
     Allocator* pAlloc;
     String sSavedPath;
-    Vec<Vec<Mesh>> aaMeshes;
+    VecBase<VecBase<Mesh>> aaMeshes;
     gltf::Model modelData;
-    Vec<int> aTmIdxs; /* parents map */
-    Vec<int> aTmCounters; /* map's sizes */
+    VecBase<int> aTmIdxs; /* parents map */
+    VecBase<int> aTmCounters; /* map's sizes */
 
     Model(Allocator* p) : pAlloc(p), aaMeshes(p), modelData(p), aTmIdxs(p), aTmCounters(p) {}
-
 };
 
 struct Quad
@@ -142,7 +141,7 @@ struct ModelLoadArg
 };
 
 inline int
-ModelLoadSubmit(void* p)
+ModelSubmit(void* p)
 {
     auto a = *(ModelLoadArg*)p;
     ModelLoad(a.p, a.path, a.drawMode, a.texMode);

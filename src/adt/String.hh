@@ -55,9 +55,9 @@ struct String
 };
 
 constexpr bool StringEndsWith(String l, String r);
-constexpr bool operator==(const String& sL, const String& sR);
+constexpr bool operator==(const String& l, const String& r);
 constexpr bool operator==(const String& l, const char* r);
-constexpr bool operator!=(const String& sL, const String& sR);
+constexpr bool operator!=(const String& l, const String& r);
 constexpr s64 operator-(const String& l, const String& r);
 constexpr u32 StringLastOf(String sv, char c);
 constexpr String StringAlloc(Allocator* p, const char* str, u32 size);
@@ -84,12 +84,12 @@ StringEndsWith(String l, String r)
 }
 
 constexpr bool
-operator==(const String& sL, const String& sR)
+operator==(const String& l, const String& r)
 {
-    if (sL.size != sR.size) return false;
+    if (l.size != r.size) return false;
 
-    for (u32 i = 0; i < sL.size; i++)
-        if (sL[i] != sR[i]) return false;
+    for (u32 i = 0; i < l.size; i++)
+        if (l[i] != r[i]) return false;
 
     return true;
 }
@@ -102,9 +102,9 @@ operator==(const String& l, const char* r)
 }
 
 constexpr bool
-operator!=(const String& sL, const String& sR)
+operator!=(const String& l, const String& r)
 {
-    return !(sL == sR);
+    return !(l == r);
 }
 
 constexpr s64

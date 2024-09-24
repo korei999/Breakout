@@ -30,44 +30,19 @@ M4::M4(const M3& m)
 f32
 V2Length(const V2& v)
 {
-    f32 res = 0;
-    res += sq(v.x);
-    res += sq(v.y);
-
-    return sqrtf(res);
+    return hypot(v.x, v.y);
 }
 
 f32
 V3Length(const V3& v)
 {
-    f32 res = 0;
-    res += sq(v.x);
-    res += sq(v.y);
-    res += sq(v.z);
-
-    return sqrtf(res);
-}
-
-f32
-V3Length(const V2& v)
-{
-    f32 res = 0;
-    res += sq(v.x);
-    res += sq(v.y);
-
-    return sqrtf(res);
+    return hypot(v.x, v.y, v.z);
 }
 
 f32
 V4Length(const V4& v)
 {
-    f32 res = 0;
-    res += sq(v.x);
-    res += sq(v.y);
-    res += sq(v.z);
-    res += sq(v.w);
-
-    return sqrtf(res);
+    return sqrtf(sq(v.x) + sq(v.y) + sq(v.z) + sq(v.w));
 }
 
 V2

@@ -1,26 +1,26 @@
 #pragma once
 
 #include "Vec.hh"
-#include "adt/logs.hh"
 #include "hash.hh"
 
 namespace adt
 {
 
 constexpr f32 HASHMAP_DEFAULT_LOAD_FACTOR = 0.5;
+constexpr f32 HASHMAP_DEFAULT_LOAD_FACTOR_INV = 1.0 / HASHMAP_DEFAULT_LOAD_FACTOR;
 
 template<typename T> struct Bucket;
-template<typename T> struct HashMapRet;
+template<typename T> struct HashMapResult;
 template<typename T> struct HashMap;
 
 template<typename T> inline u32 HashMapFirstI(HashMap<T>* s);
 template<typename T> inline u32 HashMapNextI(HashMap<T>* s, u32 i);
 template<typename T> inline f32 HashMapLoadFactor(HashMap<T>* s);
-template<typename T> inline HashMapRet<T> HashMapInsert(HashMap<T>* s, const T& value);
-template<typename T> inline HashMapRet<T> HashMapSearch(HashMap<T>* s, const T& value);
+template<typename T> inline HashMapResult<T> HashMapInsert(HashMap<T>* s, const T& value);
+template<typename T> inline HashMapResult<T> HashMapSearch(HashMap<T>* s, const T& value);
 template<typename T> inline void HashMapRemove(HashMap<T>*s, u32 i);
 template<typename T> inline void HashMapRemove(HashMap<T>*s, const T& x);
-template<typename T> inline HashMapRet<T> HashMapTryInsert(HashMap<T>* s, const T& value);
+template<typename T> inline HashMapResult<T> HashMapTryInsert(HashMap<T>* s, const T& value);
 template<typename T> inline void HashMapDestroy(HashMap<T>* s);
 
 template<typename T> inline void __HashMapRehash(HashMap<T>* s, u32 size);
@@ -33,27 +33,34 @@ struct Bucket
     bool bDeleted = false;
 };
 
+/* custom return type for insert/search operations */
 template<typename T>
-struct HashMapRet
+struct HashMapResult
 {
     T* pData;
     u64 hash;
     u32 idx;
     bool bInserted;
+
+    constexpr explicit operator bool() const
+    {
+        return this->pData != nullptr;
+    }
 };
 
+/* Value is the key in this map.
+ * For key/value pairs, use struct { KEY k; VALUE v; }, add `u64 adt::hash::func(const struct&)`
+ * and* bool operator==(const struct& l, const struct& r). */
 template<typename T>
 struct HashMap
 {
-    Allocator* pAlloc;
     Vec<Bucket<T>> aBuckets;
     f32 maxLoadFactor;
     u32 bucketCount = 0;
 
     HashMap() = default;
     HashMap(Allocator* pAllocator, u32 prealloc = SIZE_MIN)
-        : pAlloc (pAllocator),
-          aBuckets (pAllocator, prealloc),
+        : aBuckets (pAllocator, prealloc),
           maxLoadFactor (HASHMAP_DEFAULT_LOAD_FACTOR) {}
 
     Bucket<T>& operator[](u32 i) { return aBuckets[i]; }
@@ -66,8 +73,8 @@ struct HashMap
 
         It(HashMap* _s, u32 _i) : s {_s}, i {_i} {}
 
-        T& operator*() { return s->aBuckets.pData[i].data; }
-        T* operator->() { return &s->aBuckets.pData[i].data; }
+        T& operator*() { return s->aBuckets[i].data; }
+        T* operator->() { return &s->aBuckets[i].data; }
 
         It operator++()
         {
@@ -92,10 +99,10 @@ inline u32
 HashMapFirstI(HashMap<T>* s)
 {
     u32 i = 0;
-    while (i < s->aBuckets.cap && !s->aBuckets.pData[i].bOccupied)
+    while (i < VecCap(&s->aBuckets) && !s->aBuckets[i].bOccupied)
         i++;
 
-    if (i >= s->aBuckets.cap) i = NPOS;
+    if (i >= VecCap(&s->aBuckets)) i = NPOS;
 
     return i;
 }
@@ -105,10 +112,10 @@ inline u32
 HashMapNextI(HashMap<T>* s, u32 i)
 {
     ++i;
-    while (i < s->aBuckets.cap && !s->aBuckets.pData[i].bOccupied)
+    while (i < VecCap(&s->aBuckets) && !s->aBuckets[i].bOccupied)
         i++;
 
-    if (i >= s->aBuckets.cap) i = NPOS;
+    if (i >= VecCap(&s->aBuckets)) i = NPOS;
 
     return i;
 }
@@ -117,23 +124,23 @@ template<typename T>
 inline f32
 HashMapLoadFactor(HashMap<T>* s)
 {
-    return f32(s->bucketCount) / f32(s->aBuckets.cap);
+    return f32(s->bucketCount) / f32(VecCap(&s->aBuckets));
 }
 
 template<typename T>
-inline HashMapRet<T>
+inline HashMapResult<T>
 HashMapInsert(HashMap<T>* s, const T& value)
 {
     if (HashMapLoadFactor(s) >= s->maxLoadFactor)
-        __HashMapRehash(s, s->aBuckets.cap * 2);
+        __HashMapRehash(s, VecCap(&s->aBuckets) * 2);
 
     u64 hash = hash::func(value);
-    u32 idx = u32(hash % s->aBuckets.cap);
+    u32 idx = u32(hash % VecCap(&s->aBuckets));
 
     while (s->aBuckets[idx].bOccupied)
     {
         idx++;
-        if (idx >= s->aBuckets.cap)
+        if (idx >= VecCap(&s->aBuckets))
             idx = 0;
     }
 
@@ -151,13 +158,13 @@ HashMapInsert(HashMap<T>* s, const T& value)
 }
 
 template<typename T>
-inline HashMapRet<T>
+inline HashMapResult<T>
 HashMapSearch(HashMap<T>* s, const T& value)
 {
     u64 hash = hash::func(value);
-    u32 idx = u32(hash % s->aBuckets.cap);
+    u32 idx = u32(hash % VecCap(&s->aBuckets));
 
-    HashMapRet<T> ret;
+    HashMapResult<T> ret;
     ret.hash = hash;
     ret.pData = nullptr;
     ret.bInserted = false;
@@ -171,8 +178,7 @@ HashMapSearch(HashMap<T>* s, const T& value)
         }
 
         idx++;
-        if (idx >= s->aBuckets.cap)
-            idx = 0;
+        if (idx >= VecCap(&s->aBuckets)) idx = 0;
     }
 
     ret.idx = idx;
@@ -203,7 +209,7 @@ __HashMapRehash(HashMap<T>* s, u32 size)
 {
     auto mNew = HashMap<T>(s->aBuckets.pAlloc, size);
 
-    for (u32 i = 0; i < s->aBuckets.cap; i++)
+    for (u32 i = 0; i < VecCap(&s->aBuckets); i++)
         if (s->aBuckets[i].bOccupied)
             HashMapInsert(&mNew, s->aBuckets[i].data);
 
@@ -212,11 +218,11 @@ __HashMapRehash(HashMap<T>* s, u32 size)
 }
 
 template<typename T>
-inline HashMapRet<T>
+inline HashMapResult<T>
 HashMapTryInsert(HashMap<T>* s, const T& value)
 {
     auto f = HashMapSearch(s, value);
-    if (f.pData) return f;
+    if (f) return f;
     else return HashMapInsert(s, value);
 }
 
