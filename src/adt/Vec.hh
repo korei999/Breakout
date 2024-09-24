@@ -282,28 +282,28 @@ template<typename T>
 inline void
 VecDestroy(Vec<T>* s)
 {
-    free(s->pAlloc, s->base.pData);
+    VecDestroy(&s->base, s->pAlloc);
 }
 
 template<typename T>
 inline u32
 VecSize(const Vec<T>* s)
 {
-    return s->base.size;
+    return VecSize(&s->base);
 }
 
 template<typename T>
 inline u32
 VecCap(const Vec<T>* s)
 {
-    return s->base.cap;
+    return VecCap(&s->base);
 }
 
 template<typename T>
 inline T*
 VecData(Vec<T>* s)
 {
-    return s->base.pData;
+    return VecData(&s->base);
 }
 
 } /* namespace adt */
