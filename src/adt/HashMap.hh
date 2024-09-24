@@ -9,21 +9,9 @@ namespace adt
 constexpr f32 HASHMAP_DEFAULT_LOAD_FACTOR = 0.5;
 constexpr f32 HASHMAP_DEFAULT_LOAD_FACTOR_INV = 1.0 / HASHMAP_DEFAULT_LOAD_FACTOR;
 
-template<typename T> struct Bucket;
-template<typename T> struct HashMapResult;
-template<typename T> struct HashMap;
+template<typename T> struct HashMapBase;
 
-template<typename T> inline u32 HashMapFirstI(HashMap<T>* s);
-template<typename T> inline u32 HashMapNextI(HashMap<T>* s, u32 i);
-template<typename T> inline f32 HashMapLoadFactor(HashMap<T>* s);
-template<typename T> inline HashMapResult<T> HashMapInsert(HashMap<T>* s, const T& value);
-template<typename T> inline HashMapResult<T> HashMapSearch(HashMap<T>* s, const T& value);
-template<typename T> inline void HashMapRemove(HashMap<T>*s, u32 i);
-template<typename T> inline void HashMapRemove(HashMap<T>*s, const T& x);
-template<typename T> inline HashMapResult<T> HashMapTryInsert(HashMap<T>* s, const T& value);
-template<typename T> inline void HashMapDestroy(HashMap<T>* s);
-
-template<typename T> inline void __HashMapRehash(HashMap<T>* s, u32 size);
+template<typename T> inline void __HashMapRehash(HashMapBase<T>* s, Allocator* p, u32 size);
 
 template<typename T>
 struct Bucket
@@ -52,26 +40,23 @@ struct HashMapResult
  * For key/value pairs, use struct { KEY k; VALUE v; }, add `u64 adt::hash::func(const struct&)`
  * and* bool operator==(const struct& l, const struct& r). */
 template<typename T>
-struct HashMap
+struct HashMapBase
 {
-    Vec<Bucket<T>> aBuckets;
+    VecBase<Bucket<T>> aBuckets;
     f32 maxLoadFactor;
     u32 bucketCount = 0;
 
-    HashMap() = default;
-    HashMap(Allocator* pAllocator, u32 prealloc = SIZE_MIN)
-        : aBuckets (pAllocator, prealloc),
-          maxLoadFactor (HASHMAP_DEFAULT_LOAD_FACTOR) {}
-
-    Bucket<T>& operator[](u32 i) { return aBuckets[i]; }
-    const Bucket<T>& operator[](u32 i) const { return aBuckets[i]; }
+    HashMapBase() = default;
+    HashMapBase(Allocator* pAllocator, u32 prealloc = SIZE_MIN)
+        : aBuckets(pAllocator, prealloc),
+          maxLoadFactor(HASHMAP_DEFAULT_LOAD_FACTOR) {}
 
     struct It
     {
-        HashMap* s {};
+        HashMapBase* s {};
         u32 i = 0;
 
-        It(HashMap* _s, u32 _i) : s {_s}, i {_i} {}
+        It(HashMapBase* _s, u32 _i) : s {_s}, i {_i} {}
 
         T& operator*() { return s->aBuckets[i].data; }
         T* operator->() { return &s->aBuckets[i].data; }
@@ -96,7 +81,7 @@ struct HashMap
 
 template<typename T>
 inline u32
-HashMapFirstI(HashMap<T>* s)
+HashMapFirstI(HashMapBase<T>* s)
 {
     u32 i = 0;
     while (i < VecCap(&s->aBuckets) && !s->aBuckets[i].bOccupied)
@@ -109,7 +94,7 @@ HashMapFirstI(HashMap<T>* s)
 
 template<typename T>
 inline u32
-HashMapNextI(HashMap<T>* s, u32 i)
+HashMapNextI(HashMapBase<T>* s, u32 i)
 {
     ++i;
     while (i < VecCap(&s->aBuckets) && !s->aBuckets[i].bOccupied)
@@ -122,17 +107,17 @@ HashMapNextI(HashMap<T>* s, u32 i)
 
 template<typename T>
 inline f32
-HashMapLoadFactor(HashMap<T>* s)
+HashMapLoadFactor(HashMapBase<T>* s)
 {
     return f32(s->bucketCount) / f32(VecCap(&s->aBuckets));
 }
 
 template<typename T>
 inline HashMapResult<T>
-HashMapInsert(HashMap<T>* s, const T& value)
+HashMapInsert(HashMapBase<T>* s, Allocator* p, const T& value)
 {
     if (HashMapLoadFactor(s) >= s->maxLoadFactor)
-        __HashMapRehash(s, VecCap(&s->aBuckets) * 2);
+        __HashMapRehash(s, p, VecCap(&s->aBuckets) * 2);
 
     u64 hash = hash::func(value);
     u32 idx = u32(hash % VecCap(&s->aBuckets));
@@ -159,7 +144,7 @@ HashMapInsert(HashMap<T>* s, const T& value)
 
 template<typename T>
 inline HashMapResult<T>
-HashMapSearch(HashMap<T>* s, const T& value)
+HashMapSearch(HashMapBase<T>* s, const T& value)
 {
     u64 hash = hash::func(value);
     u32 idx = u32(hash % VecCap(&s->aBuckets));
@@ -187,7 +172,7 @@ HashMapSearch(HashMap<T>* s, const T& value)
 
 template<typename T>
 inline void
-HashMapRemove(HashMap<T>*s, u32 i)
+HashMapRemove(HashMapBase<T>*s, u32 i)
 {
     s->aBuckets[i].bDeleted = true;
     s->aBuckets[i].bOccupied = false;
@@ -197,7 +182,7 @@ HashMapRemove(HashMap<T>*s, u32 i)
 
 template<typename T>
 inline void
-HashMapRemove(HashMap<T>*s, const T& x)
+HashMapRemove(HashMapBase<T>*s, const T& x)
 {
     auto f = HashMapSearch(s, x);
     HashMapRemove(s, f.idx);
@@ -205,32 +190,124 @@ HashMapRemove(HashMap<T>*s, const T& x)
 
 template<typename T>
 inline void
-__HashMapRehash(HashMap<T>* s, u32 size)
+__HashMapRehash(HashMapBase<T>* s, Allocator* p, u32 size)
 {
-    auto mNew = HashMap<T>(s->aBuckets.pAlloc, size);
+    auto mNew = HashMapBase<T>(p, size);
 
     for (u32 i = 0; i < VecCap(&s->aBuckets); i++)
         if (s->aBuckets[i].bOccupied)
-            HashMapInsert(&mNew, s->aBuckets[i].data);
+            HashMapInsert(&mNew, p, s->aBuckets[i].data);
 
-    HashMapDestroy(s);
+    HashMapDestroy(s, p);
     *s = mNew;
+}
+
+template<typename T>
+inline HashMapResult<T>
+HashMapTryInsert(HashMapBase<T>* s, Allocator* p, const T& value)
+{
+    auto f = HashMapSearch(s, value);
+    if (f) return f;
+    else return HashMapInsert(s, p, value);
+}
+
+template<typename T>
+inline void
+HashMapDestroy(HashMapBase<T>* s, Allocator* p)
+{
+    VecDestroy(&s->aBuckets, p);
+}
+
+template<typename T>
+struct HashMap
+{
+    HashMapBase<T> base {};
+    Allocator* pA {};
+
+    HashMap() = default;
+    HashMap(Allocator* _pA, u32 prealloc = SIZE_MIN)
+        : base(_pA, prealloc), pA(_pA) {}
+
+    HashMapBase<T>::It begin() { return base.begin(); }
+    HashMapBase<T>::It end() { return base.end(); }
+    HashMapBase<T>::It rbegin() { return base.rbegin(); }
+    HashMapBase<T>::It rend() { return rend(); }
+
+    const HashMapBase<T>::It begin() const { return begin(); }
+    const HashMapBase<T>::It end() const { return end(); }
+    const HashMapBase<T>::It rbegin() const { return rbegin(); }
+    const HashMapBase<T>::It rend() const { return rend(); }
+};
+
+template<typename T>
+inline u32
+HashMapFirstI(HashMap<T>* s)
+{
+    return HashMapFirstI(&s->base);
+}
+
+template<typename T>
+inline u32
+HashMapNextI(HashMap<T>* s, u32 i)
+{
+    return HashMapNextI(&s->base, i);
+}
+
+template<typename T>
+inline f32
+HashMapLoadFactor(HashMap<T>* s)
+{
+    return HashMapLoadFactor(&s->base);
+}
+
+template<typename T>
+inline HashMapResult<T>
+HashMapInsert(HashMap<T>* s, const T& value)
+{
+    return HashMapInsert(&s->base, s->pA, value);
+}
+
+template<typename T>
+inline HashMapResult<T>
+HashMapSearch(HashMap<T>* s, const T& value)
+{
+    return HashMapSearch(&s->base, value);
+}
+
+template<typename T>
+inline void
+HashMapRemove(HashMap<T>*s, u32 i)
+{
+    HashMapRemove(&s->base, i);
+}
+
+template<typename T>
+inline void
+HashMapRemove(HashMap<T>*s, const T& x)
+{
+    HashMapRemove(&s->base, x);
+}
+
+template<typename T>
+inline void
+__HashMapRehash(HashMap<T>* s, u32 size)
+{
+    __HashMapRehash(&s->base, s->pA, size);
 }
 
 template<typename T>
 inline HashMapResult<T>
 HashMapTryInsert(HashMap<T>* s, const T& value)
 {
-    auto f = HashMapSearch(s, value);
-    if (f) return f;
-    else return HashMapInsert(s, value);
+    return HashMapTryInsert(&s->base, s->pA, value);
 }
 
 template<typename T>
 inline void
 HashMapDestroy(HashMap<T>* s)
 {
-    VecDestroy(&s->aBuckets);
+    HashMapDestroy(&s->base, s->pA);
 }
+
 
 } /* namespace adt */

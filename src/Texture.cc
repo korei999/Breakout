@@ -142,9 +142,9 @@ TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GL
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
 
-    /* NOTE: swapping bits on load is not nessesary?
-     * glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-     * glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED); */
+    /* NOTE: less fun way of swapping channels */
+    /*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);*/
+    /*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);*/
 
     /* load image, create texture and generate mipmaps */
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, pData);
@@ -244,6 +244,8 @@ CubeMap
 SkyBoxCreate(String sFaces[6])
 {
     Arena al(SIZE_1M * 6);
+    defer(ArenaFreeAll(&al));
+
     CubeMap cmNew {};
 
     glGenTextures(1, &cmNew.t.tex);
@@ -262,8 +264,6 @@ SkyBoxCreate(String sFaces[6])
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    ArenaFreeAll(&al);
 
     return cmNew;
 }
@@ -333,7 +333,7 @@ loadBMP(Allocator* pAlloc, String path, bool flip)
 #endif
     Vec<u8> pixels(pAlloc, nPixels * byteDepth);
 
-    parser::BinSetPos(&p, imageDataAddress);
+    p.pos = imageDataAddress;
 
     switch (format)
     {

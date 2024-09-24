@@ -115,7 +115,7 @@ FontParse(Font* s)
 #endif
 
     auto& map = td.mTableRecords;
-    map = HashMap<TableRecord>(s->p.pAlloc, td.numTables * HASHMAP_DEFAULT_LOAD_FACTOR_INV);
+    map = HashMapBase<TableRecord>(s->p.pA, td.numTables * HASHMAP_DEFAULT_LOAD_FACTOR_INV);
 
     for (u32 i = 0; i < td.numTables; i++)
     {
@@ -126,7 +126,7 @@ FontParse(Font* s)
             .length = BinRead32Rev(&s->p),
         };
 
-        HashMapInsert(&td.mTableRecords, r);
+        HashMapInsert(&td.mTableRecords, s->p.pA, r);
 
 #ifdef D_TTF
         LOG(

@@ -27,8 +27,6 @@ using F2Dot14 = s16; /* 16-bit signed fixed number with the low 14 bits of fract
 using longDateTime = s64; /* Date and time represented in number of seconds
                            * since 12:00 midnight, January 1, 1904, UTC.
                            * The value is represented as a signed 64-bit integer. */
-using Tag = u8[4]; /* Array of four uint8s (length = 32 bits) used to identify a table,
-                    * design-variation axis, script, language system, feature, or baseline. */
 using Offset8 = u8; /* 8-bit offset to a table, same as uint8, NULL offset = 0x00 */
 using Offset16 = u16; /* Short offset to a table, same as uint16, NULL offset = 0x0000 */
 using Offset24 = u24; /* 24-bit offset to a table, same as uint24, NULL offset = 0x000000 */
@@ -37,7 +35,7 @@ using Version16Dot16 = struct { u16 maj; u16 min; }; /*Packed 32-bit value with 
 
 struct TableRecord
 {
-    String tag {}; /* instead of TTF_Tag */
+    String tag {};
     u32 checkSum {};
     Offset32 offset {};
     u32 length {};
@@ -57,8 +55,8 @@ struct TableDirectory
     u16 entrySelector; /* Log2 of the maximum power of 2 less than or equal to numTables (log2(searchRange/16),
                         * which is equal to floor(log2(numTables))). */
     u16 rangeShift; /* numTables times 16, minus searchRange ((numTables * 16) - searchRange). */
-    // Vec<TableRecord> aTableRecords;
-    HashMap<TableRecord> mTableRecords;
+    // VecBase<TableRecord> aTableRecords;
+    HashMapBase<TableRecord> mTableRecords;
 };
 
 struct Kern
@@ -87,7 +85,7 @@ struct Cmap
 {
     u16 version; /* Version number (Set to zero) */
     u16 numberSubtables; /* Number of encoding subtables */
-    Vec<CMAPEncodingSubtable> aSubtables;
+    VecBase<CMAPEncodingSubtable> aSubtables;
 };
 
 enum OUTLINE_FLAGS : u8
@@ -114,10 +112,10 @@ enum OUTLINE_FLAGS : u8
 
 struct GlyphSimple
 {
-    Vec<u16> aEndPtsOfContours; /* [n] Array of last points of each contour; n is the number of contours; array entries are point indices */
+    VecBase<u16> aEndPtsOfContours; /* [n] Array of last points of each contour; n is the number of contours; array entries are point indices */
     u16 instructionLength; /* Total number of bytes needed for instructions */
-    Vec<u8> aInstructions; /* [instructionLength] Array of instructions for this glyph */
-    Vec<OUTLINE_FLAGS> aeFlags; /* [variable] Array of flags */
+    VecBase<u8> aInstructions; /* [instructionLength] Array of instructions for this glyph */
+    VecBase<OUTLINE_FLAGS> aeFlags; /* [variable] Array of flags */
     void* pXCoordinates; /* (u8 or s16) Array of x-coordinates; the first is relative to (0,0), others are relative to previous point */
     void* pYCoordinates; /* (u8 or s16) Array of y-coordinates; the first is relative to (0,0), others are relative to previous point */
 };
@@ -362,8 +360,8 @@ struct Hmtx
 struct Loca
 {
     union {
-        Vec<u16> shortVersion;
-        Vec<u32> longVersion;
+        VecBase<u16> shortVersion;
+        VecBase<u32> longVersion;
     } offsets;
 };
 
@@ -408,7 +406,7 @@ struct Name
     u16 format; /* Format selector. Set to 0. */
     u16 count; /* The number of nameRecords in this name table. */
     u16 stringOffset; /* Offset in bytes to the beginning of the name character strings. */
-    Vec<NameRecords> aNameRecords; /* [count] The name records array. */
+    VecBase<NameRecords> aNameRecords; /* [count] The name records array. */
     String name; /* Character strings. The character strings of the names. Note that these are not necessarily ASCII! */
 };
 
@@ -418,8 +416,8 @@ struct Post
 
 struct Font
 {
-    Bin p;
-    TableDirectory tableDirectory;
+    Bin p {};
+    TableDirectory tableDirectory {};
 
     /*Cmap cmap {};*/
     /*Glyph glyph {};*/
@@ -443,7 +441,7 @@ struct Font
     /*u32 postOffset {};*/
 
     Font() = default;
-    Font(Allocator* p) : p {p} {}
+    Font(Allocator* _pA) : p(_pA) {}
 };
 
 } /* namespace ttf */

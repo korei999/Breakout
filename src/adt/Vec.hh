@@ -152,7 +152,7 @@ template<typename T>
 inline void
 VecDestroy(VecBase<T>* s, Allocator* p)
 {
-    free(p, s->base.pData);
+    free(p, s->pData);
 }
 
 template<typename T>

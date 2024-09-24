@@ -304,6 +304,9 @@ loadLevel()
     VecSetCap(&s_aBlocks, levelY*levelX);
     VecSetSize(&s_aBlocks, 0);
 
+    auto fBoxTex = HashMapSearch(&g_mAllTexturesIdxs, {"test-assets/box3.bmp"});
+    auto boxTexId = g_aAllTextures[fBoxTex.pData->vecIdx].id;
+
     for (u32 i = 0; i < levelY; i++)
     {
         for (u32 j = 0; j < levelX; j++)
@@ -318,7 +321,7 @@ loadLevel()
                     .yOff = 0.0f,
                     .zOff = 0.0f,
                     .shaderIdx = 0,
-                    .texIdx = u16(s_tBox.id),
+                    .texIdx = u16(boxTexId),
                     .eColor = COLOR(at(i, j)),
                     .bDead = false,
                     .bRemoveAfterDraw = false,

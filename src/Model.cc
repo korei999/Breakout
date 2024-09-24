@@ -51,7 +51,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     defer(ThreadPoolDestroy(&tp));
 
     /* preload texures */
-    Vec<Texture> aTex((Allocator*)&atmAl, VecSize(&a.aImages));
+    Vec<Texture> aTex(&atmAl.arena.base, VecSize(&a.aImages));
     VecSetSize(&aTex, VecSize(&a.aImages));
 
     for (u32 i = 0; i < VecSize(&a.aImages); i++)

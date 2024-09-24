@@ -11,13 +11,13 @@ namespace parser
 
 template <typename T>
 ADT_NO_UB
-constexpr T
+inline T
 readTypeBytes(String s, u32 at)
 {
     return *(T*)(&s[at]);
 }
 
-constexpr u16
+inline u16
 swapBytes(u16 x)
 {
 #if defined __clang__ || __GNUC__
@@ -27,7 +27,7 @@ swapBytes(u16 x)
 #endif
 }
 
-constexpr u32
+inline u32
 swapBytes(u32 x)
 {
 #if defined __clang__ || __GNUC__
@@ -40,7 +40,7 @@ swapBytes(u32 x)
 #endif
 }
 
-constexpr u64
+inline u64
 swapBytes(u64 x)
 {
 #if defined __clang__ || __GNUC__
@@ -57,13 +57,13 @@ swapBytes(u64 x)
 
 struct Bin
 {
-    Allocator* pAlloc;
+    Allocator* pA;
     String sFile;
     String sPath;
     u32 pos;
 
-    constexpr Bin() = default;
-    constexpr Bin(Allocator* p) : pAlloc(p) {}
+    Bin() = default;
+    Bin(Allocator* p) : pA(p) {}
 
     char& operator[](u32 i) { return sFile[i]; };
 };
@@ -71,10 +71,10 @@ struct Bin
 inline bool 
 BinLoadFile(Bin* s, String path)
 {
-    s->sPath = StringAlloc(s->pAlloc, path);
+    s->sPath = StringAlloc(s->pA, path);
     s->pos = 0;
 
-    Option<String> rs = file::load(s->pAlloc, path);
+    Option<String> rs = file::load(s->pA, path);
     if (!rs) LOG_FATAL("error opening file: '%.*s'\n", path.size, path.pData);
 
     s->sFile = rs.data;
@@ -82,13 +82,13 @@ BinLoadFile(Bin* s, String path)
     return s->sFile.pData != nullptr;
 }
 
-constexpr void 
+inline void 
 BinSkipBytes(Bin* s, u32 n)
 {
     s->pos += n;
 }
 
-constexpr String
+inline String
 BinReadString(Bin* s, u32 bytes)
 {
     String ret(&s->sFile[s->pos], bytes);
@@ -96,7 +96,7 @@ BinReadString(Bin* s, u32 bytes)
     return ret;
 }
 
-constexpr u8
+inline u8
 BinRead8(Bin* s)
 {
     auto ret = readTypeBytes<u8>(s->sFile, s->pos);
@@ -104,7 +104,7 @@ BinRead8(Bin* s)
     return ret;
 }
 
-constexpr u16
+inline u16
 BinRead16(Bin* s)
 {
     auto ret = readTypeBytes<u16>(s->sFile, s->pos);
@@ -112,13 +112,13 @@ BinRead16(Bin* s)
     return ret;
 }
 
-constexpr u16
+inline u16
 BinRead16Rev(Bin* s)
 {
     return swapBytes(BinRead16(s));
 }
 
-constexpr u32
+inline u32
 BinRead32(Bin* s)
 {
     auto ret = readTypeBytes<u32>(s->sFile, s->pos);
@@ -126,13 +126,13 @@ BinRead32(Bin* s)
     return ret;
 }
 
-constexpr u32
+inline u32
 BinRead32Rev(Bin* s)
 {
     return swapBytes(BinRead32(s));
 }
 
-constexpr u64
+inline u64
 BinRead64(Bin* s)
 {
     auto ret = readTypeBytes<u64>(s->sFile, s->pos);
@@ -140,19 +140,13 @@ BinRead64(Bin* s)
     return ret;
 }
 
-constexpr u64
+inline u64
 BinRead64Rev(Bin* s)
 {
     return swapBytes(BinRead64(s));
 }
 
-constexpr void
-BinSetPos(Bin* s, u32 p)
-{
-    s->pos = p;
-}
-
-constexpr bool
+inline bool
 BinFinished(Bin* s)
 {
     return s->pos >= s->sFile.size;
