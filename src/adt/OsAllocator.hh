@@ -31,7 +31,7 @@ struct OsAllocator
 {
     Allocator base {};
 
-    constexpr OsAllocator() : base {&__OsAllocatorVTable} {}
+    constexpr OsAllocator([[maybe_unused]] u32 _ingnored = 0) : base {&__OsAllocatorVTable} {}
 };
 
 inline void*

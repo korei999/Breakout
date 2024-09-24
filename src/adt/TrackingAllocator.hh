@@ -13,7 +13,7 @@ namespace adt
 struct TrackingAllocator
 {
     Allocator base;
-    HashMap<void*> mAllocations;
+    HashMapBase<void*> mAllocations;
 
     TrackingAllocator() = default;
     TrackingAllocator(u64 pre);
@@ -23,7 +23,7 @@ inline void*
 TrackingAlloc(TrackingAllocator* s, u64 mCount, u64 mSize)
 {
     void* r = ::calloc(mCount, mSize);
-    HashMapInsert(&s->mAllocations, r);
+    HashMapInsert(&s->mAllocations, &s->base, r);
     return r;
 }
 
@@ -35,7 +35,7 @@ TrackingRealloc(TrackingAllocator* s, void* p, u64 mCount, u64 mSize)
     if (p != r)
     {
         HashMapRemove(&s->mAllocations, p);
-        HashMapInsert(&s->mAllocations, r);
+        HashMapInsert(&s->mAllocations, &s->base, r);
     }
 
     return r;
@@ -54,7 +54,7 @@ TrackingFreeAll(TrackingAllocator* s)
     for (auto& b : s->mAllocations)
         ::free(b);
 
-    HashMapDestroy(&s->mAllocations);
+    HashMapDestroy(&s->mAllocations, &s->base);
 }
 
 inline const AllocatorInterface __MapAllocatorVTable {
