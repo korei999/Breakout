@@ -30,13 +30,13 @@ M4::M4(const M3& m)
 f32
 V2Length(const V2& v)
 {
-    return hypot(v.x, v.y);
+    return hypotf(v.x, v.y);
 }
 
 f32
 V3Length(const V3& v)
 {
-    return hypot(v.x, v.y, v.z);
+    return sqrtf(sq(v.x) + sq(v.y) + sq(v.z));
 }
 
 f32

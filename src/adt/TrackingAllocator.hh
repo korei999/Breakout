@@ -2,7 +2,7 @@
 
 #include "Allocator.hh"
 #include "HashMap.hh"
-#include "adt/DefaultAllocator.hh"
+#include "adt/OsAllocator.hh"
 
 #include <stdlib.h>
 
@@ -30,7 +30,7 @@ TrackingAlloc(TrackingAllocator* s, u64 mCount, u64 mSize)
 inline void*
 TrackingRealloc(TrackingAllocator* s, void* p, u64 mCount, u64 mSize)
 {
-    void* r = ::reallocarray(p, mCount, mSize);
+    void* r = ::realloc(p, mCount * mSize);
 
     if (p != r)
     {

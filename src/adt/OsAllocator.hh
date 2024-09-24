@@ -43,7 +43,7 @@ OsAlloc([[maybe_unused]] OsAllocator* s, u64 mCount, u64 mSize)
 inline void*
 OsRealloc([[maybe_unused]] OsAllocator* s, void* p, u64 mCount, u64 mSize)
 {
-    return ::reallocarray(p, mCount, mSize);
+    return ::realloc(p, mCount * mSize);
 }
 
 inline void
