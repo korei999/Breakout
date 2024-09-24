@@ -225,18 +225,18 @@ exitFullscreen(HWND hwnd, int windowX, int windowY, int windowedWidth, int windo
 LRESULT CALLBACK
 windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    Win32Window* pApp = (Win32Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    Win32Window* s = (Win32Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
     switch (msg)
     {
         case WM_DESTROY:
-            pApp->base.bRunning = false;
+            s->base.bRunning = false;
             app::g_pMixer->bRunning = false;
             return 0;
 
         case WM_SIZE:
-            pApp->base.wWidth = LOWORD(lParam);
-            pApp->base.wHeight = HIWORD(lParam);
+            s->base.wWidth = LOWORD(lParam);
+            s->base.wHeight = HIWORD(lParam);
             break;
 
         case WM_KILLFOCUS:
@@ -292,9 +292,15 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
     }
 
-    if (pApp && pApp->base.bPointerRelativeMode)
+    if (s && s->base.bPointerRelativeMode)
     {
-        SetCursorPos(pApp->base.wWidth / 2, pApp->base.wHeight / 2);
+        RECT r;
+        GetWindowRect(s->hWindow, &r);
+
+        SetCursorPos(
+            s->base.wWidth / 2 + r.left,
+            s->base.wHeight / 2 + r.top
+        );
         SetCursor(nullptr);
     }
 
