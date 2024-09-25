@@ -23,7 +23,7 @@ endif()
 
 include_directories(BEFORE "src")
 include_directories(BEFORE "ThirdParty")
-add_definitions("-DFMT_HEADER_ONLY")
+# add_definitions("-DFMT_HEADER_ONLY")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_definitions("-D_CRT_SECURE_NO_WARNINGS")
@@ -126,7 +126,11 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(LINUX_PKGS REQUIRED gl egl wayland-client wayland-egl wayland-cursor libpipewire-0.3)
     include_directories(BEFORE ${LINUX_PKGS_INCLUDE_DIRS})
-    target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC ${LINUX_PKGS_LIBRARIES})
+    target_link_libraries(
+        ${CMAKE_PROJECT_NAME} PUBLIC
+        ${LINUX_PKGS_LIBRARIES} 
+        ${CMAKE_SOURCE_DIR}/ThirdParty/libfmt.a
+    )
 
     set(WLP "./src/platform/wayland")
     set(WLPD "${WLP}/wayland-protocols")
