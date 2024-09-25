@@ -59,8 +59,7 @@ Ball g_ball {
 void
 loadAssets()
 {
-    /*parser::ttf::FontLoad(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");*/
-    parser::ttf::FontLoad(&s_fLiberation, "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf");
+    parser::ttf::FontLoad(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");
 
     json::ParserLoadAndParse(&s_json, "test-assets/models/cube/gltf/cube.gltf");
     json::ParserPrint(&s_json);
@@ -331,7 +330,7 @@ loadLevel()
                 u32 idx = VecPush(&s_aEntities, {});
                 auto& e = s_aEntities[idx];
 
-                VecPush(&s_aBlocks, {idx});
+                VecPush(&s_aBlocks, {u16(idx)});
                 e.pos = tilePosToImagePos(i, j);
                 e.width = 1.0f;
                 e.height = 1.0f;

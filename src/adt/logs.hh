@@ -58,7 +58,7 @@ inline const char* _LOG_SEV_STR[] = {
         do                                                                                                             \
         {                                                                                                              \
             assert(SEV >= 0 && SEV < _LOG_SEV_ENUM_SIZE && "wrong _LOG_SEV*");                                         \
-            CERR("(%s%s, %d): ", _LOG_SEV_STR[SEV], ADT_FILE, __LINE__);                                               \
+            FERR("({}{}, {}): ", _LOG_SEV_STR[SEV], ADT_FILE, __LINE__);                                               \
             CERR(__VA_ARGS__);                                                                                         \
             switch (SEV)                                                                                               \
             {                                                                                                          \

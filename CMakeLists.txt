@@ -97,6 +97,8 @@ message(STATUS "CMAKE_BUILD_TYPE: '${CMAKE_BUILD_TYPE}'")
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4146 /wd4200 /wd4312")
+    set(CMAKE_CXX_FLAGS "/utf-8")
+    set(CMAKE_C_FLAGS "/utf-8")
 else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fms-extensions")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fms-extensions")
@@ -179,7 +181,23 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     find_package(OpenGL REQUIRED)
     message(STATUS "OpenGL: '${OpenGL}'")
-    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${OPENGL_gl_LIBRARY})
+
+    target_link_libraries(
+        ${CMAKE_PROJECT_NAME} PRIVATE
+        ${OPENGL_gl_LIBRARY}
+    )
+
+    if (CMAKE_BUILD_TYPE MATCHES "Debug")
+        target_link_libraries(
+            ${CMAKE_PROJECT_NAME} PRIVATE
+            ${CMAKE_SOURCE_DIR}/ThirdParty/fmtd.lib
+        )
+    else()
+        target_link_libraries(
+            ${CMAKE_PROJECT_NAME} PRIVATE
+            ${CMAKE_SOURCE_DIR}/ThirdParty/fmt.lib
+        )
+    endif()
 
     target_sources(
         ${CMAKE_PROJECT_NAME}
