@@ -62,7 +62,6 @@ loadAssets()
     /*parser::ttf::FontLoad(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");*/
     parser::ttf::FontLoad(&s_fLiberation, "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf");
 
-    /*json::ParserLoadAndParse(&s_json, "/home/korei/source/JSON/jsonast-cxx/test/t0.json");*/
     json::ParserLoadAndParse(&s_json, "test-assets/models/cube/gltf/cube.gltf");
     json::ParserPrint(&s_json);
 
