@@ -1,10 +1,10 @@
 #pragma once
 
-#include "format.hh"
-
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <fmt/base.h>
 
 #define COL_NORM  "\x1B[0m"
 #define COL_RED  "\x1B[31m"
@@ -17,6 +17,9 @@
 
 #define COUT(...) fprintf(stdout, __VA_ARGS__)
 #define CERR(...) fprintf(stderr, __VA_ARGS__)
+
+#define OUT(...) fmt::print(stdout, __VA_ARGS__)
+#define ERR(...) fmt::print(stderr, __VA_ARGS__)
 
 #ifdef DEBUG
     #define DCOUT(...) COUT(__VA_ARGS__)

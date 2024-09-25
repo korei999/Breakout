@@ -22,6 +22,8 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 include_directories(BEFORE "src")
+include_directories(BEFORE "ThirdParty")
+add_definitions("-DFMT_HEADER_ONLY")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_definitions("-D_CRT_SECURE_NO_WARNINGS")

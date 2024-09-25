@@ -1,5 +1,7 @@
 #include "ttf.hh"
 
+#include <math.h>
+
 namespace parser
 {
 namespace ttf
@@ -28,13 +30,17 @@ FontLoad(Font* s, String path)
 }
 
 constexpr u32
-getTableChecksum(u32* Table, u32 Length)
+getTableChecksum(u32* pTable, u32 nBytes)
 {
-    u32 Sum = 0L;
-    u32 *Endptr = Table + ((Length + 3) & ~3) / sizeof(u32);
-    while (Table < Endptr)
-        Sum += *Table++;
-    return Sum;
+    u32 sum = 0;
+    u32 nLongs = (nBytes + 3) / 4;
+    while (nLongs > 0)
+    {
+        sum += swapBytes(*pTable);
+        nLongs--, pTable++;
+    }
+
+    return sum;
 }
 
 constexpr String
@@ -83,8 +89,108 @@ languageIDToString(u16 languageID)
 }
 
 static void
+readHeadTable(Font* s)
+{
+    u32 savedPos = s->p.pos;
+    defer(s->p.pos = savedPos);
+
+    auto fHead = HashMapSearch(&s->tableDirectory.mTableRecords, {"head"});
+    assert(fHead);
+
+    s->p.pos = fHead.pData->offset;
+
+    auto& h = s->head;
+
+    h.version.l = BinRead16Rev(&s->p);
+    h.version.r = BinRead16Rev(&s->p);
+    h.fontRevision.l = BinRead16Rev(&s->p);
+    h.fontRevision.r = BinRead16Rev(&s->p);
+    h.checkSumAdjustment = BinRead32Rev(&s->p);
+    h.magicNumber = BinRead32Rev(&s->p);
+    h.flags = BinRead16Rev(&s->p);
+    h.unitsPerEm = BinRead16Rev(&s->p);
+    h.created = BinRead64Rev(&s->p);
+    h.modified = BinRead64Rev(&s->p);
+    h.xMin = BinRead16Rev(&s->p);
+    h.yMin = BinRead16Rev(&s->p);
+    h.xMax = BinRead16Rev(&s->p);
+    h.yMax = BinRead16Rev(&s->p);
+    h.macStyle = BinRead16Rev(&s->p);
+    h.lowestRecPPEM = BinRead16Rev(&s->p);
+    h.fontDirectionHint = BinRead16Rev(&s->p);
+    h.indexToLocFormat = BinRead16Rev(&s->p);
+    h.glyphDataFormat = BinRead16Rev(&s->p);
+
+    LOG(
+        "\thead:\n"
+        "\t\tversion: %d, %d\n"
+        "\t\tfontRevision: %d, %d\n"
+        "\t\tcheckSumAdjustment: %u\n"
+        "\t\tmagicNumber: %u\n"
+        "\t\tflags: %#x\n"
+        "\t\tunitsPerEm: %u\n"
+        "\t\tcreated: %ld\n"
+        "\t\tmodified: %ld\n"
+        "\t\txMin: %d\n"
+        "\t\tyMin: %d\n"
+        "\t\txMax: %d\n"
+        "\t\tyMax: %d\n"
+        "\t\tmacStyle: %u\n"
+        "\t\tlowestRecPPEM: %u\n"
+        "\t\tfontDirectionHint: %d\n"
+        "\t\tindexToLocFormat: %d\n"
+        "\t\tglyphDataFormat: %d\n",
+        h.version.l, h.version.r,
+        h.fontRevision.l, h.fontRevision.r,
+        h.checkSumAdjustment,
+        h.magicNumber,
+        h.flags,
+        h.unitsPerEm,
+        h.created,
+        h.modified,
+        h.xMin,
+        h.yMin,
+        h.xMax,
+        h.yMax,
+        h.macStyle,
+        h.lowestRecPPEM,
+        h.fontDirectionHint,
+        h.indexToLocFormat,
+        h.glyphDataFormat
+    );
+}
+
+static u32
+getGlyphOffset(Font* s, u32 idx)
+{
+    auto fLoca = HashMapSearch(&s->tableDirectory.mTableRecords, {"loca"});
+    assert(fLoca);
+
+    u32 savedPos = s->p.pos;
+    defer(s->p.pos = savedPos);
+
+    const auto& table = *fLoca.pData;
+    u32 offset = NPOS;
+
+    if (s->head.indexToLocFormat == 1)
+    {
+        s->p.pos = table.offset + idx*4;
+        offset = BinRead32Rev(&s->p);
+    }
+    else
+    {
+        s->p.pos = table.offset + idx*2;
+        offset = BinRead16Rev(&s->p);
+    }
+
+    return offset;
+}
+
+static void
 FontParse(Font* s)
 {
+    LOG_GOOD("loading font: '%.*s'\n", s->p.sPath.size, s->p.sPath.pData);
+
     if (s->p.sFile.size == 0) LOG_FATAL("unable to parse empty file\n");
 
     auto& td = s->tableDirectory;
@@ -108,7 +214,7 @@ FontParse(Font* s)
     u16 _rangeShiftCheck = td.numTables*16 - td.searchRange;
     assert(td.rangeShift == _rangeShiftCheck);
 
-    LOG_GOOD(
+    LOG(
         "sfntVersion: %u, numTables: %u, searchRange: %u, entrySelector: %u, rangeShift: %u\n",
         td.sfntVersion, td.numTables, td.searchRange, td.entrySelector, td.rangeShift
     );
@@ -127,6 +233,12 @@ FontParse(Font* s)
         };
 
         HashMapInsert(&td.mTableRecords, s->p.pA, r);
+        if (r.tag != "head")
+        {
+            auto checkSum = getTableChecksum((u32*)(&s->p.sFile[r.offset]), r.length);
+            if (r.checkSum - checkSum != 0)
+                LOG_WARN("checkSums don't match: expected: %u, got: %u\n", r.checkSum, checkSum);
+        }
 
 #ifdef D_TTF
         LOG(
@@ -137,7 +249,7 @@ FontParse(Font* s)
     }
 
 #ifdef D_TTF
-    HashMapResult<TableRecord> fGlyf = HashMapSearch(&map, {"glyf"});
+    auto fGlyf = HashMapSearch(&map, {"glyf"});
     if (fGlyf)
     {
         LOG(
@@ -145,9 +257,9 @@ FontParse(Font* s)
             fGlyf.pData->tag.size, fGlyf.pData->tag.pData, fGlyf.pData->offset, fGlyf.pData->length
         );
     }
-    else LOG_WARN("glyf not found?\n");
+    else LOG_FATAL("'glyf' header not found\n");
 
-    HashMapResult<TableRecord> fHead = HashMapSearch(&map, {"head"});
+    auto fHead = HashMapSearch(&map, {"head"});
     if (fHead)
     {
         LOG(
@@ -155,8 +267,10 @@ FontParse(Font* s)
             fHead.pData->tag.size, fHead.pData->tag.pData, fHead.pData->offset, fHead.pData->length
         );
     }
-    else LOG_WARN("head not found?\n");
+    else LOG_FATAL("'head' header not found?\n");
 #endif
+
+    readHeadTable(s);
 }
 
 void

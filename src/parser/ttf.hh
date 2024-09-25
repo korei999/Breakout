@@ -15,8 +15,10 @@ struct Font;
 bool FontLoad(Font* s, String path);
 void FontDestroy(Font* s);
 
+/* RESOURCES: */
 /* https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6.html */
 /* https://learn.microsoft.com/en-us/typography/opentype/spec/otff */
+/* https://stevehanov.ca/blog/?id=143 */
 /* https://handmade.network/forums/articles/t/7330-implementing_a_font_reader_and_rasterizer_from_scratch%252C_part_1__ttf_font_reader. */
 
 using Fixed = struct { s16 l; s16 r; }; /* 32-bit signed fixed-point number (16.16) */
@@ -418,11 +420,11 @@ struct Font
 {
     Bin p {};
     TableDirectory tableDirectory {};
+    Head head {};
 
     /*Cmap cmap {};*/
     /*Glyph glyph {};*/
     /*Kern kern {};*/
-    /*Head head {};*/
     /*Hhea hhea {};*/
     /*Hmtx hmtx {};*/
     /*Loca loca {};*/

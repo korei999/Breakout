@@ -40,6 +40,8 @@ static Plain s_plain;
 static Text s_textFPS;
 static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
 
+static json::Parser s_json(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
+
 Player g_player {
     .enIdx = 0,
     .speed = 0.5,
@@ -57,7 +59,12 @@ Ball g_ball {
 void
 loadAssets()
 {
-    parser::ttf::FontLoad(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");
+    /*parser::ttf::FontLoad(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");*/
+    parser::ttf::FontLoad(&s_fLiberation, "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf");
+
+    /*json::ParserLoadAndParse(&s_json, "/home/korei/source/JSON/jsonast-cxx/test/t0.json");*/
+    json::ParserLoadAndParse(&s_json, "test-assets/models/cube/gltf/cube.gltf");
+    json::ParserPrint(&s_json);
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
@@ -227,6 +234,7 @@ blockHit()
 static void
 paddleHit()
 {
+    namespace f = frame;
     auto& enBall = s_aEntities[g_ball.enIdx];
     auto& enPlayer = s_aEntities[g_player.enIdx];
 
@@ -235,10 +243,10 @@ paddleHit()
     const auto& px = enPlayer.pos.x;
     const auto& py = enPlayer.pos.y;
 
-    if (bx >= px - frame::g_unit.x*2.0f && bx <= px + frame::g_unit.x*2.0f &&
-        by >= py - frame::g_unit.y && by <= py - frame::g_unit.y + frame::g_unit.y/2.0f)
+    if (bx >= px - f::g_unit.x*2.0f && bx <= px + f::g_unit.x*2.0f &&
+        by >= py - f::g_unit.y && by <= py - f::g_unit.y + f::g_unit.y/2.0f)
     {
-        enBall.pos.y = (py - frame::g_unit.y + frame::g_unit.y/2.0f) + 4.0f;
+        enBall.pos.y = (py - f::g_unit.y + f::g_unit.y/2.0f) + 4.0f;
         audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 
         g_ball.dir.y = 1.0f;
@@ -366,6 +374,7 @@ loadLevel()
 void
 updateState()
 {
+    namespace f = frame;
     auto& enBall = s_aEntities[g_ball.enIdx];
     auto& enPlayer = s_aEntities[g_player.enIdx];
 
@@ -374,9 +383,9 @@ updateState()
         enPlayer.pos = nextPos(g_player, false);
         enPlayer.pos = nextPos(g_player, false);
 
-        if (enPlayer.pos.x >= frame::WIDTH - frame::g_unit.x*2)
+        if (enPlayer.pos.x >= f::WIDTH - f::g_unit.x*2)
         {
-            enPlayer.pos.x = frame::WIDTH - frame::g_unit.x*2;
+            enPlayer.pos.x = f::WIDTH - f::g_unit.x*2;
             g_player.dir = {};
         }
         else if (enPlayer.pos.x <= 0)
@@ -402,7 +411,7 @@ updateState()
         math::M4 tm;
         tm = math::M4Iden();
         tm = M4Translate(tm, {pos.x, pos.y, 10.0f});
-        tm = M4Scale(tm, {frame::g_unit.x, frame::g_unit.y, 1.0f});
+        tm = M4Scale(tm, {f::g_unit.x, f::g_unit.y, 1.0f});
     }
 }
 
@@ -437,7 +446,7 @@ drawEntities()
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
 
-    for (const auto& e: s_aEntities)
+    for (const Entity& e : s_aEntities)
     {
         if (e.bDead || e.eColor == COLOR::INVISIBLE) continue;
 

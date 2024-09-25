@@ -23,6 +23,7 @@ struct Parser
 void ParserPrintNode(Object* pNode, adt::String svEnd, int depth);
 void ParserLoad(Parser* s, adt::String path);
 void ParserParse(Parser* s);
+void ParserLoadAndParse(Parser* s, adt::String path);
 void ParserPrint(Parser* s);
 void ParserTraverse(Parser* s, Object* pNode, bool (*pfn)(Object* p, void* a), void* args);
 inline void ParserTraverse(Parser* s, bool (*pfn)(Object* p, void* a), void* args) { ParserTraverse(s, s->pHead, pfn, args); }
