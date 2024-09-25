@@ -16,7 +16,7 @@ extern HashMap<TextureHash> g_mAllTexturesIdxs;
 struct TextureHash
 {
     String sPathKey {};
-    GLuint vecIdx {};
+    u32 vecIdx {};
 };
 
 inline bool

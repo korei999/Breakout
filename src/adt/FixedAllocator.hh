@@ -71,13 +71,13 @@ FixedAllocatorRealloc(FixedAllocator* s, void* p, u64 mCount, u64 mSize)
 constexpr void
 FixedAllocatorFree([[maybe_unused]] FixedAllocator* s, [[maybe_unused]] void* p)
 {
-    /* outside buffer is used */
+    //
 }
 
 constexpr void
 FixedAllocatorFreeAll([[maybe_unused]] FixedAllocator* s, [[maybe_unused]] void* p)
 {
-    /* outside buffer is used */
+    //
 }
 
 constexpr void

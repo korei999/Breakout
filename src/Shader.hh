@@ -11,21 +11,21 @@ extern Vec<Shader> g_aAllShaders;
 
 struct ShaderHash
 {
-    String sKey {};
-    GLuint vecIdx {};
+    String sKeyWord {};
+    u32 vecIdx {};
 };
 
 inline bool
 operator==(const ShaderHash& l, const ShaderHash& r)
 {
-    return l.sKey == r.sKey;
+    return l.sKeyWord == r.sKeyWord;
 }
 
 template<>
 inline u64
 hash::func(const ShaderHash& x)
 {
-    return hash::func(x.sKey);
+    return hash::func(x.sKeyWord);
 }
 
 struct Shader

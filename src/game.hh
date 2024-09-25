@@ -57,18 +57,23 @@ struct Entity
 
 struct Player
 {
-    Entity base;
+    u16 enIdx {};
     f32 speed = 5.0;
     math::V2 dir {};
 };
 
 struct Ball
 {
-    Entity base;
-    bool bReleased;
-    f32 speed;
-    f32 radius;
-    math::V2 dir;
+    u16 enIdx {};
+    bool bReleased {};
+    f32 speed {};
+    f32 radius {};
+    math::V2 dir {};
+};
+
+struct Block
+{
+    u16 enIdx {};
 };
 
 struct Level
