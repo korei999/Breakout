@@ -18,8 +18,8 @@
 #define COUT(...) fprintf(stdout, __VA_ARGS__)
 #define CERR(...) fprintf(stderr, __VA_ARGS__)
 
-#define OUT(...) fmt::print(stdout, __VA_ARGS__)
-#define ERR(...) fmt::print(stderr, __VA_ARGS__)
+#define FOUT(...) fmt::print(stdout, __VA_ARGS__)
+#define FERR(...) fmt::print(stderr, __VA_ARGS__)
 
 #ifdef DEBUG
     #define DCOUT(...) COUT(__VA_ARGS__)
