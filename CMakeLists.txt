@@ -57,7 +57,7 @@ if (LOGS)
     add_definitions("-DLOGS")
 endif()
 
-if (FMT_STATIC)
+if (FMT_HEADER_ONLY)
     add_definitions("-DFMT_HEADER_ONLY")
 endif()
 
