@@ -23,7 +23,6 @@ endif()
 
 include_directories(BEFORE "src")
 include_directories(BEFORE "ThirdParty")
-# add_definitions("-DFMT_HEADER_ONLY")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_definitions("-D_CRT_SECURE_NO_WARNINGS")
@@ -56,6 +55,10 @@ endif()
 
 if (LOGS)
     add_definitions("-DLOGS")
+endif()
+
+if (FMT_STATIC)
+    add_definitions("-DFMT_HEADER_ONLY")
 endif()
 
 # debug logs defines
@@ -133,10 +136,12 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         ${LINUX_PKGS_LIBRARIES} 
     )
 
-    target_link_libraries(
-        ${CMAKE_PROJECT_NAME} PRIVATE
-        ${CMAKE_SOURCE_DIR}/ThirdParty/libfmt.a
-    )
+    if (NOT FMT_STATIC)
+        target_link_libraries(
+            ${CMAKE_PROJECT_NAME} PRIVATE
+            ${CMAKE_SOURCE_DIR}/ThirdParty/libfmt.a
+        )
+    endif()
 
     set(WLP "./src/platform/wayland")
     set(WLPD "${WLP}/wayland-protocols")
@@ -191,16 +196,19 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
         ${OPENGL_gl_LIBRARY}
     )
 
-    if (CMAKE_BUILD_TYPE MATCHES "Debug")
-        target_link_libraries(
-            ${CMAKE_PROJECT_NAME} PRIVATE
-            ${CMAKE_SOURCE_DIR}/ThirdParty/fmtd.lib
-        )
-    else()
-        target_link_libraries(
-            ${CMAKE_PROJECT_NAME} PRIVATE
-            ${CMAKE_SOURCE_DIR}/ThirdParty/fmt.lib
-        )
+
+    if (NOT FMT_STATIC)
+        if (CMAKE_BUILD_TYPE MATCHES "Debug")
+            target_link_libraries(
+                ${CMAKE_PROJECT_NAME} PRIVATE
+                ${CMAKE_SOURCE_DIR}/ThirdParty/fmtd.lib
+            )
+        else()
+            target_link_libraries(
+                ${CMAKE_PROJECT_NAME} PRIVATE
+                ${CMAKE_SOURCE_DIR}/ThirdParty/fmt.lib
+            )
+        endif()
     endif()
 
     target_sources(
