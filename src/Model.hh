@@ -32,8 +32,8 @@ operator|(DRAW l, DRAW r)
     return DRAW(std::underlying_type_t<DRAW>(l) | std::underlying_type_t<DRAW>(r));
 }
 
-constexpr enum DRAW
-operator^(enum DRAW l, enum DRAW r)
+constexpr DRAW
+operator^(DRAW l, DRAW r)
 {
     return DRAW(std::underlying_type_t<DRAW>(l) ^ std::underlying_type_t<DRAW>(r));
 }
@@ -70,8 +70,8 @@ struct Mesh
 {
     MeshData meshData;
 
-    enum gltf::COMPONENT_TYPE indType;
-    enum gltf::PRIMITIVES mode;
+    gltf::COMPONENT_TYPE indType;
+    gltf::PRIMITIVES mode;
     u32 triangleCount;
 };
 
@@ -111,7 +111,7 @@ void ModelLoad(Model* s, String path, GLint drawMode, GLint texMode);
 void ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode);
 void ModelDraw(
     Model* s,
-    enum DRAW flags,
+    DRAW flags,
     Shader* sh = nullptr,
     String svUniform = "",
     String svUniformM3Norm = "",
@@ -120,8 +120,8 @@ void ModelDraw(
 void
 ModelDrawGraph(
     Model* s,
-    [[maybe_unused]] Allocator* pFrameAlloc,
-    enum DRAW flags,
+    Allocator* pFrameAlloc,
+    DRAW flags,
     Shader* sh,
     String svUniform,
     String svUniformM3Norm,

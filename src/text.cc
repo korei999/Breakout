@@ -1,21 +1,24 @@
-#include "Text.hh"
+#include "text.hh"
 
 #include "adt/Arena.hh"
 #include "adt/Vec.hh"
 #include "frame.hh"
 #include "adt/defer.hh"
 
-static Vec<TextCharQuad> TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
-static void TextGenMesh(Text* s, int xOrigin, int yOrigin, GLint drawMode);
+namespace text
+{
 
-Text::Text(String s, u64 size, int x, int y, GLint drawMode)
+static Vec<BitmapCharQuad> TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
+static void TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode);
+
+Bitmap::Bitmap(String s, u64 size, int x, int y, GLint drawMode)
     : str(s), maxSize(size)
 {
     TextGenMesh(this, x, y, drawMode);
 }
 
 static void
-TextGenMesh(Text* s, int xOrigin, int yOrigin, GLint drawMode)
+TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode)
 {
     Arena allocScope(SIZE_1M);
     defer(ArenaFreeAll(&allocScope));
@@ -39,11 +42,11 @@ TextGenMesh(Text* s, int xOrigin, int yOrigin, GLint drawMode)
     glBindVertexArray(0);
 }
 
-static Vec<TextCharQuad>
-TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin)
+static Vec<BitmapCharQuad>
+TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin)
 {
-    Vec<TextCharQuad> aQuads(pAlloc, size);
-    memset(VecData(&aQuads), 0, sizeof(TextCharQuad) * size);
+    Vec<BitmapCharQuad> aQuads(pAlloc, size);
+    memset(VecData(&aQuads), 0, sizeof(BitmapCharQuad) * size);
 
     /* 16/16 bitmap aka extended ascii */
     auto getUV = [](int p) -> f32 {
@@ -97,12 +100,12 @@ TextUpdateBuffer(Text* s, Allocator* pAlloc, String str, u32 size, int xOrigin, 
 }
 
 void
-TextUpdate(Text* s, Allocator* pAlloc, String str, int x, int y)
+TextUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y)
 {
     assert(str.size <= s->maxSize);
 
     s->str = str;
-    Vec<TextCharQuad> aQuads = TextUpdateBuffer(s, pAlloc, str, s->maxSize, x, y);
+    Vec<BitmapCharQuad> aQuads = TextUpdateBuffer(s, pAlloc, str, s->maxSize, x, y);
     defer(VecDestroy(&aQuads));
 
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
@@ -111,8 +114,10 @@ TextUpdate(Text* s, Allocator* pAlloc, String str, int x, int y)
 }
 
 void
-TextDraw(Text* s)
+TextDraw(Bitmap* s)
 {
     glBindVertexArray(s->vao);
     glDrawArrays(GL_TRIANGLES, 0, s->vboSize);
 }
+
+} /* namespace text */

@@ -430,7 +430,7 @@ struct Font
     Font(Allocator* _pA) : p(_pA) {}
 };
 
-bool FontLoad(Font* s, String path);
+bool FontLoadAndParse(Font* s, String path);
 Option<Glyph> FontReadGlyph(Font* s, u32 idx);
 void FontPrintGlyph(Font* s, Glyph* g);
 void FontDestroy(Font* s);

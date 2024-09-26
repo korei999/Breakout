@@ -43,7 +43,7 @@ add_executable(
     src/parser/ttf.cc
     src/Texture.cc
     src/Model.cc
-    src/Text.cc
+    src/text.cc
     src/game.cc
     src/app.cc
     # ThirdParty/mimalloc/src/static.c
@@ -136,7 +136,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         ${LINUX_PKGS_LIBRARIES} 
     )
 
-    if (NOT FMT_STATIC)
+    if (NOT FMT_HEADER_ONLY)
         target_link_libraries(
             ${CMAKE_PROJECT_NAME} PRIVATE
             ${CMAKE_SOURCE_DIR}/ThirdParty/libfmt.a
@@ -197,7 +197,7 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
     )
 
 
-    if (NOT FMT_STATIC)
+    if (NOT FMT_HEADER_ONLY)
         if (CMAKE_BUILD_TYPE MATCHES "Debug")
             target_link_libraries(
                 ${CMAKE_PROJECT_NAME} PRIVATE

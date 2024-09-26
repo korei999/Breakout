@@ -19,7 +19,7 @@ F2Dot14Tof32(F2Dot14 x)
 }
 
 bool
-FontLoad(Font* s, String path)
+FontLoadAndParse(Font* s, String path)
 {
     auto bSuc = BinLoadFile(&s->p, path);
     if (!bSuc) LOG_FATAL("BinLoadFile failed: '{}'\n", path);

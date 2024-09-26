@@ -2,7 +2,7 @@
 
 #include "Model.hh"
 #include "Shader.hh"
-#include "Text.hh"
+#include "text.hh"
 #include "Texture.hh"
 #include "Window.hh"
 #include "adt/AllocatorPool.hh"
@@ -14,7 +14,7 @@
 #include "parser/Wave.hh"
 #include "parser/ttf.hh"
 
-#include <stdio.h>
+#include "logs.hh"
 
 namespace game
 {
@@ -24,7 +24,7 @@ static AllocatorPool<Arena> s_assetArenas(10);
 static Vec<Entity> s_aEntities(AllocatorPoolGet(&s_assetArenas, SIZE_8K));
 static Vec<game::Block> s_aBlocks(AllocatorPoolGet(&s_assetArenas, SIZE_1K));
 
-static Shader s_shFontBitMap;
+static Shader s_shFontBitap;
 static Shader s_shSprite;
 
 static Texture s_tAsciiMap(AllocatorPoolGet(&s_assetArenas, SIZE_1M));
@@ -37,7 +37,7 @@ static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_assetArenas, SIZE_1M * 35));
 
 static Plain s_plain;
 
-static Text s_textFPS;
+static text::Bitmap s_textFPS;
 static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
 
 Player g_player {
@@ -59,7 +59,7 @@ loadAssets()
 {
     namespace font = parser::ttf;
 
-    font::FontLoad(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");
+    font::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");
     auto glyphA = font::FontReadGlyph(&s_fLiberation, 'A');
     if (glyphA) COUT("read 'A'\n");
 
@@ -70,16 +70,16 @@ loadAssets()
 
     s_plain = Plain(GL_STATIC_DRAW);
 
-    ShaderLoad(&s_shFontBitMap, "shaders/font/font.vert", "shaders/font/font.frag");
-    ShaderUse(&s_shFontBitMap);
-    ShaderSetI(&s_shFontBitMap, "tex0", 0);
+    ShaderLoad(&s_shFontBitap, "shaders/font/font.vert", "shaders/font/font.frag");
+    ShaderUse(&s_shFontBitap);
+    ShaderSetI(&s_shFontBitap, "tex0", 0);
 
     ShaderLoad(&s_shSprite, "shaders/2d/sprite.vert", "shaders/2d/sprite.frag");
     ShaderUse(&s_shSprite);
     ShaderSetI(&s_shSprite, "tex0", 0);
     UboBindShader(&frame::g_uboProjView, &s_shSprite, "ubProjView", 0);
 
-    s_textFPS = Text("", 40, 0, 0, GL_DYNAMIC_DRAW);
+    s_textFPS = text::Bitmap("", 40, 0, 0, GL_DYNAMIC_DRAW);
 
     Arena allocScope(SIZE_1K);
     ThreadPool tp(&allocScope.base);
@@ -96,7 +96,7 @@ loadAssets()
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
-    TexLoadArg argFontBitMap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
+    TexLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
     TexLoadArg argBox {&s_tBox, "test-assets/box3.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg argBall {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
@@ -104,7 +104,7 @@ loadAssets()
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argBeep);
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argUnatco);
 
-    ThreadPoolSubmit(&tp, TextureSubmit, &argFontBitMap);
+    ThreadPoolSubmit(&tp, TextureSubmit, &argFontBitmap);
     ThreadPoolSubmit(&tp, TextureSubmit, &argBox);
     ThreadPoolSubmit(&tp, TextureSubmit, &argBall);
     ThreadPoolSubmit(&tp, TextureSubmit, &argPaddle);
@@ -419,10 +419,10 @@ void
 drawFPSCounter(Allocator* pAlloc)
 {
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
-    ShaderUse(&s_shFontBitMap);
+    ShaderUse(&s_shFontBitap);
     TextureBind(&s_tAsciiMap, GL_TEXTURE0);
-    ShaderSetM4(&s_shFontBitMap, "uProj", proj);
-    ShaderSetV4(&s_shFontBitMap, "uColor", {colors::hexToV4(0xeeeeeeff), 1.0f});
+    ShaderSetM4(&s_shFontBitap, "uProj", proj);
+    ShaderSetV4(&s_shFontBitap, "uColor", {colors::hexToV4(0xeeeeeeff), 1.0f});
 
     f64 currTime = utils::timeNowMS();
     if (currTime >= frame::g_prevTime + 1000.0)

@@ -105,7 +105,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             u32 accTexIdx = primitive.attributes.TEXCOORD_0;
             u32 accTanIdx = primitive.attributes.TANGENT;
             u32 accMatIdx = primitive.material;
-            enum gltf::PRIMITIVES mode = primitive.mode;
+            gltf::PRIMITIVES mode = primitive.mode;
 
             auto& accPos = a.aAccessors[accPosIdx];
             auto& accTex = a.aAccessors[accTexIdx];
@@ -117,86 +117,88 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
             nMesh.mode = mode;
 
-            /**********************************************/
-            mtx_lock(&gl::g_mtxGlContext);
-            WindowBindGlContext(app::g_pWindow);
-
-            glGenVertexArrays(1, &nMesh.meshData.vao);
-            glBindVertexArray(nMesh.meshData.vao);
-
-            if (accIndIdx != NPOS)
             {
-                auto& accInd = a.aAccessors[accIndIdx];
-                auto& bvInd = a.aBufferViews[accInd.bufferView];
-                nMesh.indType = accInd.componentType;
-                nMesh.meshData.eboSize = accInd.count;
-                nMesh.triangleCount = NPOS;
-
-                /* TODO: figure out how to reuse VBO data for index buffer (possible?) */
-                glGenBuffers(1, &nMesh.meshData.ebo);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nMesh.meshData.ebo);
-                glBufferData(
-                    GL_ELEMENT_ARRAY_BUFFER, bvInd.byteLength,
-                    &a.aBuffers[bvInd.buffer].aBin.pData[bvInd.byteOffset + accInd.byteOffset], drawMode
+                mtx_lock(&gl::g_mtxGlContext);
+                WindowBindGlContext(app::g_pWindow);
+                defer(
+                    WindowUnbindGlContext(app::g_pWindow);
+                    mtx_unlock(&gl::g_mtxGlContext);
                 );
-            }
-            else
-            {
-                nMesh.triangleCount = accPos.count;
-            }
 
-            constexpr u32 v3Size = sizeof(math::V3) / sizeof(f32);
-            constexpr u32 v2Size = sizeof(math::V2) / sizeof(f32);
+                glGenVertexArrays(1, &nMesh.meshData.vao);
+                glBindVertexArray(nMesh.meshData.vao);
 
-            /* if there are different VBO's for positions textures or normals,
-             * given gltf file should be considered harmful, and this will crash ofc */
-            nMesh.meshData.vbo = aBufferMap[bvPos.buffer];
-            glBindBuffer(GL_ARRAY_BUFFER, nMesh.meshData.vbo);
+                if (accIndIdx != NPOS)
+                {
+                    auto& accInd = a.aAccessors[accIndIdx];
+                    auto& bvInd = a.aBufferViews[accInd.bufferView];
+                    nMesh.indType = accInd.componentType;
+                    nMesh.meshData.eboSize = accInd.count;
+                    nMesh.triangleCount = NPOS;
 
-            /* positions */
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(
-                0, v3Size, GLenum(accPos.componentType), GL_FALSE, bvPos.byteStride,
-                reinterpret_cast<void*>(bvPos.byteOffset + accPos.byteOffset)
-            );
+                    /* TODO: figure out how to reuse VBO data for index buffer (possible?) */
+                    glGenBuffers(1, &nMesh.meshData.ebo);
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nMesh.meshData.ebo);
+                    glBufferData(
+                        GL_ELEMENT_ARRAY_BUFFER, bvInd.byteLength,
+                        &a.aBuffers[bvInd.buffer].aBin.pData[bvInd.byteOffset + accInd.byteOffset], drawMode
+                    );
+                }
+                else
+                {
+                    nMesh.triangleCount = accPos.count;
+                }
 
-            /* texture coords */
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(
-                1, v2Size, GLenum(accTex.componentType), GL_FALSE, bvTex.byteStride,
-                reinterpret_cast<void*>(bvTex.byteOffset + accTex.byteOffset)
-            );
+                constexpr u32 v3Size = sizeof(math::V3) / sizeof(f32);
+                constexpr u32 v2Size = sizeof(math::V2) / sizeof(f32);
 
-             /*normals */
-            if (accNormIdx != NPOS)
-            {
-                auto& accNorm = a.aAccessors[accNormIdx];
-                auto& bvNorm = a.aBufferViews[accNorm.bufferView];
+                /* if there are different VBO's for positions textures or normals,
+                 * given gltf file should be considered harmful, and this will crash ofc */
+                nMesh.meshData.vbo = aBufferMap[bvPos.buffer];
+                glBindBuffer(GL_ARRAY_BUFFER, nMesh.meshData.vbo);
 
-                glEnableVertexAttribArray(2);
+                /* positions */
+                glEnableVertexAttribArray(0);
                 glVertexAttribPointer(
-                    2, v3Size, GLenum(accNorm.componentType), GL_FALSE, bvNorm.byteStride,
-                    reinterpret_cast<void*>(accNorm.byteOffset + bvNorm.byteOffset)
+                    0, v3Size, GLenum(accPos.componentType), GL_FALSE, bvPos.byteStride,
+                    reinterpret_cast<void*>(bvPos.byteOffset + accPos.byteOffset)
                 );
-            }
 
-            /* tangents */
-            if (accTanIdx != NPOS)
-            {
-                auto& accTan = a.aAccessors[accTanIdx];
-                auto& bvTan = a.aBufferViews[accTan.bufferView];
-
-                glEnableVertexAttribArray(3);
+                /* texture coords */
+                glEnableVertexAttribArray(1);
                 glVertexAttribPointer(
-                    3, v3Size, GLenum(accTan.componentType), GL_FALSE, bvTan.byteStride,
-                    reinterpret_cast<void*>(accTan.byteOffset + bvTan.byteOffset)
+                    1, v2Size, GLenum(accTex.componentType), GL_FALSE, bvTex.byteStride,
+                    reinterpret_cast<void*>(bvTex.byteOffset + accTex.byteOffset)
                 );
-            }
 
-            glBindVertexArray(0);
-            WindowUnbindGlContext(app::g_pWindow);
-            mtx_unlock(&gl::g_mtxGlContext);
-            /**************************************/
+                 /*normals */
+                if (accNormIdx != NPOS)
+                {
+                    auto& accNorm = a.aAccessors[accNormIdx];
+                    auto& bvNorm = a.aBufferViews[accNorm.bufferView];
+
+                    glEnableVertexAttribArray(2);
+                    glVertexAttribPointer(
+                        2, v3Size, GLenum(accNorm.componentType), GL_FALSE, bvNorm.byteStride,
+                        reinterpret_cast<void*>(accNorm.byteOffset + bvNorm.byteOffset)
+                    );
+                }
+
+                /* tangents */
+                if (accTanIdx != NPOS)
+                {
+                    auto& accTan = a.aAccessors[accTanIdx];
+                    auto& bvTan = a.aBufferViews[accTan.bufferView];
+
+                    glEnableVertexAttribArray(3);
+                    glVertexAttribPointer(
+                        3, v3Size, GLenum(accTan.componentType), GL_FALSE, bvTan.byteStride,
+                        reinterpret_cast<void*>(accTan.byteOffset + bvTan.byteOffset)
+                    );
+                }
+
+                glBindVertexArray(0);
+            }
 
             /* load textures */
             if (accMatIdx != NPOS)
@@ -250,7 +252,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 }
 
 void
-ModelDraw(Model* s, enum DRAW flags, Shader* sh, String svUniform, String svUniformM3Norm, const math::M4& tmGlobal)
+ModelDraw(Model* s, DRAW flags, Shader* sh, String svUniform, String svUniformM3Norm, const math::M4& tmGlobal)
 {
     for (auto& m : s->aaMeshes)
     {
@@ -292,7 +294,7 @@ void
 ModelDrawGraph(
     Model* s,
     [[maybe_unused]] Allocator* pFrameAlloc,
-    enum DRAW flags,
+    DRAW flags,
     Shader* sh,
     String svUniform,
     String svUniformM3Norm,
