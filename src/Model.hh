@@ -6,6 +6,7 @@
 #include "Texture.hh"
 
 #include <limits.h>
+#include <type_traits>
 
 using namespace adt;
 
@@ -19,22 +20,22 @@ enum DRAW : int
     ALL      = INT_MAX
 };
 
-inline bool
-operator&(enum DRAW l, enum DRAW r)
+constexpr bool
+operator&(DRAW l, DRAW r)
 {
-    return int(l) & int(r);
+    return std::underlying_type_t<DRAW>(l) & std::underlying_type_t<DRAW>(r);
 }
 
-inline enum DRAW
-operator|(enum DRAW l, enum DRAW r)
+constexpr DRAW
+operator|(DRAW l, DRAW r)
 {
-    return (enum DRAW)(int(l) | int(r));
+    return DRAW(std::underlying_type_t<DRAW>(l) | std::underlying_type_t<DRAW>(r));
 }
 
-inline enum DRAW
+constexpr enum DRAW
 operator^(enum DRAW l, enum DRAW r)
 {
-    return (enum DRAW)((int)(l) ^ (int)(r));
+    return DRAW(std::underlying_type_t<DRAW>(l) ^ std::underlying_type_t<DRAW>(r));
 }
 
 struct Ubo

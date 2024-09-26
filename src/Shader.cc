@@ -2,7 +2,7 @@
 
 #include "adt/Arena.hh"
 #include "adt/file.hh"
-#include "adt/logs.hh"
+#include "logs.hh"
 #include "adt/OsAllocator.hh"
 
 Vec<Shader> g_aAllShaders;
@@ -47,7 +47,7 @@ loadVertFrag(Shader* s, String vertexPath, String fragmentPath)
 
     s->id = glCreateProgram();
     if (s->id == 0)
-        LOG_FATAL("glCreateProgram failed: %d\n", s->id);
+        LOG_FATAL("glCreateProgram failed: {}\n", s->id);
 
     glAttachShader(s->id, vertex);
     glAttachShader(s->id, fragment);
@@ -62,7 +62,7 @@ loadVertFrag(Shader* s, String vertexPath, String fragmentPath)
         if (infoLen > 1)
         {
             glGetProgramInfoLog(s->id, infoLen, nullptr, infoLog);
-            LOG_FATAL("error linking program: %s\n", infoLog);
+            LOG_FATAL("error linking program: {}\n", infoLog);
         }
         glDeleteProgram(s->id);
         LOG_FATAL("error linking program.\n");
@@ -92,7 +92,7 @@ loadVertGeomFrag(Shader* s, String vertexPath, String geometryPath, String fragm
 
     s->id = glCreateProgram();
     if (s->id == 0)
-        LOG_FATAL("glCreateProgram failed: %d\n", s->id);
+        LOG_FATAL("glCreateProgram failed: {}\n", s->id);
 
     glAttachShader(s->id, vertex);
     glAttachShader(s->id, fragment);
@@ -108,7 +108,7 @@ loadVertGeomFrag(Shader* s, String vertexPath, String geometryPath, String fragm
         {
             char infoLog[255] {};
             glGetProgramInfoLog(s->id, infoLen, nullptr, infoLog);
-            LOG_FATAL("error linking program: %s\n", infoLog);
+            LOG_FATAL("error linking program: {}\n", infoLog);
         }
         glDeleteProgram(s->id);
         LOG_FATAL("error linking program.\n");
@@ -129,7 +129,7 @@ ShaderDestroy(Shader* s)
     if (s->id != 0)
     {
         glDeleteProgram(s->id);
-        LOG_OK("Shader '%d' destroyed\n", s->id);
+        LOG_OK("Shader '{}' destroyed\n", s->id);
         s->id = 0;
     }
 }
@@ -144,7 +144,7 @@ ShaderQueryActiveUniforms(Shader* s)
     glGetProgramiv(s->id, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformLen);
 
     char uniformName[255] {};
-    LOG_OK("queryActiveUniforms for '%d':\n", s->id);
+    LOG_OK("queryActiveUniforms for '{}':\n", s->id);
 
     for (int i = 0; i < nUniforms; i++)
     {
@@ -187,7 +187,7 @@ ShaderQueryActiveUniforms(Shader* s)
                 typeName = "unknown";
                 break;
         }
-        LOG_OK("\tuniformName: '%s', type: '%.*s'\n", uniformName, (int)typeName.size, typeName.pData);
+        LOG_OK("\tuniformName: '{}', type: '{}'\n", uniformName, typeName);
     }
 }
 
@@ -201,7 +201,7 @@ ShaderLoadOne(GLenum type, String path)
     Arena al(SIZE_8K);
 
     Option<String> src = file::load(&al.base, path);
-    if (!src) LOG_FATAL("error opening shader file: '%.*s'\n", path.size, path.pData);
+    if (!src) LOG_FATAL("error opening shader file: '{}'\n", path);
 
     const char* srcData = src.data.pData;
 
@@ -218,7 +218,7 @@ ShaderLoadOne(GLenum type, String path)
         {
             char infoLog[255] {};
             glGetShaderInfoLog(shader, infoLen, nullptr, infoLog);
-            LOG_FATAL("error compiling shader '%.*s'\n%s\n", (int)path.size, path.pData, infoLog);
+            LOG_FATAL("error compiling shader '{}'\n{}\n", path, infoLog);
         }
         glDeleteShader(shader);
         return 0;

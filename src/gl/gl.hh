@@ -23,7 +23,7 @@
                 switch (glLastErrorCode)                                                                               \
                 {                                                                                                      \
                     default:                                                                                           \
-                        LOG_WARN(WARNIN"unknown error: %#x\n", g_glLastErrorCode);                                     \
+                        LOG_WARN(WARNIN"unknown error: {:#x}\n", g_glLastErrorCode);                                   \
                         break;                                                                                         \
                                                                                                                        \
                     case 0x506:                                                                                        \

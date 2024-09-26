@@ -1,6 +1,6 @@
 #include "controls.hh"
 
-#include "adt/logs.hh"
+#include "logs.hh"
 #include "app.hh"
 
 #include <math.h>

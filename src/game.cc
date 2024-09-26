@@ -40,8 +40,6 @@ static Plain s_plain;
 static Text s_textFPS;
 static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
 
-static json::Parser s_json(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
-
 Player g_player {
     .enIdx = 0,
     .speed = 0.5,
@@ -59,10 +57,14 @@ Ball g_ball {
 void
 loadAssets()
 {
-    parser::ttf::FontLoad(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");
+    namespace font = parser::ttf;
 
-    json::ParserLoadAndParse(&s_json, "test-assets/models/cube/gltf/cube.gltf");
-    json::ParserPrint(&s_json);
+    font::FontLoad(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");
+    auto glyphA = font::FontReadGlyph(&s_fLiberation, 'A');
+    if (glyphA) COUT("read 'A'\n");
+
+    font::FontPrintGlyph(&s_fLiberation, &glyphA.data);
+
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 

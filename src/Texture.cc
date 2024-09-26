@@ -3,7 +3,7 @@
 #include "Window.hh"
 #include "adt/Arena.hh"
 #include "adt/OsAllocator.hh"
-#include "adt/logs.hh"
+#include "logs.hh"
 #include "app.hh"
 #include "parser/Bin.hh"
 
@@ -57,7 +57,7 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
         auto fTried = HashMapSearch(&g_mAllTexturesIdxs, {path});
         if (fTried)
         {
-            LOG_WARN("Rejecting duplicate texture: '%.*s'\n", path.size, path.pData);
+            LOG_WARN("Rejecting duplicate texture: '{}'\n", path);
             return;
         }
 
@@ -66,10 +66,10 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
     }
 
 #ifdef D_TEXTURE
-    LOG_OK("loading '%.*s' texture...\n", path.size, path._pData);
+    LOG_OK("loading '{}' texture...\n", path);
 #endif
 
-    if (s->id != 0) LOG_FATAL("id != 0: '%d'\n", s->id);
+    if (s->id != 0) LOG_FATAL("id != 0: '{}'\n", s->id);
 
     Arena al(SIZE_1M * 5);
     defer(ArenaFreeAll(&al));
@@ -92,10 +92,6 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
         g_aAllTextures[idx] = *s;
     }
     else LOG_FATAL("Why didn't find?\n");
-
-#ifdef D_TEXTURE
-    LOG_OK("%.*s: id: %d, texMode: %d\n", path.size, path._pData, _id, texMode);
-#endif
 }
 
 void
@@ -104,7 +100,7 @@ TextureDestroy(Texture* s)
     if (s->id != 0)
     {
         glDeleteTextures(1, &s->id);
-        LOG_OK("Texture '%d' destroyed\n", s->id);
+        LOG_OK("Texture '{}' destroyed\n", s->id);
         s->id = 0;
     }
 }
@@ -283,31 +279,31 @@ loadBMP(Allocator* pAlloc, String path, bool flip)
     auto BM = parser::BinReadString(&p, 2);
 
     if (BM != "BM")
-        LOG_FATAL("BM: %.*s, bmp file should have 'BM' as first 2 bytes\n", (int)BM.size, BM.pData);
+        LOG_FATAL("BM: '{}', bmp file should have 'BM' as first 2 bytes\n", BM);
 
     parser::BinSkipBytes(&p, 8);
     imageDataAddress = parser::BinRead32(&p);
 
 #ifdef D_TEXTURE
-    LOG_OK("imageDataAddress: %u\n", imageDataAddress);
+    LOG_OK("imageDataAddress: {}\n", imageDataAddress);
 #endif
 
     parser::BinSkipBytes(&p, 4);
     width = parser::BinRead32(&p);
     height = parser::BinRead32(&p);
 #ifdef D_TEXTURE
-    LOG_OK("width: %d, height: %d\n", width, height);
+    LOG_OK("width: {}, height: {}\n", width, height);
 #endif
 
     [[maybe_unused]] auto colorPlane = parser::BinRead16(&p);
 #ifdef D_TEXTURE
-    LOG_OK("colorPlane: %d\n", colorPlane);
+    LOG_OK("colorPlane: {}\n", colorPlane);
 #endif
 
     GLint format = GL_RGB;
     bitDepth = parser::BinRead16(&p);
 #ifdef D_TEXTURE
-    LOG_OK("bitDepth: %u\n", bitDepth);
+    LOG_OK("bitDepth: {}\n", bitDepth);
 #endif
 
     switch (bitDepth)
@@ -321,7 +317,7 @@ loadBMP(Allocator* pAlloc, String path, bool flip)
             break;
 
         default:
-            LOG_WARN("support only for 32 and 24 bit bmp's, read '%u', setting to GL_RGB\n", bitDepth);
+            LOG_WARN("support only for 32 and 24 bit bmp's, read '{}', setting to GL_RGB\n", bitDepth);
             break;
     }
 
@@ -329,7 +325,7 @@ loadBMP(Allocator* pAlloc, String path, bool flip)
     nPixels = width * height;
     byteDepth = bitDepth / 8;
 #ifdef D_TEXTURE
-    LOG_OK("nPixels: %u, byteDepth: %u, format: %d\n", nPixels, byteDepth, format);
+    LOG_OK("nPixels: {}, byteDepth: {}, format: {}\n", nPixels, byteDepth, format);
 #endif
     Vec<u8> pixels(pAlloc, nPixels * byteDepth);
 
@@ -378,7 +374,7 @@ TexFramebufferCreate(const GLsizei width, const GLsizei height)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        LOG_FATAL("framebuffer '%u' creation failed\n", fbo);
+        LOG_FATAL("framebuffer '{}' creation failed\n", fbo);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

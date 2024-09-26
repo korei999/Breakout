@@ -188,5 +188,27 @@ clamp(const T& x, const T& _min, const T& _max)
     return max(_min, min(_max, x));
 }
 
+template<template<typename> typename CON, typename T>
+inline T&
+searchMax(CON<T>& s)
+{
+    auto _max = s.begin();
+    for (auto it = s.begin(); it != s.end(); ++it)
+        if (*it > *_max) _max = it;
+
+    return *_max;
+}
+
+template<template<typename> typename CON, typename T>
+inline T&
+searchMin(CON<T>& s)
+{
+    auto _min = s.begin();
+    for (auto it = s.begin(); it != s.end(); ++it)
+        if (*it < *_min) _min = it;
+
+    return *_min;
+}
+
 } /* namespace utils */
 } /* namespace adt */

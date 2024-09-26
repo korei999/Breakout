@@ -20,10 +20,10 @@ struct VecBase
     u32 cap = 0;
 
     VecBase() = default;
-    VecBase(Allocator* p, u32 capacity = 1)
-        : pData {(T*)alloc(p, capacity, sizeof(T))},
+    VecBase(Allocator* p, u32 prealloc = 1)
+        : pData {(T*)alloc(p, prealloc, sizeof(T))},
           size {0},
-          cap {capacity} {}
+          cap {prealloc} {}
 
     T& operator[](u32 i)             { assert(i < cap && "out of range vec access"); return pData[i]; }
     const T& operator[](u32 i) const { assert(i < cap && "out of range vec access"); return pData[i]; }
@@ -70,6 +70,8 @@ template<typename T>
 inline u32
 VecPush(VecBase<T>* s, Allocator* p, const T& data)
 {
+    if (s->cap == 0) *s = {p, SIZE_MIN};
+
     assert(s->cap > 0 && "VecBase: uninitialized push");
 
     if (s->size >= s->cap) VecGrow(s, p, s->cap * 2);

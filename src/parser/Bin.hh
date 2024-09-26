@@ -57,13 +57,13 @@ swapBytes(u64 x)
 
 struct Bin
 {
-    Allocator* pA;
+    Allocator* pAlloc;
     String sFile;
     String sPath;
     u32 pos;
 
     Bin() = default;
-    Bin(Allocator* p) : pA(p) {}
+    Bin(Allocator* p) : pAlloc(p) {}
 
     char& operator[](u32 i) { return sFile[i]; };
 };
@@ -71,10 +71,10 @@ struct Bin
 inline bool 
 BinLoadFile(Bin* s, String path)
 {
-    s->sPath = StringAlloc(s->pA, path);
+    s->sPath = StringAlloc(s->pAlloc, path);
     s->pos = 0;
 
-    Option<String> rs = file::load(s->pA, path);
+    Option<String> rs = file::load(s->pAlloc, path);
     if (!rs) LOG_FATAL("error opening file: '%.*s'\n", path.size, path.pData);
 
     s->sFile = rs.data;

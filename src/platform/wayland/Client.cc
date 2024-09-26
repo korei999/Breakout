@@ -5,7 +5,7 @@
 
 #include "adt/Arena.hh"
 #include "adt/Vec.hh"
-#include "adt/logs.hh"
+#include "logs.hh"
 #include "input.hh"
 
 #include <string.h>
@@ -23,7 +23,7 @@ EGLint eglLastErrorCode = EGL_SUCCESS;
         {                                                                                                              \
             C;                                                                                                         \
             if ((eglLastErrorCode = eglGetError()) != EGL_SUCCESS)                                                     \
-                LOG_FATAL("eglLastErrorCode: %#x\n", eglLastErrorCode);                                                \
+                LOG_FATAL("eglLastErrorCode: {:#x}\n", eglLastErrorCode);                                              \
         }
 #else
 #    define EGLD(C) C
@@ -193,7 +193,7 @@ registryGlobalHandler(
     [[maybe_unused]] u32 version
 )
 {
-    LOG_OK("interface: '%s', version: %u, name: %u\n", interface, version, name);
+    LOG_OK("interface: '{}', version: {}, name: {}\n", interface, version, name);
     auto app = (Client*)data;
 
     if (strcmp(interface, wl_seat_interface.name) == 0)
@@ -335,7 +335,7 @@ ClientInit(Client* s)
     if (!eglBindAPI(EGL_OPENGL_API))
         LOG_FATAL("eglBindAPI(EGL_OPENGL_API) failed\n");
 
-    LOG_OK("egl: major: %d, minor: %d\n", major, minor);
+    LOG_OK("egl: major: {}, minor: {}\n", major, minor);
 
     EGLint count;
     EGLD( eglGetConfigs(s->eglDisplay, nullptr, 0, &count) );
@@ -444,7 +444,7 @@ ClientSetCursorImage(Client* s, String cursorType)
     wl_cursor* cursor = wl_cursor_theme_get_cursor(s->cursorTheme, cursorType.pData);
     if (!cursor)
     {
-        LOG_WARN("failed to set cursor to '%s', falling back to 'default'\n", cursorType.pData);
+        LOG_WARN("failed to set cursor to '{}', falling back to 'default'\n", cursorType);
         cursor = wl_cursor_theme_get_cursor(s->cursorTheme, "default");
     }
 

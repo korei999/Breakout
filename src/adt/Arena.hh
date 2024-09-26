@@ -7,8 +7,8 @@
 
 #include "Allocator.hh"
 
-#ifdef DEBUG
-    #include "logs.hh"
+#ifndef NDEBUG
+    #include <stdio.h>
 #endif
 
 #define ADT_ARENA_FIRST(A) ((A)->pBlocksHead)
@@ -91,9 +91,12 @@ ArenaAlloc(Arena* s, u64 mCount, u64 mSize)
 
     while (aligned >= pFreeBlock->size)
     {
-#ifdef DEBUG
-        LOG_WARN("requested size > than one block\n"
-                 "aligned: %zu, blockSize: %zu, requested: %zu\n", aligned, pFreeBlock->size, requested);
+#ifndef NDEBUG
+        fprintf(stderr,
+            "[DEBUG]: Arena:\n\trequested size > than one block\n"
+            "\taligned: %zu, blockSize: %zu, requested: %zu\n",
+            aligned, pFreeBlock->size, requested
+        );
 #endif
 
         pFreeBlock = pFreeBlock->pNext;

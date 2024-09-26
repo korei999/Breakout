@@ -10,15 +10,11 @@ namespace parser
 namespace ttf
 {
 
-struct Font;
-
-bool FontLoad(Font* s, String path);
-void FontDestroy(Font* s);
-
 /* RESOURCES: */
 /* https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6.html */
 /* https://learn.microsoft.com/en-us/typography/opentype/spec/otff */
 /* https://stevehanov.ca/blog/?id=143 */
+/* https://gist.github.com/smhanov/f009a02c00eb27d99479a1e37c1b3354 */
 /* https://handmade.network/forums/articles/t/7330-implementing_a_font_reader_and_rasterizer_from_scratch%252C_part_1__ttf_font_reader. */
 
 using Fixed = struct { s16 l; s16 r; }; /* 32-bit signed fixed-point number (16.16) */
@@ -90,36 +86,44 @@ struct Cmap
     VecBase<CMAPEncodingSubtable> aSubtables;
 };
 
-enum OUTLINE_FLAGS : u8
+enum OUTLINE_FLAG : u8
 {
-    ON_CURVE = 0, /* If set, the point is on the curve;
+    ON_CURVE = 1, /* If set, the point is on the curve;
                    * Otherwise, it is off the curve. */
-    X_SHORT_VECTOR, /* If set, the corresponding x-coordinate is 1 byte long;
-                     * Otherwise, the corresponding x-coordinate is 2 bytes long */
-    Y_SHORT_VECTOR, /* If set, the corresponding y-coordinate is 1 byte long;
-                     * Otherwise, the corresponding y-coordinate is 2 bytes long */
-    REPEAT, /* If set, the next byte specifies the number of additional times this set of flags is to be repeated.
-             * In this way, the number of flags listed can be smaller than the number of points in a character. */
-    THIS_X_IS_SAME, /* This flag has one of two meanings, depending on how the x-Short Vector flag is set.
-                     * If the x-Short Vector bit is set, this bit describes the sign of the value, with a value of 1 equalling positive and a zero value negative.
-                     * If the x-short Vector bit is not set, and this bit is set, then the current x-coordinate is the same as the previous x-coordinate.
-                     * If the x-short Vector bit is not set, and this bit is not set, the current x-coordinate is a signed 16-bit delta vector. In this case, the delta vector is the change in x */
-    THIS_Y_IS_SAME, /* This flag has one of two meanings, depending on how the y-Short Vector flag is set.
-                     * If the y-Short Vector bit is set, this bit describes the sign of the value, with a value of 1 equalling positive and a zero value negative.
-                     * If the y-short Vector bit is not set, and this bit is set, then the current y-coordinate is the same as the previous y-coordinate.
-                     * If the y-short Vector bit is not set, and this bit is not set, the current y-coordinate is a signed 16-bit delta vector. In this case, the delta vector is the change in y */
-    RESERVED6, /* set to zero */
-    RESERVED7, /* set to zero */
+    X_SHORT_VECTOR = 1 << 1, /* If set, the corresponding x-coordinate is 1 byte long;
+                              * Otherwise, the corresponding x-coordinate is 2 bytes long */
+    Y_SHORT_VECTOR = 1 << 2, /* If set, the corresponding y-coordinate is 1 byte long;
+                              * Otherwise, the corresponding y-coordinate is 2 bytes long */
+    REPEAT = 1 << 3, /* If set, the next byte specifies the number of additional times this set of flags is to be repeated.
+                      * In this way, the number of flags listed can be smaller than the number of points in a character. */
+    THIS_X_IS_SAME = 1 << 4, /* This flag has one of two meanings, depending on how the x-Short Vector flag is set.
+                              * If the x-Short Vector bit is set, this bit describes the sign of the value, with a value of 1 equalling positive and a zero value negative.
+                              * If the x-short Vector bit is not set, and this bit is set, then the current x-coordinate is the same as the previous x-coordinate.
+                              * If the x-short Vector bit is not set, and this bit is not set, the current x-coordinate is a signed 16-bit delta vector. In this case, the delta vector is the change in x */
+    THIS_Y_IS_SAME = 1 << 5, /* This flag has one of two meanings, depending on how the y-Short Vector flag is set.
+                              * If the y-Short Vector bit is set, this bit describes the sign of the value, with a value of 1 equalling positive and a zero value negative.
+                              * If the y-short Vector bit is not set, and this bit is set, then the current y-coordinate is the same as the previous y-coordinate.
+                              * If the y-short Vector bit is not set, and this bit is not set, the current y-coordinate is a signed 16-bit delta vector. In this case, the delta vector is the change in y */
+    RESERVED6 = 1 << 6, /* set to zero */
+    RESERVED7 = 1 << 7, /* set to zero */
+};
+
+struct Point
+{
+    s16 x {};
+    s16 y {};
+    bool bOnCurve {};
 };
 
 struct GlyphSimple
 {
     VecBase<u16> aEndPtsOfContours; /* [n] Array of last points of each contour; n is the number of contours; array entries are point indices */
     u16 instructionLength; /* Total number of bytes needed for instructions */
-    VecBase<u8> aInstructions; /* [instructionLength] Array of instructions for this glyph */
-    VecBase<OUTLINE_FLAGS> aeFlags; /* [variable] Array of flags */
-    void* pXCoordinates; /* (u8 or s16) Array of x-coordinates; the first is relative to (0,0), others are relative to previous point */
-    void* pYCoordinates; /* (u8 or s16) Array of y-coordinates; the first is relative to (0,0), others are relative to previous point */
+    // VecBase<u8> aInstructions; /* [instructionLength] Array of instructions for this glyph */
+    VecBase<OUTLINE_FLAG> aeFlags; /* [variable] Array of flags */
+    VecBase<Point> aPoints;
+    // void* pXCoordinates; /* (u8 or s16) Array of x-coordinates; the first is relative to (0,0), others are relative to previous point */
+    // void* pYCoordinates; /* (u8 or s16) Array of y-coordinates; the first is relative to (0,0), others are relative to previous point */
 };
 
 enum COMPONENT_FLAG : u16
@@ -227,14 +231,14 @@ struct Glyph
 {
     s16 numberOfContours; /* If the number of contours is positive or zero, it is a single glyph;
                            * If the number of contours less than zero, the glyph is compound */
-    FWord xMin; /* Minimum x for coordinate data */
-    FWord yMin; /* Minimum y for coordinate data */
-    FWord xMax; /* Maximum x for coordinate data */
-    FWord yMax; /* Maximum y for coordinate data */
+    FWord xMin {}; /* Minimum x for coordinate data */
+    FWord yMin {}; /* Minimum y for coordinate data */
+    FWord xMax {}; /* Maximum x for coordinate data */
+    FWord yMax {}; /* Maximum y for coordinate data */
     union {
         GlyphSimple simple;
         GlyphCompound compound;
-    } uGlyph;
+    } uGlyph {};
 };
 
 /* Many of the fields in the 'head' table are closely related to the values in other tables.
@@ -422,29 +426,14 @@ struct Font
     TableDirectory tableDirectory {};
     Head head {};
 
-    /*Cmap cmap {};*/
-    /*Glyph glyph {};*/
-    /*Kern kern {};*/
-    /*Hhea hhea {};*/
-    /*Hmtx hmtx {};*/
-    /*Loca loca {};*/
-    /*Maxp maxp {};*/
-    /*Name name {};*/
-    /*Post post {};*/
-    /* keep offsets separately so tables are closer to the spec */
-    /*u32 cmapOffset {};*/
-    /*u32 glyphOffset {};*/
-    /*u32 headOffset {};*/
-    /*u32 hheaOffset {};*/
-    /*u32 hmtxOffset {};*/
-    /*u32 locaOffset {};*/
-    /*u32 maxpOffset {};*/
-    /*u32 nameOffset {};*/
-    /*u32 postOffset {};*/
-
     Font() = default;
     Font(Allocator* _pA) : p(_pA) {}
 };
+
+bool FontLoad(Font* s, String path);
+Option<Glyph> FontReadGlyph(Font* s, u32 idx);
+void FontPrintGlyph(Font* s, Glyph* g);
+void FontDestroy(Font* s);
 
 } /* namespace ttf */
 } /* namespace parser */

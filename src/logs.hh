@@ -1,10 +1,11 @@
 #pragma once
 
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "adt/String.hh"
 
 #include <fmt/base.h>
+
+#include <assert.h>
+#include <stdlib.h>
 
 #define COL_NORM  "\x1B[0m"
 #define COL_RED  "\x1B[31m"
@@ -15,11 +16,8 @@
 #define COL_CYAN  "\x1B[36m"
 #define COL_WHITE  "\x1B[37m"
 
-#define COUT(...) fprintf(stdout, __VA_ARGS__)
-#define CERR(...) fprintf(stderr, __VA_ARGS__)
-
-#define FOUT(...) fmt::print(stdout, __VA_ARGS__)
-#define FERR(...) fmt::print(stderr, __VA_ARGS__)
+#define COUT(...) fmt::print(stdout, __VA_ARGS__)
+#define CERR(...) fmt::print(stderr, __VA_ARGS__)
 
 #ifdef DEBUG
     #define DCOUT(...) COUT(__VA_ARGS__)
@@ -28,6 +26,25 @@
     #define DCOUT(...) (void)0
     #define DCERR(...) (void)0
 #endif
+
+template<>
+class fmt::formatter<adt::String>
+{
+  public:
+
+    constexpr auto
+    parse(format_parse_context& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template<typename CONTEXT>
+    constexpr auto
+    format(const adt::String& s, CONTEXT& ctx) const
+    {
+        return format_to(ctx.out(), "{:.{}}", s.pData ? s.pData : "", s.size);
+    }
+};
 
 enum _LOG_SEV
 {
@@ -48,9 +65,9 @@ inline const char* _LOG_SEV_STR[] = {
 };
 
 #if defined __clang__ || __GNUC__
-    #define ADT_FILE __FILE_NAME__
+    #define LOGS_FILE __FILE_NAME__
 #else
-    #define ADT_FILE __FILE__
+    #define LOGS_FILE __FILE__
 #endif
 
 #ifdef LOGS
@@ -58,14 +75,14 @@ inline const char* _LOG_SEV_STR[] = {
         do                                                                                                             \
         {                                                                                                              \
             assert(SEV >= 0 && SEV < _LOG_SEV_ENUM_SIZE && "wrong _LOG_SEV*");                                         \
-            FERR("({}{}, {}): ", _LOG_SEV_STR[SEV], ADT_FILE, __LINE__);                                               \
+            CERR("({}{}, {}): ", _LOG_SEV_STR[SEV], LOGS_FILE, __LINE__);                                              \
             CERR(__VA_ARGS__);                                                                                         \
             switch (SEV)                                                                                               \
             {                                                                                                          \
                 default:                                                                                               \
                     break;                                                                                             \
                 case _LOG_SEV_BAD:                                                                                     \
-                    exit(static_cast<int>(SEV));                                                                       \
+                    exit(int(SEV));                                                                                    \
                 case _LOG_SEV_FATAL:                                                                                   \
                     abort();                                                                                           \
             }                                                                                                          \

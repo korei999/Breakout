@@ -129,8 +129,12 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     pkg_check_modules(LINUX_PKGS REQUIRED gl egl wayland-client wayland-egl wayland-cursor libpipewire-0.3)
     include_directories(BEFORE ${LINUX_PKGS_INCLUDE_DIRS})
     target_link_libraries(
-        ${CMAKE_PROJECT_NAME} PUBLIC
+        ${CMAKE_PROJECT_NAME} PRIVATE
         ${LINUX_PKGS_LIBRARIES} 
+    )
+
+    target_link_libraries(
+        ${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_SOURCE_DIR}/ThirdParty/libfmt.a
     )
 

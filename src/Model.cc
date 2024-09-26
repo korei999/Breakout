@@ -3,7 +3,7 @@
 #include "adt/MutexArena.hh"
 #include "adt/ThreadPool.hh"
 #include "adt/file.hh"
-#include "adt/logs.hh"
+#include "logs.hh"
 #include "adt/utils.hh"
 #include "app.hh"
 
@@ -13,7 +13,7 @@ ModelLoad(Model* s, String path, GLint drawMode, GLint texMode)
     if (StringEndsWith(path, ".gltf"))
         ModelLoadGLTF(s, path, drawMode, texMode);
     else
-        LOG_FATAL("trying to load unsupported asset: '%.*s'\n", path.size, path.pData);
+        LOG_FATAL("trying to load unsupported asset: '{}'\n", path);
 
     s->sSavedPath = path;
 }
@@ -59,7 +59,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         auto uri = a.aImages[i].uri;
 
         if (!StringEndsWith(uri, ".bmp"))
-            LOG_FATAL("trying to load unsupported texture: '%.*s'\n", uri.size, uri.pData);
+            LOG_FATAL("trying to load unsupported texture: '{}'\n", uri);
 
         struct args
         {
@@ -374,7 +374,7 @@ UboBindShader(Ubo *s, Shader* sh, String block, GLuint point)
     s->point = point;
     GLuint index = glGetUniformBlockIndex(sh->id, block.pData);
     glUniformBlockBinding(sh->id, index, s->point);
-    LOG_OK("uniform block: '%.*s' at '%u', in shader '%u'\n", (int)block.size, block.pData, index, sh->id);
+    LOG_OK("uniform block: '{}' at '{}', in shader '{}'\n", block, index, sh->id);
 
     glBindBufferBase(GL_UNIFORM_BUFFER, point, s->id);
     /* or */
@@ -439,7 +439,7 @@ Quad::Quad(GLint drawMode)
 
     glBindVertexArray(0);
 
-    LOG_OK("quad '%u' created\n", q.vao);
+    LOG_OK("quad '{}' created\n", q.vao);
     *this = q;
 }
 
@@ -496,7 +496,7 @@ Plain::Plain(GLint drawMode)
 
     glBindVertexArray(0);
 
-    LOG_OK("plane '%u' created\n", p.vao);
+    LOG_OK("plane '{}' created\n", p.vao);
     *this = p;
 }
 
@@ -519,5 +519,5 @@ PlainDestroy(Plain* s)
 {
     glDeleteBuffers(1, &s->vao);
     /*glDeleteBuffers(1, &s->vbo);*/
-    LOG_OK("plain %d(vao), %d(vbo) destroyed\n", s->vao, s->vbo);
+    LOG_OK("plain {}(vao), {}(vbo) destroyed\n", s->vao, s->vbo);
 }

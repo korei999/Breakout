@@ -19,7 +19,7 @@ load(Allocator* pAlloc, String path)
     FILE* pf = fopen(path.pData, "rb");
     if (!pf)
     {
-        LOG_WARN("ret(%p): Error opening '%.*s' file\n", pf, path.size, path.pData);
+        LOG_WARN("Error opening '{}' file\n", path);
         return ret;
     }
     defer(fclose(pf));

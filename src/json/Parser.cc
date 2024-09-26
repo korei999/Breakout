@@ -1,6 +1,6 @@
 #include "Parser.hh"
 
-#include "adt/logs.hh"
+#include "logs.hh"
 
 using namespace adt;
 
@@ -53,8 +53,8 @@ expect(Parser* s, enum Token::TYPE t, adt::String svFile, int line)
 {
     if (s->tCurr.type != t)
     {
-        CERR("('%.*s', at %d): (%.*s): unexpected token: expected: '%c', got '%c'\n",
-             svFile.size, svFile.pData, line, s->sName.size, s->sName.pData, char(t), char(s->tCurr.type));
+        CERR("('{}', at {}): ({}): unexpected token: expected: '{}', got '{}'\n",
+             svFile, line, s->sName, char(t), char(s->tCurr.type));
         exit(2);
     }
 }
@@ -133,13 +133,13 @@ parseObject(Parser* s, Object* pNode)
 
     for (; s->tCurr.type != Token::RBRACE; next(s))
     {
-        expect(s, Token::IDENT, ADT_FILE, __LINE__);
+        expect(s, Token::IDENT, LOGS_FILE, __LINE__);
         Object ob {.svKey = s->tCurr.sLiteral, .tagVal = {}};
         adt::VecPush(&aObjs, s->pAlloc, ob);
 
         /* skip identifier and ':' */
         next(s);
-        expect(s, Token::ASSIGN, ADT_FILE, __LINE__);
+        expect(s, Token::ASSIGN, LOGS_FILE, __LINE__);
         next(s);
 
         parseNode(s, &adt::VecLast(&aObjs));
@@ -250,18 +250,18 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
                 }
 
                 /*COUT("%*s", depth, "");*/
-                FOUT("{: >{}}", "", depth);
+                COUT("{: >{}}", "", depth);
                 /*COUT("%.*s%.*s%.*s%.*s{\n", q0.size, q0.pData, objName0.size, objName0.pData, q1.size, q1.pData, objName1.size, objName1.pData);*/
-                FOUT("{}{}{}{}{{\n", q0, objName0, q1, objName1);
+                COUT("{}{}{}{}{{\n", q0, objName0, q1, objName1);
                 for (u32 i = 0; i < VecSize(&obj); i++)
                 {
                     adt::String slE = (i == VecSize(&obj) - 1) ? "\n" : ",\n";
                     ParserPrintNode(&obj[i], slE, depth + 2);
                 }
                 /*COUT("%*s", depth, "");*/
-                FOUT("{: >{}}", "", depth);
+                COUT("{: >{}}", "", depth);
                 /*COUT("}%.*s", svEnd.size, svEnd.pData);*/
-                FOUT("}}{}", svEnd);
+                COUT("}}{}", svEnd);
             } break;
 
         case TAG::ARRAY:
@@ -281,19 +281,19 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
                 }
 
                 /*COUT("%*s", depth, "");*/
-                FOUT("{: >{}}", "", depth);
+                COUT("{: >{}}", "", depth);
 
                 if (VecSize(&arr) == 0)
                 {
                     /*COUT("%.*s%.*s%.*s%.*s[", q0.size, q0.pData, arrName0.size, arrName0.pData, q1.size, q1.pData, arrName1.size, arrName1.pData);*/
-                    FOUT("{}{}{}{}[", q0, arrName0, q1, arrName1);
+                    COUT("{}{}{}{}[", q0, arrName0, q1, arrName1);
                     /*COUT("]%.*s", svEnd.size, svEnd.pData);*/
-                    FOUT("]{}", svEnd);
+                    COUT("]{}", svEnd);
                     break;
                 }
 
                 /*COUT("%.*s%.*s%.*s%.*s[\n", q0.size, q0.pData, arrName0.size, arrName0.pData, q1.size, q1.pData, arrName1.size, arrName1.pData);*/
-                FOUT("{}{}{}{}[\n", q0, arrName0, q1, arrName1);
+                COUT("{}{}{}{}[\n", q0, arrName0, q1, arrName1);
                 for (u32 i = 0; i < VecSize(&arr); i++)
                 {
                     adt::String slE = (i == VecSize(&arr) - 1) ? "\n" : ",\n";
@@ -305,43 +305,43 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
                             {
                                 adt::String sl = getString(&arr[i]);
                                 /*COUT("%*s", depth + 2, "");*/
-                                FOUT("{: >{}}", "", depth + 2);
+                                COUT("{: >{}}", "", depth + 2);
                                 /*COUT("\"%.*s\"%.*s", sl.size, sl.pData, slE.size, slE.pData);*/
-                                FOUT("\"{}\"{}", sl, slE);
+                                COUT("\"{}\"{}", sl, slE);
                             } break;
 
                         case TAG::NULL_:
                                 /*COUT("%*s", depth + 2, "");*/
-                                FOUT("{: >{}}", "", depth + 2);
+                                COUT("{: >{}}", "", depth + 2);
                                 /*COUT("%s%.*s", "null", slE.size, slE.pData);*/
-                                FOUT("{}{}", "null", slE);
+                                COUT("{}{}", "null", slE);
                             break;
 
                         case TAG::LONG:
                             {
                                 long num = getLong(&arr[i]);
                                 /*COUT("%*s", depth + 2, "");*/
-                                FOUT("{: >{}}", "", depth + 2);
+                                COUT("{: >{}}", "", depth + 2);
                                 /*COUT("%ld%.*s", num, slE.size, slE.pData);*/
-                                FOUT("{}{}", num, slE);
+                                COUT("{}{}", num, slE);
                             } break;
 
                         case TAG::DOUBLE:
                             {
                                 double dnum = getDouble(&arr[i]);
                                 /*COUT("%*s", depth + 2, "");*/
-                                FOUT("{: >{}}", "", depth + 2);
+                                COUT("{: >{}}", "", depth + 2);
                                 /*COUT("%.17lf%.*s", dnum, slE.size, slE.pData);*/
-                                FOUT("{}{}", dnum, slE);
+                                COUT("{}{}", dnum, slE);
                             } break;
 
                         case TAG::BOOL:
                             {
                                 bool b = getBool(&arr[i]);
                                 /*COUT("%*s", depth + 2, "");*/
-                                FOUT("{: >{}}", "", depth + 2);
+                                COUT("{: >{}}", "", depth + 2);
                                 /*COUT("%s%.*s", b ? "true" : "false", slE.size, slE.pData);*/
-                                FOUT("{}{}", b ? "true" : "false", slE);
+                                COUT("{}{}", b ? "true" : "false", slE);
                             } break;
 
                         case TAG::OBJECT:
@@ -350,52 +350,52 @@ ParserPrintNode(Object* pNode, adt::String svEnd, int depth)
                     }
                 }
                 /*COUT("%*s", depth, "");*/
-                FOUT("{: >{}}", "", depth);
+                COUT("{: >{}}", "", depth);
                 /*COUT("]%.*s", (int)svEnd.size, svEnd.pData);*/
-                FOUT("]{}", svEnd);
+                COUT("]{}", svEnd);
             } break;
 
         case TAG::DOUBLE:
             {
                 double f = getDouble(pNode);
                 /*COUT("%*s", depth, "");*/
-                FOUT("{: >{}}", "", depth);
+                COUT("{: >{}}", "", depth);
                 /*COUT("\"%.*s\": %.17lf%.*s", key.size, key.pData, f, svEnd.size, svEnd.pData);*/
-                FOUT("\"{}\": {}{}", key, f, svEnd);
+                COUT("\"{}\": {}{}", key, f, svEnd);
             } break;
 
         case TAG::LONG:
             {
                 long i = getLong(pNode);
                 /*COUT("%*s", depth, "");*/
-                FOUT("{: >{}}", "", depth);
+                COUT("{: >{}}", "", depth);
                 /*COUT("\"%.*s\": %ld%.*s", key.size, key.pData, i, svEnd.size, svEnd.pData);*/
-                FOUT("\"{}\": {}{}", key, i, svEnd);
+                COUT("\"{}\": {}{}", key, i, svEnd);
             } break;
 
         case TAG::NULL_:
                 /*COUT("%*s", depth, "");*/
-                FOUT("{: >{}}", "", depth);
+                COUT("{: >{}}", "", depth);
                 /*COUT("\"%.*s\": %s%.*s", key.size, key.pData, "null", svEnd.size, svEnd.pData);*/
-                FOUT("\"{}\": {}{}", key, "null", svEnd);
+                COUT("\"{}\": {}{}", key, "null", svEnd);
             break;
 
         case TAG::STRING:
             {
                 adt::String sl = getString(pNode);
                 /*COUT("%*s", depth, "");*/
-                FOUT("{: >{}}", "", depth);
+                COUT("{: >{}}", "", depth);
                 /*COUT("\"%.*s\": \"%.*s\"%.*s", key.size, key.pData, sl.size, sl.pData, svEnd.size, svEnd.pData);*/
-                FOUT("\"{}\": \"{}\"{}", key, sl, svEnd);
+                COUT("\"{}\": \"{}\"{}", key, sl, svEnd);
             } break;
 
         case TAG::BOOL:
             {
                 bool b = getBool(pNode);
                 /*COUT("%*s", depth, "");*/
-                FOUT("{: >{}}", "", depth);
+                COUT("{: >{}}", "", depth);
                 /*COUT("\"%.*s\": %s%.*s", key.size, key.pData, b ? "true" : "false", svEnd.size, svEnd.pData);*/
-                FOUT("\"{}\": {}{}", key, b ? "true" : "false", svEnd);
+                COUT("\"{}\": {}{}", key, b ? "true" : "false", svEnd);
             } break;
     }
 }

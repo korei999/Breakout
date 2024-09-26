@@ -1,6 +1,6 @@
 #include "gl.hh"
 
-#include "adt/logs.hh"
+#include "logs.hh"
 
 namespace gl
 {
@@ -51,7 +51,7 @@ debugCallback(
         default: break;
     }
 
-    CERR("source: '%s', type: '%s'\n%s\n", sourceStr, typeStr, message);
+    CERR("source: '{}', type: '{}'\n{}\n", sourceStr, typeStr, message);
 }
 
 #endif

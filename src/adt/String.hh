@@ -3,8 +3,6 @@
 #include "Allocator.hh"
 #include "hash.hh"
 
-#include <fmt/base.h>
-
 namespace adt
 {
 
@@ -209,22 +207,3 @@ hash::func<const String>(const String& str)
 }
 
 } /* namespace adt */
-
-template<>
-class fmt::formatter<adt::String>
-{
-  public:
-
-    constexpr auto
-    parse(format_parse_context& ctx)
-    {
-        return ctx.begin();
-    }
-
-    template<typename CONTEXT>
-    constexpr auto
-    format(const adt::String& s, CONTEXT& ctx) const
-    {
-        return format_to(ctx.out(), "{:.{}}", s.size > 0 ? s.pData : "", s.size);
-    }
-};

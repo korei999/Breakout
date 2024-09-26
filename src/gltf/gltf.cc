@@ -1,7 +1,7 @@
 #include "gltf.hh"
 
 #include "adt/file.hh"
-#include "adt/logs.hh"
+#include "logs.hh"
 
 namespace gltf
 {
@@ -285,7 +285,7 @@ ModelProcBuffers(Model* s)
             auto sNewPath = file::replacePathEnding(s->pAl, s->parser.sName, svUri);
 
             rsBin = file::load(s->pAl, sNewPath);
-            if (!rsBin) LOG_WARN("error opening file: '%.*s'\n", sNewPath.size, sNewPath.pData);
+            if (!rsBin) LOG_WARN("error opening file: '{}'\n", sNewPath);
             else
             {
                 aBin = rsBin.data;

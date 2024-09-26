@@ -1,7 +1,7 @@
 #include "input.hh"
 
 #include "Client.hh"
-#include "adt/logs.hh"
+#include "logs.hh"
 #include "adt/utils.hh"
 #include "controls.hh"
 
@@ -79,7 +79,7 @@ keyboardKeyHandler(
 #ifdef DEBUG
     if (key >= utils::size(controls::g_pressedKeys))
     {
-        LOG_WARN("key '%u' is out of range\n", key);
+        LOG_WARN("key '{}' is out of range\n", key);
         return;
     }
 #endif

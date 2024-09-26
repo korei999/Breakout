@@ -1,5 +1,5 @@
 #include "Wave.hh"
-#include "adt/logs.hh"
+#include "logs.hh"
 
 namespace parser
 {
@@ -27,7 +27,7 @@ WaveParse(Wave* s)
     [[maybe_unused]] s16 wFormatTag = BinRead16(&s->bin);
     if (wFormatTag != 1 && wFormatTag != 3)
     {
-        LOG_WARN("wFormatTag: '%#hx' unsupported Wave format\n", wFormatTag);
+        LOG_WARN("wFormatTag: '{:#x}' unsupported Wave format\n", wFormatTag);
         return;
     }
 

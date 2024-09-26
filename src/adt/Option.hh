@@ -1,5 +1,3 @@
-#include "types.hh"
-
 namespace adt
 {
 
@@ -11,9 +9,9 @@ struct Option
 
     constexpr Option() = default;
 
-    constexpr Option(const T& x)
+    constexpr Option(const T& x, bool _bHasValue = true)
     {
-        bHasValue = true;
+        bHasValue = _bHasValue;
         data = x;
     }
 

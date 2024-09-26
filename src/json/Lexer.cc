@@ -1,7 +1,7 @@
 #include "Lexer.hh"
 
 #include "adt/file.hh"
-#include "adt/logs.hh"
+#include "logs.hh"
 
 #include <ctype.h>
 
