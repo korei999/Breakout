@@ -128,21 +128,21 @@ struct GlyphSimple
 
 enum COMPONENT_FLAG : u16
 {
-    ARG_1_AND_2_ARE_WORDS = 0, /* If set, the arguments are words;
+    ARG_1_AND_2_ARE_WORDS = 1, /* If set, the arguments are words;
                                 * If not set, they are bytes. */
-    ARGS_ARE_XY_VALUES, /* If set, the arguments are xy values;
-                         * If not set, they are points. */
-    ROUND_XY_TO_GRID, /* If set, round the xy values to grid;
-                       * if not set do not round xy values to grid (relevant only to bit 1 is set) */
-    WE_HAVE_A_SCALE, /* If set, there is a simple scale for the component.
-                      * If not set, scale is 1.0. */
-    __THIS_BIT_IS_OBSOLETE, /* (obsolete; set to zero) */
+    ARGS_ARE_XY_VALUES = 1 << 1, /* If set, the arguments are xy values;
+                                  * If not set, they are points. */
+    ROUND_XY_TO_GRID = 1 << 2, /* If set, round the xy values to grid;
+                                * if not set do not round xy values to grid (relevant only to bit 1 is set) */
+    WE_HAVE_A_SCALE = 1 << 3, /* If set, there is a simple scale for the component.
+                               * If not set, scale is 1.0. */
+    __THIS_BIT_IS_OBSOLETE = 1 << 4, /* (obsolete; set to zero) */
     MORE_COMPONENST, /* If set, at least one additional glyph follows this one. */
-    WE_HAVE_AN_X_AND_Y_SCALE, /* If set the x direction will use a different scale than the y direction. */
-    WE_HAVE_A_TWO_BY_TWO, /* If set there is a 2-by-2 transformation that will be used to scale the component. */
-    WE_HAVE_INSTRUCTIONS, /* If set, instructions for the component character follow the last component. */
-    USE_MY_METRICS, /* Use metrics from this component for the compound glyph. */
-    OVERLAP_COMPOUND, /* If set, the components of this compound glyph overlap. */
+    WE_HAVE_AN_X_AND_Y_SCALE = 1 << 5, /* If set the x direction will use a different scale than the y direction. */
+    WE_HAVE_A_TWO_BY_TWO = 1 << 6, /* If set there is a 2-by-2 transformation that will be used to scale the component. */
+    WE_HAVE_INSTRUCTIONS = 1 << 7, /* If set, instructions for the component character follow the last component. */
+    USE_MY_METRICS = 1 << 8, /* Use metrics from this component for the compound glyph. */
+    OVERLAP_COMPOUND = 1 << 9, /* If set, the components of this compound glyph overlap. */
 };
 
 /* x' = m((a/m)*x + (c/m)*y + e)

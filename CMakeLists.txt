@@ -22,7 +22,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 include_directories(BEFORE "src")
-include_directories(BEFORE "ThirdParty")
+include_directories(BEFORE "ThirdParty/include")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_definitions("-D_CRT_SECURE_NO_WARNINGS")
@@ -139,7 +139,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     if (NOT FMT_HEADER_ONLY)
         target_link_libraries(
             ${CMAKE_PROJECT_NAME} PRIVATE
-            ${CMAKE_SOURCE_DIR}/ThirdParty/libfmt.a
+            ${CMAKE_SOURCE_DIR}/ThirdParty/libs/libfmt.a
         )
     endif()
 
@@ -201,12 +201,12 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
         if (CMAKE_BUILD_TYPE MATCHES "Debug")
             target_link_libraries(
                 ${CMAKE_PROJECT_NAME} PRIVATE
-                ${CMAKE_SOURCE_DIR}/ThirdParty/fmtd.lib
+                ${CMAKE_SOURCE_DIR}/ThirdParty/libs/fmtd.lib
             )
         else()
             target_link_libraries(
                 ${CMAKE_PROJECT_NAME} PRIVATE
-                ${CMAKE_SOURCE_DIR}/ThirdParty/fmt.lib
+                ${CMAKE_SOURCE_DIR}/ThirdParty/libs/fmt.lib
             )
         endif()
     endif()

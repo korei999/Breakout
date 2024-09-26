@@ -100,7 +100,7 @@ TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin
 }
 
 void
-TextUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y)
+BitmapUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y)
 {
     assert(str.size <= s->maxSize);
 
@@ -114,7 +114,7 @@ TextUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y)
 }
 
 void
-TextDraw(Bitmap* s)
+BitmapDraw(Bitmap* s)
 {
     glBindVertexArray(s->vao);
     glDrawArrays(GL_TRIANGLES, 0, s->vboSize);

@@ -25,7 +25,7 @@ struct Bitmap
     Bitmap(String s, u64 size, int x, int y, GLint drawMode);
 };
 
-void TextUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y);
-void TextDraw(Bitmap* s);
+void BitmapUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y);
+void BitmapDraw(Bitmap* s);
 
 } /* namespace text */

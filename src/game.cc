@@ -434,10 +434,10 @@ drawFPSCounter(Allocator* pAlloc)
         frame::g_nfps = 0;
         frame::g_prevTime = currTime;
 
-        TextUpdate(&s_textFPS, pAlloc, s, 0, 0);
+        text::BitmapUpdate(&s_textFPS, pAlloc, s, 0, 0);
     }
 
-    TextDraw(&s_textFPS);
+    text::BitmapDraw(&s_textFPS);
 }
 
 void
