@@ -202,7 +202,6 @@ readCmapFormat4(Font* s)
     s->p.pos += c.segCountX2;
 
     assert(c.endCode[segCount - 1] == 0xffff);
-    LOG_GOOD("endCode: {:#x}\n", c.endCode[segCount - 1]);
 
     c.reservedPad = BinRead16Rev(&s->p);
     assert(c.reservedPad == 0);
@@ -217,6 +216,7 @@ readCmapFormat4(Font* s)
     c.idRangeOffset = (u16*)&s->p.sFile[s->p.pos];
     s->p.pos += c.segCountX2;
 
+#ifdef D_TTF
     LOG_NOTIFY(
         "\treadCmapFormat4:\n"
         "\t\tformat: {}\n"
@@ -236,6 +236,7 @@ readCmapFormat4(Font* s)
         c.rangeShift,
         c.reservedPad
     );
+#endif
 }
 
 static void
@@ -250,7 +251,9 @@ readCmap(Font* s, u32 offset)
     u16 length = BinRead16Rev(&s->p);
     u16 language = BinRead16Rev(&s->p);
 
+#ifdef D_TTF
     LOG_NOTIFY("readCmap: format: {}, length: {}, language: {}\n", format, length, language);
+#endif
 
     // TODO: other formats
     if (format == 4)
@@ -290,11 +293,14 @@ readCmapTable(Font* s)
         });
 
         const auto& lastSt = VecLast(&c.aSubtables);
+
+#ifdef D_TTF
         LOG_NOTIFY(
             "readCmap: platformID: {}('{}'), platformSpecificID: {}('{}')\n",
             lastSt.platformID, platformIDToString(lastSt.platformID),
             lastSt.platformSpecificID, platformSpecificIDToString(lastSt.platformSpecificID)
         );
+#endif
         if (lastSt.platformID == 3 && lastSt.platformSpecificID <= 1)
         {
             readCmap(s, fCmap.pData->offset + lastSt.offset);
@@ -371,7 +377,6 @@ readSimpleGlyph(Font* s, Glyph* g)
 {
     auto& sg = g->uGlyph.simple;
 
-    sg.aEndPtsOfContours = {s->p.pAlloc, u32(g->numberOfContours)};
     for (s16 i = 0; i < g->numberOfContours; i++)
         VecPush(&sg.aEndPtsOfContours, s->p.pAlloc, BinRead16Rev(&s->p));
 
