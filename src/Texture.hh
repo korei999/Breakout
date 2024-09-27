@@ -1,7 +1,7 @@
 #pragma once
 
 #include "adt/Allocator.hh"
-#include "adt/HashMap.hh"
+#include "adt/Map.hh"
 #include "adt/Vec.hh"
 #include "adt/String.hh"
 #include "gl/gl.hh"
@@ -11,7 +11,7 @@ struct Texture;
 struct TextureHash;
 
 extern Vec<Texture> g_aAllTextures;
-extern HashMap<TextureHash> g_mAllTexturesIdxs;
+extern Map<TextureHash> g_mAllTexturesIdxs;
 
 struct TextureHash
 {

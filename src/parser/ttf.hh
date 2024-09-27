@@ -3,7 +3,7 @@
 #include "Bin.hh"
 #include "adt/String.hh"
 #include "adt/Vec.hh"
-#include "adt/HashMap.hh"
+#include "adt/Map.hh"
 
 namespace parser
 {
@@ -54,7 +54,7 @@ struct TableDirectory
                         * which is equal to floor(log2(numTables))). */
     u16 rangeShift; /* numTables times 16, minus searchRange ((numTables * 16) - searchRange). */
     // VecBase<TableRecord> aTableRecords;
-    HashMapBase<TableRecord> mTableRecords;
+    MapBase<TableRecord> mTableRecords;
 };
 
 struct Kern
@@ -124,7 +124,7 @@ struct CmapFormat4
     u16* idDelta; /* [segCount] Delta for all character codes in segment */
     u16* idRangeOffset; /* [segCount] Offset in bytes to glyph indexArray, or 0 */
     // VecBase<u16> aGlyghIndex; /* Glyph index array */
-    HashMapBase<CodeToGlyphIdx> mGlyphIndices;
+    MapBase<CodeToGlyphIdx> mGlyphIndices;
 };
 
 enum OUTLINE_FLAG : u8
@@ -480,7 +480,7 @@ struct Font
     Head head {};
     Cmap cmap {};
     CmapFormat4 cmapF4 {};
-    HashMapBase<OffsetToGlyph> mOffsetToGlyph {};
+    MapBase<OffsetToGlyph> mOffsetToGlyph {};
 
     Font() = default;
     Font(Allocator* _pA) : p(_pA), mOffsetToGlyph(_pA, 128) {}
@@ -488,7 +488,7 @@ struct Font
 
 bool FontLoadAndParse(Font* s, String path);
 Glyph FontReadGlyph(Font* s, u32 codePoint);
-void FontPrintGlyph(Font* s, Glyph* g);
+void FontPrintGlyph(Font* s, const Glyph& g, bool bNormalize = false);
 void FontDestroy(Font* s);
 
 } /* namespace ttf */

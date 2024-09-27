@@ -70,7 +70,8 @@ run()
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(gl::debugCallback, app::g_pWindow);
 
-    glPointSize(5.0f);
+    glPointSize(3.0f);
+    glLineWidth(2.0f);
 #endif
 
     /*glEnable(GL_CULL_FACE);*/

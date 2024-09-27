@@ -193,8 +193,10 @@ V2 operator-(const V2& l, const V2& r);
 V3 operator-(const V3& l, const V3& r);
 V2 operator+(const V2& l, const V2& r);
 V2 operator+(const V2& l, f32 r);
+inline V2 operator+(f32 l, const V2& r) { return r + l; }
 V3 operator+(const V3& l, const V3& r);
 V2 operator*(const V2& v, const f32 s);
+inline V2 operator*(const f32 s, const V2& v) { return v * s; }
 V2& operator*=(V2& v, const f32 s);
 V3 operator*(const V3& v, const f32 s);
 V3 operator/(const V3& v, const f32 s);

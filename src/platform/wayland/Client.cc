@@ -311,8 +311,7 @@ ClientInit(Client* s)
 
     if ((s->display = wl_display_connect(nullptr)))
         LOG_OK("wayland display connected\n");
-    else
-        LOG_OK("error connecting wayland display\n");
+    else LOG_OK("error connecting wayland display\n");
 
     s->registry = wl_display_get_registry(s->display);
     wl_registry_add_listener(s->registry, &registryListener, s);
@@ -490,14 +489,14 @@ void
 ClientTogglePointerRelativeMode(Client* s)
 {
     s->base.bPointerRelativeMode ? ClientDisableRelativeMode(s) : ClientEnableRelativeMode(s);
-    LOG_OK("relative mode: %d\n", s->base.bPointerRelativeMode);
+    LOG_OK("relative mode: {}\n", s->base.bPointerRelativeMode);
 }
 
 void
 ClientToggleFullscreen(Client* s)
 {
     s->base.bFullscreen ? ClientUnsetFullscreen(s) : ClientSetFullscreen(s);
-    LOG_OK("fullscreen mode: %d\n", s->base.bFullscreen);
+    LOG_OK("fullscreen mode: {}\n", s->base.bFullscreen);
 }
 
 void 
@@ -524,7 +523,7 @@ ClientToggleVSync(Client* s)
 {
     s->base.swapInterval = !s->base.swapInterval;
     EGLD( eglSwapInterval(s->eglDisplay, s->base.swapInterval) );
-    LOG_OK("swapInterval: %d\n", s->base.swapInterval);
+    LOG_OK("swapInterval: {}\n", s->base.swapInterval);
 
     /*auto hint = s->base.swapInterval == 0 ? WP_TEARING_CONTROL_V1_PRESENTATION_HINT_VSYNC : WP_TEARING_CONTROL_V1_PRESENTATION_HINT_ASYNC;*/
     /*wp_tearing_control_v1_set_presentation_hint(s->tearingConrol, hint);*/

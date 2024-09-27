@@ -11,7 +11,7 @@ namespace controls
 bool g_aPressedKeys[300] {};
 Mouse g_mouse {};
 Camera g_camera {};
-bool g_bDebugTTF = false;
+bool g_bTTFDebugScreen = false;
 
 static void PlayerProcMovements(game::Player* s);
 
@@ -94,8 +94,8 @@ procKeysOnce(u32 key, u32 pressed)
         case KEY_T: {
             if (!pressed) break;
 
-            g_bDebugTTF = !g_bDebugTTF;
-            LOG_NOTIFY("g_bDebugTTF: {}\n", g_bDebugTTF);
+            g_bTTFDebugScreen = !g_bTTFDebugScreen;
+            LOG_NOTIFY("g_bDebugTTF: {}\n", g_bTTFDebugScreen);
         } break;
 
         default:

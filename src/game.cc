@@ -41,6 +41,7 @@ static text::Bitmap s_textFPS;
 static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
 
 static text::TTF s_ttfTest {};
+static text::TTF s_ttfBezier {};
 
 Player g_player {
     .enIdx = 0,
@@ -64,8 +65,10 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '*');
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, 'A');
     text::TTFGenMesh(&s_ttfTest, glyphA);
+
+    text::TTFGenBezierMesh(&s_ttfBezier, {0.0f, 0.1f}, {0.25f, 0.5f}, {0.5f, 0.1f}, 10);
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
@@ -323,7 +326,7 @@ loadLevel()
     VecSetCap(&s_aBlocks, levelY*levelX);
     VecSetSize(&s_aBlocks, 0);
 
-    auto fBoxTex = HashMapSearch(&g_mAllTexturesIdxs, {"test-assets/box3.bmp"});
+    auto fBoxTex = MapSearch(&g_mAllTexturesIdxs, {"test-assets/box3.bmp"});
     auto boxTexId = g_aAllTextures[fBoxTex.pData->vecIdx].id;
 
     for (u32 i = 0; i < levelY; i++)
@@ -421,7 +424,7 @@ updateState()
 void
 draw(Allocator *pAlloc)
 {
-    if (controls::g_bDebugTTF)
+    if (controls::g_bTTFDebugScreen)
     {
         drawTTF(pAlloc);
     }
@@ -490,19 +493,20 @@ drawEntities(Allocator* pAlloc)
 static void
 drawTTF(Allocator* pAlloc)
 {
-    math::M4 proj = math::M4Ortho(0.0f, 2.0f, 0.0f, 2.0f, -1.0f, 1.0f);
+    math::M4 proj = math::M4Ortho(-1.0f, 2.0f, -1.0f, 2.0f, -1.0f, 1.0f);
 
     auto* sh = &s_shFontBitmap;
     ShaderUse(sh);
 
-    auto f = HashMapSearch(&g_mAllTexturesIdxs, {"test-assets/WhitePixel.bmp"});
+    auto f = MapSearch(&g_mAllTexturesIdxs, {"test-assets/WhitePixel.bmp"});
     assert(f);
     TextureBind(g_aAllTextures[f.pData->vecIdx].id, GL_TEXTURE0);
 
     ShaderSetM4(sh, "uProj", proj);
     ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'ff'00'ff), 1.0f});
 
-    text::TTFDrawOutline(&s_ttfTest);
+    /*text::TTFDrawOutline(&s_ttfTest);*/
+    text::TTFDrawOutline(&s_ttfBezier);
 }
 
 void
@@ -517,7 +521,7 @@ cleanup()
     for (auto& t : g_aAllTextures)
         TextureDestroy(&t);
     VecDestroy(&g_aAllTextures);
-    HashMapDestroy(&g_mAllTexturesIdxs);
+    MapDestroy(&g_mAllTexturesIdxs);
 
     AllocatorPoolFreeAll(&s_assetArenas);
 }

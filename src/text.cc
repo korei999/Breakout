@@ -13,6 +13,11 @@ struct CharQuad
     f32 vs[24]; /* 6(2 triangles) * 4(2 pos, 2 uv coords) */
 };
 
+struct Points
+{
+    f32 x, y, u, v;
+};
+
 static VecBase<CharQuad> TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
 static void TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode);
 
@@ -125,18 +130,67 @@ BitmapDraw(Bitmap* s)
 }
 
 void
+TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2& p2, int nSteps)
+{
+    Arena al(SIZE_1K);
+    defer(ArenaFreeAll(&al));
+
+    glGenVertexArrays(1, &s->vao);
+    glBindVertexArray(s->vao);
+    defer(glBindVertexArray(0));
+
+    glGenBuffers(1, &s->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
+
+    VecBase<Points> aPoints(&al.base, 3);
+    VecPush(&aPoints, &al.base, {p0.x, p0.y, 0.0f, 1.0f});
+
+    /* quadratic bezier */
+    /*B(t) = (1-t)^2*P0 + 2(1-t)*t*P1 + t^2*P2*/
+
+    f32 stepPerIter = 1.0f/nSteps;
+    for (int i = 0; i <= nSteps; i++) {
+        f32 t = i*stepPerIter;
+
+        auto vec = math::sq(1-t)*p0
+            + 2*(1-t)*t*p1
+            + math::sq(t)*p2;
+
+        /*COUT("p0: {}, {}\nx: {}, y: {}\n", p0.x, p0.y, x, y);*/
+
+        VecPush(&aPoints, &al.base, {vec.x, vec.y, 0.0f, 1.0f});
+    }
+
+    /*VecPush(&aPoints, &al.base, {p1.x, p1.y, 0.0f, 1.0f});*/
+    VecPush(&aPoints, &al.base, {p2.x, p2.y, 0.0f, 1.0f});
+
+    s->maxSize = VecSize(&aPoints);
+
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        sizeof(Points) * VecSize(&aPoints),
+        VecData(&aPoints),
+        GL_DYNAMIC_DRAW
+    );
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+        0, 2, GL_FLOAT, GL_FALSE,
+        4 * sizeof(f32), (void*)0
+    );
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+        1, 2, GL_FLOAT, GL_FALSE,
+        4 * sizeof(f32), (void*)(sizeof(f32) * 2)
+    );
+}
+
+void
 TTFGenMesh(TTF* s, const parser::ttf::Glyph& g)
 {
     Arena alloc(SIZE_1K);
     defer(ArenaFreeAll(&alloc));
-
-    struct Points
-    {
-        f32 x;
-        f32 y;
-        f32 u;
-        f32 v;
-    };
 
     u32 size = VecSize(&g.uGlyph.simple.aPoints);
     s->maxSize = size;

@@ -27,7 +27,7 @@ FontLoadAndParse(Font* s, String path)
     FontParse(s);
 
     /* cache some ascii glyphs */
-    for (u32 i = 21; i < 126; ++i)
+    for (u32 i = 21; i < 127; ++i)
         FontReadGlyph(s, i);
 
     return true;
@@ -92,10 +92,10 @@ languageIDToString(u16 languageID)
     }
 }
 
-inline HashMapResult<TableRecord>
+inline MapResult<TableRecord>
 getTable(Font* s, String sTableTag)
 {
-    return HashMapSearch(&s->tableDirectory.mTableRecords, {sTableTag});
+    return MapSearch(&s->tableDirectory.mTableRecords, {sTableTag});
 }
 
 inline FWord
@@ -444,7 +444,7 @@ static u32
 getGlyphIdx(Font* s, u16 code)
 {
     auto& c = s->cmapF4;
-    auto fIdx = HashMapSearch(&c.mGlyphIndices, {code});
+    auto fIdx = MapSearch(&c.mGlyphIndices, {code});
 
     if (fIdx) return fIdx.pData->glyphIdx;
 
@@ -468,7 +468,7 @@ getGlyphIdx(Font* s, u16 code)
             }
             else idx = (swapBytes(c.idDelta[i]) + code) & 0xffff;
 
-            HashMapInsert(&c.mGlyphIndices, s->p.pAlloc, {code, u16(idx)});
+            MapInsert(&c.mGlyphIndices, s->p.pAlloc, {code, u16(idx)});
             break;
         }
     }
@@ -485,7 +485,7 @@ FontReadGlyph(Font* s, u32 code)
     const auto glyphIdx = getGlyphIdx(s, code);
     const u32 offset = getGlyphOffset(s, glyphIdx);
 
-    auto fCachedGlyph = HashMapSearch(&s->mOffsetToGlyph, {offset});
+    auto fCachedGlyph = MapSearch(&s->mOffsetToGlyph, {offset});
     if (fCachedGlyph) return fCachedGlyph.pData->glyph;
 
     const auto fGlyf = getTable(s, "glyf");
@@ -513,22 +513,35 @@ FontReadGlyph(Font* s, u32 code)
         readCompoundGlyph(s, &g);
     else readSimpleGlyph(s, &g);
 
-    HashMapInsert(&s->mOffsetToGlyph, s->p.pAlloc, {offset, g});
+    MapInsert(&s->mOffsetToGlyph, s->p.pAlloc, {offset, g});
 
     return g;
 };
 
 void
-FontPrintGlyph(Font* s, Glyph* g)
+FontPrintGlyph(Font* s, const Glyph& g, bool bNormalize)
 {
-    auto& sg = g->uGlyph.simple;
-    COUT("xMin: {}, yMin: {}, xMax: {}, yMax: {}\n", g->xMin, g->yMin, g->xMax, g->yMax);
+    auto& sg = g.uGlyph.simple;
+    COUT("xMin: {}, yMin: {}, xMax: {}, yMax: {}\n", g.xMin, g.yMin, g.xMax, g.yMax);
     COUT(
         "instructionLength: {}, points: {}, numberOfContours: {}\n",
-        sg.instructionLength, VecSize(&sg.aPoints), g->numberOfContours
+        sg.instructionLength, VecSize(&sg.aPoints), g.numberOfContours
     );
-    for (auto& e : sg.aPoints)
-        COUT("x: {}, y: {}, bOnCurve: {}\n", e.x, e.y, e.bOnCurve);
+
+    if (bNormalize)
+    {
+        for (auto& e : sg.aPoints)
+            COUT(
+                "x: {}, y: {}, bOnCurve: {}\n",
+                f32(e.x) / f32(g.xMax), f32(e.y) / f32(g.yMax),
+                e.bOnCurve
+            );
+    }
+    else
+    {
+        for (auto& e : sg.aPoints)
+            COUT("x: {}, y: {}, bOnCurve: {}\n", e.x, e.y, e.bOnCurve);
+    }
 }
 
 static void
@@ -566,7 +579,7 @@ FontParse(Font* s)
 #endif
 
     auto& map = td.mTableRecords;
-    map = HashMapBase<TableRecord>(s->p.pAlloc, td.numTables * HASHMAP_DEFAULT_LOAD_FACTOR_INV);
+    map = MapBase<TableRecord>(s->p.pAlloc, td.numTables * MAP_DEFAULT_LOAD_FACTOR_INV);
 
     for (u32 i = 0; i < td.numTables; i++)
     {
@@ -577,7 +590,7 @@ FontParse(Font* s)
             .length = BinRead32Rev(&s->p),
         };
 
-        HashMapInsert(&td.mTableRecords, s->p.pAlloc, r);
+        MapInsert(&td.mTableRecords, s->p.pAlloc, r);
         if (r.tag != "head")
         {
             auto checkSum = getTableChecksum((u32*)(&s->p.sFile[r.offset]), r.length);

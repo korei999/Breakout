@@ -2,6 +2,7 @@
 
 #include "adt/String.hh"
 #include "gl/gl.hh"
+#include "math.hh"
 #include "parser/ttf.hh"
 
 using namespace adt;
@@ -33,6 +34,7 @@ struct TTF
     GLuint vboSize;
 };
 
+void TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2& p2, int steps);
 void TTFGenMesh(TTF* s, const parser::ttf::Glyph& g);
 void TTFDrawOutline(TTF* s);
 

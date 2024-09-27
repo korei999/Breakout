@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Allocator.hh"
-#include "HashMap.hh"
-#include "adt/OsAllocator.hh"
+#include "Map.hh"
+#include "OsAllocator.hh"
 
 #include <stdlib.h>
 
@@ -13,7 +13,7 @@ namespace adt
 struct TrackingAllocator
 {
     Allocator base;
-    HashMapBase<void*> mAllocations;
+    MapBase<void*> mAllocations;
 
     TrackingAllocator() = default;
     TrackingAllocator(u64 pre);
@@ -23,7 +23,7 @@ inline void*
 TrackingAlloc(TrackingAllocator* s, u64 mCount, u64 mSize)
 {
     void* r = ::calloc(mCount, mSize);
-    HashMapInsert(&s->mAllocations, &s->base, r);
+    MapInsert(&s->mAllocations, &s->base, r);
     return r;
 }
 
@@ -34,8 +34,8 @@ TrackingRealloc(TrackingAllocator* s, void* p, u64 mCount, u64 mSize)
 
     if (p != r)
     {
-        HashMapRemove(&s->mAllocations, p);
-        HashMapInsert(&s->mAllocations, &s->base, r);
+        MapRemove(&s->mAllocations, p);
+        MapInsert(&s->mAllocations, &s->base, r);
     }
 
     return r;
@@ -44,7 +44,7 @@ TrackingRealloc(TrackingAllocator* s, void* p, u64 mCount, u64 mSize)
 inline void
 TrackingFree(TrackingAllocator* s, void* p)
 {
-    HashMapRemove(&s->mAllocations, p);
+    MapRemove(&s->mAllocations, p);
     ::free(p);
 }
 
@@ -54,7 +54,7 @@ TrackingFreeAll(TrackingAllocator* s)
     for (auto& b : s->mAllocations)
         ::free(b);
 
-    HashMapDestroy(&s->mAllocations, &s->base);
+    MapDestroy(&s->mAllocations, &s->base);
 }
 
 inline const AllocatorInterface __MapAllocatorVTable {

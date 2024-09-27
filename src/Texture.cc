@@ -32,7 +32,7 @@
  */
 
 Vec<Texture> g_aAllTextures;
-HashMap<TextureHash> g_mAllTexturesIdxs;
+Map<TextureHash> g_mAllTexturesIdxs;
 
 static mtx_t s_mtxAllTextures;
 static once_flag s_onceFlagAllTextures = ONCE_FLAG_INIT;
@@ -54,7 +54,7 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
         mtx_lock(&s_mtxAllTextures);
         defer(mtx_unlock(&s_mtxAllTextures));
 
-        auto fTried = HashMapSearch(&g_mAllTexturesIdxs, {path});
+        auto fTried = MapSearch(&g_mAllTexturesIdxs, {path});
         if (fTried)
         {
             LOG_WARN("Rejecting duplicate texture: '{}'\n", path);
@@ -62,7 +62,7 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
         }
 
         vecIdx = VecPush(&g_aAllTextures, *s);
-        HashMapInsert(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = vecIdx});
+        MapInsert(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = vecIdx});
     }
 
 #ifdef D_TEXTURE
@@ -85,7 +85,7 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
     s->width = img.width;
     s->height = img.height;
     
-    auto found = HashMapSearch(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = vecIdx});
+    auto found = MapSearch(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = vecIdx});
     if (found)
     {
         u32 idx = found.pData->vecIdx;
