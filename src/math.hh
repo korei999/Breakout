@@ -2,7 +2,7 @@
 
 #include "adt/String.hh"
 
-#include <stdio.h>
+#include <fmt/base.h>
 #include <math.h>
 
 #include <concepts>
@@ -257,7 +257,7 @@ bezier(const T& p0, const T& p1, const T& p2, std::floating_point auto t)
 
 template<typename T>
 constexpr T
-bezier2(const T& p0, const T& p1, const T& p2, std::floating_point auto t)
+__bezier(const T& p0, const T& p1, const T& p2, std::floating_point auto t)
 {
     auto interA = lerp(p0, p1, t);
     auto interB = lerp(p1, p2, t);
@@ -346,3 +346,23 @@ printOne(FILE* pf, const math::M4& a)
 
 } /* namespace adt */
 } /* namespace format */
+
+
+template<>
+class fmt::formatter<math::V2>
+{
+  public:
+
+    constexpr auto
+    parse(format_parse_context& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template<typename CONTEXT>
+    constexpr auto
+    format(const math::V2& s, CONTEXT& ctx) const
+    {
+        return format_to(ctx.out(), "[{}, {}]", s.x, s.y);
+    }
+};

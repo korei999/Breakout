@@ -12,6 +12,8 @@ bool g_aPressedKeys[300] {};
 Mouse g_mouse {};
 Camera g_camera {};
 bool g_bTTFDebugScreen = false;
+bool g_bTTFDebugDots = false;
+int g_nDots = 0;
 
 static void PlayerProcMovements(game::Player* s);
 
@@ -72,10 +74,6 @@ procKeysOnce(u32 key, u32 pressed)
                 LOG_OK("quit...\n");
             } break;
 
-        case KEY_R:
-            /*if (pressed) incCounter = 0;*/
-            break;
-
         case KEY_F:
             if (pressed) WindowToggleFullscreen(app::g_pWindow);
             break;
@@ -95,7 +93,23 @@ procKeysOnce(u32 key, u32 pressed)
             if (!pressed) break;
 
             g_bTTFDebugScreen = !g_bTTFDebugScreen;
-            LOG_NOTIFY("g_bDebugTTF: {}\n", g_bTTFDebugScreen);
+            LOG_NOTIFY("g_bTTFDebugScreen: {}\n", g_bTTFDebugScreen);
+        } break;
+
+        case KEY_R: {
+            if (!pressed) break;
+
+            g_bTTFDebugDots = !g_bTTFDebugDots;
+            LOG_NOTIFY("g_bTTFDebugDots: {}\n", g_bTTFDebugDots);
+        } break;
+
+        case KEY_E: {
+            if (!pressed) break;
+
+            if (g_aPressedKeys[KEY_LEFTSHIFT]) --g_nDots;
+            else ++g_nDots;
+
+            /*LOG_NOTIFY("g_nDots: {}\n", g_nDots);*/
         } break;
 
         default:

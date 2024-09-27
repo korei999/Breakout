@@ -32,10 +32,12 @@ struct TTF
     GLuint vao;
     GLuint vbo;
     GLuint vboSize;
+    parser::ttf::Glyph glyph;
 };
 
 void TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2& p2, int steps);
-void TTFGenMesh(TTF* s, const parser::ttf::Glyph& g);
-void TTFDrawOutline(TTF* s);
+void TTFGenMesh(TTF* s, parser::ttf::Glyph* g);
+void TTFDrawOutline(TTF* s, u32 max = 0);
+void TTFDrawDots(TTF* s, u32 max = 0);
 
 } /* namespace text */

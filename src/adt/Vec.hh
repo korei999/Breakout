@@ -88,8 +88,22 @@ VecLast(VecBase<T>* s)
 }
 
 template<typename T>
+inline const T&
+VecLast(const VecBase<T>* s)
+{
+    return s->pData[s->size - 1];
+}
+
+template<typename T>
 inline T&
 VecFirst(VecBase<T>* s)
+{
+    return s->pData[0];
+}
+
+template<typename T>
+inline const T&
+VecFirst(const VecBase<T>* s)
 {
     return s->pData[0];
 }
@@ -137,9 +151,16 @@ VecPopAsLast(VecBase<T>* s, u32 i)
 
 template<typename T>
 inline u32
-VecIdx(const VecBase<T>* s, T* x)
+VecIdx(const VecBase<T>* s, const T* x)
 {
     return u32(x - s->pData);
+}
+
+template<typename T>
+inline u32
+VecLastI(const VecBase<T>* s)
+{
+    return VecIdx(s, &VecLast(s));
 }
 
 template<typename T>
@@ -225,8 +246,22 @@ VecLast(Vec<T>* s)
 }
 
 template<typename T>
+inline const T&
+VecLast(Vec<T>* s)
+{
+    return VecLast(&s->base);
+}
+
+template<typename T>
 inline T&
 VecFirst(Vec<T>* s)
+{
+    return VecFirst(&s->base);
+}
+
+template<typename T>
+inline const T&
+VecFirst(const Vec<T>* s)
 {
     return VecFirst(&s->base);
 }
@@ -268,9 +303,16 @@ VecPopAsLast(Vec<T>* s, u32 i)
 
 template<typename T>
 inline u32
-VecIdx(const Vec<T>* s, T* x)
+VecIdx(const Vec<T>* s, const T* x)
 {
     return VecIdx(&s->base, x);
+}
+
+template<typename T>
+inline u32
+VecLastI(const Vec<T>* s)
+{
+    return VecLastI(&s->base);
 }
 
 template<typename T>

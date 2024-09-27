@@ -524,18 +524,30 @@ FontPrintGlyph(Font* s, const Glyph& g, bool bNormalize)
     auto& sg = g.uGlyph.simple;
     COUT("xMin: {}, yMin: {}, xMax: {}, yMax: {}\n", g.xMin, g.yMin, g.xMax, g.yMax);
     COUT(
-        "instructionLength: {}, points: {}, numberOfContours: {}\n",
-        sg.instructionLength, VecSize(&sg.aPoints), g.numberOfContours
+        "instructionLength: {}, points: {}, numberOfContours: {}, aEndPtsOfContours.size: {}\n",
+        sg.instructionLength, VecSize(&sg.aPoints), g.numberOfContours, VecSize(&sg.aEndPtsOfContours)
     );
+
+    for (auto& cn : sg.aEndPtsOfContours)
+    {
+        u32 idx = VecIdx(&sg.aEndPtsOfContours, &cn);
+        COUT("cn({}): {}", idx, cn);
+        if (idx != VecSize(&sg.aEndPtsOfContours) - 1) COUT(", ");
+        else COUT(" ");
+    }
+    COUT("\n");
 
     if (bNormalize)
     {
         for (auto& e : sg.aPoints)
+        {
+            u32 i = VecIdx(&sg.aPoints, &e);
             COUT(
-                "x: {}, y: {}, bOnCurve: {}\n",
-                f32(e.x) / f32(g.xMax), f32(e.y) / f32(g.yMax),
+                "({}): x: {}, y: {}, bOnCurve: {}\n",
+                i, f32(e.x) / f32(g.xMax), f32(e.y) / f32(g.yMax),
                 e.bOnCurve
             );
+        }
     }
     else
     {

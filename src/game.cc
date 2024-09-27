@@ -65,10 +65,12 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, 'A');
-    text::TTFGenMesh(&s_ttfTest, glyphA);
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '&');
+    parser::ttf::FontPrintGlyph(&s_fLiberation, glyphA, true);
 
-    text::TTFGenBezierMesh(&s_ttfBezier, {0.0f, 0.1f}, {2.0f, 1.0f}, {0.5f, -0.25f}, 20);
+    text::TTFGenMesh(&s_ttfTest, &glyphA);
+
+    text::TTFGenBezierMesh(&s_ttfBezier, {0.0f, 0.1f}, {2.0f, 1.0f}, {0.5f, -0.25f}, 5);
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
@@ -493,7 +495,7 @@ drawEntities(Allocator* pAlloc)
 static void
 drawTTF(Allocator* pAlloc)
 {
-    math::M4 proj = math::M4Ortho(-1.0f, 2.0f, -1.0f, 2.0f, -1.0f, 1.0f);
+    math::M4 proj = math::M4Ortho(-1.0f, 2.0f, -0.5f, 1.5f, -1.0f, 1.0f);
 
     auto* sh = &s_shFontBitmap;
     ShaderUse(sh);
@@ -505,8 +507,24 @@ drawTTF(Allocator* pAlloc)
     ShaderSetM4(sh, "uProj", proj);
     ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'ff'00'ff), 1.0f});
 
-    /*text::TTFDrawOutline(&s_ttfTest);*/
-    text::TTFDrawOutline(&s_ttfBezier);
+    static f64 s_dotsTime {};
+    static u32 nDots {};
+
+    // f64 t = utils::timeNowMS();
+    // if (t > (s_dotsTime + 100.0))
+    // {
+    //     s_dotsTime = t;
+    //     nDots = (nDots + 1) % s_ttfTest.maxSize;
+    // }
+
+    if (controls::g_nDots < 0) controls::g_nDots = controls::g_nDots = s_ttfTest.maxSize - 1;
+    if (controls::g_nDots > int(s_ttfTest.maxSize)) controls::g_nDots = 0;
+
+    if (controls::g_bTTFDebugDots)
+        text::TTFDrawDots(&s_ttfTest, controls::g_nDots);
+    else text::TTFDrawOutline(&s_ttfTest, controls::g_nDots);
+
+    /*text::TTFDrawOutline(&s_ttfBezier);*/
 }
 
 void

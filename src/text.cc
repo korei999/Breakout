@@ -142,7 +142,6 @@ getBeizerPoints(
 
     VecBase<Points> aPoints(pAlloc, 2 + nSteps);
     VecPush(&aPoints, pAlloc, {p0.x, p0.y, 0.0f, 1.0f});
-
     for (int i = 0; i <= nSteps; i++) {
         f32 t = f32(i) / f32(nSteps);
 
@@ -150,7 +149,6 @@ getBeizerPoints(
 
         VecPush(&aPoints, pAlloc, {vec.x, vec.y, 0.0f, 1.0f});
     }
-
     VecPush(&aPoints, pAlloc, {p2.x, p2.y, 0.0f, 1.0f});
 
     return aPoints;
@@ -170,7 +168,6 @@ TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2&
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
 
     VecBase<Points> aPoints = getBeizerPoints(&al.base, p0, p1, p2, nSteps);
-
     s->maxSize = VecSize(&aPoints);
 
     glBufferData(
@@ -194,23 +191,43 @@ TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2&
 }
 
 void
-TTFGenMesh(TTF* s, const parser::ttf::Glyph& g)
+TTFGenMesh(TTF* s, parser::ttf::Glyph* g)
 {
-    Arena alloc(SIZE_1K);
+    Arena alloc(500);
     defer(ArenaFreeAll(&alloc));
 
-    u32 size = VecSize(&g.uGlyph.simple.aPoints);
-    s->maxSize = size;
+    s->glyph = *g;
 
-    VecBase<Points> aQuads(&alloc.base, size);
-    for (auto& p : g.uGlyph.simple.aPoints)
+    const auto& aGlyphPoints = g->uGlyph.simple.aPoints;
+    u32 size = VecSize(&aGlyphPoints);
+
+    u32 firstInContourIdx = 0;
+    VecBase<Points> aPoints(&alloc.base, size);
+    for (const auto& p : aGlyphPoints)
     {
-        f32 x = (f32(p.x) / f32(g.xMax));
-        f32 y = (f32(p.y) / f32(g.yMax));
-        VecPush(&aQuads, &alloc.base, {
+        const u32 pointIdx = VecIdx(&aGlyphPoints, &p);
+
+        f32 x = (f32(p.x) / f32(g->xMax));
+        f32 y = (f32(p.y) / f32(g->yMax));
+
+        VecPush(&aPoints, &alloc.base, {
             x, y, 0.0f, 1.0f
         });
+
+        // TODO: bezier
+
+        for (auto endContourIdx : g->uGlyph.simple.aEndPtsOfContours)
+        {
+            if (endContourIdx == pointIdx)
+            {
+                VecPush(&aPoints, &alloc.base, aPoints[firstInContourIdx]);
+                firstInContourIdx = VecLastI(&aPoints) + 1;
+                break;
+            }
+        }
     }
+
+    s->maxSize = VecSize(&aPoints);
 
     glGenVertexArrays(1, &s->vao);
     glBindVertexArray(s->vao);
@@ -220,8 +237,8 @@ TTFGenMesh(TTF* s, const parser::ttf::Glyph& g)
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
     glBufferData(
         GL_ARRAY_BUFFER,
-        sizeof(Points) * size,
-        VecData(&aQuads),
+        sizeof(Points) * VecSize(&aPoints),
+        VecData(&aPoints),
         GL_DYNAMIC_DRAW
     );
 
@@ -238,11 +255,36 @@ TTFGenMesh(TTF* s, const parser::ttf::Glyph& g)
     );
 }
 
-void
-TTFDrawOutline(TTF* s)
+static void
+TTFDrawLinesOrDots(TTF* s, GLint drawMode, u32 max)
 {
     glBindVertexArray(s->vao);
-    glDrawArrays(GL_LINE_STRIP, 0, s->maxSize);
+    /*glDrawArrays(drawMode, 0, max);*/
+
+    auto& g = s->glyph.uGlyph.simple.aEndPtsOfContours;
+
+    u32 off = 0;
+    u32 endOff = 1;
+
+    for (u32 i = 0; i < VecSize(&g); i++)
+    {
+        auto ecIdx = g[i] + endOff;
+        glDrawArrays(drawMode, off, ecIdx + 1 - off);
+        off = ecIdx + 1;
+        ++endOff;
+    }
+}
+
+void
+TTFDrawOutline(TTF* s, u32 max)
+{
+    TTFDrawLinesOrDots(s, GL_LINE_STRIP, max == 0 ? s->maxSize : max);
+}
+
+void
+TTFDrawDots(TTF* s, u32 max)
+{
+    TTFDrawLinesOrDots(s, GL_POINTS, max == 0 ? s->maxSize : max);
 }
 
 } /* namespace text */

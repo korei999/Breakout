@@ -52,6 +52,8 @@ extern bool g_aPressedKeys[300];
 extern Mouse g_mouse;
 extern Camera g_camera;
 extern bool g_bTTFDebugScreen;
+extern bool g_bTTFDebugDots;
+extern int g_nDots;
 
 } /* namespace controls */
 
