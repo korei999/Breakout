@@ -2,6 +2,7 @@
 
 #include "Model.hh"
 #include "Shader.hh"
+#include "controls.hh"
 #include "text.hh"
 #include "Texture.hh"
 #include "Window.hh"
@@ -14,8 +15,6 @@
 #include "parser/Wave.hh"
 #include "parser/ttf.hh"
 
-#include "logs.hh"
-
 namespace game
 {
 
@@ -24,13 +23,14 @@ static AllocatorPool<Arena> s_assetArenas(10);
 static Vec<Entity> s_aEntities(AllocatorPoolGet(&s_assetArenas, SIZE_8K));
 static Vec<game::Block> s_aBlocks(AllocatorPoolGet(&s_assetArenas, SIZE_1K));
 
-static Shader s_shFontBitap;
+static Shader s_shFontBitmap;
 static Shader s_shSprite;
 
 static Texture s_tAsciiMap(AllocatorPoolGet(&s_assetArenas, SIZE_1M));
 static Texture s_tBox(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
 static Texture s_tBall(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
 static Texture s_tPaddle(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
+static Texture s_tWhitePixel(AllocatorPoolGet(&s_assetArenas, 250));
 
 static parser::Wave s_sndBeep(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 400));
 static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_assetArenas, SIZE_1M * 35));
@@ -39,6 +39,8 @@ static Plain s_plain;
 
 static text::Bitmap s_textFPS;
 static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
+
+static text::TTF s_ttfTest {};
 
 Player g_player {
     .enIdx = 0,
@@ -54,25 +56,26 @@ Ball g_ball {
     .dir {},
 };
 
+static void drawFPSCounter(Allocator* pAlloc);
+static void drawEntities(Allocator* pAlloc);
+static void drawTTF(Allocator* pAlloc);
+
 void
 loadAssets()
 {
-    namespace font = parser::ttf;
+    parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
+    auto glyphA = FontReadGlyph(&s_fLiberation, u'$');
 
-    font::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationSans-Regular.ttf");
-    auto glyphA = font::FontReadGlyph(&s_fLiberation, 'A');
-    if (glyphA) COUT("read 'A'\n");
-
-    font::FontPrintGlyph(&s_fLiberation, &glyphA.data);
-
+    text::TTFGenMesh(&s_ttfTest, glyphA.data);
+    /*FontPrintGlyph(&s_fLiberation, &glyphA.data);*/
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
     s_plain = Plain(GL_STATIC_DRAW);
 
-    ShaderLoad(&s_shFontBitap, "shaders/font/font.vert", "shaders/font/font.frag");
-    ShaderUse(&s_shFontBitap);
-    ShaderSetI(&s_shFontBitap, "tex0", 0);
+    ShaderLoad(&s_shFontBitmap, "shaders/font/font.vert", "shaders/font/font.frag");
+    ShaderUse(&s_shFontBitmap);
+    ShaderSetI(&s_shFontBitmap, "tex0", 0);
 
     ShaderLoad(&s_shSprite, "shaders/2d/sprite.vert", "shaders/2d/sprite.frag");
     ShaderUse(&s_shSprite);
@@ -100,6 +103,7 @@ loadAssets()
     TexLoadArg argBox {&s_tBox, "test-assets/box3.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg argBall {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
     TexLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg argWhitePixel {&s_tWhitePixel, "test-assets/WhitePixel.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
 
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argBeep);
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argUnatco);
@@ -108,6 +112,7 @@ loadAssets()
     ThreadPoolSubmit(&tp, TextureSubmit, &argBox);
     ThreadPoolSubmit(&tp, TextureSubmit, &argBall);
     ThreadPoolSubmit(&tp, TextureSubmit, &argPaddle);
+    ThreadPoolSubmit(&tp, TextureSubmit, &argWhitePixel);
 
     ThreadPoolWait(&tp);
 }
@@ -416,13 +421,29 @@ updateState()
 }
 
 void
+draw(Allocator *pAlloc)
+{
+    if (controls::g_bDebugTTF)
+    {
+        drawTTF(pAlloc);
+    }
+    else
+    {
+        drawFPSCounter(pAlloc);
+        drawEntities(pAlloc);
+    }
+}
+
+static void
 drawFPSCounter(Allocator* pAlloc)
 {
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
-    ShaderUse(&s_shFontBitap);
+    ShaderUse(&s_shFontBitmap);
+
     TextureBind(&s_tAsciiMap, GL_TEXTURE0);
-    ShaderSetM4(&s_shFontBitap, "uProj", proj);
-    ShaderSetV4(&s_shFontBitap, "uColor", {colors::hexToV4(0xeeeeeeff), 1.0f});
+
+    ShaderSetM4(&s_shFontBitmap, "uProj", proj);
+    ShaderSetV4(&s_shFontBitmap, "uColor", {colors::hexToV4(0xeeeeeeff), 1.0f});
 
     f64 currTime = utils::timeNowMS();
     if (currTime >= frame::g_prevTime + 1000.0)
@@ -440,8 +461,8 @@ drawFPSCounter(Allocator* pAlloc)
     text::BitmapDraw(&s_textFPS);
 }
 
-void
-drawEntities()
+static void
+drawEntities(Allocator* pAlloc)
 {
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
@@ -465,6 +486,24 @@ drawEntities()
         ShaderSetV3(&s_shSprite, "uColor", blockColorToV3(e.eColor));
         PlainDraw(&s_plain);
     }
+}
+
+static void
+drawTTF(Allocator* pAlloc)
+{
+    math::M4 proj = math::M4Ortho(0.0f, 2.0f, 0.0f, 2.0f, -1.0f, 1.0f);
+
+    auto* sh = &s_shFontBitmap;
+    ShaderUse(sh);
+
+    auto f = HashMapSearch(&g_mAllTexturesIdxs, {"test-assets/WhitePixel.bmp"});
+    assert(f);
+    TextureBind(g_aAllTextures[f.pData->vecIdx].id, GL_TEXTURE0);
+
+    ShaderSetM4(sh, "uProj", proj);
+    ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'ff'00'ff), 1.0f});
+
+    text::TTFDrawOutline(&s_ttfTest);
 }
 
 void

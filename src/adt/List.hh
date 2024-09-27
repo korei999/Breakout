@@ -145,9 +145,9 @@ struct List
     ListBase<T>::It rbegin() { return base.rbegin(); }
     ListBase<T>::It rend() { return rend(); }
 
-    const ListBase<T>::It begin() const { return begin(); }
-    const ListBase<T>::It end() const { return end(); }
-    const ListBase<T>::It rbegin() const { return rbegin(); }
+    const ListBase<T>::It begin() const { return base.begin(); }
+    const ListBase<T>::It end() const { return base.end(); }
+    const ListBase<T>::It rbegin() const { return base.rbegin(); }
     const ListBase<T>::It rend() const { return rend(); }
 };
 

@@ -193,7 +193,7 @@ inline T&
 searchMax(CON<T>& s)
 {
     auto _max = s.begin();
-    for (auto it = s.begin(); it != s.end(); ++it)
+    for (auto it = ++s.begin(); it != s.end(); ++it)
         if (*it > *_max) _max = it;
 
     return *_max;
@@ -204,7 +204,7 @@ inline T&
 searchMin(CON<T>& s)
 {
     auto _min = s.begin();
-    for (auto it = s.begin(); it != s.end(); ++it)
+    for (auto it = ++s.begin(); it != s.end(); ++it)
         if (*it < *_min) _min = it;
 
     return *_min;

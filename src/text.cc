@@ -8,7 +8,12 @@
 namespace text
 {
 
-static Vec<BitmapCharQuad> TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
+struct CharQuad
+{
+    f32 vs[24]; /* 6(2 triangles) * 4(2 pos, 2 uv coords) */
+};
+
+static VecBase<CharQuad> TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
 static void TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode);
 
 Bitmap::Bitmap(String s, u64 size, int x, int y, GLint drawMode)
@@ -30,23 +35,23 @@ TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode)
 
     glGenBuffers(1, &s->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(f32) * 4 * 6, VecData(&aQuads), drawMode);
+    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(CharQuad), VecData(&aQuads), drawMode);
 
     /* positions */
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(math::V2), (void*)0);
     /* texture coords */
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), (void*)(2 * sizeof(f32)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(math::V2), (void*)(sizeof(math::V2)));
 
     glBindVertexArray(0);
 }
 
-static Vec<BitmapCharQuad>
+static VecBase<CharQuad>
 TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin)
 {
-    Vec<BitmapCharQuad> aQuads(pAlloc, size);
-    memset(VecData(&aQuads), 0, sizeof(BitmapCharQuad) * size);
+    VecBase<CharQuad> aQuads(pAlloc, size);
+    memset(VecData(&aQuads), 0, sizeof(CharQuad) * size);
 
     /* 16/16 bitmap aka extended ascii */
     auto getUV = [](int p) -> f32 {
@@ -80,7 +85,7 @@ TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin
             continue;
         }
 
-        VecPush(&aQuads, {
+        VecPush(&aQuads, pAlloc, {
              0.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,     x0, y0, /* tl */
              0.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,     x1, y1, /* bl */
              2.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,     x2, y2, /* br */
@@ -105,8 +110,7 @@ BitmapUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y)
     assert(str.size <= s->maxSize);
 
     s->str = str;
-    Vec<BitmapCharQuad> aQuads = TextUpdateBuffer(s, pAlloc, str, s->maxSize, x, y);
-    defer(VecDestroy(&aQuads));
+    VecBase<CharQuad> aQuads = TextUpdateBuffer(s, pAlloc, str, s->maxSize, x, y);
 
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(f32) * 4 * 6, VecData(&aQuads));
@@ -118,6 +122,66 @@ BitmapDraw(Bitmap* s)
 {
     glBindVertexArray(s->vao);
     glDrawArrays(GL_TRIANGLES, 0, s->vboSize);
+}
+
+void
+TTFGenMesh(TTF* s, const parser::ttf::Glyph& g)
+{
+    Arena alloc(SIZE_1K);
+    defer(ArenaFreeAll(&alloc));
+
+    struct Points
+    {
+        f32 x;
+        f32 y;
+        f32 u;
+        f32 v;
+    };
+
+    u32 size = VecSize(&g.uGlyph.simple.aPoints);
+    s->maxSize = size;
+
+    VecBase<Points> aQuads(&alloc.base, size);
+    for (auto& p : g.uGlyph.simple.aPoints)
+    {
+        f32 x = (f32(p.x + g.xMax) / f32(g.xMax)) / 2.0f;
+        f32 y = (f32(p.y + g.yMax) / f32(g.yMax)) / 2.0f;
+        VecPush(&aQuads, &alloc.base, {
+            x, y, 0.0f, 1.0f
+        });
+    }
+
+    glGenVertexArrays(1, &s->vao);
+    glBindVertexArray(s->vao);
+    defer(glBindVertexArray(0));
+
+    glGenBuffers(1, &s->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        sizeof(Points) * size,
+        VecData(&aQuads),
+        GL_DYNAMIC_DRAW
+    );
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+        0, 2, GL_FLOAT, GL_FALSE,
+        4 * sizeof(f32), (void*)0
+    );
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+        1, 2, GL_FLOAT, GL_FALSE,
+        4 * sizeof(f32), (void*)(sizeof(f32) * 2)
+    );
+}
+
+void
+TTFDrawOutline(TTF* s)
+{
+    glBindVertexArray(s->vao);
+    glDrawArrays(GL_LINE_STRIP, 0, s->maxSize);
 }
 
 } /* namespace text */

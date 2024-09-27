@@ -1,17 +1,13 @@
 #pragma once
 
-#include "gl/gl.hh"
 #include "adt/String.hh"
+#include "gl/gl.hh"
+#include "parser/ttf.hh"
 
 using namespace adt;
 
 namespace text
 {
-
-struct BitmapCharQuad
-{
-    f32 vs[24];
-};
 
 struct Bitmap
 {
@@ -27,5 +23,17 @@ struct Bitmap
 
 void BitmapUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y);
 void BitmapDraw(Bitmap* s);
+
+struct TTF
+{
+    String str;
+    u32 maxSize;
+    GLuint vao;
+    GLuint vbo;
+    GLuint vboSize;
+};
+
+void TTFGenMesh(TTF* s, const parser::ttf::Glyph& g);
+void TTFDrawOutline(TTF* s);
 
 } /* namespace text */

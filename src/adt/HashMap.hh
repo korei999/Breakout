@@ -75,8 +75,8 @@ struct HashMapBase
     It begin() { return {this, HashMapFirstI(this)}; }
     It end() { return {this, NPOS}; }
 
-    const It begin() const { return begin(); }
-    const It end() const { return end(); }
+    const It begin() const { return {this, HashMapFirstI(this)}; }
+    const It end() const { return {this, NPOS}; }
 };
 
 template<typename T>

@@ -86,6 +86,36 @@ struct Cmap
     VecBase<CMAPEncodingSubtable> aSubtables;
 };
 
+
+/* 'cmap' format 4
+ * 
+ * Format 4 is a two-byte encoding format. It should be used when the character codes for a font fall into several contiguous ranges,
+ * possibly with holes in some or all of the ranges. That is, some of the codes in a range may not be associated with glyphs in the font.
+ * Two-byte fonts that are densely mapped should use Format 6.
+ * 
+ * The table begins with the format number, the length and language. The format-dependent data follows. It is divided into three parts:
+ * 
+ * A four-word header giving parameters needed for an optimized search of the segment list
+ * Four parallel arrays describing the segments (one segment for each contiguous range of codes)
+ * A variable-length array of glyph IDs */
+struct CmapFormat4
+{
+    u16 format; /* Format number is set to 4 */
+    u16 length; /* Length of subtable in bytes */
+    u16 language; /* Language code (see above) */
+    u16 segCountX2; /* 2 * segCount */
+    u16 searchRange; /* 2 * (2**FLOOR(log2(segCount))) */
+    u16 entrySelector; /* log2(searchRange/2) */
+    u16 rangeShift; /* (2 * segCount) - searchRange */
+    u16* endCode; /* [segCount] Ending character code for each segment, last = 0xFFFF. */
+    u16 reservedPad; /* This value should be zero */
+    u16* startCode; /* [segCount] Starting character code for each segment */
+    u16* idDelta; /* [segCount] Delta for all character codes in segment */
+    u16* idRangeOffset; /* [segCount] Offset in bytes to glyph indexArray, or 0 */
+    // VecBase<u16> aGlyghIndex; /* Glyph index array */
+    HashMapBase<u16> mGlyphIndices;
+};
+
 enum OUTLINE_FLAG : u8
 {
     ON_CURVE = 1, /* If set, the point is on the curve;
@@ -425,6 +455,8 @@ struct Font
     Bin p {};
     TableDirectory tableDirectory {};
     Head head {};
+    Cmap cmap {};
+    CmapFormat4 cmapF4 {};
 
     Font() = default;
     Font(Allocator* _pA) : p(_pA) {}

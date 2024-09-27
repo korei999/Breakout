@@ -50,6 +50,7 @@ enum _LOG_SEV
 {
     _LOG_SEV_OK,
     _LOG_SEV_GOOD,
+    _LOG_SEV_NOTIFY,
     _LOG_SEV_WARN,
     _LOG_SEV_BAD,
     _LOG_SEV_FATAL,
@@ -59,6 +60,7 @@ enum _LOG_SEV
 inline const char* _LOG_SEV_STR[] = {
     "",
     COL_GREEN "GOOD: " COL_NORM,
+    COL_CYAN "NOTIFY: " COL_NORM,
     COL_YELLOW "WARNING: " COL_NORM,
     COL_RED "BAD: " COL_NORM,
     COL_RED "FATAL: " COL_NORM
@@ -91,6 +93,7 @@ inline const char* _LOG_SEV_STR[] = {
     #define LOG(...) _LOG(_LOG_SEV_OK, __VA_ARGS__)
     #define LOG_OK(...) _LOG(_LOG_SEV_OK, __VA_ARGS__)
     #define LOG_GOOD(...) _LOG(_LOG_SEV_GOOD, __VA_ARGS__)
+    #define LOG_NOTIFY(...) _LOG(_LOG_SEV_NOTIFY, __VA_ARGS__)
     #define LOG_WARN(...) _LOG(_LOG_SEV_WARN, __VA_ARGS__)
     #define LOG_BAD(...) _LOG(_LOG_SEV_BAD, __VA_ARGS__)
     #define LOG_FATAL(...) _LOG(_LOG_SEV_FATAL, __VA_ARGS__)

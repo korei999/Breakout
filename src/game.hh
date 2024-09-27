@@ -86,8 +86,7 @@ struct Level
 void loadAssets();
 void loadLevel();
 void updateState();
-void drawFPSCounter(Allocator* pAlloc);
-void drawEntities();
+void draw(Allocator* pAlloc);
 void cleanup();
 
 constexpr math::V3

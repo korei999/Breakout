@@ -69,6 +69,8 @@ run()
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(gl::debugCallback, app::g_pWindow);
+
+    glPointSize(5.0f);
 #endif
 
     /*glEnable(GL_CULL_FACE);*/
@@ -144,8 +146,7 @@ mainLoop()
 
         UboBufferData(&g_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
 
-        game::drawEntities();
-        game::drawFPSCounter(&alFrame.base);
+        game::draw(&alFrame.base);
 
         FixedAllocatorReset(&alFrame);
         WindowSwapBuffers(app::g_pWindow);

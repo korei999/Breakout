@@ -133,6 +133,7 @@ readHeadTable(Font* s)
     h.indexToLocFormat = BinRead16Rev(&s->p);
     h.glyphDataFormat = BinRead16Rev(&s->p);
 
+#ifdef D_TTF
     LOG(
         "\thead:\n"
         "\t\tversion: {}, {}\n"
@@ -170,6 +171,147 @@ readHeadTable(Font* s)
         h.indexToLocFormat,
         h.glyphDataFormat
     );
+#endif
+}
+
+static void
+readCmapFormat4(Font* s)
+{
+    u32 savedPos = s->p.pos;
+    defer(s->p.pos = savedPos);
+
+    auto& c = s->cmapF4;
+
+    c.segCountX2 = BinRead16Rev(&s->p);
+    c.searchRange = BinRead16Rev(&s->p);
+    c.entrySelector = BinRead16Rev(&s->p);
+    c.rangeShift = BinRead16Rev(&s->p);
+
+    auto segCount = c.segCountX2 / 2;
+    auto searchRangeCheck = 2*(pow(2, floor(log2(segCount))));
+    assert(c.searchRange == searchRangeCheck);
+
+    /* just set pointer and skip bytes, swap bytes after */
+    c.endCode = (u16*)&s->p.sFile[s->p.pos];
+    s->p.pos += c.segCountX2;
+
+    assert(c.endCode[segCount - 1] == 0xffff);
+    LOG_GOOD("endCode: {:#x}\n", c.endCode[segCount - 1]);
+
+    c.reservedPad = BinRead16Rev(&s->p);
+    assert(c.reservedPad == 0);
+
+    c.startCode = (u16*)&s->p.sFile[s->p.pos];
+    s->p.pos += c.segCountX2;
+    assert(c.startCode[segCount - 1] == 0xffff);
+
+    c.idDelta = (u16*)&s->p.sFile[s->p.pos];
+    s->p.pos += c.segCountX2;
+
+    c.idRangeOffset = (u16*)&s->p.sFile[s->p.pos];
+    s->p.pos += c.segCountX2;
+
+    LOG_NOTIFY(
+        "\treadCmapFormat4:\n"
+        "\t\tformat: {}\n"
+        "\t\tlength: {}\n"
+        "\t\tlanguage: {}\n"
+        "\t\tsegCountX2: {}\n"
+        "\t\tsearchRange: {}, (check: {})\n"
+        "\t\tentrySelector: {}\n"
+        "\t\trangeShift: {}\n"
+        "\t\treservedPad: {}\n",
+        c.format,
+        c.length,
+        c.language,
+        c.segCountX2,
+        c.searchRange, searchRangeCheck,
+        c.entrySelector,
+        c.rangeShift,
+        c.reservedPad
+    );
+}
+
+static void
+readCmap(Font* s, u32 offset)
+{
+    u32 savedPos = s->p.pos;
+    defer(s->p.pos = savedPos);
+
+    s->p.pos = offset;
+
+    u16 format = BinRead16Rev(&s->p);
+    u16 length = BinRead16Rev(&s->p);
+    u16 language = BinRead16Rev(&s->p);
+
+    LOG_NOTIFY("readCmap: format: {}, length: {}, language: {}\n", format, length, language);
+
+    // TODO: other formats
+    if (format == 4)
+    {
+        s->cmapF4.format = format;
+        s->cmapF4.length = length;
+        s->cmapF4.language = language;
+        readCmapFormat4(s);
+    }
+}
+
+static void
+readCmapTable(Font* s)
+{
+    const u32 savedPos = s->p.pos;
+    defer(s->p.pos = savedPos);
+
+    auto fCmap = getTable(s, "cmap");
+    assert(fCmap);
+
+    s->p.pos = fCmap.pData->offset;
+
+    auto& c = s->cmap;
+
+    c.version = BinRead16Rev(&s->p);
+    assert(c.version == 0 && "they say it's set to zero");
+    c.numberSubtables = BinRead16Rev(&s->p);
+
+    c.aSubtables = {s->p.pAlloc, c.numberSubtables};
+    for (int i = c.numberSubtables - 1; i >= 0; --i)
+    {
+        VecPush(&c.aSubtables, s->p.pAlloc, {
+            .platformID = BinRead16Rev(&s->p),
+            .platformSpecificID = BinRead16Rev(&s->p),
+            .offset = BinRead32Rev(&s->p),
+        });
+
+        const auto& lastSt = VecLast(&c.aSubtables);
+        if (lastSt.platformID == 3 && lastSt.platformSpecificID <= 1)
+        {
+            readCmap(s, fCmap.pData->offset + lastSt.offset);
+            break;
+        }
+    }
+
+#ifdef D_TTF
+    LOG(
+        "\tcmap:\n"
+        "\t\tversion: {}\n"
+        "\t\tnumberSubtables: {}\n"
+        "\t\tSubtables:\n",
+        c.version,
+        c.numberSubtables
+    );
+    for (auto& st : c.aSubtables)
+    {
+        LOG(
+            "\t({}): platformID: {}('{}')\n"
+            "\t      platformSpecificID: {}('{}')\n"
+            "\t      offset: {}\n",
+            VecIdx(&c.aSubtables, &st),
+            st.platformID, platformIDToString(st.platformID),
+            st.platformSpecificID, platformSpecificIDToString(st.platformSpecificID),
+            st.offset
+        );
+    }
+#endif
 }
 
 static u32
@@ -279,13 +421,49 @@ readSimpleGlyph(Font* s, Glyph* g)
     readCoords(false, Y_SHORT_VECTOR, THIS_Y_IS_SAME);
 }
 
+static u32
+getGlyphIdx(Font* s, u16 code)
+{
+    u32 savedPos = s->p.pos;
+    defer(s->p.pos = savedPos);
+
+    const auto& c = s->cmapF4;
+
+    u32 idx = 0, glyphIndexAddr = 0;
+
+    for (u16 i = 0; i < c.segCountX2/2; ++i)
+    {
+        if (swapBytes(c.startCode[i]) <= code && swapBytes(c.endCode[i]) >= code)
+        {
+            idx = 0, glyphIndexAddr = 0;
+            if (swapBytes(c.idRangeOffset[i]))
+            {
+                glyphIndexAddr = swapBytes(c.idRangeOffset[i]) +
+                    2 * (code - swapBytes(c.startCode[i]));
+                COUT("glyphIndexAddr: {}\n", glyphIndexAddr);
+                s->p.pos = glyphIndexAddr;
+                idx = BinRead16Rev(&s->p);
+            }
+            else idx = (swapBytes(c.idDelta[i]) + code) & 0xffff;
+
+            // TODO: map codes to glyphs
+            break;
+        }
+    }
+
+    COUT("getGlyphIdx: {}\n", idx);
+    return idx;
+}
+
 Option<Glyph>
 FontReadGlyph(Font* s, u32 idx)
 {
     const u32 savedPos = s->p.pos;
     defer(s->p.pos = savedPos);
 
-    const u32 offset = getGlyphOffset(s, idx);
+    const auto glyphIdx = getGlyphIdx(s, idx);
+    LOG_NOTIFY("glyphIdx: {}\n", glyphIdx);
+    const u32 offset = getGlyphOffset(s, glyphIdx);
     const auto fGlyf = getTable(s, "glyf");
     const auto& glyfTable = *fGlyf.pData;
 
@@ -320,9 +498,12 @@ FontPrintGlyph(Font* s, Glyph* g)
 {
     auto& sg = g->uGlyph.simple;
     COUT("xMin: {}, yMin: {}, xMax: {}, yMax: {}\n", g->xMin, g->yMin, g->xMax, g->yMax);
-    COUT("instructionLength: {}, points: {}\n", sg.instructionLength, VecSize(&sg.aPoints));
+    COUT(
+        "instructionLength: {}, points: {}, numberOfContours: {}\n",
+        sg.instructionLength, VecSize(&sg.aPoints), g->numberOfContours
+    );
     for (auto& e : sg.aPoints)
-        COUT("x: {}, y: {}\n", e.x, e.y);
+        COUT("x: {}, y: {}, bOnCurve: {}\n", e.x, e.y, e.bOnCurve);
 }
 
 static void
@@ -410,6 +591,7 @@ FontParse(Font* s)
 #endif
 
     readHeadTable(s);
+    readCmapTable(s);
 }
 
 void

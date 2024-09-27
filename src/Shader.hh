@@ -43,7 +43,7 @@ void ShaderQueryActiveUniforms(Shader* s);
 void ShaderDestroy(Shader* s);
 
 inline void
-ShaderUse(Shader* s)
+ShaderUse(const Shader* s)
 {
     glUseProgram(s->id);
 }

@@ -51,6 +51,7 @@ void procKeysOnce(u32 key, u32 pressed);
 extern bool g_pressedKeys[300];
 extern Mouse g_mouse;
 extern Camera g_camera;
+extern bool g_bDebugTTF;
 
 } /* namespace controls */
 

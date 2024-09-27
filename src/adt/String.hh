@@ -48,10 +48,15 @@ struct String
         friend constexpr bool operator!=(It l, It r) { return l.p != r.p; }
     };
 
-    constexpr It begin() const { return {&this->pData[0]}; }
-    constexpr It end() const { return {&this->pData[this->size]}; }
-    constexpr It rbegin() const { return {&this->pData[this->size - 1]}; }
-    constexpr It rend() const { return {this->pData - 1}; }
+    constexpr It begin() { return {&this->pData[0]}; }
+    constexpr It end() { return {&this->pData[this->size]}; }
+    constexpr It rbegin() { return {&this->pData[this->size - 1]}; }
+    constexpr It rend() { return {this->pData - 1}; }
+
+    constexpr const It begin() const { return {&this->pData[0]}; }
+    constexpr const It end() const { return {&this->pData[this->size]}; }
+    constexpr const It rbegin() const { return {&this->pData[this->size - 1]}; }
+    constexpr const It rend() const { return {this->pData - 1}; }
 };
 
 constexpr bool StringEndsWith(String l, String r);

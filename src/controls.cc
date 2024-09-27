@@ -11,6 +11,7 @@ namespace controls
 bool g_pressedKeys[300] {};
 Mouse g_mouse {};
 Camera g_camera {};
+bool g_bDebugTTF = false;
 
 static void PlayerProcMovements(game::Player* s);
 
@@ -51,8 +52,7 @@ procKeysOnce(u32 key, u32 pressed)
             {
                 app::g_pWindow->bPaused = !app::g_pWindow->bPaused;
                 if (app::g_pWindow->bPaused) LOG_WARN("paused: %d\n", app::g_pWindow->bPaused);
-            }
-            break;
+            } break;
 
         case KEY_Q:
             if (pressed) WindowTogglePointerRelativeMode(app::g_pWindow);
@@ -70,8 +70,7 @@ procKeysOnce(u32 key, u32 pressed)
 #endif
 
                 LOG_OK("quit...\n");
-            }
-            break;
+            } break;
 
         case KEY_R:
             /*if (pressed) incCounter = 0;*/
@@ -85,14 +84,19 @@ procKeysOnce(u32 key, u32 pressed)
             if (pressed) WindowToggleVSync(app::g_pWindow);
             break;
 
-        case KEY_SPACE:
-            {
-                if (!pressed) break;
+        case KEY_SPACE: {
+            if (!pressed) break;
 
-                game::g_ball.bReleased = !game::g_ball.bReleased;
-                game::g_ball.dir = math::V3(0.0f, 1.0f, 0.0f) + game::g_player.dir * 0.25f;
-            }
-            break;
+            game::g_ball.bReleased = !game::g_ball.bReleased;
+            game::g_ball.dir = math::V3(0.0f, 1.0f, 0.0f) + game::g_player.dir * 0.25f;
+        } break;
+
+        case KEY_T: {
+            if (!pressed) break;
+
+            g_bDebugTTF = !g_bDebugTTF;
+            LOG_NOTIFY("g_bDebugTTF: {}\n", g_bDebugTTF);
+        } break;
 
         default:
             break;

@@ -196,7 +196,6 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
         ${OPENGL_gl_LIBRARY}
     )
 
-
     if (NOT FMT_HEADER_ONLY)
         if (CMAKE_BUILD_TYPE MATCHES "Debug")
             target_link_libraries(

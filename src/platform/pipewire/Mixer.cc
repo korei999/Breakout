@@ -83,7 +83,7 @@ MixerAdd(Mixer* s, audio::Track t)
     mtx_lock(&s->mtxAdd);
 
     if (VecSize(&s->aTracks) < audio::MAX_TRACK_COUNT) VecPush(&s->aTracks, t);
-    else LOG_WARN("MAX_TRACK_COUNT(%u) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
+    else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
 
     mtx_unlock(&s->mtxAdd);
 }
@@ -94,7 +94,7 @@ MixerAddBackground(Mixer* s, audio::Track t)
     mtx_lock(&s->mtxAdd);
 
     if (VecSize(&s->aTracks) < audio::MAX_TRACK_COUNT) VecPush(&s->aBackgroundTracks, t);
-    else LOG_WARN("MAX_TRACK_COUNT(%u) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
+    else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
 
     mtx_unlock(&s->mtxAdd);
 }
