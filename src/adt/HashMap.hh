@@ -116,6 +116,8 @@ template<typename T>
 inline HashMapResult<T>
 HashMapInsert(HashMapBase<T>* s, Allocator* p, const T& value)
 {
+    if (VecCap(&s->aBuckets) == 0) *s = {p};
+
     if (HashMapLoadFactor(s) >= s->maxLoadFactor)
         __HashMapRehash(s, p, VecCap(&s->aBuckets) * 2);
 
@@ -146,6 +148,10 @@ template<typename T>
 inline HashMapResult<T>
 HashMapSearch(HashMapBase<T>* s, const T& value)
 {
+    assert(s && "HashMapBase: map is nullptr");
+
+    if (s->bucketCount == 0) return {};
+
     u64 hash = hash::func(value);
     u32 idx = u32(hash % VecCap(&s->aBuckets));
 

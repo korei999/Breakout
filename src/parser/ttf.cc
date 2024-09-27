@@ -424,10 +424,13 @@ readSimpleGlyph(Font* s, Glyph* g)
 static u32
 getGlyphIdx(Font* s, u16 code)
 {
+    auto& c = s->cmapF4;
+    auto fIdx = HashMapSearch(&c.mGlyphIndices, {code});
+
+    if (fIdx) return fIdx.pData->glyphIdx;
+
     u32 savedPos = s->p.pos;
     defer(s->p.pos = savedPos);
-
-    const auto& c = s->cmapF4;
 
     u32 idx = 0, glyphIndexAddr = 0;
 
@@ -446,7 +449,7 @@ getGlyphIdx(Font* s, u16 code)
             }
             else idx = (swapBytes(c.idDelta[i]) + code) & 0xffff;
 
-            // TODO: map codes to glyphs
+            HashMapInsert(&c.mGlyphIndices, s->p.pAlloc, {code, idx});
             break;
         }
     }
@@ -456,12 +459,13 @@ getGlyphIdx(Font* s, u16 code)
 }
 
 Option<Glyph>
-FontReadGlyph(Font* s, u32 idx)
+FontReadGlyph(Font* s, u32 code)
 {
     const u32 savedPos = s->p.pos;
     defer(s->p.pos = savedPos);
 
-    const auto glyphIdx = getGlyphIdx(s, idx);
+    // TODO: map idx to actual glyphs
+    const auto glyphIdx = getGlyphIdx(s, code);
     LOG_NOTIFY("glyphIdx: {}\n", glyphIdx);
     const u32 offset = getGlyphOffset(s, glyphIdx);
     const auto fGlyf = getTable(s, "glyf");

@@ -86,6 +86,17 @@ struct Cmap
     VecBase<CMAPEncodingSubtable> aSubtables;
 };
 
+struct CodeToGlyphIdx
+{
+    u16 code {};
+    u16 glyphIdx {};
+};
+
+inline bool
+operator==(const CodeToGlyphIdx& l, const CodeToGlyphIdx& r)
+{
+    return l.code == r.code;
+}
 
 /* 'cmap' format 4
  * 
@@ -113,7 +124,7 @@ struct CmapFormat4
     u16* idDelta; /* [segCount] Delta for all character codes in segment */
     u16* idRangeOffset; /* [segCount] Offset in bytes to glyph indexArray, or 0 */
     // VecBase<u16> aGlyghIndex; /* Glyph index array */
-    HashMapBase<u16> mGlyphIndices;
+    HashMapBase<CodeToGlyphIdx> mGlyphIndices;
 };
 
 enum OUTLINE_FLAG : u8
@@ -463,7 +474,7 @@ struct Font
 };
 
 bool FontLoadAndParse(Font* s, String path);
-Option<Glyph> FontReadGlyph(Font* s, u32 idx);
+Option<Glyph> FontReadGlyph(Font* s, u32 codePoint);
 void FontPrintGlyph(Font* s, Glyph* g);
 void FontDestroy(Font* s);
 
@@ -475,4 +486,11 @@ inline u64
 hash::func(const parser::ttf::TableRecord& x)
 {
     return hash::func(x.tag);
+}
+
+template<>
+inline u64
+hash::func(const parser::ttf::CodeToGlyphIdx& x)
+{
+    return hash::func(x.code);
 }
