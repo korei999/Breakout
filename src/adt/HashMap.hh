@@ -27,7 +27,7 @@ struct HashMapResult
 {
     T* pData;
     u64 hash;
-    u32 idx;
+    // u32 idx;
     bool bInserted;
 
     constexpr explicit operator bool() const
@@ -78,6 +78,13 @@ struct HashMapBase
     const It begin() const { return {this, HashMapFirstI(this)}; }
     const It end() const { return {this, NPOS}; }
 };
+
+template<typename T>
+inline u32
+HashMapIdx(HashMapBase<T>* s, T* p)
+{
+    return p - VecData(&s->aBuckets);
+}
 
 template<typename T>
 inline u32
@@ -139,7 +146,7 @@ HashMapInsert(HashMapBase<T>* s, Allocator* p, const T& value)
     return {
         .pData = &s->aBuckets[idx].data,
         .hash = hash,
-        .idx = idx,
+        /*.idx = idx,*/
         .bInserted = true
     };
 }
@@ -172,7 +179,7 @@ HashMapSearch(HashMapBase<T>* s, const T& value)
         if (idx >= VecCap(&s->aBuckets)) idx = 0;
     }
 
-    ret.idx = idx;
+    /*ret.idx = idx;*/
     return ret;
 }
 
@@ -244,6 +251,13 @@ struct HashMap
     const HashMapBase<T>::It rbegin() const { return rbegin(); }
     const HashMapBase<T>::It rend() const { return rend(); }
 };
+
+template<typename T>
+inline u32
+HashMapIdx(HashMap<T>* s, T* p)
+{
+    return HashMapIdx(&s->base, p);
+}
 
 template<typename T>
 inline u32

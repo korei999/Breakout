@@ -188,6 +188,8 @@ readCmapFormat4(Font* s)
     c.rangeShift = BinRead16Rev(&s->p);
 
     auto segCount = c.segCountX2 / 2;
+    c.mGlyphIndices = {s->p.pAlloc, segCount};
+
     auto searchRangeCheck = 2*(pow(2, floor(log2(segCount))));
     assert(c.searchRange == searchRangeCheck);
 
@@ -274,7 +276,7 @@ readCmapTable(Font* s)
     c.numberSubtables = BinRead16Rev(&s->p);
 
     c.aSubtables = {s->p.pAlloc, c.numberSubtables};
-    for (int i = c.numberSubtables - 1; i >= 0; --i)
+    for (u32 i = 0; i < c.numberSubtables; ++i)
     {
         VecPush(&c.aSubtables, s->p.pAlloc, {
             .platformID = BinRead16Rev(&s->p),
@@ -283,10 +285,19 @@ readCmapTable(Font* s)
         });
 
         const auto& lastSt = VecLast(&c.aSubtables);
+        LOG_NOTIFY(
+            "readCmap: platformID: {}('{}'), platformSpecificID: {}('{}')\n",
+            lastSt.platformID, platformIDToString(lastSt.platformID),
+            lastSt.platformSpecificID, platformSpecificIDToString(lastSt.platformSpecificID)
+        );
         if (lastSt.platformID == 3 && lastSt.platformSpecificID <= 1)
         {
             readCmap(s, fCmap.pData->offset + lastSt.offset);
             break;
+        }
+        else if (lastSt.platformID == 0 && lastSt.platformSpecificID == 3)
+        {
+            // TODO: Unicode, Unicode 2.0 or later (BMP only)
         }
     }
 
@@ -454,7 +465,6 @@ getGlyphIdx(Font* s, u16 code)
         }
     }
 
-    COUT("getGlyphIdx: {}\n", idx);
     return idx;
 }
 
