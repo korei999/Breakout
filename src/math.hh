@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <concepts>
+
 using namespace adt;
 
 namespace math
@@ -239,6 +241,28 @@ Qt QtConj(const Qt& q);
 Qt operator*(const Qt& l, const Qt& r);
 Qt operator*=(Qt& l, const Qt& r);
 
+template<typename T>
+constexpr T
+lerp(const T& l, const T& r, std::floating_point auto t)
+{
+    return l + (r - l)*t;
+}
+
+template<typename T>
+constexpr T
+bezier(const T& p0, const T& p1, const T& p2, std::floating_point auto t)
+{
+    return math::sq(1-t)*p0 + 2*(1-t)*t*p1 + math::sq(t)*p2;
+}
+
+template<typename T>
+constexpr T
+bezier2(const T& p0, const T& p1, const T& p2, std::floating_point auto t)
+{
+    auto interA = lerp(p0, p1, t);
+    auto interB = lerp(p1, p2, t);
+    return lerp(interA, interB, t);
+}
 
 /* TODO: rewrite the whole library as header only */
 inline V2

@@ -129,6 +129,33 @@ BitmapDraw(Bitmap* s)
     glDrawArrays(GL_TRIANGLES, 0, s->vboSize);
 }
 
+static VecBase<Points>
+getBeizerPoints(
+    Allocator* pAlloc,
+    const math::V2& p0,
+    const math::V2& p1,
+    const math::V2& p2,
+    int nSteps)
+{
+    /* quadratic bezier */
+    /*B(t) = (1-t)^2*P0 + 2(1-t)*t*P1 + t^2*P2*/
+
+    VecBase<Points> aPoints(pAlloc, 2 + nSteps);
+    VecPush(&aPoints, pAlloc, {p0.x, p0.y, 0.0f, 1.0f});
+
+    for (int i = 0; i <= nSteps; i++) {
+        f32 t = f32(i) / f32(nSteps);
+
+        math::V2 vec = math::bezier(p0, p1, p2, t);
+
+        VecPush(&aPoints, pAlloc, {vec.x, vec.y, 0.0f, 1.0f});
+    }
+
+    VecPush(&aPoints, pAlloc, {p2.x, p2.y, 0.0f, 1.0f});
+
+    return aPoints;
+}
+
 void
 TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2& p2, int nSteps)
 {
@@ -142,27 +169,7 @@ TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2&
     glGenBuffers(1, &s->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
 
-    VecBase<Points> aPoints(&al.base, 3);
-    VecPush(&aPoints, &al.base, {p0.x, p0.y, 0.0f, 1.0f});
-
-    /* quadratic bezier */
-    /*B(t) = (1-t)^2*P0 + 2(1-t)*t*P1 + t^2*P2*/
-
-    f32 stepPerIter = 1.0f/nSteps;
-    for (int i = 0; i <= nSteps; i++) {
-        f32 t = i*stepPerIter;
-
-        auto vec = math::sq(1-t)*p0
-            + 2*(1-t)*t*p1
-            + math::sq(t)*p2;
-
-        /*COUT("p0: {}, {}\nx: {}, y: {}\n", p0.x, p0.y, x, y);*/
-
-        VecPush(&aPoints, &al.base, {vec.x, vec.y, 0.0f, 1.0f});
-    }
-
-    /*VecPush(&aPoints, &al.base, {p1.x, p1.y, 0.0f, 1.0f});*/
-    VecPush(&aPoints, &al.base, {p2.x, p2.y, 0.0f, 1.0f});
+    VecBase<Points> aPoints = getBeizerPoints(&al.base, p0, p1, p2, nSteps);
 
     s->maxSize = VecSize(&aPoints);
 

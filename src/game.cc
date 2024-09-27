@@ -68,7 +68,7 @@ loadAssets()
     parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, 'A');
     text::TTFGenMesh(&s_ttfTest, glyphA);
 
-    text::TTFGenBezierMesh(&s_ttfBezier, {0.0f, 0.1f}, {0.25f, 0.5f}, {0.5f, 0.1f}, 10);
+    text::TTFGenBezierMesh(&s_ttfBezier, {0.0f, 0.1f}, {2.0f, 1.0f}, {0.5f, -0.25f}, 20);
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
