@@ -8,7 +8,7 @@
 namespace controls
 {
 
-bool g_pressedKeys[300] {};
+bool g_aPressedKeys[300] {};
 Mouse g_mouse {};
 Camera g_camera {};
 bool g_bDebugTTF = false;
@@ -114,22 +114,22 @@ PlayerProcMovements(game::Player* s)
 {
     s->dir = {};
 
-    if (g_pressedKeys[KEY_A])
+    if (g_aPressedKeys[KEY_A])
     {
         s->dir = {-1.0f, 0.0f};
     }
 
-    if (g_pressedKeys[KEY_D])
+    if (g_aPressedKeys[KEY_D])
     {
         s->dir = {1.0f, 0.0f};
     }
 
-    if (g_pressedKeys[KEY_LEFTALT])
+    if (g_aPressedKeys[KEY_LEFTALT])
     {
         s->dir /= 2.0;
     }
 
-    if (g_pressedKeys[KEY_LEFTSHIFT])
+    if (g_aPressedKeys[KEY_LEFTSHIFT])
     {
         s->dir *= 2.0;
     }

@@ -20,7 +20,7 @@ namespace win32
 namespace input
 {
 
-int asciiToLinuxKeyCodes[300] {
+int aAsciiToLinuxKeyCodes[300] {
     0,
     0,
     0,
@@ -169,7 +169,7 @@ registerRawMouseDevice(Win32Window* pApp, bool on)
     // pApp->rawInputDevices[1].hwndTarget = 0;
 
     if (RegisterRawInputDevices(pApp->rawInputDevices, 1, sizeof(pApp->rawInputDevices[0])) == FALSE)
-        LOG_FATAL("RegisterRawInputDevices failed: %lu\n", GetLastError());
+        LOG_FATAL("RegisterRawInputDevices failed: {}\n", GetLastError());
 }
 
 void
@@ -183,7 +183,7 @@ registerRawKBDevice(Win32Window* pApp, bool on)
     pApp->rawInputDevices[1].hwndTarget = 0;
 
     if (RegisterRawInputDevices(pApp->rawInputDevices, 1, sizeof(pApp->rawInputDevices[1])) == FALSE)
-        LOG_FATAL("RegisterRawInputDevices failed: %lu\n", GetLastError());
+        LOG_FATAL("RegisterRawInputDevices failed: {}\n", GetLastError());
 }
 
 bool
@@ -240,7 +240,7 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
 
         case WM_KILLFOCUS:
-            memset(controls::g_pressedKeys, 0, sizeof(controls::g_pressedKeys));
+            memset(controls::g_aPressedKeys, 0, sizeof(controls::g_aPressedKeys));
             break;
 
         case WM_NCCREATE:
@@ -262,8 +262,8 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 if (bWasDown == bDown)
                     break;
 
-                controls::g_pressedKeys[ asciiToLinuxKeyCodes[keyCode] ] = bDown;
-                controls::procKeysOnce(asciiToLinuxKeyCodes[keyCode], bDown);
+                controls::g_aPressedKeys[ aAsciiToLinuxKeyCodes[keyCode] ] = bDown;
+                controls::procKeysOnce(aAsciiToLinuxKeyCodes[keyCode], bDown);
             }
             break;
 

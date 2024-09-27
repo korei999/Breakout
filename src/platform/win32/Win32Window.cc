@@ -72,7 +72,7 @@ getWglFunctions(void)
         skipSpace();
 
         String sWord(&sExt[start], end - start);
-        LOG_OK("'%.*s'\n", sWord.size, sWord.pData);
+        LOG_OK("'{}'\n", sWord);
 
         if (sWord == "WGL_ARB_pixel_format")
             wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
@@ -250,7 +250,7 @@ Win32TogglePointerRelativeMode(Win32Window* s)
 {
     s->base.bPointerRelativeMode = !s->base.bPointerRelativeMode;
     s->base.bPointerRelativeMode ? Win32EnableRelativeMode(s) : Win32DisableRelativeMode(s);
-    LOG_OK("relative mode: %d\n", s->base.bPointerRelativeMode);
+    LOG_OK("relative mode: {}\n", s->base.bPointerRelativeMode);
 }
 
 void
@@ -258,7 +258,7 @@ Win32ToggleFullscreen(Win32Window* s)
 {
     s->base.bFullscreen = !s->base.bFullscreen;
     s->base.bFullscreen ? Win32SetFullscreen(s) : Win32UnsetFullscreen(s);
-    LOG_OK("fullscreen: %d\n", s->base.bPointerRelativeMode);
+    LOG_OK("fullscreen: {}\n", s->base.bPointerRelativeMode);
 }
 
 void 
@@ -319,7 +319,7 @@ Win32ToggleVSync(Win32Window* s)
 {
     s->base.swapInterval = !s->base.swapInterval;
     wglSwapIntervalEXT(s->base.swapInterval);
-    LOG_OK("swapInterval: %d\n", s->base.swapInterval);
+    LOG_OK("swapInterval: {}\n", s->base.swapInterval);
 }
 
 void

@@ -48,7 +48,7 @@ void updateView();
 void updateProj(game::Player* s, f32 fov, f32 aspect, f32 near, f32 far);
 void procKeysOnce(u32 key, u32 pressed);
 
-extern bool g_pressedKeys[300];
+extern bool g_aPressedKeys[300];
 extern Mouse g_mouse;
 extern Camera g_camera;
 extern bool g_bDebugTTF;

@@ -427,9 +427,10 @@ draw(Allocator *pAlloc)
     }
     else
     {
-        drawFPSCounter(pAlloc);
         drawEntities(pAlloc);
     }
+
+    drawFPSCounter(pAlloc);
 }
 
 static void

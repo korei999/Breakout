@@ -192,7 +192,7 @@ readCmapFormat4(Font* s)
     c.rangeShift = BinRead16Rev(&s->p);
 
     auto segCount = c.segCountX2 / 2;
-    c.mGlyphIndices = {s->p.pAlloc, segCount};
+    c.mGlyphIndices = {s->p.pAlloc, u32(segCount)};
 
     auto searchRangeCheck = 2*(pow(2, floor(log2(segCount))));
     assert(c.searchRange == searchRangeCheck);
@@ -371,7 +371,7 @@ readSimpleGlyph(Font* s, Glyph* g)
 {
     auto& sg = g->uGlyph.simple;
 
-    sg.aEndPtsOfContours = {s->p.pAlloc, g->numberOfContours};
+    sg.aEndPtsOfContours = {s->p.pAlloc, u32(g->numberOfContours)};
     for (s16 i = 0; i < g->numberOfContours; i++)
         VecPush(&sg.aEndPtsOfContours, s->p.pAlloc, BinRead16Rev(&s->p));
 
@@ -389,7 +389,7 @@ readSimpleGlyph(Font* s, Glyph* g)
         OUTLINE_FLAG eFlag = OUTLINE_FLAG(BinRead8(&s->p));
         VecPush(&sg.aeFlags, s->p.pAlloc, eFlag);
         VecPush(&sg.aPoints, s->p.pAlloc, {
-            .bOnCurve = eFlag & ON_CURVE
+            .bOnCurve = bool(eFlag & ON_CURVE)
         });
 
         if (eFlag & REPEAT)
@@ -402,7 +402,7 @@ readSimpleGlyph(Font* s, Glyph* g)
             {
                 VecPush(&sg.aeFlags, s->p.pAlloc, eFlag);
                 VecPush(&sg.aPoints, s->p.pAlloc, {
-                    .bOnCurve = eFlag & ON_CURVE
+                    .bOnCurve = bool(eFlag & ON_CURVE)
                 });
             }
         }
@@ -463,7 +463,7 @@ getGlyphIdx(Font* s, u16 code)
             }
             else idx = (swapBytes(c.idDelta[i]) + code) & 0xffff;
 
-            HashMapInsert(&c.mGlyphIndices, s->p.pAlloc, {code, idx});
+            HashMapInsert(&c.mGlyphIndices, s->p.pAlloc, {code, u16(idx)});
             break;
         }
     }
@@ -495,7 +495,7 @@ FontReadGlyph(Font* s, u32 code)
 
     s->p.pos = offset;
     Glyph g {
-        .numberOfContours = BinRead16Rev(&s->p),
+        .numberOfContours = s16(BinRead16Rev(&s->p)),
         .xMin = readFWord(s),
         .yMin = readFWord(s),
         .xMax = readFWord(s),
