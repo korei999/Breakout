@@ -26,6 +26,10 @@ FontLoadAndParse(Font* s, String path)
 
     FontParse(s);
 
+    /* cache some ascii glyphs */
+    for (u32 i = 21; i < 126; ++i)
+        FontReadGlyph(s, i);
+
     return true;
 }
 
@@ -276,6 +280,7 @@ readCmapTable(Font* s)
     c.numberSubtables = BinRead16Rev(&s->p);
 
     c.aSubtables = {s->p.pAlloc, c.numberSubtables};
+
     for (u32 i = 0; i < c.numberSubtables; ++i)
     {
         VecPush(&c.aSubtables, s->p.pAlloc, {
@@ -365,8 +370,6 @@ static void
 readSimpleGlyph(Font* s, Glyph* g)
 {
     auto& sg = g->uGlyph.simple;
-
-    LOG_GOOD("Reading simple glyph...\n");
 
     sg.aEndPtsOfContours = {s->p.pAlloc, g->numberOfContours};
     for (s16 i = 0; i < g->numberOfContours; i++)
@@ -468,22 +471,23 @@ getGlyphIdx(Font* s, u16 code)
     return idx;
 }
 
-Option<Glyph>
+Glyph
 FontReadGlyph(Font* s, u32 code)
 {
     const u32 savedPos = s->p.pos;
     defer(s->p.pos = savedPos);
 
-    // TODO: map idx to actual glyphs
     const auto glyphIdx = getGlyphIdx(s, code);
-    LOG_NOTIFY("glyphIdx: {}\n", glyphIdx);
     const u32 offset = getGlyphOffset(s, glyphIdx);
+
+    auto fCachedGlyph = HashMapSearch(&s->mOffsetToGlyph, {offset});
+    if (fCachedGlyph) return fCachedGlyph.pData->glyph;
+
     const auto fGlyf = getTable(s, "glyf");
     const auto& glyfTable = *fGlyf.pData;
 
     assert(fGlyf);
 
-    LOG("offset: {}, glyfTable.offset: {}\n", offset, glyfTable.offset);
     assert(offset >= glyfTable.offset);
 
     if (offset >= glyfTable.offset + glyfTable.length)
@@ -503,6 +507,8 @@ FontReadGlyph(Font* s, u32 code)
     if (g.numberOfContours == -1)
         readCompoundGlyph(s, &g);
     else readSimpleGlyph(s, &g);
+
+    HashMapInsert(&s->mOffsetToGlyph, s->p.pAlloc, {offset, g});
 
     return g;
 };

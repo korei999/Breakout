@@ -64,12 +64,8 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    auto glyphA = FontReadGlyph(&s_fLiberation, '$');
-    glyphA = FontReadGlyph(&s_fLiberation, '6');
-    glyphA = FontReadGlyph(&s_fLiberation, '$');
-
-    text::TTFGenMesh(&s_ttfTest, glyphA.data);
-    /*FontPrintGlyph(&s_fLiberation, &glyphA.data);*/
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '*');
+    text::TTFGenMesh(&s_ttfTest, glyphA);
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 

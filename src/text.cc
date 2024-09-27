@@ -144,8 +144,8 @@ TTFGenMesh(TTF* s, const parser::ttf::Glyph& g)
     VecBase<Points> aQuads(&alloc.base, size);
     for (auto& p : g.uGlyph.simple.aPoints)
     {
-        f32 x = (f32(p.x + g.xMax) / f32(g.xMax)) / 2.0f;
-        f32 y = (f32(p.y + g.yMax) / f32(g.yMax)) / 2.0f;
+        f32 x = (f32(p.x) / f32(g.xMax));
+        f32 y = (f32(p.y) / f32(g.yMax));
         VecPush(&aQuads, &alloc.base, {
             x, y, 0.0f, 1.0f
         });

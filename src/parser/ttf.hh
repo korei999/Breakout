@@ -282,6 +282,18 @@ struct Glyph
     } uGlyph {};
 };
 
+struct OffsetToGlyph
+{
+    u32 offset {};
+    Glyph glyph {};
+};
+
+inline bool
+operator==(const OffsetToGlyph& l, const OffsetToGlyph& r)
+{
+    return l.offset == r.offset;
+}
+
 /* Many of the fields in the 'head' table are closely related to the values in other tables.
  * For example, the unitsPerEm field is fundamental to all tables which deal with curves or metrics.
  * This table is used throughout the TrueType rendering engine as a short-cut to determine various key aspects of the font.
@@ -468,13 +480,14 @@ struct Font
     Head head {};
     Cmap cmap {};
     CmapFormat4 cmapF4 {};
+    HashMapBase<OffsetToGlyph> mOffsetToGlyph {};
 
     Font() = default;
-    Font(Allocator* _pA) : p(_pA) {}
+    Font(Allocator* _pA) : p(_pA), mOffsetToGlyph(_pA) {}
 };
 
 bool FontLoadAndParse(Font* s, String path);
-Option<Glyph> FontReadGlyph(Font* s, u32 codePoint);
+Glyph FontReadGlyph(Font* s, u32 codePoint);
 void FontPrintGlyph(Font* s, Glyph* g);
 void FontDestroy(Font* s);
 
@@ -493,4 +506,11 @@ inline u64
 hash::func(const parser::ttf::CodeToGlyphIdx& x)
 {
     return hash::func(x.code);
+}
+
+template<>
+inline u64
+hash::func(const parser::ttf::OffsetToGlyph& x)
+{
+    return hash::func(x.offset);
 }

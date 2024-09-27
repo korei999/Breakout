@@ -27,7 +27,7 @@ struct HashMapResult
 {
     T* pData;
     u64 hash;
-    // u32 idx;
+    /*u32 idx;*/ /* can be calculated from pData */
     bool bInserted;
 
     constexpr explicit operator bool() const
