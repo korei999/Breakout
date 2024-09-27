@@ -48,7 +48,7 @@ struct HashMapBase
 
     HashMapBase() = default;
     HashMapBase(Allocator* pAllocator, u32 prealloc = SIZE_MIN)
-        : aBuckets(pAllocator, prealloc),
+        : aBuckets(pAllocator, prealloc * HASHMAP_DEFAULT_LOAD_FACTOR_INV),
           maxLoadFactor(HASHMAP_DEFAULT_LOAD_FACTOR) {}
 
     struct It

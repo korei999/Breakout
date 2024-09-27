@@ -483,7 +483,7 @@ struct Font
     HashMapBase<OffsetToGlyph> mOffsetToGlyph {};
 
     Font() = default;
-    Font(Allocator* _pA) : p(_pA), mOffsetToGlyph(_pA) {}
+    Font(Allocator* _pA) : p(_pA), mOffsetToGlyph(_pA, 128) {}
 };
 
 bool FontLoadAndParse(Font* s, String path);
