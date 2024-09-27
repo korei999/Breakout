@@ -57,7 +57,7 @@ keyboardLeaveHandler(
     auto app = (Client*)(data);
 
     /* prevent keys getting stuck after leaving surface */
-    for (auto& key : controls::g_pressedKeys) key = 0;
+    for (auto& key : controls::g_aPressedKeys) key = 0;
 
     if (app->base.bPointerRelativeMode)
     {
@@ -77,14 +77,14 @@ keyboardKeyHandler(
 )
 {
 #ifdef DEBUG
-    if (key >= utils::size(controls::g_pressedKeys))
+    if (key >= utils::size(controls::g_aPressedKeys))
     {
         LOG_WARN("key '{}' is out of range\n", key);
         return;
     }
 #endif
 
-    controls::g_pressedKeys[key] = keyState;
+    controls::g_aPressedKeys[key] = keyState;
     controls::procKeysOnce(key, keyState);
 }
 
