@@ -13,6 +13,7 @@ Mouse g_mouse {};
 Camera g_camera {};
 bool g_bTTFDebugScreen = false;
 bool g_bTTFDebugDots = false;
+bool g_bTTFStepDebug = false;
 int g_nDots = 0;
 
 static void PlayerProcMovements(game::Player* s);
@@ -110,6 +111,13 @@ procKeysOnce(u32 key, u32 pressed)
             else ++g_nDots;
 
             /*LOG_NOTIFY("g_nDots: {}\n", g_nDots);*/
+        } break;
+
+        case KEY_G: {
+            if (!pressed) break;
+
+            g_bTTFStepDebug = !g_bTTFStepDebug;
+            LOG_NOTIFY("g_bTTFStepDebbug: {}\n", g_bTTFStepDebug);
         } break;
 
         default:

@@ -39,5 +39,6 @@ void TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math
 void TTFGenMesh(TTF* s, parser::ttf::Glyph* g);
 void TTFDrawOutline(TTF* s, u32 max = 0);
 void TTFDrawDots(TTF* s, u32 max = 0);
+void TTFDrawCorrectLines(TTF* s);
 
 } /* namespace text */

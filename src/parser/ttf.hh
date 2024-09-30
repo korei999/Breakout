@@ -159,7 +159,7 @@ struct Point
 {
     s16 x {};
     s16 y {};
-    bool bOnCurve {};
+    bool bOnCurve {}; // TODO: remove this bool, aeFlags is sufficient
 };
 
 struct GlyphSimple

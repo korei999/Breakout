@@ -2,6 +2,7 @@
 
 #include "adt/utils.hh"
 
+#include <cassert>
 #include <stdio.h>
 
 namespace math
@@ -317,15 +318,40 @@ M4::operator*=(const M4& other)
     return *this;
 }
 
+M3
+operator*(const M3& l, const M3& r)
+{
+    M3 res {};
+
+    for (int x = 0; x < 3; x++)
+        for (int y = 0; y < 3; y++)
+            for (int z = 0; z < 3; z++)
+                res.e[y][x] += l.e[z][x] * r.e[y][z];
+
+    return res;
+}
+
 M4
 operator*(const M4& l, const M4& r)
 {
     M4 res {};
 
-    for (int j = 0 ; j < 4; j++)
+    for (int j = 0; j < 4; j++)
         for (int i = 0; i < 4; i++)
             for (int k = 0; k < 4; k++)
                 res.e[i][j] += l.e[k][j] * r.e[i][k];
+
+    return res;
+}
+
+V4
+operator*(const M4& l, const V4& r)
+{
+    V4 res {};
+
+    for (int j = 0; j < 4; j++)
+        for (int i = 0; i < 4; i++)
+            res.e[j] += l.e[j][i] * r.e[i];
 
     return res;
 }
@@ -562,6 +588,32 @@ M3Inverse(const M3& m)
         (e[2][0] * e[0][1] - e[0][0] * e[2][1]) * invdet,
         (e[0][0] * e[1][1] - e[1][0] * e[0][1]) * invdet
     };
+}
+
+M4
+M4Inverse(const M4& m)
+{
+    assert(false && "NYI");
+
+    /*auto e = m.e;*/
+    /*f32 det = e[0][0] * (e[1][1] * e[2][2] - e[2][1] * e[1][2]) -*/
+    /*          e[0][1] * (e[1][0] * e[2][2] - e[1][2] * e[2][0]) +*/
+    /*          e[0][2] * (e[1][0] * e[2][1] - e[1][1] * e[2][0]);*/
+    /*f32 invdet = 1.0f / det;*/
+    /**/
+    /*return {*/
+    /*    (e[1][1] * e[2][2] - e[2][1] * e[1][2]) * invdet,*/
+    /*    (e[0][2] * e[2][1] - e[0][1] * e[2][2]) * invdet,*/
+    /*    (e[0][1] * e[1][2] - e[0][2] * e[1][1]) * invdet,*/
+    /**/
+    /*    (e[1][2] * e[2][0] - e[1][0] * e[2][2]) * invdet,*/
+    /*    (e[0][0] * e[2][2] - e[0][2] * e[2][0]) * invdet,*/
+    /*    (e[1][0] * e[0][2] - e[0][0] * e[1][2]) * invdet,*/
+    /**/
+    /*    (e[1][0] * e[2][1] - e[2][0] * e[1][1]) * invdet,*/
+    /*    (e[2][0] * e[0][1] - e[0][0] * e[2][1]) * invdet,*/
+    /*    (e[0][0] * e[1][1] - e[1][0] * e[0][1]) * invdet*/
+    /*};*/
 }
 
 M3 

@@ -163,7 +163,7 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
         if (VecSize(&s->aBackgroundTracks) > 0)
         {
             auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
-            f32 vol = powf(t.volume, 3.0f);
+            f32 vol = powf(t.volume * audio::g_globalVolume, 3.0f);
 
             if (t.pcmPos + 8 <= t.pcmSize)
             {
@@ -251,7 +251,7 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
         if (VecSize(&s->aBackgroundTracks) > 0)
         {
             auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
-            f32 vol = powf(t.volume, 3.0f);
+            f32 vol = powf(t.volume * audio::g_globalVolume, 3.0f);
 
             if (t.pcmPos + 16 <= t.pcmSize)
             {

@@ -6,6 +6,7 @@
 #include "controls.hh"
 #include "game.hh"
 #include "math.hh"
+#include "test.hh"
 
 #include "adt/FixedAllocator.hh"
 
@@ -93,6 +94,8 @@ run()
 
     game::loadAssets();
     game::loadLevel();
+
+    test::math();
 
     /* proc once to get events */
     WindowSwapBuffers(app::g_pWindow);

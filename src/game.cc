@@ -65,12 +65,13 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '&');
+    /*parser::ttf::FontLoadAndParse(&s_fLiberation, "/usr/share/fonts/liberation-mono/LiberationMono-Bold.ttf");*/
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, 'B');
     parser::ttf::FontPrintGlyph(&s_fLiberation, glyphA, true);
 
     text::TTFGenMesh(&s_ttfTest, &glyphA);
 
-    text::TTFGenBezierMesh(&s_ttfBezier, {0.0f, 0.1f}, {2.0f, 1.0f}, {0.5f, -0.25f}, 5);
+    text::TTFGenBezierMesh(&s_ttfBezier, {0.0f, 0.1f}, {2.0f, 1.0f}, {0.5f, -0.25f}, 10);
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
@@ -522,9 +523,24 @@ drawTTF(Allocator* pAlloc)
 
     if (controls::g_bTTFDebugDots)
         text::TTFDrawDots(&s_ttfTest, controls::g_nDots);
-    else text::TTFDrawOutline(&s_ttfTest, controls::g_nDots);
+    else
+        text::TTFDrawOutline(&s_ttfTest, controls::g_nDots);
 
-    /*text::TTFDrawOutline(&s_ttfBezier);*/
+    // if (controls::g_bTTFDebugDots)
+    // {
+    //     text::TTFDrawDots(&s_ttfTest, controls::g_nDots);
+    // }
+    // else
+    // {
+    //     if (controls::g_bTTFStepDebug)
+    //         text::TTFDrawCorrectLines(&s_ttfTest);
+    //     else text::TTFDrawOutline(&s_ttfTest, controls::g_nDots);
+    // }
+
+    // if (controls::g_bTTFDebugDots)
+    //     text::TTFDrawOutline(&s_ttfBezier, s_ttfBezier.maxSize);
+    // else
+    //     text::TTFDrawDots(&s_ttfBezier, s_ttfBezier.maxSize);
 }
 
 void

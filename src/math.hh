@@ -219,7 +219,9 @@ f32 V4Dot(const V4& l, const V4& r);
 V3 V3Color(const u32 hex);
 V4 V4Color(const u32 hex);
 
+M3 operator*(const M3& l, const M3& r);
 M4 operator*(const M4& l, const M4& r);
+V4 operator*(const M4& l, const V4& r);
 M4 M4Rot(const M4& m, const f32 th, const V3& ax);
 M4 M4RotX(const M4& m, const f32 angle);
 M4 M4RotY(const M4& m, const f32 angle);
@@ -233,6 +235,7 @@ M4 M4LookAt(const V3& eyeV, const V3& centerV, const V3& upV);
 M4 M4Transpose(const M4& m);
 M3 M3Transpose(const M3& m);
 M3 M3Inverse(const M3& m);
+M4 M4Inverse(const M4& m);
 M3 M3Normal(const M3& m);
 
 Qt QtAxisAngle(const V3& axis, f32 th);
@@ -243,25 +246,59 @@ Qt operator*=(Qt& l, const Qt& r);
 
 template<typename T>
 constexpr T
-lerp(const T& l, const T& r, std::floating_point auto t)
+lerp(const T& l, const T& r, const std::floating_point auto t)
 {
     return l + (r - l)*t;
 }
 
 template<typename T>
 constexpr T
-bezier(const T& p0, const T& p1, const T& p2, std::floating_point auto t)
+bezier(
+    const T& p0,
+    const T& p1,
+    const T& p2,
+    const std::floating_point auto t)
 {
-    return math::sq(1-t)*p0 + 2*(1-t)*t*p1 + math::sq(t)*p2;
+    return sq(1-t)*p0 + 2*(1-t)*t*p1 + sq(t)*p2;
 }
 
 template<typename T>
 constexpr T
-__bezier(const T& p0, const T& p1, const T& p2, std::floating_point auto t)
+bezier(
+    const T& p0,
+    const T& p1,
+    const T& p2,
+    const T& p3,
+    const std::floating_point auto t)
 {
-    auto interA = lerp(p0, p1, t);
-    auto interB = lerp(p1, p2, t);
-    return lerp(interA, interB, t);
+    return lerp(bezier(p0, p1, p2, t), bezier(p1, p2, p3, t), t);
+}
+
+template<typename T>
+constexpr T
+bezier(
+    const T& p0,
+    const T& p1,
+    const T& p2,
+    const T& p3,
+    const T& p4,
+    const std::floating_point auto t)
+{
+    return lerp(bezier(p0, p1, p2, p3, t), bezier(p1, p2, p3, p4, t), t);
+}
+
+template<typename T>
+constexpr T
+bezier(
+    const T& p0,
+    const T& p1,
+    const T& p2,
+    const T& p3,
+    const T& p4,
+    const T& p5,
+    const std::floating_point auto t)
+{
+    return lerp(bezier(p0, p1, p2, p3, p4, t), bezier(p1, p2, p3, p4, p5, t), t);
 }
 
 /* TODO: rewrite the whole library as header only */
@@ -285,84 +322,94 @@ normalize(const V4& v)
 
 } /* namespace math */
 
-namespace adt
-{
-namespace format
-{
-
-inline void
-printOne(FILE* pf, const math::V2& a)
-{
-    fprintf(pf, "%.3f, %.3f\n", a.x, a.y);
-}
-
-inline void
-printOne(FILE* pf, const math::V3& a)
-{
-    fprintf(pf, "%.3f, %.3f, %.3f\n", a.x, a.y, a.z);
-}
-
-inline void
-printOne(FILE* pf, const math::V4& a)
-{
-    fprintf(pf, "%.3f, %.3f, %.3f, %.3f\n", a.x, a.y, a.z, a.w);
-}
-
-inline void
-printOne(FILE* pf, const math::Qt& a)
-{
-    fprintf(pf, "%.3f, %.3f, %.3f, %.3f\n", a.x, a.y, a.z, a.s);
-}
-
-inline void
-printOne(FILE* pf, const math::M3& a)
-{
-    fprintf(
-        pf,
-        "%.3f, %.3f, %.3f\n"
-        "%.3f, %.3f, %.3f\n"
-        "%.3f, %.3f, %.3f\n",
-        a.e[0][0], a.e[0][1], a.e[0][2],
-        a.e[1][0], a.e[1][1], a.e[1][2],
-        a.e[2][0], a.e[2][1], a.e[2][2]
-    );
-}
-
-inline void
-printOne(FILE* pf, const math::M4& a)
-{
-    fprintf(
-        pf,
-        "%.3f, %.3f, %.3f, %.3f\n"
-        "%.3f, %.3f, %.3f, %.3f\n"
-        "%.3f, %.3f, %.3f, %.3f\n"
-        "%.3f, %.3f, %.3f, %.3f\n",
-        a.e[0][0], a.e[0][1], a.e[0][2], a.e[0][3],
-        a.e[1][0], a.e[1][1], a.e[1][2], a.e[1][3],
-        a.e[2][0], a.e[2][1], a.e[2][2], a.e[2][3],
-        a.e[3][0], a.e[3][1], a.e[3][2], a.e[3][3]
-    );
-}
-
-} /* namespace adt */
-} /* namespace format */
-
 
 template<>
 class fmt::formatter<math::V2>
 {
   public:
 
-    constexpr auto
-    parse(format_parse_context& ctx)
-    {
-        return ctx.begin();
-    }
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
     template<typename CONTEXT>
     constexpr auto
     format(const math::V2& s, CONTEXT& ctx) const
     {
         return format_to(ctx.out(), "[{}, {}]", s.x, s.y);
+    }
+};
+
+template<>
+class fmt::formatter<math::V3>
+{
+  public:
+
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename CONTEXT>
+    constexpr auto
+    format(const math::V3& s, CONTEXT& ctx) const
+    {
+        return format_to(ctx.out(), "[{}, {}, {}]", s.x, s.y, s.z);
+    }
+};
+
+template<>
+class fmt::formatter<math::V4>
+{
+  public:
+
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename CONTEXT>
+    constexpr auto
+    format(const math::V4& s, CONTEXT& ctx) const
+    {
+        return format_to(ctx.out(), "[{}, {}, {}, {}]", s.x, s.y, s.z, s.w);
+    }
+};
+
+template<>
+class fmt::formatter<math::M3>
+{
+  public:
+
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename CONTEXT>
+    constexpr auto
+    format(const math::M3& s, CONTEXT& ctx) const
+    {
+        return format_to(ctx.out(),
+            "\n\t[{}, {}, {}"
+            "\n\t {}, {}, {}"
+            "\n\t {}, {}, {}]",
+            s.e[0][0], s.e[0][1], s.e[0][2],
+            s.e[1][0], s.e[1][1], s.e[1][2],
+            s.e[2][0], s.e[2][1], s.e[2][2]
+        );
+    }
+};
+
+template<>
+class fmt::formatter<math::M4>
+{
+  public:
+
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename CONTEXT>
+    constexpr auto
+    format(const math::M4& s, CONTEXT& ctx) const
+    {
+        return format_to(ctx.out(),
+            "\n\t[{}, {}, {}, {}"
+            "\n\t {}, {}, {}, {}"
+            "\n\t {}, {}, {}, {}"
+            "\n\t {}, {}, {}, {}]",
+            s.e[0][0], s.e[0][1], s.e[0][2], s.e[0][3],
+            s.e[1][0], s.e[1][1], s.e[1][2], s.e[1][3],
+            s.e[2][0], s.e[2][1], s.e[2][2], s.e[2][3],
+            s.e[3][0], s.e[3][1], s.e[3][2], s.e[3][3]
+        );
     }
 };

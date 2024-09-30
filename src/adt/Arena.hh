@@ -49,7 +49,7 @@ struct Arena
 
 inline void* ArenaAlloc(Arena* s, u64 mCount, u64 mSize);
 inline void* ArenaRealloc(Arena* s, void* p, u64 mCount, u64 mSize);
-inline void ArenaFree([[maybe_unused]] Arena* s, [[maybe_unused]] void* p);
+inline void ArenaFree(Arena* s, void* p);
 inline void ArenaReset(Arena* s);
 inline void ArenaFreeAll(Arena* s);
 
@@ -161,7 +161,7 @@ ArenaRealloc(Arena* s, void* p, u64 mCount, u64 mSize)
 inline void
 ArenaFree([[maybe_unused]] Arena* s, [[maybe_unused]] void* p)
 {
-    /* no individual frees */
+    // TODO: it's possible to free the last allocation i guess
 }
 
 inline void

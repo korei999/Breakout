@@ -102,6 +102,7 @@ inline const char* _LOG_SEV_STR[] = {
     #define LOG(...) (void)0
     #define LOG_OK(...) (void)0
     #define LOG_GOOD(...) (void)0
+    #define LOG_NOTIFY(...) (void)0
     #define LOG_WARN(...) (void)0
     #define LOG_BAD(...) (void)0
     #define LOG_FATAL(...) (void)0

@@ -172,6 +172,14 @@ VecAt(VecBase<T>* s, u32 at)
 }
 
 template<typename T>
+inline const T&
+VecAt(const VecBase<T>* s, u32 at)
+{
+    assert(at < s->size && "VecBase: out of size range");
+    return s->pData[at];
+}
+
+template<typename T>
 inline void
 VecDestroy(VecBase<T>* s, Allocator* p)
 {
@@ -318,6 +326,13 @@ VecLastI(const Vec<T>* s)
 template<typename T>
 inline T&
 VecAt(Vec<T>* s, u32 at)
+{
+    return VecAt(&s->base, at);
+}
+
+template<typename T>
+inline const T&
+VecAt(const Vec<T>* s, u32 at)
 {
     return VecAt(&s->base, at);
 }

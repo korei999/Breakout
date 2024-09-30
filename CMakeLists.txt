@@ -46,8 +46,12 @@ add_executable(
     src/text.cc
     src/game.cc
     src/app.cc
+    src/audio.cc
+    src/test.cc
     # ThirdParty/mimalloc/src/static.c
 )
+
+add_definitions("-DADT_FMTLIB_INCLUDED")
 
 if (CMAKE_BUILD_TYPE MATCHES "Release" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
     set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY WIN32_EXECUTABLE TRUE)
@@ -103,8 +107,8 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(CMAKE_CXX_FLAGS "/utf-8")
     set(CMAKE_C_FLAGS "/utf-8")
 else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fms-extensions")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fms-extensions")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fms-extensions -Wno-missing-braces")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fms-extensions -Wno-missing-braces")
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
