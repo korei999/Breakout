@@ -45,7 +45,7 @@ static text::TTF s_ttfBezier {};
 
 Player g_player {
     .enIdx = 0,
-    .speed = 0.5,
+    .speed = 0.8,
     .dir {},
 };
 
@@ -168,7 +168,7 @@ blockHit()
         if (b.bDead || b.eColor == COLOR::INVISIBLE) continue;
 
         math::V2 center = nextPos(g_ball, true);
-        math::V2 aabbHalfExtents(f::g_unit.x / 2, f::g_unit.y / 2);
+        math::V2 aabbHalfExtents {f::g_unit.x / 2, f::g_unit.y / 2};
         math::V2 aabbCenter = b.pos;
         math::V2 diff = center - b.pos;
         math::V2 clamped = math::V2Clamp(diff, -aabbHalfExtents, aabbHalfExtents);
@@ -390,7 +390,6 @@ updateState()
     /* player */
     {
         enPlayer.pos = nextPos(g_player, false);
-        enPlayer.pos = nextPos(g_player, false);
 
         if (enPlayer.pos.x >= f::WIDTH - f::g_unit.x*2)
         {
@@ -448,7 +447,7 @@ drawFPSCounter(Allocator* pAlloc)
     TextureBind(&s_tAsciiMap, GL_TEXTURE0);
 
     ShaderSetM4(&s_shFontBitmap, "uProj", proj);
-    ShaderSetV4(&s_shFontBitmap, "uColor", {colors::hexToV4(0xeeeeeeff), 1.0f});
+    ShaderSetV4(&s_shFontBitmap, "uColor", {colors::hexToV4(0xeeeeeeff)});
 
     f64 currTime = utils::timeNowMS();
     if (currTime >= frame::g_prevTime + 1000.0)
@@ -506,7 +505,7 @@ drawTTF(Allocator* pAlloc)
     TextureBind(g_aAllTextures[f.pData->vecIdx].id, GL_TEXTURE0);
 
     ShaderSetM4(sh, "uProj", proj);
-    ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'ff'00'ff), 1.0f});
+    ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'ff'00'ff)});
 
     static f64 s_dotsTime {};
     static u32 nDots {};

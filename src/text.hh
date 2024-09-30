@@ -2,7 +2,7 @@
 
 #include "adt/String.hh"
 #include "gl/gl.hh"
-#include "math.hh"
+#include "adt/math.hh"
 #include "parser/ttf.hh"
 
 using namespace adt;

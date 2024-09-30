@@ -33,7 +33,7 @@ add_executable(
     src/main.cc
     src/gl/gl.cc
     src/controls.cc
-    src/math.cc
+    # src/math.cc
     src/frame.cc
     src/Shader.cc
     src/json/Lexer.cc

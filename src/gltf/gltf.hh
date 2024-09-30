@@ -1,7 +1,7 @@
 #pragma once
 
 #include "json/Parser.hh"
-#include "math.hh"
+#include "adt/math.hh"
 #include "adt/String.hh"
 
 using namespace adt;
@@ -95,7 +95,7 @@ struct Node
     math::M4 matrix = math::M4Iden();
     u32 mesh = NPOS; /* The index of the mesh in this node. */
     math::V3 translation {};
-    math::V4 rotation = math::QtIden();
+    math::V4 rotation = math::QtIden().base;
     math::V3 scale {1, 1, 1};
 
     Node() = default;

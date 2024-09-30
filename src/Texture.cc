@@ -148,13 +148,13 @@ TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GL
 }
 
 CubeMapProjections::CubeMapProjections(const math::M4& proj, const math::V3& pos)
-    : tms{
-        proj * M4LookAt(pos, pos + math::V3( 1, 0, 0), math::V3(0,-1, 0)),
-        proj * M4LookAt(pos, pos + math::V3(-1, 0, 0), math::V3(0,-1, 0)),
-        proj * M4LookAt(pos, pos + math::V3( 0, 1, 0), math::V3(0, 0, 1)),
-        proj * M4LookAt(pos, pos + math::V3( 0,-1, 0), math::V3(0, 0,-1)),
-        proj * M4LookAt(pos, pos + math::V3( 0, 0, 1), math::V3(0,-1, 0)),
-        proj * M4LookAt(pos, pos + math::V3( 0, 0,-1), math::V3(0,-1, 0))
+    : tms {
+        proj * M4LookAt(pos, pos + math::V3{ 1, 0, 0}, math::V3{0,-1, 0}),
+        proj * M4LookAt(pos, pos + math::V3{-1, 0, 0}, math::V3{0,-1, 0}),
+        proj * M4LookAt(pos, pos + math::V3{ 0, 1, 0}, math::V3{0, 0, 1}),
+        proj * M4LookAt(pos, pos + math::V3{ 0,-1, 0}, math::V3{0, 0,-1}),
+        proj * M4LookAt(pos, pos + math::V3{ 0, 0, 1}, math::V3{0,-1, 0}),
+        proj * M4LookAt(pos, pos + math::V3{ 0, 0,-1}, math::V3{0,-1, 0})
     } {}
 
 ShadowMap

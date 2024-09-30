@@ -5,7 +5,9 @@
 #include "adt/Vec.hh"
 #include "adt/String.hh"
 #include "gl/gl.hh"
-#include "math.hh"
+#include "adt/math.hh"
+
+using namespace adt;
 
 struct Texture;
 struct TextureHash;

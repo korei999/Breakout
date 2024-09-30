@@ -5,7 +5,6 @@
 #include "colors.hh"
 #include "controls.hh"
 #include "game.hh"
-#include "math.hh"
 #include "test.hh"
 
 #include "adt/FixedAllocator.hh"
@@ -79,7 +78,10 @@ run()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 
-    math::V4 col = {colors::get(colors::IDX::BLACK), 1.0f};
+    math::V4 col;
+    col.xyz = colors::get(colors::IDX::BLACK);
+    col.a = 1.0f;
+
     glClearColor(col.r, col.g, col.b, col.a);
 
     UboCreateBuffer(&g_uboProjView, sizeof(math::M4)*2, GL_DYNAMIC_DRAW);

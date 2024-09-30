@@ -1,9 +1,11 @@
 #pragma once
 
 #include "adt/Vec.hh"
-#include "math.hh"
+#include "adt/math.hh"
 #include "gl/gl.hh"
 #include "adt/String.hh"
+
+using namespace adt;
 
 struct Shader;
 

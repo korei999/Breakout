@@ -1,12 +1,11 @@
 #pragma once
 
 #include "gltf/gltf.hh"
-#include "math.hh"
+#include "adt/math.hh"
 #include "Shader.hh"
 #include "Texture.hh"
 
 #include <limits.h>
-#include <type_traits>
 
 using namespace adt;
 

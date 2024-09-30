@@ -87,7 +87,7 @@ procKeysOnce(u32 key, u32 pressed)
             if (!pressed) break;
 
             game::g_ball.bReleased = !game::g_ball.bReleased;
-            game::g_ball.dir = math::V3(0.0f, 1.0f, 0.0f) + game::g_player.dir * 0.25f;
+            game::g_ball.dir = math::V2{0.0f, 1.0f} + math::V2{game::g_player.dir * 0.25f};
         } break;
 
         case KEY_T: {

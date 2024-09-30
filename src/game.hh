@@ -1,5 +1,6 @@
 #pragma once
 
+#include "adt/Allocator.hh"
 #include "adt/types.hh"
 #include "colors.hh"
 

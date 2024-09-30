@@ -1,22 +1,11 @@
 #pragma once
 
+#include "adt/utils.hh"
 #include <adt/types.hh>
 #include <assert.h>
+#include <math.h>
 
-#define ADT_MATH_COLOR4(hex)                                                                                           \
-    {                                                                                                                  \
-        ((hex >> 24) & 0xFF) / 255.0f,                                                                                 \
-        ((hex >> 16) & 0xFF) / 255.0f,                                                                                 \
-        ((hex >> 8)  & 0xFF) / 255.0f,                                                                                 \
-        ((hex >> 0)  & 0xFF) / 255.0f                                                                                  \
-    }
-
-#define ADT_MATH_COLOR3(hex)                                                                                           \
-    {                                                                                                                  \
-        ((hex >> 16) & 0xFF) / 255.0f,                                                                                 \
-        ((hex >> 8)  & 0xFF) / 255.0f,                                                                                 \
-        ((hex >> 0)  & 0xFF) / 255.0f                                                                                  \
-    }
+#include <concepts>
 
 namespace adt
 {
@@ -59,7 +48,7 @@ union V3
     f32 e[3];
     struct {
         V2 xy;
-        f32 _v2pad;
+        f32 __v2pad;
     };
     struct {
         f32 x, y, z;
@@ -109,6 +98,15 @@ union M4
     V4 v[4];
 };
 
+union Qt
+{
+    V4 base;
+    f32 e[4];
+    struct {
+        f32 x, y, z, w;
+    };
+};
+
 inline M3
 M4ToM3(const M4& s)
 {
@@ -120,20 +118,13 @@ M4ToM3(const M4& s)
     };
 }
 
-struct M3BindToLetters
+inline V2
+operator-(const V2& s)
 {
-    const f32& a, & b, & c;
-    const f32& d, & e, & f;
-    const f32& g, & h, & i;
+    return {.x = -s.x, .y = -s.y};
+}
 
-    M3BindToLetters() = delete;
-    M3BindToLetters(const M3& m)
-        : a(m.e[0][0]), b(m.e[0][1]), c(m.e[0][2]),
-          d(m.e[1][0]), e(m.e[1][1]), f(m.e[1][2]),
-          g(m.e[2][0]), h(m.e[2][1]), i(m.e[2][2]) {}
-};
-
-constexpr V2
+inline V2
 operator+(const V2& l, const V2& r)
 {
     return {
@@ -142,7 +133,7 @@ operator+(const V2& l, const V2& r)
     };
 }
 
-constexpr V2
+inline V2
 operator-(const V2& l, const V2& r)
 {
     return {
@@ -151,49 +142,58 @@ operator-(const V2& l, const V2& r)
     };
 }
 
-constexpr V2
+inline V2
 operator*(const V2& v, f32 s)
 {
     return {
         .x = v.x * s,
-        .y = v.x * s
+        .y = v.y * s
     };
 }
 
-constexpr V2
+inline V2
+operator*(f32 s, const V2& v)
+{
+    return {
+        .x = v.x * s,
+        .y = v.y * s
+    };
+}
+
+inline V2
 operator/(const V2& v, f32 s)
 {
     return {
         .x = v.x / s,
-        .y = v.x / s
+        .y = v.y / s
     };
 }
 
-constexpr V2&
+inline V2&
 operator+=(V2& l, const V2& r)
 {
     return l = l + r;
 }
 
-constexpr V2&
+inline V2&
 operator-=(V2& l, const V2& r)
 {
     return l = l - r;
 }
 
-constexpr V2&
+inline V2&
 operator*=(V2& l, f32 r)
 {
     return l = l * r;
 }
 
-constexpr V2&
+inline V2&
 operator/=(V2& l, f32 r)
 {
     return l = l / r;
 }
 
-constexpr V3
+inline V3
 operator+(const V3& l, const V3& r)
 {
     return {
@@ -203,7 +203,7 @@ operator+(const V3& l, const V3& r)
     };
 }
 
-constexpr V3
+inline V3
 operator-(const V3& l, const V3& r)
 {
     return {
@@ -213,7 +213,7 @@ operator-(const V3& l, const V3& r)
     };
 }
 
-constexpr V3
+inline V3
 operator*(const V3& v, f32 s)
 {
     return {
@@ -223,7 +223,7 @@ operator*(const V3& v, f32 s)
     };
 }
 
-constexpr V3
+inline V3
 operator/(const V3& v, f32 s)
 {
     return {
@@ -233,31 +233,31 @@ operator/(const V3& v, f32 s)
     };
 }
 
-constexpr V3&
+inline V3&
 operator+=(V3& l, const V3& r)
 {
     return l = l + r;
 }
 
-constexpr V3&
+inline V3&
 operator-=(V3& l, const V3& r)
 {
     return l = l - r;
 }
 
-constexpr V3&
+inline V3&
 operator*=(V3& v, f32 s)
 {
     return v = v * s;
 }
 
-constexpr V3&
+inline V3&
 operator/=(V3& v, f32 s)
 {
     return v = v / s;
 }
 
-constexpr V4
+inline V4
 operator+(const V4& l, const V4& r)
 {
     return {
@@ -268,7 +268,7 @@ operator+(const V4& l, const V4& r)
     };
 }
 
-constexpr V4
+inline V4
 operator-(const V4& l, const V4& r)
 {
     return {
@@ -279,7 +279,7 @@ operator-(const V4& l, const V4& r)
     };
 }
 
-constexpr V4
+inline V4
 operator*(const V4& l, f32 r)
 {
     return {
@@ -290,7 +290,7 @@ operator*(const V4& l, f32 r)
     };
 }
 
-constexpr V4
+inline V4
 operator/(const V4& l, f32 r)
 {
     return {
@@ -301,25 +301,25 @@ operator/(const V4& l, f32 r)
     };
 }
 
-constexpr V4&
+inline V4&
 operator+=(V4& l, const V4& r)
 {
     return l = l + r;
 }
 
-constexpr V4&
+inline V4&
 operator-=(V4& l, const V4& r)
 {
     return l = l - r;
 }
 
-constexpr V4&
+inline V4&
 operator*=(V4& l, f32 r)
 {
     return l = l * r;
 }
 
-constexpr V4&
+inline V4&
 operator/=(V4& l, f32 r)
 {
     return l = l / r;
@@ -353,6 +353,12 @@ M4Iden()
         0, 0, 1, 0,
         0, 0, 0, 1
     };
+}
+
+constexpr Qt
+QtIden()
+{
+    return {0, 0, 0, 1};
 }
 
 inline f32
@@ -565,6 +571,12 @@ M4Inv(const M4& s)
     return (1.0f/M4Det(s)) * M4Adj(s);
 }
 
+inline M3 
+M3Normal(const M3& m)
+{
+    return M3Transpose(M3Inv(m));
+}
+
 inline M3
 operator*(const M3& l, const M3& r)
 {
@@ -573,7 +585,7 @@ operator*(const M3& l, const M3& r)
     for (int i = 0; i < 3; ++i)
         for (int j = 0; j < 3; ++j)
             for (int k = 0; k < 3; ++k)
-                m.e[i][j] += l.e[i][k] * r.e[k][j];
+                m.e[j][i] += l.e[k][i] * r.e[j][k];
 
     return m;
 }
@@ -589,10 +601,10 @@ operator*(const M4& l, const M4& r)
 {
     M4 m {};
 
-    for (int i = 0; i < 4; ++i)
-        for (int j = 0; j < 4; ++j)
-            for (int k = 0; k < 4; ++k)
-                m.e[i][j] += l.e[i][k] * r.e[k][j];
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++)
+            for (int k = 0; k < 4; k++)
+                m.e[j][i] += l.e[k][i] * r.e[j][k];
 
     return m;
 }
@@ -623,6 +635,340 @@ operator==(const M4& l, const M4& r)
     return true;
 }
 
+inline f32
+V2Length(const V2& s)
+{
+    return hypotf(s.x, s.y);
+}
+
+inline f32
+V3Length(const V3& s)
+{
+    return sqrtf(sq(s.x) + sq(s.y) + sq(s.z));
+}
+
+inline f32
+V4Length(const V4& s)
+{
+    return sqrtf(sq(s.x) + sq(s.y) + sq(s.z) + sq(s.w));
+}
+
+inline V2
+V2Norm(const V2& s)
+{
+    f32 len = V2Length(s);
+    return V2 {s.x / len, s.y / len};
+}
+
+inline V3
+V3Norm(const V3& s)
+{
+    f32 len = V3Length(s);
+    return V3 {s.x / len, s.y / len, s.z / len};
+}
+
+inline V4
+V4Norm(const V4& s)
+{
+    f32 len = V4Length(s);
+    return {s.x / len, s.y / len, s.z / len, s.w / len};
+}
+
+inline V2
+V2Clamp(const V2& x, const V2& min, const V2& max)
+{
+    V2 r {};
+
+    f32 minX = utils::min(min.x, max.x);
+    f32 minY = utils::min(min.y, max.y);
+
+    f32 maxX = utils::max(min.x, max.x);
+    f32 maxY = utils::max(min.y, max.y);
+
+    r.x = utils::clamp(x.x, minX, maxX);
+    r.y = utils::clamp(x.y, minY, maxY);
+
+    return r;
+}
+
+inline f32
+V2Dot(const V2& l, const V2& r)
+{
+    return (l.x * r.x) + (l.y * r.y);
+}
+
+inline f32
+V3Dot(const V3& l, const V3& r)
+{
+    return (l.x * r.x) + (l.y * r.y) + (l.z * r.z);
+}
+
+inline f32
+V4Dot(const V4& l, const V4& r)
+{
+    return (l.x * r.x) + (l.y * r.y) + (l.z * r.z) + (l.w * r.w);
+}
+
+inline f32
+V3Rad(const V3& l, const V3& r)
+{
+    return acosf(V3Dot(l, r) / (V3Length(l) * V3Length(r)));
+}
+
+inline f32
+V2Dist(const V2& l, const V2& r)
+{
+    return sqrtf(sq(r.x - l.x) + sq(r.y - l.y));
+}
+
+inline f32
+V3Dist(const V3& l, const V3& r)
+{
+    return sqrtf(sq(r.x - l.x) + sq(r.y - l.y) + sq(r.z - l.z));
+}
+
+inline M4
+M4Translate(const M4& m, const V3& tv)
+{
+    M4 tm {
+        1,    0,    0,    0,
+        0,    1,    0,    0,
+        0,    0,    1,    0,
+        tv.x, tv.y, tv.z, 1
+    };
+
+    return m * tm;
+}
+
+inline M4
+M4Scale(const M4& m, const f32 s)
+{
+    M4 sm {
+        s, 0, 0, 0,
+        0, s, 0, 0,
+        0, 0, s, 0,
+        0, 0, 0, 1
+    };
+
+    return m * sm;
+}
+
+inline M4
+M4Scale(const M4& m, const V3& s)
+{
+    M4 sm {
+        s.x, 0,   0,   0,
+        0,   s.y, 0,   0,
+        0,   0,   s.z, 0,
+        0,   0,   0,   1
+    };
+
+    return m * sm;
+}
+
+inline M4
+M4Pers(const f32 fov, const f32 asp, const f32 n, const f32 f)
+{
+    /* b(back), l(left) are not needed if viewing volume is symmetric */
+    f32 t = n * tanf(fov / 2);
+    f32 r = t * asp;
+
+    return M4 {
+        n / r, 0,     0,                  0,
+        0,     n / t, 0,                  0,
+        0,     0,    -(f + n) / (f - n), -1,
+        0,     0,    -(2*f*n) / (f - n),  0
+    };
+}
+
+inline M4
+M4Ortho(const f32 l, const f32 r, const f32 b, const f32 t, const f32 n, const f32 f)
+{
+    return M4 {
+        2/(r-l),       0,            0,           0,
+        0,             2/(t-b),      0,           0,
+        0,             0,           -2/(f-n),     0,
+        -(r+l)/(r-l), -(t+b)/(t-b), -(f+n)/(f-n), 1
+    };
+}
+
+inline V3
+V3Cross(const V3& l, const V3& r)
+{
+    return V3 {
+        (l.y * r.z) - (r.y * l.z),
+        (l.z * r.x) - (r.z * l.x),
+        (l.x * r.y) - (r.x * l.y)
+    };
+}
+
+inline M4
+m4LookAt(const V3& R, const V3& U, const V3& D, const V3& P)
+{
+    M4 m0 {
+        R.x,  U.x,  D.x,  0,
+        R.y,  U.y,  D.y,  0,
+        R.z,  U.z,  D.z,  0,
+        0,    0,    0,    1
+    };
+
+    return (M4Translate(m0, {-P.x, -P.y, -P.z}));
+}
+
+inline M4
+M4LookAt(const V3& eyeV, const V3& centerV, const V3& upV)
+{
+    V3 camDir = V3Norm(eyeV - centerV);
+    V3 camRight = V3Norm(V3Cross(upV, camDir));
+    V3 camUp = V3Cross(camDir, camRight);
+
+    return m4LookAt(camRight, camUp, camDir, eyeV);
+}
+
+inline Qt
+QtAxisAngle(const V3& axis, f32 th)
+{
+    f32 sinTh = f32(sin(th / 2));
+
+    return {
+        axis.x * sinTh,
+        axis.y * sinTh,
+        axis.z * sinTh,
+        f32(cos(th / 2))
+    };
+}
+
+inline M4
+QtRot(const Qt& q)
+{
+    auto& x = q.x;
+    auto& y = q.y;
+    auto& z = q.z;
+    auto& s = q.w;
+
+    return {
+        1 - 2*y*y - 2*z*z, 2*x*y - 2*s*z,     2*x*z + 2*s*y,     0,
+        2*x*y + 2*s*z,     1 - 2*x*x - 2*z*z, 2*y*z - 2*s*x,     0,
+        2*x*z - 2*s*y,     2*y*z + 2*s*x,     1 - 2*x*x - 2*y*y, 0,
+        0,                 0,                 0,                 1
+    };
+}
+
+inline Qt
+QtConj(const Qt& q)
+{
+    return {-q.x, -q.y, -q.z, q.w};
+}
+
+inline Qt
+operator*(const Qt& l, const Qt& r)
+{
+    return {
+        l.w*r.x + l.x*r.w + l.y*r.z - l.z*r.y,
+        l.w*r.y - l.x*r.z + l.y*r.w + l.z*r.x,
+        l.w*r.z + l.x*r.y - l.y*r.x + l.z*r.w,
+        l.w*r.w - l.x*r.x - l.y*r.y - l.z*r.z,
+    };
+}
+
+inline Qt
+operator*(const Qt& l, const V4& r)
+{
+    return {
+        l.w*r.x + l.x*r.w + l.y*r.z - l.z*r.y,
+        l.w*r.y - l.x*r.z + l.y*r.w + l.z*r.x,
+        l.w*r.z + l.x*r.y - l.y*r.x + l.z*r.w,
+        l.w*r.w - l.x*r.x - l.y*r.y - l.z*r.z,
+    };
+}
+
+inline Qt
+operator*=(Qt& l, const Qt& r)
+{
+    return l = l * r;
+}
+
+inline Qt
+operator*=(Qt& l, const V4& r)
+{
+    return l = l * r;
+}
+
+inline V2
+normalize(const V2& v)
+{
+    return V2Norm(v);
+}
+
+inline V3
+normalize(const V3& v)
+{
+    return V3Norm(v);
+}
+
+inline V4
+normalize(const V4& v)
+{
+    return V4Norm(v);
+}
+
+template<typename T>
+constexpr T
+lerp(const T& l, const T& r, const std::floating_point auto t)
+{
+    return l + (r - l)*t;
+}
+
+template<typename T>
+constexpr T
+bezier(
+    const T& p0,
+    const T& p1,
+    const T& p2,
+    const std::floating_point auto t)
+{
+    return sq(1-t)*p0 + 2*(1-t)*t*p1 + sq(t)*p2;
+}
+
+template<typename T>
+constexpr T
+bezier(
+    const T& p0,
+    const T& p1,
+    const T& p2,
+    const T& p3,
+    const std::floating_point auto t)
+{
+    return lerp(bezier(p0, p1, p2, t), bezier(p1, p2, p3, t), t);
+}
+
+template<typename T>
+constexpr T
+bezier(
+    const T& p0,
+    const T& p1,
+    const T& p2,
+    const T& p3,
+    const T& p4,
+    const std::floating_point auto t)
+{
+    return lerp(bezier(p0, p1, p2, p3, t), bezier(p1, p2, p3, p4, t), t);
+}
+
+template<typename T>
+constexpr T
+bezier(
+    const T& p0,
+    const T& p1,
+    const T& p2,
+    const T& p3,
+    const T& p4,
+    const T& p5,
+    const std::floating_point auto t)
+{
+    return lerp(bezier(p0, p1, p2, p3, p4, t), bezier(p1, p2, p3, p4, p5, t), t);
+}
+
 } /* namespace math */
 } /* namespace adt */
 
@@ -644,7 +990,7 @@ class fmt::formatter<adt::math::V2>
     {
         return format_to(
             ctx.out(),
-            "\n\t[{:.3}, {:.3}]",
+            "[{:.3}, {:.3}]",
             s.e[0], s.e[1]
         );
     }
@@ -665,7 +1011,7 @@ class fmt::formatter<adt::math::V3>
     {
         return format_to(
             ctx.out(),
-            "\n\t[{:.3}, {:.3}, {:.3}]",
+            "[{:.3}, {:.3}, {:.3}]",
             s.e[0], s.e[1], s.e[2]
         );
     }
@@ -686,7 +1032,7 @@ class fmt::formatter<adt::math::V4>
     {
         return format_to(
             ctx.out(),
-            "\n\t[{:.3}, {:.3}, {:.3}, {:.3}]",
+            "[{:.3}, {:.3}, {:.3}, {:.3}]",
             s.e[0], s.e[1], s.e[2], s.e[3]
         );
     }

@@ -272,7 +272,7 @@ ModelDraw(Model* s, DRAW flags, Shader* sh, String svUniform, String svUniformM3
             if (sh)
             {
                 ShaderSetM4(sh, svUniform, m);
-                if (flags & DRAW::APPLY_NM) ShaderSetM3(sh, svUniformM3Norm, M3Normal(m));
+                if (flags & DRAW::APPLY_NM) ShaderSetM3(sh, svUniformM3Norm, M3Normal(M4ToM3(m)));
             }
 
             if (e.triangleCount != NPOS)
@@ -341,7 +341,7 @@ ModelDrawGraph(
                 {
                     ShaderSetM4(sh, svUniform, tm);
                     if (flags & DRAW::APPLY_NM)
-                        ShaderSetM3(sh, svUniformM3Norm, M3Normal(tm));
+                        ShaderSetM3(sh, svUniformM3Norm, M3Normal(M4ToM3(tm)));
                 }
 
                 if (e.triangleCount != NPOS)

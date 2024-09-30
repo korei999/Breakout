@@ -98,9 +98,9 @@ assignUnionType(json::Object* obj, u32 n)
 
     for (u32 i = 0; i < n; i++)
         if (arr[i].tagVal.tag == json::TAG::LONG)
-            type.MAT4.p[i] = f32(json::getLong(&arr[i]));
+            type.MAT4.d[i] = f32(json::getLong(&arr[i]));
         else
-            type.MAT4.p[i] = f32(json::getDouble(&arr[i]));
+            type.MAT4.d[i] = f32(json::getDouble(&arr[i]));
 
     return type;
 }

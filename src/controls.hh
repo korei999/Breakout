@@ -1,6 +1,6 @@
 #pragma once
 
-#include "math.hh"
+#include "adt/math.hh"
 #include "game.hh"
 
 using namespace adt;
