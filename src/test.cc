@@ -1,7 +1,6 @@
 #include "test.hh"
 
 #include "adt/math.hh"
-#include "logs.hh"
 
 using namespace adt;
 

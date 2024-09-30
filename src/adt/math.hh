@@ -816,6 +816,65 @@ m4LookAt(const V3& R, const V3& U, const V3& D, const V3& P)
 }
 
 inline M4
+M4Rot(const M4& m, const f32 th, const V3& ax)
+{
+    const f32 c = cosf(th);
+    const f32 s = sinf(th);
+
+    const f32 x = ax.x;
+    const f32 y = ax.y;
+    const f32 z = ax.z;
+
+    M4 r {
+        ((1 - c)*sq(x)) + c, ((1 - c)*x*y) - s*z, ((1 - c)*x*z) + s*y, 0,
+        ((1 - c)*x*y) + s*z, ((1 - c)*sq(y)) + c, ((1 - c)*y*z) - s*x, 0,
+        ((1 - c)*x*z) - s*y, ((1 - c)*y*z) + s*x, ((1 - c)*sq(z)) + c, 0,
+        0,                   0,                   0,                   1
+    };
+
+    return m * r;
+}
+
+inline M4
+M4RotX(const M4& m, const f32 angle)
+{
+    M4 axisX {
+        1, 0,            0,           0,
+        0, cosf(angle),  sinf(angle), 0,
+        0, -sinf(angle), cosf(angle), 0,
+        0, 0,            0,           1
+    };
+
+    return m * axisX;
+}
+
+inline M4
+M4RotY(const M4& m, const f32 angle)
+{
+    M4 axisY {
+        cosf(angle), 0,  -sinf(angle), 0,
+        0,               1, 0,         0,
+        sinf(angle), 0,  cosf(angle),  0,
+        0,               0, 0,         1
+    };
+
+    return m * axisY;
+}
+
+inline M4
+M4RotZ(const M4& m, const f32 angle)
+{
+    M4 axisZ {
+        cosf(angle),  sinf(angle), 0, 0,
+        -sinf(angle), cosf(angle), 0, 0,
+        0,            0,           1, 0,
+        0,            0,           0, 1
+    };
+
+    return m * axisZ;
+}
+
+inline M4
 M4LookAt(const V3& eyeV, const V3& centerV, const V3& upV)
 {
     V3 camDir = V3Norm(eyeV - centerV);
