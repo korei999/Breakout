@@ -281,12 +281,12 @@ insertPoints(
     const math::V2& p0,
     const math::V2& p1,
     const math::V2& p2,
-    int nTimes = 10
+    int nTimes = 6
 )
 {
-    for (int i = 1; i < nTimes; ++i)
+    for (int i = 1; i < nTimes + 1; ++i)
     {
-        f32 t = f32(i) / f32(nTimes);
+        f32 t = f32(i) / f32(nTimes + 1);
 
         auto point = math::bezier(p0, p1, p2, t);
         VecPush(aPoints, pAlloc, {
@@ -302,6 +302,17 @@ makeItCurvyNow(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints)
 {
     VecBase<PointOnCurve> aNew(pAlloc, VecSize(&aNonCurvyPoints));
 
+#ifdef D_TTF
+    for (auto& p : aNonCurvyPoints)
+    {
+        u32 idx = VecIdx(&aNonCurvyPoints, &p);
+        COUT("({}): pos: {}, bOnCurve: {}", idx, p.pos, p.bOnCurve);
+
+        if (p.bEndOfCurve) COUT(", bEndOfCurve: {}\n", p.bEndOfCurve);
+        else COUT("\n");
+    }
+#endif
+
     u32 firstInCurveIdx = 0;
     bool bPrevOnCurve = true;
     for (auto& p : aNonCurvyPoints)
@@ -310,15 +321,14 @@ makeItCurvyNow(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints)
 
         if (p.bEndOfCurve)
         {
-            math::V2 p0 {aNonCurvyPoints[idx - 1].pos};
-            math::V2 p1 {aNonCurvyPoints[idx - 0].pos};
-            math::V2 p2 {aNonCurvyPoints[firstInCurveIdx].pos};
-            insertPoints(pAlloc, &aNew, p0, p1, p2);
-            VecPush(&aNew, pAlloc, {
-                .pos = p2,
-                .bOnCurve = true,
-                .bEndOfCurve = false,
-            });
+            // FIXME: this might be out of range
+            if (!aNonCurvyPoints[idx - 2].bOnCurve)
+            {
+                math::V2 p0 {aNonCurvyPoints[idx - 1].pos};
+                math::V2 p1 {aNonCurvyPoints[idx - 0].pos};
+                math::V2 p2 {aNonCurvyPoints[firstInCurveIdx].pos};
+                insertPoints(pAlloc, &aNew, p0, p1, p2);
+            }
         }
         else if (!bPrevOnCurve)
         {
@@ -337,7 +347,16 @@ makeItCurvyNow(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints)
             });
         }
 
-        if (p.bEndOfCurve) firstInCurveIdx = idx + 1;
+        if (p.bEndOfCurve)
+        {
+            VecPush(&aNew, pAlloc, {
+                .pos = aNonCurvyPoints[firstInCurveIdx].pos,
+                .bOnCurve = true,
+                .bEndOfCurve = false,
+            });
+
+            firstInCurveIdx = idx + 1;
+        }
 
         if (p.bEndOfCurve) bPrevOnCurve = true;
         else bPrevOnCurve = p.bOnCurve;

@@ -66,7 +66,7 @@ loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
     /*parser::ttf::FontLoadAndParse(&s_fLiberation, "/usr/share/fonts/liberation-mono/LiberationMono-Bold.ttf");*/
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '%');
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '$');
     /*parser::ttf::FontPrintGlyph(&s_fLiberation, glyphA, true);*/
 
     text::TTFGenMesh(&s_ttfTest, &glyphA);
