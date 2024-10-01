@@ -108,6 +108,8 @@ procKeysOnce(u32 key, u32 pressed)
             if (!pressed) break;
 
             if (g_aPressedKeys[KEY_LEFTSHIFT]) --g_nDots;
+            else if (g_aPressedKeys[KEY_LEFTCTRL]) g_nDots += 9;
+            else if (g_aPressedKeys[KEY_LEFTALT]) g_nDots -= 9;
             else ++g_nDots;
 
             /*LOG_NOTIFY("g_nDots: {}\n", g_nDots);*/

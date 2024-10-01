@@ -70,7 +70,7 @@ run()
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(gl::debugCallback, app::g_pWindow);
 
-    glPointSize(3.0f);
+    glPointSize(2.0f);
     glLineWidth(2.0f);
 #endif
 

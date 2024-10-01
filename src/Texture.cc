@@ -386,7 +386,7 @@ TexFramebufferCreate(const GLsizei width, const GLsizei height)
     };
 }
 
-#ifdef DEBUG
+#ifndef NDEBUG
 [[maybe_unused]] static void
 printPack(String s, __m128i m)
 {

@@ -13,9 +13,17 @@ struct CharQuad
     f32 vs[24]; /* 6(2 triangles) * 4(2 pos, 2 uv coords) */
 };
 
-struct Points
+struct Point
 {
     f32 x, y, u, v;
+};
+
+struct PointOnCurve
+{
+    math::V2 pos;
+    bool bOnCurve;
+    bool bEndOfCurve;
+    f32 __pad {};
 };
 
 static VecBase<CharQuad> TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
@@ -129,7 +137,7 @@ BitmapDraw(Bitmap* s)
     glDrawArrays(GL_TRIANGLES, 0, s->vboSize);
 }
 
-static VecBase<Points>
+static VecBase<Point>
 getBeizerPoints(
     Allocator* pAlloc,
     const math::V2& p0,
@@ -140,7 +148,7 @@ getBeizerPoints(
     /* quadratic bezier */
     /*B(t) = (1-t)^2*P0 + 2(1-t)*t*P1 + t^2*P2*/
 
-    VecBase<Points> aPoints(pAlloc, 2 + nSteps);
+    VecBase<Point> aPoints(pAlloc, 2 + nSteps);
     VecPush(&aPoints, pAlloc, {p0.x, p0.y, 0.0f, 1.0f});
     for (int i = 1; i < nSteps; i++) {
         f32 t = f32(i) / f32(nSteps);
@@ -167,12 +175,12 @@ TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2&
     glGenBuffers(1, &s->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
 
-    VecBase<Points> aPoints = getBeizerPoints(&al.base, p0, p1, p2, nSteps);
+    VecBase<Point> aPoints = getBeizerPoints(&al.base, p0, p1, p2, nSteps);
     s->maxSize = VecSize(&aPoints);
 
     glBufferData(
         GL_ARRAY_BUFFER,
-        sizeof(Points) * VecSize(&aPoints),
+        sizeof(Point) * VecSize(&aPoints),
         VecData(&aPoints),
         GL_DYNAMIC_DRAW
     );
@@ -191,7 +199,7 @@ TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2&
 }
 
 static void
-addBunchOfDots(const VecBase<Points>& s, VecBase<Points>* a, Allocator* p, int i, int nDegree)
+addBunchOfDots(const VecBase<Point>& s, VecBase<Point>* a, Allocator* p, int i, int nDegree)
 {
     const auto& itPoint = VecLast(&s);
 
@@ -266,62 +274,82 @@ addBunchOfDots(const VecBase<Points>& s, VecBase<Points>* a, Allocator* p, int i
     }
 }
 
-static VecBase<Points>
-bezieriteArray(const VecBase<Points>& s, Allocator* p, parser::ttf::Glyph* g)
+static void
+insertPoints(
+    Allocator* pAlloc,
+    VecBase<PointOnCurve>* aPoints,
+    const math::V2& p0,
+    const math::V2& p1,
+    const math::V2& p2,
+    int nTimes = 10
+)
 {
-    VecBase<Points> a(p, VecSize(&s));
+    for (int i = 1; i < nTimes; ++i)
+    {
+        f32 t = f32(i) / f32(nTimes);
 
-    Arena al(SIZE_1K);
-    defer(ArenaFreeAll(&al));
-    Vec<Points> aBezPoints(&al.base, 5);
+        auto point = math::bezier(p0, p1, p2, t);
+        VecPush(aPoints, pAlloc, {
+            .pos = point,
+            .bOnCurve = true,
+            .bEndOfCurve = false
+        });
+    }
+}
 
-    const auto& aEndsOfContours = g->uGlyph.simple.aEndPtsOfContours;
-    const auto& aGlyphPoints = g->uGlyph.simple.aPoints;
+static VecBase<PointOnCurve>
+makeItCurvyNow(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints)
+{
+    VecBase<PointOnCurve> aNew(pAlloc, VecSize(&aNonCurvyPoints));
 
     u32 firstInCurveIdx = 0;
-    u32 firstInCurveSrcIdx = 0;
-
-    u32 nOffCurve = 0;
-    for (u32 i = 0; i < VecSize(&s); ++i)
+    bool bPrevOnCurve = true;
+    for (auto& p : aNonCurvyPoints)
     {
-        const auto& itPoint = VecAt(&s, i);
+        u32 idx = VecIdx(&aNonCurvyPoints, &p);
 
-        bool bEndOfCurve = false;
-        for (auto endIdx : g->uGlyph.simple.aEndPtsOfContours)
+        if (p.bEndOfCurve)
         {
-            /*COUT("i: {}, endIdx: {}\n", i, endIdx);*/
-            if (i == endIdx)
-            {
-                bEndOfCurve = true;
-                break;
-            }
+            math::V2 p0 {aNonCurvyPoints[idx - 1].pos};
+            math::V2 p1 {aNonCurvyPoints[idx - 0].pos};
+            math::V2 p2 {aNonCurvyPoints[firstInCurveIdx].pos};
+            insertPoints(pAlloc, &aNew, p0, p1, p2);
+            VecPush(&aNew, pAlloc, {
+                .pos = p2,
+                .bOnCurve = true,
+                .bEndOfCurve = false,
+            });
+        }
+        else if (!bPrevOnCurve)
+        {
+            math::V2 p0 {aNonCurvyPoints[idx - 2].pos};
+            math::V2 p1 {aNonCurvyPoints[idx - 1].pos};
+            math::V2 p2 {aNonCurvyPoints[idx - 0].pos};
+            insertPoints(pAlloc, &aNew, p0, p1, p2);
         }
 
-        if (!aGlyphPoints[i].bOnCurve && !bEndOfCurve)
+        if (p.bOnCurve)
         {
-            /*VecPush(&aBezPoints, s[i]);*/
-            ++nOffCurve;
-            continue;
+            VecPush(&aNew, pAlloc, {
+                .pos = p.pos,
+                .bOnCurve = p.bOnCurve,
+                .bEndOfCurve = p.bEndOfCurve
+            });
         }
 
-        /* bezier through each offCurve point */
-        /*COUT("nOffCurve: {}, size: {}\n", nOffCurve, VecSize(&aBezPoints));*/
-        /*addBunchOfDots(aBezPoints.base, &a, p, i, nOffCurve);*/
+        if (p.bEndOfCurve) firstInCurveIdx = idx + 1;
 
-        nOffCurve = 0;
-
-        VecPush(&a, p, VecAt(&s, i));
-
-        VecSetSize(&aBezPoints, 0);
+        if (p.bEndOfCurve) bPrevOnCurve = true;
+        else bPrevOnCurve = p.bOnCurve;
     }
 
-    return a;
+    return aNew;
 }
 
 void
 TTFGenMesh(TTF* s, parser::ttf::Glyph* g)
 {
-    Arena alloc(SIZE_1K);
+    Arena alloc(SIZE_8K * 2);
     defer(ArenaFreeAll(&alloc));
 
     s->glyph = *g;
@@ -329,59 +357,56 @@ TTFGenMesh(TTF* s, parser::ttf::Glyph* g)
     const auto& aGlyphPoints = g->uGlyph.simple.aPoints;
     u32 size = VecSize(&aGlyphPoints);
 
-    [[maybe_unused]] bool bPrevOffCurve = false;
+    bool bCurrOnCurve = false;
+    bool bPrevOnCurve = false;
+    u32 firstInCurveIdx = 0;
 
-    u32 firstInContourIdx = 0;
-    u32 off = 0;
-    VecBase<Points> aPoints(&alloc.base, size);
+    VecBase<PointOnCurve> aPoints(&alloc.base, size);
+    int nOffCurve = 0;
     for (const auto& p : aGlyphPoints)
     {
         const u32 pointIdx = VecIdx(&aGlyphPoints, &p);
-        bool bCurrOffCurve = !p.bOnCurve;
 
         f32 x = f32(p.x) / f32(g->xMax);
         f32 y = f32(p.y) / f32(g->yMax);
 
+        bool bEndOfCurve = false;
+        for (auto e : g->uGlyph.simple.aEndPtsOfContours)
+            if (e == pointIdx)
+                bEndOfCurve = true;
+
         math::V2 vCurr {x, y};
 
+        bCurrOnCurve = p.bOnCurve;
+        defer(bPrevOnCurve = bCurrOnCurve);
+
+        if (!bCurrOnCurve && !bPrevOnCurve)
+        {
+            /* insert middle point */
+            const auto& prev = VecLast(&aPoints);
+            math::V2 mid = math::lerp(prev.pos, vCurr, 0.5f);
+
+            VecPush(&aPoints, &alloc.base, {
+                .pos = mid,
+                .bOnCurve = true,
+                .bEndOfCurve = false
+            });
+        }
+
         VecPush(&aPoints, &alloc.base, {
-            x, y, 0.0f, 1.0f
+            .pos {x, y},
+            .bOnCurve = p.bOnCurve,
+            .bEndOfCurve = bEndOfCurve
         });
 
-        // if (bPrevOffCurve && bCurrOffCurve && (pointIdx + 1) < VecSize(&aGlyphPoints))
-        // {
-        //     auto& prev = aGlyphPoints[pointIdx - 1];
-        //     auto& next = VecAt(&aGlyphPoints, pointIdx + 1);
+        if (!bCurrOnCurve && bEndOfCurve)
+            assert(aGlyphPoints[firstInCurveIdx].bOnCurve == true);
 
-        //     math::V2 vPrev {f32(prev.x) / f32(g->xMax), f32(prev.y) / f32(g->yMax)};
-        //     math::V2 vMid = math::lerp(vPrev, vCurr, 0.5f);
-        //     math::V2 vNext {f32(next.x) / f32(g->xMax), f32(next.y) / f32(g->yMax)};
-
-        //     VecPush(&aPoints, &alloc.base, {
-        //         vMid.x, vMid.y, 1.0f, 0.0f
-        //     });
-        //     VecSwapWithLast(&aPoints, VecLastI(&aPoints) - 1);
-
-        //     /*++off;*/
-        // }
-
-        // for (auto endContourIdx : g->uGlyph.simple.aEndPtsOfContours)
-        // {
-        //     if (endContourIdx + off == pointIdx)
-        //     {
-        //         VecPush(&aPoints, &alloc.base, aPoints[firstInContourIdx]);
-        //         firstInContourIdx = VecLastI(&aPoints) + 1;
-        //         break;
-        //     }
-        // }
-
-        bPrevOffCurve = bCurrOffCurve;
+        if (bEndOfCurve) firstInCurveIdx = pointIdx + 1;
     }
 
-    VecBase<Points> aBeziered = bezieriteArray(aPoints, &alloc.base, g);
-
-    /*s->maxSize = VecSize(&aPoints);*/
-    s->maxSize = VecSize(&aBeziered);
+    auto aCurvyPoints = makeItCurvyNow(&alloc.base, aPoints);
+    s->maxSize = VecSize(&aCurvyPoints);
 
     glGenVertexArrays(1, &s->vao);
     glBindVertexArray(s->vao);
@@ -391,8 +416,8 @@ TTFGenMesh(TTF* s, parser::ttf::Glyph* g)
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
     glBufferData(
         GL_ARRAY_BUFFER,
-        sizeof(*VecData(&aBeziered)) * VecSize(&aBeziered),
-        VecData(&aBeziered),
+        sizeof(*VecData(&aCurvyPoints)) * VecSize(&aCurvyPoints),
+        VecData(&aCurvyPoints),
         GL_DYNAMIC_DRAW
     );
 

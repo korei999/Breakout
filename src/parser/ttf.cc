@@ -387,7 +387,7 @@ readSimpleGlyph(Font* s, Glyph* g)
     if (g->numberOfContours == 0)
         return;
 
-    u32 numPoints = utils::searchMax(sg.aEndPtsOfContours) + 1;
+    u32 numPoints = VecLast(&sg.aEndPtsOfContours) + 1;
 
     for (u32 i = 0; i < numPoints; i++)
     {

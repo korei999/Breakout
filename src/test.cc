@@ -1,6 +1,7 @@
 #include "test.hh"
 
 #include "adt/math.hh"
+#include "logs.hh"
 
 using namespace adt;
 
@@ -40,6 +41,20 @@ math()
 
     math::M3 m3FromM4 = math::M4ToM3(a4);
     assert(a4m3 == m3FromM4);
+
+    math::M4 t2 {
+        0, 0, 0, 1,
+        8, 4, 2, 1,
+        343, 49, 7, 1,
+        1000, 100, 10, 1
+    };
+    math::V4 t2r {
+        1, 1.5, 3, 1
+    };
+    math::V4 t2Exp {-0.012797616, 0.12232144, 0.05654758, 1};
+
+    auto t2l = math::M4Inv(t2) * t2r;
+    assert(t2Exp == t2l);
 }
 
 } /* namespace test */

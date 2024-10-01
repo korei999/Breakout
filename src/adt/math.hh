@@ -450,26 +450,28 @@ M4Minors(const M4& s)
 inline M3
 M3Cofactors(const M3& s)
 {
-    M3 minors = M3Minors(s);
-    auto& e = minors.e;
-    return {
-        e[0][0] *  1, e[0][1] * -1, e[0][2] *  1,
-        e[1][0] * -1, e[1][1] *  1, e[1][2] * -1,
-        e[2][0] *  1, e[2][1] * -1, e[2][2] *  1
-    };
+    M3 m = M3Minors(s);
+    auto& e = m.e;
+
+    e[0][0] *= +1, e[0][1] *= -1, e[0][2] *= +1;
+    e[1][0] *= -1, e[1][1] *= +1, e[1][2] *= -1;
+    e[2][0] *= +1, e[2][1] *= -1, e[2][2] *= +1;
+
+    return m;
 }
 
 inline M4
 M4Cofactors(const M4& s)
 {
-    M4 minors = M4Minors(s);
-    auto& e = minors.e;
-    return {
-        e[0][0] * +1, e[0][1] * -1, e[0][2] * +1, e[0][3] * -1,
-        e[1][0] * -1, e[1][1] * +1, e[1][2] * -1, e[1][3] * +1,
-        e[2][0] * +1, e[2][1] * -1, e[2][2] * +1, e[2][3] * -1,
-        e[3][0] * -1, e[3][1] * +1, e[3][2] * -1, e[3][3] * +1
-    };
+    M4 m = M4Minors(s);
+    auto& e = m.e;
+
+    e[0][0] *= +1.0f, e[0][1] *= -1, e[0][2] *= +1, e[0][3] *= -1;
+    e[1][0] *= -1.0f, e[1][1] *= +1, e[1][2] *= -1, e[1][3] *= +1;
+    e[2][0] *= +1.0f, e[2][1] *= -1, e[2][2] *= +1, e[2][3] *= -1;
+    e[3][0] *= -1.0f, e[3][1] *= +1, e[3][2] *= -1, e[3][3] *= +1;
+
+    return m;
 }
 
 inline M3
@@ -609,10 +611,42 @@ operator*(const M4& l, const M4& r)
     return m;
 }
 
+inline V4
+operator*(const M4& l, const V4& r)
+{
+    V4 res {};
+
+    for (int j = 0; j < 4; j++)
+        for (int i = 0; i < 4; i++)
+            res.e[j] += l.e[j][i] * r.e[i];
+
+    return res;
+}
+
 inline M4&
 operator*=(M4& l, const M4& r)
 {
     return l = l * r;
+}
+
+inline bool
+operator==(const V3& l, const V3& r)
+{
+    for (int i = 0; i < 3; ++i)
+        if (!rEq(l.e[i], r.e[i]))
+            return false;
+
+    return true;
+}
+
+inline bool
+operator==(const V4& l, const V4& r)
+{
+    for (int i = 0; i < 4; ++i)
+        if (!rEq(l.e[i], r.e[i]))
+            return false;
+
+    return true;
 }
 
 inline bool
@@ -998,7 +1032,8 @@ bezier(
     const T& p3,
     const std::floating_point auto t)
 {
-    return lerp(bezier(p0, p1, p2, t), bezier(p1, p2, p3, t), t);
+    /*return lerp(bezier(p0, p1, p2, t), bezier(p1, p2, p3, t), t);*/
+    return pow((1-t), 3)*p0 + 3*sq(1-t)*t*p1 + 3*(1-t)*sq(t)*p2 + pow(t, 3)*p3;
 }
 
 template<typename T>
@@ -1049,7 +1084,7 @@ class fmt::formatter<adt::math::V2>
     {
         return format_to(
             ctx.out(),
-            "[{:.3}, {:.3}]",
+            "[{}, {}]",
             s.e[0], s.e[1]
         );
     }
@@ -1070,7 +1105,7 @@ class fmt::formatter<adt::math::V3>
     {
         return format_to(
             ctx.out(),
-            "[{:.3}, {:.3}, {:.3}]",
+            "[{}, {}, {}]",
             s.e[0], s.e[1], s.e[2]
         );
     }
@@ -1091,7 +1126,7 @@ class fmt::formatter<adt::math::V4>
     {
         return format_to(
             ctx.out(),
-            "[{:.3}, {:.3}, {:.3}, {:.3}]",
+            "[{}, {}, {}, {}]",
             s.e[0], s.e[1], s.e[2], s.e[3]
         );
     }

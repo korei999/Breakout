@@ -16,7 +16,7 @@ constexpr f64 SLEEP_TIME_MS = 0.5;
 
 enum REFLECT_SIDE : s8
 {
-    NONE = -1, UP, RIGHT, DOWN, LEFT, ESIZE
+    NONE = -1, UP, RIGHT, DOWN, LEFT, ELAST
 };
 
 enum class STATE : u8

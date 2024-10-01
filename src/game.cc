@@ -66,8 +66,8 @@ loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
     /*parser::ttf::FontLoadAndParse(&s_fLiberation, "/usr/share/fonts/liberation-mono/LiberationMono-Bold.ttf");*/
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, 'B');
-    parser::ttf::FontPrintGlyph(&s_fLiberation, glyphA, true);
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '%');
+    /*parser::ttf::FontPrintGlyph(&s_fLiberation, glyphA, true);*/
 
     text::TTFGenMesh(&s_ttfTest, &glyphA);
 
@@ -141,7 +141,7 @@ getReflectionSide(math::V2 tar)
     f32 max = 0.0f;
 
     REFLECT_SIDE bestMatch = NONE;
-    for (int i = 0; i < REFLECT_SIDE::ESIZE; i++)
+    for (int i = 0; i < 4; i++)
     {
         f32 dot = V2Dot(V2Norm(tar), compass[i]);
         if (dot > max)
