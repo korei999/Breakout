@@ -112,7 +112,7 @@ MixerAddBackground(Mixer* s, audio::Track t)
             auto hr = v.m_pVoice->SubmitSourceBuffer(&b);
             if (FAILED(hr)) LOG_WARN("SubmitSourceBuffer: failed\n");
 
-            v.m_pVoice->SetVolume(t.volume);
+            v.m_pVoice->SetVolume(t.volume * audio::g_globalVolume);
             v.m_bPlaying = true;
             v.m_track = t;
             break;
@@ -149,7 +149,7 @@ MixerRunThread(Mixer* s, int argc, char** argv)
 
         assert(!FAILED(hr));
 
-        v.m_pVoice->SetVolume(1.0f);
+        v.m_pVoice->SetVolume(1.0f * audio::g_globalVolume);
         v.m_pVoice->Start();
         v.m_bPlaying = false;
     }
