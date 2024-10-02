@@ -15,6 +15,7 @@ namespace adt
 
     #define ADT_GET_NCORES() get_nprocs()
 #elif _WIN32
+    #define WIN32_LEAN_AND_MEAN 1
     #include <windows.h>
     #ifdef min
         #undef min
