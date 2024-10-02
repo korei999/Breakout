@@ -1036,33 +1036,6 @@ bezier(
     return pow((1-t), 3)*p0 + 3*sq(1-t)*t*p1 + 3*(1-t)*sq(t)*p2 + pow(t, 3)*p3;
 }
 
-template<typename T>
-constexpr T
-bezier(
-    const T& p0,
-    const T& p1,
-    const T& p2,
-    const T& p3,
-    const T& p4,
-    const std::floating_point auto t)
-{
-    return lerp(bezier(p0, p1, p2, p3, t), bezier(p1, p2, p3, p4, t), t);
-}
-
-template<typename T>
-constexpr T
-bezier(
-    const T& p0,
-    const T& p1,
-    const T& p2,
-    const T& p3,
-    const T& p4,
-    const T& p5,
-    const std::floating_point auto t)
-{
-    return lerp(bezier(p0, p1, p2, p3, p4, t), bezier(p1, p2, p3, p4, p5, t), t);
-}
-
 } /* namespace math */
 } /* namespace adt */
 
