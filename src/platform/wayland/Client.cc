@@ -1,12 +1,14 @@
-#include "adt/defer.hh"
+#ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199309L
+#endif
 
 #include "Client.hh"
 
 #include "adt/Arena.hh"
 #include "adt/Vec.hh"
-#include "logs.hh"
+#include "adt/defer.hh"
 #include "input.hh"
+#include "logs.hh"
 
 #include <string.h>
 

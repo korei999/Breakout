@@ -53,10 +53,10 @@ struct Texture
 {
     Allocator* pAlloc;
     String texPath;
-    u32 width;
-    u32 height;
+    u32 width = 0;
+    u32 height = 0;
     GLuint id = 0;
-    enum TEX_TYPE type;
+    enum TEX_TYPE type = TEX_TYPE::DIFFUSE;
 
     Texture() = default;
     Texture(Allocator* p) : pAlloc(p) {}
@@ -66,11 +66,11 @@ struct TexLoadArg
 {
     Texture* self;
     String path;
-    TEX_TYPE type;
-    bool flip;
-    GLint texMode;
-    GLint magFilter;
-    GLint minFilter;
+    bool flip = false;
+    TEX_TYPE type = TEX_TYPE::DIFFUSE;
+    GLint texMode = GL_CLAMP_TO_EDGE;
+    GLint magFilter = GL_NEAREST;
+    GLint minFilter = GL_NEAREST_MIPMAP_NEAREST;
 };
 
 struct TextureFramebuffer
@@ -102,7 +102,18 @@ struct CubeMapProjections
 
 void TextureBind(Texture* s, GLint glTex);
 void TextureBind(GLuint id, GLint glTex);
-void TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GLint magFilter = GL_NEAREST, GLint minFilter = GL_NEAREST_MIPMAP_NEAREST);
+
+void
+TextureLoad(
+    Texture* s,
+    String path,
+    bool bFlip,
+    TEX_TYPE type,
+    GLint texMode,
+    GLint magFilter = GL_NEAREST,
+    GLint minFilter = GL_NEAREST_MIPMAP_NEAREST
+);
+
 void TextureDestroy(Texture* s);
 TextureFramebuffer TexFramebufferCreate(const GLsizei width, const GLsizei height);
 ShadowMap ShadowMapCreate(const int width, const int height);
@@ -117,6 +128,6 @@ inline int
 TextureSubmit(void* p)
 {
     auto a = *(TexLoadArg*)p;
-    TextureLoad(a.self, a.path, a.type, a.flip, a.texMode, a.magFilter, a.minFilter);
+    TextureLoad(a.self, a.path, a.flip, a.type, a.texMode, a.magFilter, a.minFilter);
     return 0;
 }

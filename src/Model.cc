@@ -61,7 +61,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         if (!StringEndsWith(uri, ".bmp"))
             LOG_FATAL("trying to load unsupported texture: '{}'\n", uri);
 
-        struct args
+        struct Args
         {
             Texture* p;
             Allocator* pAlloc;
@@ -71,7 +71,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             GLint texMode;
         };
 
-        auto* arg = (args*)MutexArenaAlloc(&atmAl, 1, sizeof(args));
+        auto* arg = (Args*)MutexArenaAlloc(&atmAl, 1, sizeof(Args));
         *arg = {
             .p = &aTex[i],
             .pAlloc = &atmAl.arena.base,
@@ -82,9 +82,9 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         };
 
         auto task = [](void* pArgs) -> int {
-            auto a = *(args*)pArgs;
+            auto a = *(Args*)pArgs;
             *a.p = Texture(a.pAlloc);
-            TextureLoad(a.p, a.path, a.type, a.flip, a.texMode);
+            TextureLoad(a.p, a.path, a.flip, a.type, a.texMode);
             return 0;
         };
 

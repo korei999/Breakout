@@ -212,3 +212,28 @@ hash::func<const String>(const String& str)
 }
 
 } /* namespace adt */
+
+
+#ifdef ADT_FMTLIB_INCLUDED
+    #include <fmt/base.h>
+
+template<>
+class fmt::formatter<adt::String>
+{
+  public:
+
+    constexpr auto
+    parse(format_parse_context& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template<typename CONTEXT>
+    constexpr auto
+    format(const adt::String& s, CONTEXT& ctx) const
+    {
+        return format_to(ctx.out(), "{:.{}}", s.pData ? s.pData : "", s.size);
+    }
+};
+
+#endif

@@ -41,7 +41,6 @@ static text::Bitmap s_textFPS;
 static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
 
 static text::TTF s_ttfTest {};
-static text::TTF s_ttfBezier {};
 
 Player g_player {
     .enIdx = 0,
@@ -66,12 +65,10 @@ loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
     /*parser::ttf::FontLoadAndParse(&s_fLiberation, "/usr/share/fonts/liberation-mono/LiberationMono-Bold.ttf");*/
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '@');
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '&');
     /*parser::ttf::FontPrintGlyph(&s_fLiberation, glyphA, true);*/
 
     text::TTFGenMesh(&s_ttfTest, &glyphA);
-
-    text::TTFGenBezierMesh(&s_ttfBezier, {0.0f, 0.1f}, {2.0f, 1.0f}, {0.5f, -0.25f}, 10);
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
@@ -103,11 +100,11 @@ loadAssets()
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
-    TexLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST_MIPMAP_NEAREST};
-    TexLoadArg argBox {&s_tBox, "test-assets/box3.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
-    TexLoadArg argBall {&s_tBall, "test-assets/ball.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
-    TexLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
-    TexLoadArg argWhitePixel {&s_tWhitePixel, "test-assets/WhitePixel.bmp", TEX_TYPE::DIFFUSE, false, GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST};
+    TexLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp"};
+    TexLoadArg argBox {&s_tBox, "test-assets/box3.bmp"};
+    TexLoadArg argBall {&s_tBall, "test-assets/ball.bmp"};
+    TexLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp"};
+    TexLoadArg argWhitePixel {&s_tWhitePixel, "test-assets/WhitePixel.bmp"};
 
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argBeep);
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argUnatco);
@@ -144,7 +141,7 @@ getReflectionSide(math::V2 tar)
     for (int i = 0; i < 4; i++)
     {
         f32 dot = V2Dot(V2Norm(tar), compass[i]);
-        if (dot > max)
+        if (dot >= max)
         {
             max = dot;
             bestMatch = REFLECT_SIDE(i);
@@ -193,25 +190,25 @@ blockHit()
             auto side = getReflectionSide(diff);
 
             /* FIXME: sides are flipped */
-
             auto& enBall = s_aEntities[g_ball.enIdx];
+            f32 off = 16.0f;
             switch (side)
             {
                 default: break;
             
                 case REFLECT_SIDE::UP:
-                    enBall.pos.y -= f::g_unit.y / 8;
+                    enBall.pos.y -= f::g_unit.y / off;
                     g_ball.dir.y = -g_ball.dir.y;
                     break;
 
                 case REFLECT_SIDE::DOWN:
-                    enBall.pos.y += f::g_unit.y / 8;
+                    enBall.pos.y += f::g_unit.y / off;
                     g_ball.dir.y = -g_ball.dir.y;
                     break;
             
                 case REFLECT_SIDE::LEFT:
-                    enBall.pos.x += f::g_unit.x / 8;
-                    if (math::rEq(g_ball.dir.x, 0))
+                    enBall.pos.x += f::g_unit.x / off;
+                    if (math::eq(g_ball.dir.x, 0))
                     {
                         g_ball.dir.x = 0.25;
                         break;
@@ -221,8 +218,8 @@ blockHit()
                     break;
 
                 case REFLECT_SIDE::RIGHT:
-                    enBall.pos.x -= f::g_unit.x / 8;
-                    if (math::rEq(g_ball.dir.x, 0))
+                    enBall.pos.x -= f::g_unit.x / off;
+                    if (math::eq(g_ball.dir.x, 0))
                     {
                         g_ball.dir.x = -0.25;
                         break;
@@ -524,22 +521,6 @@ drawTTF(Allocator* pAlloc)
         text::TTFDrawDots(&s_ttfTest, controls::g_nDots);
     else
         text::TTFDrawOutline(&s_ttfTest, controls::g_nDots);
-
-    // if (controls::g_bTTFDebugDots)
-    // {
-    //     text::TTFDrawDots(&s_ttfTest, controls::g_nDots);
-    // }
-    // else
-    // {
-    //     if (controls::g_bTTFStepDebug)
-    //         text::TTFDrawCorrectLines(&s_ttfTest);
-    //     else text::TTFDrawOutline(&s_ttfTest, controls::g_nDots);
-    // }
-
-    // if (controls::g_bTTFDebugDots)
-    //     text::TTFDrawOutline(&s_ttfBezier, s_ttfBezier.maxSize);
-    // else
-    //     text::TTFDrawDots(&s_ttfBezier, s_ttfBezier.maxSize);
 }
 
 void

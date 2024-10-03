@@ -40,7 +40,7 @@ static once_flag s_onceFlagAllTextures = ONCE_FLAG_INIT;
 void TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter);
 
 void
-TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GLint magFilter, GLint minFilter)
+TextureLoad(Texture* s, String path, bool bFlip, TEX_TYPE type, GLint texMode, GLint magFilter, GLint minFilter)
 {
     call_once(&s_onceFlagAllTextures, +[]{
         mtx_init(&s_mtxAllTextures, mtx_plain);
@@ -73,7 +73,7 @@ TextureLoad(Texture* s, String path, TEX_TYPE type, bool flip, GLint texMode, GL
 
     Arena al(SIZE_1M * 5);
     defer(ArenaFreeAll(&al));
-    TextureData img = loadBMP(&al.base, path, flip);
+    TextureData img = loadBMP(&al.base, path, bFlip);
 
     s->texPath = path;
     s->type = type;

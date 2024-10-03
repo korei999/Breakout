@@ -27,25 +27,6 @@
     #define DCERR(...) (void)0
 #endif
 
-template<>
-class fmt::formatter<adt::String>
-{
-  public:
-
-    constexpr auto
-    parse(format_parse_context& ctx)
-    {
-        return ctx.begin();
-    }
-
-    template<typename CONTEXT>
-    constexpr auto
-    format(const adt::String& s, CONTEXT& ctx) const
-    {
-        return format_to(ctx.out(), "{:.{}}", s.pData ? s.pData : "", s.size);
-    }
-};
-
 enum _LOG_SEV
 {
     _LOG_SEV_OK,

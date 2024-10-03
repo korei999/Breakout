@@ -1,5 +1,5 @@
 #ifdef _WIN32
-    /* has to be included on top because of amazing macros... */
+    /* has to be included on top because of amazing win32 macros... */
     #include "platform/win32/Mixer.hh"
     #include "platform/win32/Win32Window.hh"
 #endif

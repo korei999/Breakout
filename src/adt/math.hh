@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include <concepts>
+#include <limits>
 
 namespace adt
 {
@@ -14,8 +15,8 @@ namespace math
 
 constexpr f64 PI = 3.14159265358979323846;
 constexpr f32 PI_F = f32(PI);
-constexpr f64 EPS = 0.000001;
-constexpr f32 EPS_F = 0.00001f;
+constexpr f64 EPS64 = std::numeric_limits<f64>::epsilon();
+constexpr f32 EPS32 = std::numeric_limits<f32>::epsilon();
 
 constexpr f64 toDeg(f64 x) { return x * 180.0 / PI; }
 constexpr f64 toRad(f64 x) { return x * PI / 180.0; }
@@ -27,8 +28,17 @@ constexpr f64 toDeg(long x) { return toDeg(f64(x)); }
 constexpr f32 toRad(int x) { return toRad(f32(x)); }
 constexpr f32 toDeg(int x) { return toDeg(f32(x)); }
 
-constexpr bool rEq(f64 l, f64 r) { return l >= r - EPS && l <= r + EPS; } /* roughly equals */
-constexpr bool rEq(f32 l, f32 r) { return l >= r - EPS_F && l <= r + EPS_F; } /* roughly equals */
+constexpr bool
+eq(f64 l, f64 r)
+{
+    return abs(l - r) <= EPS64*(fabs(l) + fabs(r) + 1.0);
+}
+
+constexpr bool
+eq(f32 l, f32 r)
+{
+    return fabs(l - r) <= EPS32*(fabs(l) + fabs(r) + 1.0f);
+}
 
 template<typename T> constexpr T sq(const T& x) { return x * x; }
 
@@ -633,7 +643,7 @@ inline bool
 operator==(const V3& l, const V3& r)
 {
     for (int i = 0; i < 3; ++i)
-        if (!rEq(l.e[i], r.e[i]))
+        if (!eq(l.e[i], r.e[i]))
             return false;
 
     return true;
@@ -643,7 +653,7 @@ inline bool
 operator==(const V4& l, const V4& r)
 {
     for (int i = 0; i < 4; ++i)
-        if (!rEq(l.e[i], r.e[i]))
+        if (!eq(l.e[i], r.e[i]))
             return false;
 
     return true;
@@ -653,7 +663,7 @@ inline bool
 operator==(const M3& l, const M3& r)
 {
     for (int i = 0; i < 9; ++i)
-        if (!rEq(l.d[i], r.d[i]))
+        if (!eq(l.d[i], r.d[i]))
             return false;
 
     return true;
@@ -663,7 +673,7 @@ inline bool
 operator==(const M4& l, const M4& r)
 {
     for (int i = 0; i < 16; ++i)
-        if (!rEq(l.d[i], r.d[i]))
+        if (!eq(l.d[i], r.d[i]))
             return false;
 
     return true;

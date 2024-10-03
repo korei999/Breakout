@@ -40,7 +40,7 @@ getTableChecksum(u32* pTable, u32 nBytes)
     u32 nLongs = (nBytes + 3) / 4;
     while (nLongs > 0)
     {
-        sum += swapBytes(*pTable);
+        sum += std::byteswap(*pTable);
         nLongs--, pTable++;
     }
 
@@ -455,18 +455,18 @@ getGlyphIdx(Font* s, u16 code)
 
     for (u16 i = 0; i < c.segCountX2/2; ++i)
     {
-        if (swapBytes(c.startCode[i]) <= code && swapBytes(c.endCode[i]) >= code)
+        if (std::byteswap(c.startCode[i]) <= code && std::byteswap(c.endCode[i]) >= code)
         {
             idx = 0, glyphIndexAddr = 0;
-            if (swapBytes(c.idRangeOffset[i]))
+            if (std::byteswap(c.idRangeOffset[i]))
             {
-                glyphIndexAddr = swapBytes(c.idRangeOffset[i]) +
-                    2 * (code - swapBytes(c.startCode[i]));
+                glyphIndexAddr = std::byteswap(c.idRangeOffset[i]) +
+                    2 * (code - std::byteswap(c.startCode[i]));
                 COUT("glyphIndexAddr: {}\n", glyphIndexAddr);
                 s->p.pos = glyphIndexAddr;
                 idx = BinRead16Rev(&s->p);
             }
-            else idx = (swapBytes(c.idDelta[i]) + code) & 0xffff;
+            else idx = (std::byteswap(c.idDelta[i]) + code) & 0xffff;
 
             MapInsert(&c.mGlyphIndices, s->p.pAlloc, {code, u16(idx)});
             break;
