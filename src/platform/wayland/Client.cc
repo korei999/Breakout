@@ -20,7 +20,7 @@ namespace wayland
 
 EGLint eglLastErrorCode = EGL_SUCCESS;
 
-#ifdef DEBUG
+#ifndef NDEBUG
 #    define EGLD(C)                                                                                                    \
         {                                                                                                              \
             C;                                                                                                         \
@@ -373,7 +373,7 @@ ClientInit(Client* s)
         EGL_CONTEXT_MAJOR_VERSION, 3,
         EGL_CONTEXT_MINOR_VERSION, 3,
         EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
-#ifdef DEBUG
+#ifndef NDEBUG
         EGL_CONTEXT_OPENGL_DEBUG, EGL_TRUE,
 #endif
         EGL_NONE,

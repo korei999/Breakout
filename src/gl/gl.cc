@@ -8,7 +8,7 @@ namespace gl
 GLenum g_lastErrorCode = 0;
 mtx_t g_mtxGlContext;
 
-#ifdef DEBUG
+#ifndef NDEBUG
 
 void
 debugCallback(

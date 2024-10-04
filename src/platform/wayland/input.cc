@@ -76,7 +76,7 @@ keyboardKeyHandler(
     [[maybe_unused]] u32 keyState
 )
 {
-#ifdef DEBUG
+#ifndef NDEBUG
     if (key >= utils::size(controls::g_aPressedKeys))
     {
         LOG_WARN("key '{}' is out of range\n", key);

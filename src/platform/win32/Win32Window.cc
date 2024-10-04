@@ -209,7 +209,7 @@ Win32Init(Win32Window* s)
         WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
         WGL_CONTEXT_MINOR_VERSION_ARB, 5,
         WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-#ifdef DEBUG
+#ifndef NDEBUG
         // ask for debug context for non "Release" builds
         // this is so we can enable debug callback
         WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,

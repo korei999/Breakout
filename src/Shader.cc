@@ -68,7 +68,7 @@ loadVertFrag(Shader* s, String vertexPath, String fragmentPath)
         LOG_FATAL("error linking program.\n");
     }
 
-#ifdef DEBUG
+#ifndef NDEBUG
     glValidateProgram(s->id);
 #endif
 
@@ -114,7 +114,7 @@ loadVertGeomFrag(Shader* s, String vertexPath, String geometryPath, String fragm
         LOG_FATAL("error linking program.\n");
     }
 
-#ifdef DEBUG
+#ifndef NDEBUG
     glValidateProgram(s->id);
 #endif
 

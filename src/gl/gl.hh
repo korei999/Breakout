@@ -13,7 +13,7 @@
 
 #if 0
 
-#ifdef DEBUG
+#ifndef NDEBUG
     #define D(C)                                                                                                       \
         {                                                                                                              \
             /* call function C then check for an error, enabled with -DDEBUG and -DLOGS */                             \

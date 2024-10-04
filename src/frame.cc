@@ -65,7 +65,7 @@ run()
     WindowBindGlContext(app::g_pWindow);
     WindowShowWindow(app::g_pWindow);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(gl::debugCallback, app::g_pWindow);
@@ -159,7 +159,7 @@ mainLoop()
         g_nfps++;
     }
 
-#ifdef DEBUG
+#ifndef NDEBUG
     UboDestroy(&g_uboProjView);
     game::cleanup();
 #endif

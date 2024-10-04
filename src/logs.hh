@@ -19,7 +19,7 @@
 #define COUT(...) fmt::print(stdout, __VA_ARGS__)
 #define CERR(...) fmt::print(stderr, __VA_ARGS__)
 
-#ifdef DEBUG
+#ifndef NDEBUG
     #define DCOUT(...) COUT(__VA_ARGS__)
     #define DCERR(...) CERR(__VA_ARGS__)
 #else

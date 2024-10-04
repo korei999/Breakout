@@ -32,7 +32,7 @@ main(int argc, char** argv)
 
     frame::run();
 
-#ifdef DEBUG
+#ifndef NDEBUG
     audio::MixerDestroy(&mixer);
     WindowDestroy(&window);
     ArenaFreeAll(&alMixer);
@@ -55,14 +55,14 @@ WinMain([[maybe_unused]] HINSTANCE instance,
 
     frame::run();
 
-#ifdef DEBUG
+#ifndef NDEBUG
     platform::win32::MixerDestroy(&mixer);
     platform::win32::Win32Destroy(&app);
     ArenaFreeAll(&alMixer);
 #endif
 }
 
-    #ifdef DEBUG
+    #ifndef NDEBUG
 int
 main(int argc, char** argv)
 {
