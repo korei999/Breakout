@@ -22,7 +22,8 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 include_directories(BEFORE "src")
-include_directories(BEFORE "ThirdParty/include")
+include_directories(BEFORE "ThirdParty/fmtlib")
+# include_directories(BEFORE "ThirdParty/mimalloc/include")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_definitions("-D_CRT_SECURE_NO_WARNINGS")
@@ -103,14 +104,15 @@ endif()
 message(STATUS "CMAKE_BUILD_TYPE: '${CMAKE_BUILD_TYPE}'")
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /GR") # disable exceptions
-    add_definitions("/D_HAS_EXCEPTIONS=0")
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /GR") # disable exceptions
+    # add_definitions("/D_HAS_EXCEPTIONS=0")
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4146 /wd4200 /wd4312")
     set(CMAKE_CXX_FLAGS "/utf-8")
     set(CMAKE_C_FLAGS "/utf-8")
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions") # disable exceptions
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fms-extensions -Wno-missing-braces")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fms-extensions -Wno-missing-braces")
 endif()
@@ -146,7 +148,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     if (NOT FMT_HEADER_ONLY)
         target_link_libraries(
             ${CMAKE_PROJECT_NAME} PRIVATE
-            ${CMAKE_SOURCE_DIR}/ThirdParty/libs/libfmt.a
+            ${CMAKE_SOURCE_DIR}/ThirdParty/fmtlib/libfmt.a
         )
     endif()
 
@@ -207,12 +209,12 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
         if (CMAKE_BUILD_TYPE MATCHES "Debug")
             target_link_libraries(
                 ${CMAKE_PROJECT_NAME} PRIVATE
-                ${CMAKE_SOURCE_DIR}/ThirdParty/libs/fmtd.lib
+                ${CMAKE_SOURCE_DIR}/ThirdParty/fmtlib/fmtd.lib
             )
         else()
             target_link_libraries(
                 ${CMAKE_PROJECT_NAME} PRIVATE
-                ${CMAKE_SOURCE_DIR}/ThirdParty/libs/fmt.lib
+                ${CMAKE_SOURCE_DIR}/ThirdParty/fmtlib/fmt.lib
             )
         endif()
     endif()

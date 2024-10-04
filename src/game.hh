@@ -41,6 +41,7 @@ enum class COLOR : u8
     ESIZE
 };
 
+// TODO: mega struct is sufficient
 struct Entity
 {
     math::V2 pos;
