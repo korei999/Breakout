@@ -507,13 +507,6 @@ drawTTF(Allocator* pAlloc)
     static f64 s_dotsTime {};
     static u32 nDots {};
 
-    // f64 t = utils::timeNowMS();
-    // if (t > (s_dotsTime + 100.0))
-    // {
-    //     s_dotsTime = t;
-    //     nDots = (nDots + 1) % s_ttfTest.maxSize;
-    // }
-
     if (controls::g_nDots < 0) controls::g_nDots = controls::g_nDots = s_ttfTest.maxSize - 1;
     if (controls::g_nDots > int(s_ttfTest.maxSize)) controls::g_nDots = 0;
 
