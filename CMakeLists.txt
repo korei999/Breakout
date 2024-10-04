@@ -51,6 +51,7 @@ add_executable(
 )
 
 add_definitions("-DADT_FMTLIB_INCLUDED")
+add_definitions("-DFMT_USE_EXCEPTIONS=0")
 
 if (CMAKE_BUILD_TYPE MATCHES "Release" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
     set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY WIN32_EXECUTABLE TRUE)
