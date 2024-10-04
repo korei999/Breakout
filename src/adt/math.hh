@@ -28,13 +28,13 @@ constexpr f64 toDeg(long x) { return toDeg(f64(x)); }
 constexpr f32 toRad(int x) { return toRad(f32(x)); }
 constexpr f32 toDeg(int x) { return toDeg(f32(x)); }
 
-constexpr bool
+inline bool
 eq(f64 l, f64 r)
 {
-    return abs(l - r) <= EPS64*(fabs(l) + fabs(r) + 1.0);
+    return fabs(l - r) <= EPS64*(fabs(l) + fabs(r) + 1.0);
 }
 
-constexpr bool
+inline bool
 eq(f32 l, f32 r)
 {
     return fabs(l - r) <= EPS32*(fabs(l) + fabs(r) + 1.0f);
