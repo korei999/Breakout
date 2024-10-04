@@ -4,7 +4,7 @@
 #include "Shader.hh"
 #include "controls.hh"
 #include "text.hh"
-#include "Texture.hh"
+#include "texture.hh"
 #include "Window.hh"
 #include "adt/AllocatorPool.hh"
 #include "adt/Arena.hh"
@@ -26,11 +26,11 @@ static Vec<game::Block> s_aBlocks(AllocatorPoolGet(&s_assetArenas, SIZE_1K));
 static Shader s_shFontBitmap;
 static Shader s_shSprite;
 
-static Texture s_tAsciiMap(AllocatorPoolGet(&s_assetArenas, SIZE_1M));
-static Texture s_tBox(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
-static Texture s_tBall(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
-static Texture s_tPaddle(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
-static Texture s_tWhitePixel(AllocatorPoolGet(&s_assetArenas, 250));
+static texture::Img s_tAsciiMap(AllocatorPoolGet(&s_assetArenas, SIZE_1M));
+static texture::Img s_tBox(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
+static texture::Img s_tBall(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
+static texture::Img s_tPaddle(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
+static texture::Img s_tWhitePixel(AllocatorPoolGet(&s_assetArenas, 250));
 
 static parser::Wave s_sndBeep(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 400));
 static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_assetArenas, SIZE_1M * 35));
@@ -66,7 +66,6 @@ loadAssets()
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
     /*parser::ttf::FontLoadAndParse(&s_fLiberation, "/usr/share/fonts/liberation-mono/LiberationMono-Bold.ttf");*/
     parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '&');
-    /*parser::ttf::FontPrintGlyph(&s_fLiberation, glyphA, true);*/
 
     text::TTFGenMesh(&s_ttfTest, &glyphA);
 
@@ -100,20 +99,20 @@ loadAssets()
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
-    TexLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp"};
-    TexLoadArg argBox {&s_tBox, "test-assets/box3.bmp"};
-    TexLoadArg argBall {&s_tBall, "test-assets/ball.bmp"};
-    TexLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp"};
-    TexLoadArg argWhitePixel {&s_tWhitePixel, "test-assets/WhitePixel.bmp"};
+    texture::ImgLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp"};
+    texture::ImgLoadArg argBox {&s_tBox, "test-assets/box3.bmp"};
+    texture::ImgLoadArg argBall {&s_tBall, "test-assets/ball.bmp"};
+    texture::ImgLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp"};
+    texture::ImgLoadArg argWhitePixel {&s_tWhitePixel, "test-assets/WhitePixel.bmp"};
 
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argBeep);
     ThreadPoolSubmit(&tp, parser::WaveSubmit, &argUnatco);
 
-    ThreadPoolSubmit(&tp, TextureSubmit, &argFontBitmap);
-    ThreadPoolSubmit(&tp, TextureSubmit, &argBox);
-    ThreadPoolSubmit(&tp, TextureSubmit, &argBall);
-    ThreadPoolSubmit(&tp, TextureSubmit, &argPaddle);
-    ThreadPoolSubmit(&tp, TextureSubmit, &argWhitePixel);
+    ThreadPoolSubmit(&tp, texture::ImgSubmit, &argFontBitmap);
+    ThreadPoolSubmit(&tp, texture::ImgSubmit, &argBox);
+    ThreadPoolSubmit(&tp, texture::ImgSubmit, &argBall);
+    ThreadPoolSubmit(&tp, texture::ImgSubmit, &argPaddle);
+    ThreadPoolSubmit(&tp, texture::ImgSubmit, &argWhitePixel);
 
     ThreadPoolWait(&tp);
 }
@@ -326,8 +325,8 @@ loadLevel()
     VecSetCap(&s_aBlocks, levelY*levelX);
     VecSetSize(&s_aBlocks, 0);
 
-    auto fBoxTex = MapSearch(&g_mAllTexturesIdxs, {"test-assets/box3.bmp"});
-    auto boxTexId = g_aAllTextures[fBoxTex.pData->vecIdx].id;
+    auto fBoxTex = MapSearch(&texture::g_mAllTexturesIdxs, {"test-assets/box3.bmp"});
+    auto boxTexId = texture::g_aAllTextures[fBoxTex.pData->vecIdx].id;
 
     for (u32 i = 0; i < levelY; i++)
     {
@@ -441,7 +440,7 @@ drawFPSCounter(Allocator* pAlloc)
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
     ShaderUse(&s_shFontBitmap);
 
-    TextureBind(&s_tAsciiMap, GL_TEXTURE0);
+    ImgBind(&s_tAsciiMap, GL_TEXTURE0);
 
     ShaderSetM4(&s_shFontBitmap, "uProj", proj);
     ShaderSetV4(&s_shFontBitmap, "uColor", {colors::hexToV4(0xeeeeeeff)});
@@ -480,7 +479,7 @@ drawEntities([[maybe_unused]] Allocator* pAlloc)
         if (idxLastTex != e.texIdx)
         {
             idxLastTex = e.texIdx;
-            TextureBind(e.texIdx, GL_TEXTURE0);
+            texture::ImgBind(e.texIdx, GL_TEXTURE0);
         }
 
         ShaderSetM4(&s_shSprite, "uModel", tm);
@@ -497,9 +496,9 @@ drawTTF([[maybe_unused]] Allocator* pAlloc)
     auto* sh = &s_shFontBitmap;
     ShaderUse(sh);
 
-    auto f = MapSearch(&g_mAllTexturesIdxs, {"test-assets/WhitePixel.bmp"});
+    auto f = MapSearch(&texture::g_mAllTexturesIdxs, {"test-assets/WhitePixel.bmp"});
     assert(f);
-    TextureBind(g_aAllTextures[f.pData->vecIdx].id, GL_TEXTURE0);
+    texture::ImgBind(texture::g_aAllTextures[f.pData->vecIdx].id, GL_TEXTURE0);
 
     ShaderSetM4(sh, "uProj", proj);
     ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'ff'00'ff)});
@@ -525,10 +524,10 @@ cleanup()
         ShaderDestroy(&e);
     VecDestroy(&g_aAllShaders);
 
-    for (auto& t : g_aAllTextures)
-        TextureDestroy(&t);
-    VecDestroy(&g_aAllTextures);
-    MapDestroy(&g_mAllTexturesIdxs);
+    for (auto& t : texture::g_aAllTextures)
+        ImgDestroy(&t);
+    VecDestroy(&texture::g_aAllTextures);
+    MapDestroy(&texture::g_mAllTexturesIdxs);
 
     AllocatorPoolFreeAll(&s_assetArenas);
 }

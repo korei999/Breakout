@@ -10,7 +10,7 @@
 
 using namespace adt;
 
-Arena alMixer(SIZE_1M);
+Arena arena(SIZE_1M);
 
 #ifdef __linux__
     #include "platform/wayland/Client.hh"
@@ -21,7 +21,7 @@ main(int argc, char** argv)
 {
     app::g_argc = argc, app::g_argv = argv;
 
-    platform::pipewire::Mixer mixer(&alMixer.base);
+    platform::pipewire::Mixer mixer(&arena.base);
     platform::wayland::Client window("Breakout");
 
     WindowInit(&window);
@@ -35,7 +35,7 @@ main(int argc, char** argv)
 #ifndef NDEBUG
     audio::MixerDestroy(&mixer);
     WindowDestroy(&window);
-    ArenaFreeAll(&alMixer);
+    ArenaFreeAll(&arena);
 #endif
 }
 
@@ -47,7 +47,7 @@ WinMain([[maybe_unused]] HINSTANCE instance,
         [[maybe_unused]] LPSTR cmdline,
         [[maybe_unused]] int cmdshow)
 {
-    platform::win32::Mixer mixer(&alMixer.base);
+    platform::win32::Mixer mixer(&arena.base);
     platform::win32::Win32Window app("Breakout", instance);
 
     app::g_pMixer = &mixer.base;
@@ -58,7 +58,7 @@ WinMain([[maybe_unused]] HINSTANCE instance,
 #ifndef NDEBUG
     platform::win32::MixerDestroy(&mixer);
     platform::win32::Win32Destroy(&app);
-    ArenaFreeAll(&alMixer);
+    ArenaFreeAll(&arena);
 #endif
 }
 

@@ -3,7 +3,7 @@
 #include "gltf/gltf.hh"
 #include "adt/math.hh"
 #include "Shader.hh"
-#include "Texture.hh"
+#include "texture.hh"
 
 #include <limits.h>
 
@@ -51,8 +51,8 @@ void UboDestroy(Ubo* s);
 
 struct Materials
 {
-    Texture diffuse;
-    Texture normal;
+    texture::Img diffuse;
+    texture::Img normal;
 };
 
 struct MeshData

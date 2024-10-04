@@ -18,7 +18,7 @@ static void
 addToMap()
 {
     call_once(&s_onceFlagAllShaders, +[]{
-        g_aAllShaders = {&in_OsAllocator.base};
+        g_aAllShaders = {&inl_OsAllocator.base};
     });
 
     /* TODO: hash by something */
@@ -82,7 +82,7 @@ static void
 loadVertGeomFrag(Shader* s, String vertexPath, String geometryPath, String fragmentPath)
 {
     call_once(&s_onceFlagAllShaders, +[]{
-        g_aAllShaders = {&in_OsAllocator.base};
+        g_aAllShaders = {&inl_OsAllocator.base};
     });
 
     GLint linked;

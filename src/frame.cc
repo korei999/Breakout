@@ -135,7 +135,7 @@ gameStateLoop([[maybe_unused]] void* pNull)
 static void
 mainLoop()
 {
-    FixedAllocator alFrame(s_aFrameMemDraw, sizeof(s_aFrameMemGame));
+    FixedAllocator alloc(s_aFrameMemDraw, sizeof(s_aFrameMemGame));
 
     thrd_t thrdUpdatePhysics;
     thrd_create(&thrdUpdatePhysics, gameStateLoop, nullptr);
@@ -152,9 +152,9 @@ mainLoop()
 
         UboBufferData(&g_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
 
-        game::draw(&alFrame.base);
+        game::draw(&alloc.base);
 
-        FixedAllocatorReset(&alFrame);
+        FixedAllocatorReset(&alloc);
         WindowSwapBuffers(app::g_pWindow);
         g_nfps++;
     }

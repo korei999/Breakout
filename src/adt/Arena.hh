@@ -49,13 +49,13 @@ struct Arena
 
 inline void* ArenaAlloc(Arena* s, u64 mCount, u64 mSize);
 inline void* ArenaRealloc(Arena* s, void* p, u64 mCount, u64 mSize);
-inline void ArenaFree(Arena* s, void* p);
+inline void _ArenaFree(Arena* s, void* p);
 inline void ArenaReset(Arena* s);
 inline void ArenaFreeAll(Arena* s);
 
 inline void* alloc(Arena* s, u64 mCount, u64 mSize) { return ArenaAlloc(s, mCount, mSize); }
 inline void* realloc(Arena* s, void* p, u64 mCount, u64 mSize) { return ArenaRealloc(s, p, mCount, mSize); }
-inline void free(Arena* s, void* p) { ArenaFree(s, p); }
+inline void free(Arena* s, void* p) { _ArenaFree(s, p); }
 inline void freeAll(Arena* s) { ArenaFreeAll(s); }
 
 inline ArenaBlock* _ArenaAllocatorNewBlock(Arena* s, u64 size);
@@ -161,7 +161,7 @@ ArenaRealloc(Arena* s, void* p, u64 mCount, u64 mSize)
 }
 
 inline void
-ArenaFree([[maybe_unused]] Arena* s, [[maybe_unused]] void* p)
+_ArenaFree([[maybe_unused]] Arena* s, [[maybe_unused]] void* p)
 {
     // TODO: it's possible to free the last allocation i guess
 }
@@ -187,16 +187,16 @@ ArenaFreeAll(Arena* s)
         ::free(pB);
 }
 
-inline const AllocatorInterface __ArenaAllocatorVTable {
+inline const AllocatorInterface _inl_ArenaAllocatorVTable {
     .alloc = decltype(AllocatorInterface::alloc)(ArenaAlloc),
     .realloc = decltype(AllocatorInterface::realloc)(ArenaRealloc),
-    .free = decltype(AllocatorInterface::free)(ArenaFree),
+    .free = decltype(AllocatorInterface::free)(_ArenaFree),
     .freeAll = decltype(AllocatorInterface::freeAll)(ArenaFreeAll),
 };
 
 inline 
 Arena::Arena(u32 blockCap)
-    : base {&__ArenaAllocatorVTable}
+    : base {&_inl_ArenaAllocatorVTable}
 {
     _ArenaAllocatorNewBlock(this, align8(blockCap + sizeof(ArenaNode)));
 }

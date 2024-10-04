@@ -41,7 +41,7 @@ add_executable(
     src/gltf/gltf.cc
     src/parser/Wave.cc
     src/parser/ttf.cc
-    src/Texture.cc
+    src/texture.cc
     src/Model.cc
     src/text.cc
     src/game.cc

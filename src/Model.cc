@@ -51,7 +51,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     defer(ThreadPoolDestroy(&tp));
 
     /* preload texures */
-    Vec<Texture> aTex(&atmAl.arena.base, VecSize(&a.aImages));
+    Vec<texture::Img> aTex(&atmAl.arena.base, VecSize(&a.aImages));
     VecSetSize(&aTex, VecSize(&a.aImages));
 
     for (u32 i = 0; i < VecSize(&a.aImages); i++)
@@ -63,10 +63,10 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
         struct Args
         {
-            Texture* p;
+            texture::Img* p;
             Allocator* pAlloc;
             String path;
-            TEX_TYPE type;
+            texture::TYPE type;
             bool flip;
             GLint texMode;
         };
@@ -76,15 +76,15 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             .p = &aTex[i],
             .pAlloc = &atmAl.arena.base,
             .path = file::replacePathEnding(s->pAlloc, path, uri),
-            .type = TEX_TYPE::DIFFUSE,
+            .type = texture::TYPE::DIFFUSE,
             .flip = true,
             .texMode = texMode
         };
 
         auto task = [](void* pArgs) -> int {
             auto a = *(Args*)pArgs;
-            *a.p = Texture(a.pAlloc);
-            TextureLoad(a.p, a.path, a.flip, a.type, a.texMode);
+            *a.p = texture::Img(a.pAlloc);
+            ImgLoad(a.p, a.path, a.flip, a.type, a.texMode);
             return 0;
         };
 
@@ -212,7 +212,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                     if (diffTexInd != NPOS)
                     {
                         nMesh.meshData.materials.diffuse = aTex[diffTexInd];
-                        nMesh.meshData.materials.diffuse.type = TEX_TYPE::DIFFUSE;
+                        nMesh.meshData.materials.diffuse.type = texture::TYPE::DIFFUSE;
                     }
                 }
 
@@ -223,7 +223,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                     if (normTexIdx != NPOS)
                     {
                         nMesh.meshData.materials.normal = aTex[normalSourceIdx];
-                        nMesh.meshData.materials.normal.type = TEX_TYPE::NORMAL;
+                        nMesh.meshData.materials.normal.type = texture::TYPE::NORMAL;
                     }
                 }
             }
@@ -261,9 +261,9 @@ ModelDraw(Model* s, DRAW flags, Shader* sh, String svUniform, String svUniformM3
             glBindVertexArray(e.meshData.vao);
 
             if (flags & DRAW::DIFF)
-                TextureBind(&e.meshData.materials.diffuse, GL_TEXTURE0);
+                ImgBind(&e.meshData.materials.diffuse, GL_TEXTURE0);
             if (flags & DRAW::NORM)
-                TextureBind(&e.meshData.materials.normal, GL_TEXTURE1);
+                ImgBind(&e.meshData.materials.normal, GL_TEXTURE1);
 
             math::M4 m = math::M4Iden();
             if (flags & DRAW::APPLY_TM)
@@ -333,9 +333,9 @@ ModelDrawGraph(
                 glBindVertexArray(e.meshData.vao);
 
                 if (flags & DRAW::DIFF)
-                    TextureBind(&e.meshData.materials.diffuse, GL_TEXTURE0);
+                    ImgBind(&e.meshData.materials.diffuse, GL_TEXTURE0);
                 if (flags & DRAW::NORM)
-                    TextureBind(&e.meshData.materials.normal, GL_TEXTURE1);
+                    ImgBind(&e.meshData.materials.normal, GL_TEXTURE1);
 
                 if (sh)
                 {

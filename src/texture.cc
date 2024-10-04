@@ -1,4 +1,4 @@
-#include "Texture.hh"
+#include "texture.hh"
 
 #include "Window.hh"
 #include "adt/Arena.hh"
@@ -31,21 +31,24 @@
  *	DATA:	X	Pixels
  */
 
-Vec<Texture> g_aAllTextures;
-Map<TextureHash> g_mAllTexturesIdxs;
+namespace texture
+{
+
+Vec<Img> g_aAllTextures;
+Map<Hash> g_mAllTexturesIdxs;
 
 static mtx_t s_mtxAllTextures;
 static once_flag s_onceFlagAllTextures = ONCE_FLAG_INIT;
 
-void TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter);
+void ImgSet(Img* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter);
 
 void
-TextureLoad(Texture* s, String path, bool bFlip, TEX_TYPE type, GLint texMode, GLint magFilter, GLint minFilter)
+ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilter, GLint minFilter)
 {
     call_once(&s_onceFlagAllTextures, +[]{
         mtx_init(&s_mtxAllTextures, mtx_plain);
-        g_aAllTextures = {&in_OsAllocator.base};
-        g_mAllTexturesIdxs = {&in_OsAllocator.base};
+        g_aAllTextures = {&inl_OsAllocator.base};
+        g_mAllTexturesIdxs = {&inl_OsAllocator.base};
     });
 
     u32 vecIdx = NPOS;
@@ -80,7 +83,7 @@ TextureLoad(Texture* s, String path, bool bFlip, TEX_TYPE type, GLint texMode, G
 
     Vec<u8> pixels = img.aData;
 
-    TextureSet(s, VecData(&pixels), texMode, img.format, img.width, img.height, magFilter, minFilter);
+    ImgSet(s, VecData(&pixels), texMode, img.format, img.width, img.height, magFilter, minFilter);
 
     s->width = img.width;
     s->height = img.height;
@@ -95,7 +98,7 @@ TextureLoad(Texture* s, String path, bool bFlip, TEX_TYPE type, GLint texMode, G
 }
 
 void
-TextureDestroy(Texture* s)
+ImgDestroy(Img* s)
 {
     if (s->id != 0)
     {
@@ -106,21 +109,21 @@ TextureDestroy(Texture* s)
 }
 
 void
-TextureBind(Texture* s, GLint glTex)
+ImgBind(Img* s, GLint glTex)
 {
     glActiveTexture(glTex);
     glBindTexture(GL_TEXTURE_2D, s->id);
 }
 
 void
-TextureBind(GLuint id, GLint glTex)
+ImgBind(GLuint id, GLint glTex)
 {
     glActiveTexture(glTex);
     glBindTexture(GL_TEXTURE_2D, id);
 }
 
 void
-TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter)
+ImgSet(Img* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter)
 {
     mtx_lock(&gl::g_mtxGlContext);
     WindowBindGlContext(app::g_pWindow);
@@ -138,7 +141,7 @@ TextureSet(Texture* s, u8* pData, GLint texMode, GLint format, GLsizei width, GL
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
 
-    /* NOTE: less fun way of swapping channels */
+    /* NOTE: simpler way of swapping channels */
     /*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);*/
     /*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);*/
 
@@ -201,7 +204,7 @@ ShadowMapCreate(const int width, const int height)
 }
 
 CubeMap
-CubeShadowMapCreate(const int width, const int height)
+CubeMapShadowMapCreate(const int width, const int height)
 {
     GLuint depthCubeMap;
     glGenTextures(1, &depthCubeMap);
@@ -237,7 +240,7 @@ CubeShadowMapCreate(const int width, const int height)
 }
 
 CubeMap
-SkyBoxCreate(String sFaces[6])
+skyBoxCreate(String sFaces[6])
 {
     Arena al(SIZE_1M * 6);
     defer(ArenaFreeAll(&al));
@@ -353,8 +356,8 @@ loadBMP(Allocator* pAlloc, String path, bool flip)
     };
 }
 
-TextureFramebuffer
-TexFramebufferCreate(const GLsizei width, const GLsizei height)
+Framebuffer
+FramebufferCreate(const GLsizei width, const GLsizei height)
 {
     GLuint fbo;
     glGenFramebuffers(1, &fbo);
@@ -485,3 +488,5 @@ flipCpyBGRtoRGBA(u8* dest, u8* src, int width, int height, bool vertFlip)
         f += inc;
     }
 };
+
+} /* namespace texture */

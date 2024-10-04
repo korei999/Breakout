@@ -20,7 +20,7 @@ inline void* realloc(OsAllocator* s, void* p, u64 mCount, u64 mSize) { return Os
 inline void free(OsAllocator* s, void* p) { OsFree(s, p); }
 inline void freeAll(OsAllocator* s) { __OsFreeAll(s); }
 
-inline const AllocatorInterface __OsAllocatorVTable {
+inline const AllocatorInterface _inl_OsAllocatorVTable {
     .alloc = (decltype(AllocatorInterface::alloc))OsAlloc,
     .realloc = (decltype(AllocatorInterface::realloc))OsRealloc,
     .free = (decltype(AllocatorInterface::free))OsFree,
@@ -31,7 +31,7 @@ struct OsAllocator
 {
     Allocator base {};
 
-    constexpr OsAllocator([[maybe_unused]] u32 _ingnored = 0) : base {&__OsAllocatorVTable} {}
+    constexpr OsAllocator([[maybe_unused]] u32 _ingnored = 0) : base {&_inl_OsAllocatorVTable} {}
 };
 
 inline void*
@@ -58,6 +58,6 @@ __OsFreeAll([[maybe_unused]] OsAllocator* s)
     assert(false && "OsAllocator: no 'freeAll()' method");
 }
 
-inline OsAllocator in_OsAllocator {};
+inline OsAllocator inl_OsAllocator {};
 
 } /* namespace adt */

@@ -9,32 +9,28 @@
 
 using namespace adt;
 
-struct Texture;
-struct TextureHash;
+namespace texture
+{
 
-extern Vec<Texture> g_aAllTextures;
-extern Map<TextureHash> g_mAllTexturesIdxs;
+struct Img;
+struct Hash;
 
-struct TextureHash
+extern Vec<Img> g_aAllTextures;
+extern Map<Hash> g_mAllTexturesIdxs;
+
+struct Hash
 {
     String sPathKey {};
     u32 vecIdx {};
 };
 
 inline bool
-operator==(const TextureHash& l, const TextureHash& r)
+operator==(const Hash& l, const Hash& r)
 {
     return l.sPathKey == r.sPathKey;
 }
 
-template<>
-inline u64
-hash::func(const TextureHash& x)
-{
-    return hash::func(x.sPathKey);
-}
-
-enum TEX_TYPE : s8
+enum TYPE : s8
 {
     DIFFUSE = 0,
     NORMAL
@@ -49,31 +45,31 @@ struct TextureData
     GLint format;
 };
 
-struct Texture
+struct Img
 {
     Allocator* pAlloc;
     String texPath;
     u32 width = 0;
     u32 height = 0;
     GLuint id = 0;
-    enum TEX_TYPE type = TEX_TYPE::DIFFUSE;
+    enum TYPE type = TYPE::DIFFUSE;
 
-    Texture() = default;
-    Texture(Allocator* p) : pAlloc(p) {}
+    Img() = default;
+    Img(Allocator* p) : pAlloc(p) {}
 };
 
-struct TexLoadArg
+struct ImgLoadArg
 {
-    Texture* self;
+    Img* self;
     String path;
     bool flip = false;
-    TEX_TYPE type = TEX_TYPE::DIFFUSE;
+    TYPE type = TYPE::DIFFUSE;
     GLint texMode = GL_CLAMP_TO_EDGE;
     GLint magFilter = GL_NEAREST;
     GLint minFilter = GL_NEAREST_MIPMAP_NEAREST;
 };
 
-struct TextureFramebuffer
+struct Framebuffer
 {
     GLuint fbo;
     GLuint tex;
@@ -83,12 +79,12 @@ struct TextureFramebuffer
 
 struct ShadowMap
 {
-    TextureFramebuffer t;
+    Framebuffer t;
 };
 
 struct CubeMap
 {
-    TextureFramebuffer t;
+    Framebuffer t;
 };
 
 struct CubeMapProjections
@@ -97,37 +93,46 @@ struct CubeMapProjections
 
     CubeMapProjections(const math::M4& projection, const math::V3& position);
 
-    math::M4& operator[](size_t i) { return tms[i]; }
+    math::M4& operator[](size_t i) { assert(i < 6); return tms[i]; }
 };
 
-void TextureBind(Texture* s, GLint glTex);
-void TextureBind(GLuint id, GLint glTex);
+void ImgBind(Img* s, GLint glTex);
+void ImgBind(GLuint id, GLint glTex);
 
 void
-TextureLoad(
-    Texture* s,
+ImgLoad(
+    Img* s,
     String path,
     bool bFlip,
-    TEX_TYPE type,
+    TYPE type,
     GLint texMode,
     GLint magFilter = GL_NEAREST,
     GLint minFilter = GL_NEAREST_MIPMAP_NEAREST
 );
 
-void TextureDestroy(Texture* s);
-TextureFramebuffer TexFramebufferCreate(const GLsizei width, const GLsizei height);
+void ImgDestroy(Img* s);
+Framebuffer FramebufferCreate(const GLsizei width, const GLsizei height);
 ShadowMap ShadowMapCreate(const int width, const int height);
-CubeMap CubeShadowMapCreate(const int width, const int height);
-CubeMap SkyBoxCreate(String sFaces[6]);
+CubeMap CubeMapShadowMapCreate(const int width, const int height);
+CubeMap skyBoxCreate(String sFaces[6]);
 TextureData loadBMP(Allocator* pAlloc, String path, bool flip);
 void flipCpyBGRAtoRGBA(u8* dest, u8* src, int width, int height, bool vertFlip);
 void flipCpyBGRtoRGB(u8* dest, u8* src, int width, int height, bool vertFlip);
 void flipCpyBGRtoRGBA(u8* dest, u8* src, int width, int height, bool vertFlip);
 
 inline int
-TextureSubmit(void* p)
+ImgSubmit(void* p)
 {
-    auto a = *(TexLoadArg*)p;
-    TextureLoad(a.self, a.path, a.flip, a.type, a.texMode, a.magFilter, a.minFilter);
+    auto a = *(ImgLoadArg*)p;
+    ImgLoad(a.self, a.path, a.flip, a.type, a.texMode, a.magFilter, a.minFilter);
     return 0;
+}
+
+} /* namespace texure */
+
+template<>
+inline u64
+hash::func(const texture::Hash& x)
+{
+    return hash::func(x.sPathKey);
 }
