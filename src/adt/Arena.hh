@@ -7,11 +7,6 @@
 #include <string.h>
 #include <stddef.h>
 
-#ifdef __linux
-    #include <sys/mman.h>
-    #include <unistd.h>
-#endif
-
 #ifndef NDEBUG
     #include <stdio.h>
 #endif
@@ -71,20 +66,8 @@ _ArenaAllocatorNewBlock(Arena* s, u64 size)
     ArenaBlock** ppLastBlock = &s->pBlocksHead;
     while (*ppLastBlock) ppLastBlock = &((*ppLastBlock)->pNext);
 
-#ifdef __linux__
-    int pageSize = getpagesize();
-    size = align(size, pageSize);
-    u64 addedSize = align(size + sizeof(ArenaBlock), pageSize);
-#else
     u64 addedSize = size + sizeof(ArenaBlock);
-#endif
-
-#ifdef __linux__
-    *ppLastBlock = (ArenaBlock*)mmap(0, addedSize, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-    int err = mprotect(*ppLastBlock, sizeof(ArenaBlock), PROT_READ|PROT_WRITE);
-#else
     *ppLastBlock = (ArenaBlock*)(calloc(1, addedSize));
-#endif
 
     auto* pBlock = (ArenaBlock*)*ppLastBlock;
     pBlock->size = size;
@@ -134,11 +117,6 @@ repeat:
     }
 
     auto* nextAddr = (ArenaNode*)((u8*)pNextNode + aligned);
-
-#ifdef __linux__
-    int err = mprotect(pFreeBlock, (u8*)nextAddr - (u8*)pFreeBlock + sizeof(ArenaNode), PROT_READ|PROT_WRITE);
-#endif
-
     pNextNode->pNext = nextAddr;
     pFreeBlock->pLast = pNextNode;
 
@@ -168,11 +146,6 @@ ArenaRealloc(Arena* s, void* p, u64 mCount, u64 mSize)
     {
         /* NOTE: + sizeof(ArenaNode) is necessary */
         auto* nextAddr = (ArenaNode*)((u8*)pNode + aligned + sizeof(ArenaNode));
-
-#ifdef __linux__
-        int err = mprotect(pBlock, (u8*)nextAddr - (u8*)pBlock, PROT_READ|PROT_WRITE);
-        assert(err != -1);
-#endif
 
         pNode->pNext = nextAddr;
 
@@ -210,16 +183,8 @@ ArenaReset(Arena* s)
 inline void
 ArenaFreeAll(Arena* s)
 {
-#ifdef __linux__
-    ADT_ARENA_FOREACH_SAFE(s, pB, tmp)
-    {
-        auto err = ::munmap(pB, pB->size + sizeof(ArenaBlock));
-        assert(err != -1);
-    }
-#else
     ADT_ARENA_FOREACH_SAFE(s, pB, tmp)
         ::free(pB);
-#endif
 }
 
 inline const AllocatorInterface __ArenaAllocatorVTable {

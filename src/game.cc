@@ -463,7 +463,7 @@ drawFPSCounter(Allocator* pAlloc)
 }
 
 static void
-drawEntities(Allocator* pAlloc)
+drawEntities([[maybe_unused]] Allocator* pAlloc)
 {
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
@@ -490,7 +490,7 @@ drawEntities(Allocator* pAlloc)
 }
 
 static void
-drawTTF(Allocator* pAlloc)
+drawTTF([[maybe_unused]] Allocator* pAlloc)
 {
     math::M4 proj = math::M4Ortho(-1.0f, 2.0f, -0.5f, 1.5f, -1.0f, 1.0f);
 
