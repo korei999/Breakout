@@ -263,11 +263,11 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cur
 
         if (p.bEndOfCurve)
         {
-            VecPush(&aNew, pAlloc, {
-                .pos = aNonCurvyPoints[firstInCurveIdx].pos,
-                .bOnCurve = true,
-                .bEndOfCurve = false,
-            });
+            /*VecPush(&aNew, pAlloc, {*/
+            /*    .pos = aNonCurvyPoints[firstInCurveIdx].pos,*/
+            /*    .bOnCurve = true,*/
+            /*    .bEndOfCurve = false,*/
+            /*});*/
 
             pEndIdxs->aIdxs[endIdx++] = VecLastI(&aNew);
 
@@ -397,7 +397,7 @@ TTFDrawLinesOrDots(TTF* s, GLint drawMode, u32 max)
 void
 TTFDrawOutline(TTF* s, u32 max)
 {
-    TTFDrawLinesOrDots(s, GL_LINE_STRIP, max == 0 ? s->maxSize : max);
+    TTFDrawLinesOrDots(s, GL_LINE_LOOP, max == 0 ? s->maxSize : max);
 }
 
 void

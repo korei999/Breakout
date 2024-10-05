@@ -79,7 +79,7 @@ run()
     glEnable(GL_BLEND);
 
     math::V4 col;
-    col.xyz = colors::get(colors::IDX::MEDIUMSLATEBLUE);
+    col.xyz = colors::get(colors::IDX::BLACK);
     col.a = 1.0f;
 
     glClearColor(col.r, col.g, col.b, col.a);

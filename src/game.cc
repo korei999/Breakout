@@ -68,7 +68,7 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '@');
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, 'G');
 
     text::TTFGenMesh(&s_ttfTest, &glyphA);
 
@@ -107,14 +107,18 @@ loadAssets()
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
-    u8 s_aTestImg[64][64] {};
-    for (int i = 0; i < 64; ++i)
-        for (int j = 0; j < 64; ++j)
-            if (i % 2 == 0)
-                s_aTestImg[i][j] = 1;
+    u32 testSize = 64;
+    u8* aTestImg = (u8*)::calloc(1, math::sq(testSize));
+    defer(::free(aTestImg));
 
-    texture::ImgSetMonochrome(&s_tTest, (u8*)s_aTestImg, 64, 64);
-    COUT("testImgId: {}\n", s_tTest.id);
+    aTestImg[0] = 255;
+    aTestImg[testSize*(testSize-1) + testSize-1] = 255;
+
+    /*for (int i = 0; i < 32; ++i)*/
+    /*    for (int j = 0; j < 32; j++)*/
+    /*        aTestImg[32*i + j + 0] = ((j+1.0f)/32.0f) * 255.0f;*/
+
+    texture::ImgSetMonochrome(&s_tTest, (u8*)aTestImg, testSize, testSize);
 
     texture::ImgLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp"};
     texture::ImgLoadArg argBox {&s_tBox, "test-assets/box3.bmp"};
@@ -535,7 +539,7 @@ drawTTF([[maybe_unused]] Allocator* pAlloc)
 static void
 drawTestImg([[maybe_unused]] Allocator* pAlloc)
 {
-    math::M4 proj = math::M4Ortho(-0.0f, 64.0f/10, -0.0f, 64.0f/10, -1.0f, 1.0f);
+    math::M4 proj = math::M4Ortho(-0.0f, 4.0f, -0.0f, 4.0f, -1.0f, 1.0f);
 
     auto* sh = &s_sh1Col;
     ShaderUse(sh);
@@ -543,9 +547,8 @@ drawTestImg([[maybe_unused]] Allocator* pAlloc)
     texture::ImgBind(&s_tTest, GL_TEXTURE0);
 
     ShaderSetM4(sh, "uProj", proj);
-    ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'00'ff'ff)});
+    ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'ff'ff'ff)});
 
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     PlainDraw(&s_plain);
 }
 
