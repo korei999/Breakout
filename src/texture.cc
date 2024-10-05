@@ -167,11 +167,7 @@ ImgSetMonochrome(Img* s, u8* pData, u32 width, u32 height)
     glBindTexture(GL_TEXTURE_2D, s->id);
     defer(glBindTexture(GL_TEXTURE_2D, 0));
 
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0, GL_RED, width, height,
-        0, GL_RED, GL_UNSIGNED_BYTE, pData
-    );
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, pData);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -240,9 +236,11 @@ CubeMapShadowMapCreate(const int width, const int height)
     glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubeMap);
 
     for (GLuint i = 0; i < 6; i++)
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                     0, GL_DEPTH_COMPONENT, width, height,
-                     0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage2D(
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+            0, GL_DEPTH_COMPONENT, width, height,
+            0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr
+        );
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -282,9 +280,11 @@ skyBoxCreate(String sFaces[6])
     for (u32 i = 0; i < 6; i++)
     {
         Data tex = loadBMP(&al.base, sFaces[i], true);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                     0, tex.format, tex.width, tex.height,
-                     0, tex.format, GL_UNSIGNED_BYTE, VecData(&tex.aData));
+        glTexImage2D(
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+            0, tex.format, tex.width, tex.height,
+            0, tex.format, GL_UNSIGNED_BYTE, VecData(&tex.aData)
+        );
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

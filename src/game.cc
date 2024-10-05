@@ -114,6 +114,7 @@ loadAssets()
                 s_aTestImg[i][j] = 1;
 
     texture::ImgSetMonochrome(&s_tTest, (u8*)s_aTestImg, 64, 64);
+    COUT("testImgId: {}\n", s_tTest.id);
 
     texture::ImgLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp"};
     texture::ImgLoadArg argBox {&s_tBox, "test-assets/box3.bmp"};
@@ -544,7 +545,7 @@ drawTestImg([[maybe_unused]] Allocator* pAlloc)
     ShaderSetM4(sh, "uProj", proj);
     ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'00'ff'ff)});
 
-    /*glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     PlainDraw(&s_plain);
 }
 

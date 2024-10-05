@@ -55,8 +55,6 @@ getWglFunctions(void)
     const char* ext = wglGetExtensionsStringARB(dc);
     if (!ext) LOG_FATAL("wglGetExtensionsStringARB failed\n");
 
-    COUT("'%s'\n\n", ext);
-
     String sExt(ext);
 
     for (u32 i = 0; i < sExt.size; )

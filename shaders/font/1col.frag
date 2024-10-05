@@ -15,6 +15,7 @@ main()
     // vec4 col = uColor * texture(uTex0, vsTex);
     // fragColor = col;
 
-    vec4 sampled = vec4(1.0, 1.0, 1.0, texture(uTex0, vsTex).r);
+    // vec4 sampled = vec4(1.0, 1.0, 1.0, texture(uTex0, vsTex).r);
+    vec4 sampled = vec4(texture(uTex0, vsTex).rrrr);
     fragColor = vec4(uColor.xyz, 1.0) * sampled;
 }
