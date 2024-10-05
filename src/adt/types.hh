@@ -26,6 +26,8 @@ struct u24
     u8 data[3];
 };
 
+constexpr u16 NPOS8 = 0xff;
+constexpr u16 NPOS16 = 0xffff;
 constexpr u32 NPOS = u32(-1U);
 constexpr u64 NPOS64 = u64(-1UL);
 

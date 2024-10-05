@@ -36,7 +36,7 @@ enum TYPE : s8
     NORMAL
 };
 
-struct TextureData
+struct Data
 {
     Vec<u8> aData;
     u32 width;
@@ -110,12 +110,30 @@ ImgLoad(
     GLint minFilter = GL_NEAREST_MIPMAP_NEAREST
 );
 
+void 
+ImgSet(
+    Img* s,
+    u8* pData,
+    GLint texMode,
+    GLint format,
+    GLsizei width,
+    GLsizei height,
+    GLint magFilter,
+    GLint minFilter
+);
+
+void ImgSetMonochrome(Img* s, u8* pData, u32 width, u32 height);
 void ImgDestroy(Img* s);
+
 Framebuffer FramebufferCreate(const GLsizei width, const GLsizei height);
+
 ShadowMap ShadowMapCreate(const int width, const int height);
+
 CubeMap CubeMapShadowMapCreate(const int width, const int height);
+
 CubeMap skyBoxCreate(String sFaces[6]);
-TextureData loadBMP(Allocator* pAlloc, String path, bool flip);
+
+Data loadBMP(Allocator* pAlloc, String path, bool flip);
 void flipCpyBGRAtoRGBA(u8* dest, u8* src, int width, int height, bool vertFlip);
 void flipCpyBGRtoRGB(u8* dest, u8* src, int width, int height, bool vertFlip);
 void flipCpyBGRtoRGBA(u8* dest, u8* src, int width, int height, bool vertFlip);

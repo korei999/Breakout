@@ -25,6 +25,11 @@ struct Bitmap
 void BitmapUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y);
 void BitmapDraw(Bitmap* s);
 
+struct CurveEndIdx
+{
+    u16 aIdxs[8];
+};
+
 struct TTF
 {
     String str;
@@ -32,13 +37,12 @@ struct TTF
     GLuint vao;
     GLuint vbo;
     GLuint vboSize;
-    parser::ttf::Glyph glyph;
 };
 
 void TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2& p2, int steps);
-void TTFGenMesh(TTF* s, parser::ttf::Glyph* g);
+CurveEndIdx TTFGenMesh(TTF* s, parser::ttf::Glyph* g);
 void TTFDrawOutline(TTF* s, u32 max = 0);
 void TTFDrawDots(TTF* s, u32 max = 0);
-void TTFDrawCorrectLines(TTF* s);
+void TTFDrawCorrectLines(TTF* s, const CurveEndIdx& ends);
 
 } /* namespace text */

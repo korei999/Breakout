@@ -177,7 +177,8 @@ template<typename T>
 inline void
 fill(T* pData, T x, u64 size)
 {
-    memset(pData, x, size * sizeof(pData));
+    for (u64 i = 0; i < size; ++i)
+        pData[i] = x;
 }
 
 template<typename T>

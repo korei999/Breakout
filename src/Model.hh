@@ -132,6 +132,15 @@ void PlainDrawBox(Plain* s);
 void PlainDestroy(Plain* s);
 void QuadDraw(Quad* s);
 
+struct TextPlain
+{
+    GLuint vao;
+    GLuint vbo;
+
+    TextPlain() = default;
+    TextPlain(GLint drawMode);
+};
+
 struct ModelLoadArg
 {
     Model* p;

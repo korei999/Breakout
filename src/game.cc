@@ -25,12 +25,15 @@ static Vec<game::Block> s_aBlocks(AllocatorPoolGet(&s_assetArenas, SIZE_1K));
 
 static Shader s_shFontBitmap;
 static Shader s_shSprite;
+static Shader s_sh1Col;
 
 static texture::Img s_tAsciiMap(AllocatorPoolGet(&s_assetArenas, SIZE_1M));
 static texture::Img s_tBox(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
 static texture::Img s_tBall(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
 static texture::Img s_tPaddle(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
 static texture::Img s_tWhitePixel(AllocatorPoolGet(&s_assetArenas, 250));
+
+static texture::Img s_tTest;
 
 static parser::Wave s_sndBeep(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 400));
 static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_assetArenas, SIZE_1M * 35));
@@ -59,13 +62,13 @@ Ball g_ball {
 static void drawFPSCounter(Allocator* pAlloc);
 static void drawEntities(Allocator* pAlloc);
 static void drawTTF(Allocator* pAlloc);
+static void drawTestImg(Allocator* pAlloc);
 
 void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    /*parser::ttf::FontLoadAndParse(&s_fLiberation, "/usr/share/fonts/liberation-mono/LiberationMono-Bold.ttf");*/
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '&');
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '@');
 
     text::TTFGenMesh(&s_ttfTest, &glyphA);
 
@@ -77,9 +80,14 @@ loadAssets()
     ShaderUse(&s_shFontBitmap);
     ShaderSetI(&s_shFontBitmap, "tex0", 0);
 
+    ShaderLoad(&s_sh1Col, "shaders/font/1col.vert", "shaders/font/1col.frag");
+    ShaderUse(&s_sh1Col);
+    ShaderSetI(&s_sh1Col, "uTex0", 0);
+
     ShaderLoad(&s_shSprite, "shaders/2d/sprite.vert", "shaders/2d/sprite.frag");
     ShaderUse(&s_shSprite);
     ShaderSetI(&s_shSprite, "tex0", 0);
+
     UboBindShader(&frame::g_uboProjView, &s_shSprite, "ubProjView", 0);
 
     s_textFPS = text::Bitmap("", 40, 0, 0, GL_DYNAMIC_DRAW);
@@ -98,6 +106,14 @@ loadAssets()
 
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
+
+    u8 s_aTestImg[64][64] {};
+    for (int i = 0; i < 64; ++i)
+        for (int j = 0; j < 64; ++j)
+            if (i % 2 == 0)
+                s_aTestImg[i][j] = 1;
+
+    texture::ImgSetMonochrome(&s_tTest, (u8*)s_aTestImg, 64, 64);
 
     texture::ImgLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp"};
     texture::ImgLoadArg argBox {&s_tBox, "test-assets/box3.bmp"};
@@ -424,6 +440,7 @@ draw(Allocator *pAlloc)
 {
     if (controls::g_bTTFDebugScreen)
     {
+        drawTestImg(pAlloc);
         drawTTF(pAlloc);
     }
     else
@@ -440,7 +457,7 @@ drawFPSCounter(Allocator* pAlloc)
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
     ShaderUse(&s_shFontBitmap);
 
-    ImgBind(&s_tAsciiMap, GL_TEXTURE0);
+    texture::ImgBind(&s_tAsciiMap, GL_TEXTURE0);
 
     ShaderSetM4(&s_shFontBitmap, "uProj", proj);
     ShaderSetV4(&s_shFontBitmap, "uColor", {colors::hexToV4(0xeeeeeeff)});
@@ -511,8 +528,24 @@ drawTTF([[maybe_unused]] Allocator* pAlloc)
 
     if (controls::g_bTTFDebugDots)
         text::TTFDrawDots(&s_ttfTest, controls::g_nDots);
-    else
-        text::TTFDrawOutline(&s_ttfTest, controls::g_nDots);
+    else text::TTFDrawOutline(&s_ttfTest, controls::g_nDots);
+}
+
+static void
+drawTestImg([[maybe_unused]] Allocator* pAlloc)
+{
+    math::M4 proj = math::M4Ortho(-0.0f, 64.0f/10, -0.0f, 64.0f/10, -1.0f, 1.0f);
+
+    auto* sh = &s_sh1Col;
+    ShaderUse(sh);
+
+    texture::ImgBind(&s_tTest, GL_TEXTURE0);
+
+    ShaderSetM4(sh, "uProj", proj);
+    ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'00'ff'ff)});
+
+    /*glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
+    PlainDraw(&s_plain);
 }
 
 void
@@ -525,7 +558,7 @@ cleanup()
     VecDestroy(&g_aAllShaders);
 
     for (auto& t : texture::g_aAllTextures)
-        ImgDestroy(&t);
+        texture::ImgDestroy(&t);
     VecDestroy(&texture::g_aAllTextures);
     MapDestroy(&texture::g_mAllTexturesIdxs);
 

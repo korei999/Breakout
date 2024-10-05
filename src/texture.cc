@@ -40,8 +40,6 @@ Map<Hash> g_mAllTexturesIdxs;
 static mtx_t s_mtxAllTextures;
 static once_flag s_onceFlagAllTextures = ONCE_FLAG_INIT;
 
-void ImgSet(Img* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter);
-
 void
 ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilter, GLint minFilter)
 {
@@ -76,7 +74,7 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
 
     Arena al(SIZE_1M * 5);
     defer(ArenaFreeAll(&al));
-    TextureData img = loadBMP(&al.base, path, bFlip);
+    Data img = loadBMP(&al.base, path, bFlip);
 
     s->texPath = path;
     s->type = type;
@@ -148,6 +146,37 @@ ImgSet(Img* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei he
     /* load image, create texture and generate mipmaps */
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, pData);
     glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+void
+ImgSetMonochrome(Img* s, u8* pData, u32 width, u32 height)
+{
+    mtx_lock(&gl::g_mtxGlContext);
+    WindowBindGlContext(app::g_pWindow);
+    defer(
+        WindowUnbindGlContext(app::g_pWindow);
+        mtx_unlock(&gl::g_mtxGlContext);
+    );
+
+    s->width = width;
+    s->height = height;
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    glGenTextures(1, &s->id);
+    glBindTexture(GL_TEXTURE_2D, s->id);
+    defer(glBindTexture(GL_TEXTURE_2D, 0));
+
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0, GL_RED, width, height,
+        0, GL_RED, GL_UNSIGNED_BYTE, pData
+    );
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 CubeMapProjections::CubeMapProjections(const math::M4& proj, const math::V3& pos)
@@ -252,7 +281,7 @@ skyBoxCreate(String sFaces[6])
 
     for (u32 i = 0; i < 6; i++)
     {
-        TextureData tex = loadBMP(&al.base, sFaces[i], true);
+        Data tex = loadBMP(&al.base, sFaces[i], true);
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                      0, tex.format, tex.width, tex.height,
                      0, tex.format, GL_UNSIGNED_BYTE, VecData(&tex.aData));
@@ -267,7 +296,7 @@ skyBoxCreate(String sFaces[6])
     return cmNew;
 }
 
-TextureData
+Data
 loadBMP(Allocator* pAlloc, String path, bool flip)
 {
     u32 imageDataAddress;

@@ -205,7 +205,7 @@ insertPoints(
     const math::V2& p0,
     const math::V2& p1,
     const math::V2& p2,
-    int nTimes = 6
+    int nTimes = 1
 )
 {
     for (int i = 1; i < nTimes + 1; ++i)
@@ -222,20 +222,11 @@ insertPoints(
 }
 
 static VecBase<PointOnCurve>
-makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints)
+makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, CurveEndIdx* pEndIdxs)
 {
     VecBase<PointOnCurve> aNew(pAlloc, VecSize(&aNonCurvyPoints));
-
-#ifdef D_TTF
-    for (auto& p : aNonCurvyPoints)
-    {
-        u32 idx = VecIdx(&aNonCurvyPoints, &p);
-        LOG("({}): pos: {}, bOnCurve: {}", idx, p.pos, p.bOnCurve);
-
-        if (p.bEndOfCurve) CERR(", bEndOfCurve: {}\n", p.bEndOfCurve);
-        else CERR("\n");
-    }
-#endif
+    utils::fill(pEndIdxs->aIdxs, NPOS16, utils::size(pEndIdxs->aIdxs));
+    u16 endIdx = 0;
 
     u32 firstInCurveIdx = 0;
     bool bPrevOnCurve = true;
@@ -250,7 +241,7 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints)
                 math::V2 p0 {aNonCurvyPoints[idx - 1].pos};
                 math::V2 p1 {aNonCurvyPoints[idx - 0].pos};
                 math::V2 p2 {aNonCurvyPoints[firstInCurveIdx].pos};
-                insertPoints(pAlloc, &aNew, p0, p1, p2);
+                insertPoints(pAlloc, &aNew, p0, p1, p2, 1);
             }
         }
         if (!bPrevOnCurve)
@@ -258,7 +249,7 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints)
             math::V2 p0 {aNonCurvyPoints[idx - 2].pos};
             math::V2 p1 {aNonCurvyPoints[idx - 1].pos};
             math::V2 p2 {aNonCurvyPoints[idx - 0].pos};
-            insertPoints(pAlloc, &aNew, p0, p1, p2);
+            insertPoints(pAlloc, &aNew, p0, p1, p2, 3);
         }
 
         if (p.bOnCurve)
@@ -278,6 +269,8 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints)
                 .bEndOfCurve = false,
             });
 
+            pEndIdxs->aIdxs[endIdx++] = VecLastI(&aNew);
+
             firstInCurveIdx = idx + 1;
         }
 
@@ -288,16 +281,13 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints)
     return aNew;
 }
 
-// VecBase<u32>
-// getCurvyEndPoints(parser::ttf::Glyph* g)
-// {
-// }
-
 VecBase<PointOnCurve>
 getPointsWithMissingOnCurve(Allocator* pAlloc, parser::ttf::Glyph* g)
 {
     const auto& aGlyphPoints = g->uGlyph.simple.aPoints;
     u32 size = VecSize(&aGlyphPoints);
+
+    LOG("numberOfContours: {}\n", g->numberOfContours);
 
     bool bCurrOnCurve = false;
     bool bPrevOnCurve = false;
@@ -350,13 +340,11 @@ getPointsWithMissingOnCurve(Allocator* pAlloc, parser::ttf::Glyph* g)
     return aPoints;
 }
 
-void
+CurveEndIdx
 TTFGenMesh(TTF* s, parser::ttf::Glyph* g)
 {
     Arena alloc(SIZE_8K * 2);
     defer(ArenaFreeAll(&alloc));
-
-    s->glyph = *g;
 
     const auto& aGlyphPoints = g->uGlyph.simple.aPoints;
     u32 size = VecSize(&aGlyphPoints);
@@ -365,8 +353,9 @@ TTFGenMesh(TTF* s, parser::ttf::Glyph* g)
     bool bPrevOnCurve = false;
     u32 firstInCurveIdx = 0;
 
+    CurveEndIdx endIdxs;
     VecBase<PointOnCurve> aPoints = getPointsWithMissingOnCurve(&alloc.base, g);
-    auto aCurvyPoints = makeItCurvy(&alloc.base, aPoints);
+    auto aCurvyPoints = makeItCurvy(&alloc.base, aPoints, &endIdxs);
 
     s->maxSize = VecSize(&aCurvyPoints);
 
@@ -394,6 +383,8 @@ TTFGenMesh(TTF* s, parser::ttf::Glyph* g)
         1, 2, GL_FLOAT, GL_FALSE,
         4 * sizeof(f32), (void*)(sizeof(f32) * 2)
     );
+
+    return endIdxs;
 }
 
 static void
@@ -416,16 +407,15 @@ TTFDrawDots(TTF* s, u32 max)
 }
 
 void
-TTFDrawCorrectLines(TTF* s)
+TTFDrawCorrectLines(TTF* s, const CurveEndIdx& ends)
 {
     glBindVertexArray(s->vao);
 
-    auto& g = s->glyph.uGlyph.simple.aEndPtsOfContours;
-
     u32 off = 0;
     u32 endOff = 1;
+    const auto& g = ends.aIdxs;
 
-    for (u32 i = 0; i < VecSize(&g); i++)
+    for (u32 i = 0; i < 8 && ends.aIdxs[i] != NPOS16; i++)
     {
         auto ecIdx = g[i] + endOff;
         glDrawArrays(GL_LINE_STRIP, off, ecIdx + 1 - off);

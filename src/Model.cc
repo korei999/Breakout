@@ -523,3 +523,30 @@ PlainDestroy(Plain* s)
     /*glDeleteBuffers(1, &s->vbo);*/
     LOG_OK("plain {}(vao), {}(vbo) destroyed\n", s->vao, s->vbo);
 }
+
+TextPlain::TextPlain(GLint drawMode)
+{
+    Plain p;
+
+    // glGenVertexArrays(1, &p.vao);
+    // glBindVertexArray(p.vao);
+
+    // glGenBuffers(1, &p.vbo);
+    // glBindBuffer(GL_ARRAY_BUFFER, p.vbo);
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(plainVertices), plainVertices, drawMode);
+
+    // constexpr u32 v3Size = sizeof(math::V3) / sizeof(f32);
+    // constexpr u32 v2Size = sizeof(math::V2) / sizeof(f32);
+    // constexpr u32 stride = 5 * sizeof(f32);
+    // /* positions */
+    // glEnableVertexAttribArray(0);
+    // glVertexAttribPointer(0, v3Size, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    // /* texture coords */
+    // glEnableVertexAttribArray(1);
+    // glVertexAttribPointer(1, v2Size, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(f32) * 3*6));
+    // /* normals */
+    // glEnableVertexAttribArray(2);
+    // glVertexAttribPointer(2, v3Size, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(f32) * (3*6 + v2Size)));
+
+    // glBindVertexArray(0);
+}
