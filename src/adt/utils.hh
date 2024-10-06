@@ -104,7 +104,7 @@ timeNowUS()
     QueryPerformanceFrequency(&freq);
     QueryPerformanceCounter(&count);
 
-    return (count.QuadPart * 1000000) / freq.QuadPart;
+    return (count.QuadPart * 1000000000) / freq.QuadPart;
 #endif
 }
 
