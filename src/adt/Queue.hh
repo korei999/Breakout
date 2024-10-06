@@ -26,7 +26,6 @@ template<typename T> inline int QueueLastI(QueueBase<T>* s) { return QueueEmpty(
 template<typename T>
 struct QueueBase
 {
-    // Allocator* pAlloc {};
     T* pData {};
     int size {};
     int cap {};
