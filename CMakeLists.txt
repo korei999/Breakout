@@ -92,6 +92,8 @@ if (CMAKE_BUILD_TYPE MATCHES "Asan")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g3 -fsanitize=undefined -fsanitize=address")
 
         if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -shared-libsan")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -shared-libsan")
             # doesn't work...
             # target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE clang_rt.asan_cxx-x86_64.lib clang_rt.asan-x86_64.lib)
         else()
