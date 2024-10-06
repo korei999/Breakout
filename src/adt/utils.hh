@@ -88,8 +88,8 @@ compare(const T& l, const T& r)
 }
 
 [[nodiscard]]
-inline f64
-timeNowMS()
+inline long
+timeNowUS()
 {
 #ifdef __linux__
     struct timespec ts;
@@ -97,7 +97,23 @@ timeNowMS()
     time_t micros = ts.tv_sec * 1000000000;
     micros += ts.tv_nsec;
 
-    return micros / 1000000.0;
+    return micros;
+
+#elif _WIN32
+    LARGE_INTEGER count, freq;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&count);
+
+    return (count.QuadPart * 1000000) / freq.QuadPart;
+#endif
+}
+
+[[nodiscard]]
+inline f64
+timeNowMS()
+{
+#ifdef __linux__
+    return timeNowUS() / 1000000.0;
 
 #elif _WIN32
     LARGE_INTEGER count, freq;

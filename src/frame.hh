@@ -18,9 +18,9 @@ extern Pair<f32, f32> g_unit;
 extern f32 g_uiWidth;
 extern f32 g_uiHeight;
 
-extern f64 g_currTime;
+extern long g_currTime;
 extern f64 g_deltaTime;
-extern f64 g_lastDeltaTime;
+extern long g_lastTime;
 
 extern f64 g_currDrawTime;
 extern f64 g_frameTime;

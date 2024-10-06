@@ -41,6 +41,7 @@ eq(f32 l, f32 r)
 }
 
 template<typename T> constexpr T sq(const T& x) { return x * x; }
+template<typename T> constexpr T cube(const T& x) { return x*x*x; }
 
 union V2
 {
@@ -1042,8 +1043,7 @@ bezier(
     const T& p3,
     const std::floating_point auto t)
 {
-    /*return lerp(bezier(p0, p1, p2, t), bezier(p1, p2, p3, t), t);*/
-    return pow((1-t), 3)*p0 + 3*sq(1-t)*t*p1 + 3*(1-t)*sq(t)*p2 + pow(t, 3)*p3;
+    return cube(1-t)*p0 + 3*sq(1-t)*t*p1 + 3*(1-t)*sq(t)*p2 + cube(t)*p3;
 }
 
 } /* namespace math */

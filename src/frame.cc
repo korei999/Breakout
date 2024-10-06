@@ -1,13 +1,12 @@
 #include "frame.hh"
 
+#include "adt/FixedAllocator.hh"
 #include "adt/defer.hh"
 #include "app.hh"
 #include "colors.hh"
 #include "controls.hh"
 #include "game.hh"
 #include "test.hh"
-
-#include "adt/FixedAllocator.hh"
 
 using namespace adt;
 
@@ -21,9 +20,9 @@ Pair<f32, f32> g_unit; /* draw size unit */
 f32 g_uiWidth = 192.0f * 0.75;
 f32 g_uiHeight; /* set in prepareDraw */
 
-f64 g_currTime = 0.0;
+long g_currTime = 0;
 f64 g_deltaTime = 0.0;
-f64 g_lastDeltaTime = 0.0;
+long g_lastTime = 0;
 
 f64 g_currDrawTime = 0.0;
 f64 g_frameTime = 0.0;
@@ -42,9 +41,9 @@ static u8 s_aFrameMemDraw[SIZE_8K / 2] {};
 static void
 updateDeltaTime()
 {
-    g_currTime = utils::timeNowMS();
-    g_deltaTime = g_currTime - g_lastDeltaTime;
-    g_lastDeltaTime = g_currTime;
+    g_currTime = utils::timeNowUS();
+    g_deltaTime = (g_currTime - g_lastTime) / 1000000.0;
+    g_lastTime = g_currTime;
 }
 
 static void

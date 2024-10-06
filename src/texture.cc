@@ -164,7 +164,10 @@ ImgSetMonochrome(Img* s, u8* pData, u32 width, u32 height)
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glGenTextures(1, &s->id);
     glBindTexture(GL_TEXTURE_2D, s->id);
-    defer(glBindTexture(GL_TEXTURE_2D, 0));
+    defer(
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    );
 
     /*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);*/
     /*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);*/

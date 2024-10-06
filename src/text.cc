@@ -244,6 +244,7 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cur
                 insertPoints(pAlloc, &aNew, p0, p1, p2, 1);
             }
         }
+
         if (!bPrevOnCurve)
         {
             math::V2 p0 {aNonCurvyPoints[idx - 2].pos};
@@ -263,19 +264,22 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cur
 
         if (p.bEndOfCurve)
         {
-            /*VecPush(&aNew, pAlloc, {*/
-            /*    .pos = aNonCurvyPoints[firstInCurveIdx].pos,*/
-            /*    .bOnCurve = true,*/
-            /*    .bEndOfCurve = false,*/
-            /*});*/
+            VecPush(&aNew, pAlloc, {
+                .pos = aNonCurvyPoints[firstInCurveIdx].pos,
+                .bOnCurve = true,
+                .bEndOfCurve = false,
+            });
 
-            pEndIdxs->aIdxs[endIdx++] = VecLastI(&aNew);
+            if (endIdx < 8) pEndIdxs->aIdxs[endIdx++] = VecLastI(&aNew);
+            else assert(false && "8 curves max");
 
             firstInCurveIdx = idx + 1;
+            bPrevOnCurve = true;
         }
-
-        if (p.bEndOfCurve) bPrevOnCurve = true;
-        else bPrevOnCurve = p.bOnCurve;
+        else
+        {
+            bPrevOnCurve = p.bOnCurve;
+        }
     }
 
     return aNew;

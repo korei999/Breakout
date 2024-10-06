@@ -68,7 +68,7 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, 'G');
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, 'P');
 
     text::TTFGenMesh(&s_ttfTest, &glyphA);
 
@@ -112,11 +112,12 @@ loadAssets()
     defer(::free(aTestImg));
 
     aTestImg[0] = 255;
+    aTestImg[testSize*((testSize)/2) + (testSize)/2] = 255;
     aTestImg[testSize*(testSize-1) + testSize-1] = 255;
 
-    /*for (int i = 0; i < 32; ++i)*/
-    /*    for (int j = 0; j < 32; j++)*/
-    /*        aTestImg[32*i + j + 0] = ((j+1.0f)/32.0f) * 255.0f;*/
+    /*for (int i = 0; i < 64; ++i)*/
+    /*    for (int j = 0; j < 64; ++j)*/
+    /*        aTestImg[64*i + j] = ((j+1.0f)/64.0f) * 255.0f;*/
 
     texture::ImgSetMonochrome(&s_tTest, (u8*)aTestImg, testSize, testSize);
 

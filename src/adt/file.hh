@@ -12,36 +12,35 @@ namespace file
 
 [[nodiscard]]
 inline Option<String>
-load(Allocator* pAlloc, String path)
+load(Allocator* pAlloc, String sPath)
 {
-    Option<String> ret {};
-
-    FILE* pf = fopen(path.pData, "rb");
+    FILE* pf = fopen(sPath.pData, "rb");
     if (!pf)
     {
-        LOG_WARN("Error opening '{}' file\n", path);
-        return ret;
+        LOG_WARN("Error opening '{}' file\n", sPath);
+        return {};
     }
     defer(fclose(pf));
+
+    String ret {};
 
     fseek(pf, 0, SEEK_END);
     long size = ftell(pf) + 1;
     rewind(pf);
 
-    ret.data.pData = (char*)alloc(pAlloc, size, sizeof(char));
-    ret.data.size = size - 1;
-    fread(ret.data.pData, 1, ret.data.size, pf);
-    ret.bHasValue = true;
+    ret.pData = (char*)alloc(pAlloc, size, sizeof(char));
+    ret.size = size - 1;
+    fread(ret.pData, 1, ret.size, pf);
 
-    return ret;
+    return {ret, true};
 }
 
 [[nodiscard]]
 inline String
-replacePathEnding(Allocator* pAlloc, String path, String sEnding)
+replacePathEnding(Allocator* pAlloc, String sPath, String sEnding)
 {
-    auto lastSlash = StringLastOf(path, '/');
-    String sNoEnding = {&path[0], lastSlash + 1};
+    auto lastSlash = StringLastOf(sPath, '/');
+    String sNoEnding = {&sPath[0], lastSlash + 1};
     auto r = StringCat(pAlloc, sNoEnding, sEnding);
     return r;
 }
