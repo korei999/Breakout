@@ -4,8 +4,7 @@
 #include "defer.hh"
 
 #include <threads.h>
-
-#include <atomic>
+#include <stdatomic.h>
 
 namespace adt
 {
@@ -57,7 +56,7 @@ struct ThreadPool
     u32 nThreads = 0;
     cnd_t cndQ, cndWait;
     mtx_t mtxQ, mtxWait;
-    std::atomic<int> nActiveTasksAtomic;
+    _Atomic(int) nActiveTasksAtomic;
     bool bDone = false;
 
     ThreadPool() = default;
