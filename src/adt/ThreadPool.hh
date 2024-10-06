@@ -54,10 +54,10 @@ struct ThreadPool
 {
     Queue<ThreadTask> qTasks {};
     thrd_t* pThreads = nullptr;
-    u32 threadCount = 0;
+    u32 nThreads = 0;
     cnd_t cndQ, cndWait;
     mtx_t mtxQ, mtxWait;
-    std::atomic<int> atomicActiveTaskCount;
+    std::atomic<int> nActiveTasksAtomic;
     bool bDone = false;
 
     ThreadPool() = default;
@@ -72,7 +72,7 @@ inline void ThreadPoolWait(ThreadPool* s);
 
 inline
 ThreadPool::ThreadPool(Allocator* p, u32 _threadCount)
-    : qTasks(p, _threadCount), threadCount(_threadCount), atomicActiveTaskCount(0), bDone(false)
+    : qTasks(p, _threadCount), nThreads(_threadCount), nActiveTasksAtomic(0), bDone(false)
 {
     /*QueueResize(&qTasks, _threadCount);*/
     pThreads = (thrd_t*)alloc(p, _threadCount, sizeof(thrd_t));
@@ -100,11 +100,11 @@ __ThreadPoolLoop(void* p)
             if (s->bDone) return thrd_success;
 
             task = *QueuePopFront(&s->qTasks);
-            s->atomicActiveTaskCount++; /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */
+            s->nActiveTasksAtomic++; /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */
         }
 
         task.pfn(task.pArgs);
-        s->atomicActiveTaskCount--;
+        s->nActiveTasksAtomic--;
 
         if (!ThreadPoolBusy(s))
             cnd_signal(&s->cndWait);
@@ -116,7 +116,7 @@ __ThreadPoolLoop(void* p)
 inline void
 ThreadPoolStart(ThreadPool* s)
 {
-    for (size_t i = 0; i < s->threadCount; i++)
+    for (size_t i = 0; i < s->nThreads; i++)
         thrd_create(&s->pThreads[i], __ThreadPoolLoop, s);
 }
 
@@ -127,7 +127,7 @@ ThreadPoolBusy(ThreadPool* s)
     bool ret = !QueueEmpty(&s->qTasks);
     mtx_unlock(&s->mtxQ);
 
-    return ret || s->atomicActiveTaskCount > 0;
+    return ret || s->nActiveTasksAtomic > 0;
 }
 
 inline void
@@ -162,7 +162,7 @@ __ThreadPoolStop(ThreadPool* s)
 {
     s->bDone = true;
     cnd_broadcast(&s->cndQ);
-    for (u32 i = 0; i < s->threadCount; i++)
+    for (u32 i = 0; i < s->nThreads; i++)
         thrd_join(s->pThreads[i], nullptr);
 }
 
