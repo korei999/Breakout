@@ -68,9 +68,12 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, 'P');
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '@');
 
     text::TTFGenMesh(&s_ttfTest, &glyphA);
+
+    u32 width = 128*2, height = 128*2;
+    u8* pTestBitmap = text::TTFRasterizeTEST(&s_ttfTest, &glyphA, width, height);
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
@@ -92,14 +95,6 @@ loadAssets()
 
     s_textFPS = text::Bitmap("", 40, 0, 0, GL_DYNAMIC_DRAW);
 
-    Arena allocScope(SIZE_1K);
-    ThreadPool tp(&allocScope.base);
-    defer(
-        ThreadPoolDestroy(&tp);
-        ArenaFreeAll(&allocScope);
-    );
-    ThreadPoolStart(&tp);
-
     /* unbind before creating threads */
     WindowUnbindGlContext(app::g_pWindow);
     defer(WindowBindGlContext(app::g_pWindow));
@@ -107,19 +102,19 @@ loadAssets()
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
-    u32 testSize = 64;
-    u8* aTestImg = (u8*)::calloc(1, math::sq(testSize));
-    defer(::free(aTestImg));
-
-    aTestImg[0] = 255;
-    aTestImg[testSize*((testSize)/2) + (testSize)/2] = 255;
-    aTestImg[testSize*(testSize-1) + testSize-1] = 255;
+    /*u32 testSize = 64;*/
+    /*u8* aTestImg = (u8*)::calloc(1, math::sq(testSize));*/
+    /*defer(::free(aTestImg));*/
+    /**/
+    /*aTestImg[0] = 255;*/
+    /*aTestImg[testSize*((testSize)/2) + (testSize)/2] = 255;*/
+    /*aTestImg[testSize*(testSize-1) + testSize-1] = 255;*/
 
     /*for (int i = 0; i < 64; ++i)*/
     /*    for (int j = 0; j < 64; ++j)*/
     /*        aTestImg[64*i + j] = ((j+1.0f)/64.0f) * 255.0f;*/
 
-    texture::ImgSetMonochrome(&s_tTest, (u8*)aTestImg, testSize, testSize);
+    texture::ImgSetMonochrome(&s_tTest, pTestBitmap, width, height);
 
     texture::ImgLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp"};
     texture::ImgLoadArg argBox {&s_tBox, "test-assets/box3.bmp"};
@@ -127,16 +122,16 @@ loadAssets()
     texture::ImgLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp"};
     texture::ImgLoadArg argWhitePixel {&s_tWhitePixel, "test-assets/WhitePixel.bmp"};
 
-    ThreadPoolSubmit(&tp, parser::WaveSubmit, &argBeep);
-    ThreadPoolSubmit(&tp, parser::WaveSubmit, &argUnatco);
+    ThreadPoolSubmit(app::g_pThreadPool, parser::WaveSubmit, &argBeep);
+    ThreadPoolSubmit(app::g_pThreadPool, parser::WaveSubmit, &argUnatco);
 
-    ThreadPoolSubmit(&tp, texture::ImgSubmit, &argFontBitmap);
-    ThreadPoolSubmit(&tp, texture::ImgSubmit, &argBox);
-    ThreadPoolSubmit(&tp, texture::ImgSubmit, &argBall);
-    ThreadPoolSubmit(&tp, texture::ImgSubmit, &argPaddle);
-    ThreadPoolSubmit(&tp, texture::ImgSubmit, &argWhitePixel);
+    ThreadPoolSubmit(app::g_pThreadPool, texture::ImgSubmit, &argFontBitmap);
+    ThreadPoolSubmit(app::g_pThreadPool, texture::ImgSubmit, &argBox);
+    ThreadPoolSubmit(app::g_pThreadPool, texture::ImgSubmit, &argBall);
+    ThreadPoolSubmit(app::g_pThreadPool, texture::ImgSubmit, &argPaddle);
+    ThreadPoolSubmit(app::g_pThreadPool, texture::ImgSubmit, &argWhitePixel);
 
-    ThreadPoolWait(&tp);
+    ThreadPoolWait(app::g_pThreadPool);
 }
 
 template<typename T>
@@ -447,7 +442,7 @@ draw(Allocator *pAlloc)
     if (controls::g_bTTFDebugScreen)
     {
         drawTestImg(pAlloc);
-        drawTTF(pAlloc);
+        /*drawTTF(pAlloc);*/
     }
     else
     {
@@ -514,14 +509,14 @@ drawEntities([[maybe_unused]] Allocator* pAlloc)
 static void
 drawTTF([[maybe_unused]] Allocator* pAlloc)
 {
-    math::M4 proj = math::M4Ortho(-1.0f, 2.0f, -0.5f, 1.5f, -1.0f, 1.0f);
-
     auto* sh = &s_shFontBitmap;
     ShaderUse(sh);
 
     auto f = MapSearch(&texture::g_mAllTexturesIdxs, {"test-assets/WhitePixel.bmp"});
     assert(f);
     texture::ImgBind(texture::g_aAllTextures[f.pData->vecIdx].id, GL_TEXTURE0);
+
+    math::M4 proj = math::M4Ortho(-500.0f, 3000.0f, -500.0f, 2000.0f, -1.0f, 1.0f);
 
     ShaderSetM4(sh, "uProj", proj);
     ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'ff'00'ff)});

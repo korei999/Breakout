@@ -1,5 +1,8 @@
 #include "test.hh"
 
+#include "adt/ThreadPool.hh"
+#include "adt/defer.hh"
+#include "adt/guard.hh"
 #include "adt/math.hh"
 #include "logs.hh"
 
@@ -55,6 +58,37 @@ math()
 
     auto t2l = math::M4Inv(t2) * t2r;
     assert(t2Exp == t2l);
+
+    LOG_GOOD("'math' passed\n");
+}
+
+mtx_t mtxLocks;
+
+static int
+lockGuard(int what)
+{
+    guard::Mtx lock(&mtxLocks);
+
+    if (what < 0) 
+    {
+        return what * what;
+    }
+    else
+    {
+        return what + 5;
+    }
+}
+
+void
+locks()
+{
+    mtx_init(&mtxLocks, mtx_plain);
+    defer(mtx_destroy(&mtxLocks));
+
+    lockGuard(ADT_GET_NCORES());
+    lockGuard(-2);
+
+    LOG_GOOD("'locks' passed\n");
 }
 
 } /* namespace test */

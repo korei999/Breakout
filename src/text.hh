@@ -44,5 +44,6 @@ CurveEndIdx TTFGenMesh(TTF* s, parser::ttf::Glyph* g);
 void TTFDrawOutline(TTF* s, u32 max = 0);
 void TTFDrawDots(TTF* s, u32 max = 0);
 void TTFDrawCorrectLines(TTF* s, const CurveEndIdx& ends);
+u8* TTFRasterizeTEST(TTF* s, parser::ttf::Glyph* pGlyph, u32 width, u32 height);
 
 } /* namespace text */

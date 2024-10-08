@@ -222,7 +222,7 @@ insertPoints(
 }
 
 static VecBase<PointOnCurve>
-makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, CurveEndIdx* pEndIdxs)
+makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, CurveEndIdx* pEndIdxs, bool bTessellate = true)
 {
     VecBase<PointOnCurve> aNew(pAlloc, VecSize(&aNonCurvyPoints));
     utils::fill(pEndIdxs->aIdxs, NPOS16, utils::size(pEndIdxs->aIdxs));
@@ -238,19 +238,25 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cur
         {
             if (!aNonCurvyPoints[idx].bOnCurve || !aNonCurvyPoints[firstInCurveIdx].bOnCurve)
             {
-                math::V2 p0 {aNonCurvyPoints[idx - 1].pos};
-                math::V2 p1 {aNonCurvyPoints[idx - 0].pos};
-                math::V2 p2 {aNonCurvyPoints[firstInCurveIdx].pos};
-                insertPoints(pAlloc, &aNew, p0, p1, p2, 1);
+                if (bTessellate)
+                {
+                    math::V2 p0 {aNonCurvyPoints[idx - 1].pos};
+                    math::V2 p1 {aNonCurvyPoints[idx - 0].pos};
+                    math::V2 p2 {aNonCurvyPoints[firstInCurveIdx].pos};
+                    insertPoints(pAlloc, &aNew, p0, p1, p2, 3);
+                }
             }
         }
 
         if (!bPrevOnCurve)
         {
-            math::V2 p0 {aNonCurvyPoints[idx - 2].pos};
-            math::V2 p1 {aNonCurvyPoints[idx - 1].pos};
-            math::V2 p2 {aNonCurvyPoints[idx - 0].pos};
-            insertPoints(pAlloc, &aNew, p0, p1, p2, 3);
+            if (bTessellate)
+            {
+                math::V2 p0 {aNonCurvyPoints[idx - 2].pos};
+                math::V2 p1 {aNonCurvyPoints[idx - 1].pos};
+                math::V2 p2 {aNonCurvyPoints[idx - 0].pos};
+                insertPoints(pAlloc, &aNew, p0, p1, p2, 3);
+            }
         }
 
         if (p.bOnCurve)
@@ -303,8 +309,11 @@ getPointsWithMissingOnCurve(Allocator* pAlloc, parser::ttf::Glyph* g)
     {
         const u32 pointIdx = VecIdx(&aGlyphPoints, &p);
 
-        f32 x = f32(p.x) / f32(g->xMax);
-        f32 y = f32(p.y) / f32(g->yMax);
+        /*f32 x = f32(p.x) / f32(g->xMax);*/
+        /*f32 y = f32(p.y) / f32(g->yMax);*/
+
+        f32 x = f32(p.x);
+        f32 y = f32(p.y);
 
         bool bEndOfCurve = false;
         for (auto e : g->uGlyph.simple.aEndPtsOfContours)
@@ -353,13 +362,9 @@ TTFGenMesh(TTF* s, parser::ttf::Glyph* g)
     const auto& aGlyphPoints = g->uGlyph.simple.aPoints;
     u32 size = VecSize(&aGlyphPoints);
 
-    bool bCurrOnCurve = false;
-    bool bPrevOnCurve = false;
-    u32 firstInCurveIdx = 0;
-
     CurveEndIdx endIdxs;
     VecBase<PointOnCurve> aPoints = getPointsWithMissingOnCurve(&alloc.base, g);
-    auto aCurvyPoints = makeItCurvy(&alloc.base, aPoints, &endIdxs);
+    auto aCurvyPoints = makeItCurvy(&alloc.base, aPoints, &endIdxs, true);
 
     s->maxSize = VecSize(&aCurvyPoints);
 
@@ -426,6 +431,43 @@ TTFDrawCorrectLines(TTF* s, const CurveEndIdx& ends)
         off = ecIdx + 1;
         ++endOff;
     }
+}
+
+/* TODO: rasterize string later */
+u8*
+TTFRasterizeTEST(TTF* s, parser::ttf::Glyph* pGlyph, u32 width, u32 height)
+{
+    Arena arena(SIZE_8K);
+    defer(ArenaFreeAll(&arena));
+
+    const auto& aGlyphPoints = pGlyph->uGlyph.simple.aPoints;
+    u32 size = VecSize(&aGlyphPoints);
+
+    CurveEndIdx endIdxs;
+    VecBase<PointOnCurve> aPoints = getPointsWithMissingOnCurve(&arena.base, pGlyph);
+    auto aCurvyPoints = makeItCurvy(&arena.base, aPoints, &endIdxs, true);
+
+    u8* pBitmap = (u8*)::calloc(1, width*height);
+
+    auto at = [&](int x, int y) -> u8& {
+        assert(u32(x) < width && u32(y) < height);
+        return pBitmap[width*x + y];
+    };
+
+    COUT("xMin: {}, xMax: {}, yMin: {}, yMax: {}\n", pGlyph->xMin, pGlyph->xMax, pGlyph->yMin, pGlyph->yMax);
+    for (const auto& p : aCurvyPoints)
+    {
+        const auto& pos = p.pos;
+
+        f32 x = (pos.x / pGlyph->xMax) * width;
+        f32 y = (pos.y / pGlyph->yMax) * height;
+
+        at(utils::clamp(y, 0.0f, f32(width - 1)), utils::min(x, f32(height - 1))) = 0xff;
+
+        // TODO: now draw line beetween this and prev points
+    }
+
+    return pBitmap;
 }
 
 } /* namespace text */

@@ -57,6 +57,21 @@ struct Entity
     bool bRemoveAfterDraw;
 };
 
+struct EntityV2
+{
+    math::V2 pos {};
+    math::V2 vel {};
+    f32 xOff {};
+    f32 yOff {};
+    f32 zOff {};
+    game::COLOR eColor {};
+    u16 shaderIdx {};
+    u16 texIdx {};
+    u16 modelIdx {};
+    bool bDead {};
+    bool bRemoveAfterDraw {};
+};
+
 struct Player
 {
     u16 enIdx {};

@@ -11,7 +11,7 @@ namespace adt
 #define ADT_VEC_FOREACH_I(A, I) for (u32 I = 0; I < (A)->size; I++)
 #define ADT_VEC_FOREACH_I_REV(A, I) for (u32 I = (A)->size - 1; I != -1U ; I--)
 
-/* Dynamic array (aka Vector), use outside Allocator explicitly for each allocating operation */
+/* Dynamic array (aka Vector), use outside Allocator for each allocating operation explicitly */
 template<typename T>
 struct VecBase
 {

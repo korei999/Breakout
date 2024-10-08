@@ -18,11 +18,11 @@ public:
 } /* namespace adt */
 
 /* create unique name with ## and __COUNTER__ */
-#define ADT_DEFER_1(x, y) x##y##__
+#define ADT_DEFER_1(x, y) x##y##_
 #define ADT_DEFER_2(x, y) ADT_DEFER_1(x, y)
 #define ADT_DEFER_3(x) ADT_DEFER_2(x, __COUNTER__)
 
-#define ADT_DEFER(code) auto ADT_DEFER_3(__lamDefer) = adt::Defer([&] { code; })
+#define ADT_DEFER(code) auto ADT_DEFER_3(_lamDefer) = adt::Defer([&] { code; })
 
 #ifndef ADT_DEFER_ONLY
     #define defer(code) ADT_DEFER(code)

@@ -31,7 +31,7 @@ constexpr f32 toDeg(int x) { return toDeg(f32(x)); }
 inline bool
 eq(f64 l, f64 r)
 {
-    return fabs(l - r) <= EPS64*(fabs(l) + fabs(r) + 1.0);
+    return fabsl(l - r) <= EPS64*(fabsl(l) + fabsl(r) + 1.0);
 }
 
 inline bool
@@ -40,8 +40,8 @@ eq(f32 l, f32 r)
     return fabs(l - r) <= EPS32*(fabs(l) + fabs(r) + 1.0f);
 }
 
-template<typename T> constexpr T sq(const T& x) { return x * x; }
-template<typename T> constexpr T cube(const T& x) { return x*x*x; }
+constexpr auto sq(const auto& x) { return x * x; }
+constexpr auto cube(const auto& x) { return x*x*x; }
 
 union V2
 {

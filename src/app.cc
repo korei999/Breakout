@@ -3,6 +3,8 @@
 namespace app
 {
 
+adt::ThreadPool* g_pThreadPool;
+
 int g_argc = 0;
 char** g_argv = nullptr;
 

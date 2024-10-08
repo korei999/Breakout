@@ -93,10 +93,13 @@ run()
     WindowSetSwapInterval(app::g_pWindow, 1);
     WindowSetFullscreen(app::g_pWindow);
 
+#ifndef NDEBUG
+    test::math();
+    test::locks();
+#endif
+
     game::loadAssets();
     game::loadLevel();
-
-    test::math();
 
     /* proc once to get events */
     WindowSwapBuffers(app::g_pWindow);
@@ -136,9 +139,9 @@ mainLoop()
 {
     FixedAllocator alloc(s_aFrameMemDraw, sizeof(s_aFrameMemGame));
 
-    thrd_t thrdUpdatePhysics;
-    thrd_create(&thrdUpdatePhysics, gameStateLoop, nullptr);
-    defer(thrd_join(thrdUpdatePhysics, nullptr));
+    thrd_t thrdUpdateGameState;
+    thrd_create(&thrdUpdateGameState, gameStateLoop, nullptr);
+    defer(thrd_join(thrdUpdateGameState, nullptr));
 
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {

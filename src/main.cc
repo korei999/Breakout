@@ -10,7 +10,7 @@
 
 using namespace adt;
 
-Arena arena(SIZE_1M);
+static Arena s_arena(SIZE_1M);
 
 #ifdef __linux__
     #include "platform/wayland/Client.hh"
@@ -21,7 +21,11 @@ main(int argc, char** argv)
 {
     app::g_argc = argc, app::g_argv = argv;
 
-    platform::pipewire::Mixer mixer(&arena.base);
+    auto tpool = ThreadPool(&s_arena.base, utils::max(getNCores() - 2, 2));
+    ThreadPoolStart(&tpool);
+    app::g_pThreadPool = &tpool;
+
+    platform::pipewire::Mixer mixer(&s_arena.base);
     platform::wayland::Client window("Breakout");
 
     WindowInit(&window);
@@ -32,10 +36,13 @@ main(int argc, char** argv)
 
     frame::run();
 
+    ThreadPoolWait(&tpool);
+    ThreadPoolDestroy(&tpool);
+
 #ifndef NDEBUG
     audio::MixerDestroy(&mixer);
     WindowDestroy(&window);
-    ArenaFreeAll(&arena);
+    ArenaFreeAll(&s_arena);
 #endif
 }
 
@@ -47,7 +54,7 @@ WinMain([[maybe_unused]] HINSTANCE instance,
         [[maybe_unused]] LPSTR cmdline,
         [[maybe_unused]] int cmdshow)
 {
-    platform::win32::Mixer mixer(&arena.base);
+    platform::win32::Mixer mixer(&s_arena.base);
     platform::win32::Win32Window app("Breakout", instance);
 
     app::g_pMixer = &mixer.base;
@@ -58,7 +65,7 @@ WinMain([[maybe_unused]] HINSTANCE instance,
 #ifndef NDEBUG
     platform::win32::MixerDestroy(&mixer);
     platform::win32::Win32Destroy(&app);
-    ArenaFreeAll(&arena);
+    ArenaFreeAll(&s_arena);
 #endif
 }
 
@@ -67,6 +74,10 @@ int
 main(int argc, char** argv)
 {
     app::g_argc = argc, app::g_argv = argv;
+
+    auto tpool = ThreadPool(&s_arena.base, utils::max(getNCores() - 2, 2));
+    ThreadPoolStart(&tpool);
+    app::g_pThreadPool = &tpool;
 
     return WinMain(GetModuleHandle(NULL), NULL, GetCommandLineA(), SW_SHOWNORMAL);
 }

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Queue.hh"
-#include "defer.hh"
+#include "guard.hh"
 
-#include <threads.h>
+#include <stdio.h>
 #include <stdatomic.h>
 
 namespace adt
@@ -43,6 +43,21 @@ getLogicalCoresCountWIN32()
     #define ADT_GET_NCORES() 4
 #endif
 
+inline int
+getNCores()
+{
+#ifdef __linux__
+    return get_nprocs();
+#elif _WIN32
+    SYSTEM_INFO info;
+    GetSystemInfo(&info);
+    return info.dwNumberOfProcessors;
+
+    return info.dwNumberOfProcessors;
+#endif
+    return 4;
+}
+
 struct ThreadTask
 {
     thrd_start_t pfn;
@@ -56,25 +71,24 @@ struct ThreadPool
     u32 nThreads = 0;
     cnd_t cndQ, cndWait;
     mtx_t mtxQ, mtxWait;
-    _Atomic(int) nActiveTasksAtomic;
-    bool bDone = false;
+    _Atomic(int) a_nActiveTasks;
+    _Atomic(bool) bDone;
 
     ThreadPool() = default;
-    ThreadPool(Allocator* p, u32 _threadCount = ADT_GET_NCORES());
+    ThreadPool(Allocator* pAlloc, u32 _nThreads = ADT_GET_NCORES());
 };
 
 inline void ThreadPoolStart(ThreadPool* s);
 inline bool ThreadPoolBusy(ThreadPool* s);
 inline void ThreadPoolSubmit(ThreadPool* s, ThreadTask task);
 inline void ThreadPoolSubmit(ThreadPool* s, thrd_start_t pfnTask, void* pArgs);
-inline void ThreadPoolWait(ThreadPool* s);
+inline void ThreadPoolWait(ThreadPool* s); /* wait for active tasks to finish, without joining */
 
 inline
-ThreadPool::ThreadPool(Allocator* p, u32 _threadCount)
-    : qTasks(p, _threadCount), nThreads(_threadCount), nActiveTasksAtomic(0), bDone(false)
+ThreadPool::ThreadPool(Allocator* pAlloc, u32 _nThreads)
+    : qTasks(pAlloc, _nThreads), nThreads(_nThreads), a_nActiveTasks(0), bDone(false)
 {
-    /*QueueResize(&qTasks, _threadCount);*/
-    pThreads = (thrd_t*)alloc(p, _threadCount, sizeof(thrd_t));
+    pThreads = (thrd_t*)alloc(pAlloc, _nThreads, sizeof(thrd_t));
     cnd_init(&cndQ);
     mtx_init(&mtxQ, mtx_plain);
     cnd_init(&cndWait);
@@ -82,7 +96,7 @@ ThreadPool::ThreadPool(Allocator* p, u32 _threadCount)
 }
 
 inline int
-__ThreadPoolLoop(void* p)
+_ThreadPoolLoop(void* p)
 {
     auto* s = (ThreadPool*)p;
 
@@ -90,8 +104,7 @@ __ThreadPoolLoop(void* p)
     {
         ThreadTask task;
         {
-            mtx_lock(&s->mtxQ);
-            defer(mtx_unlock(&s->mtxQ));
+            guard::Mtx lock(&s->mtxQ);
 
             while (QueueEmpty(&s->qTasks) && !s->bDone)
                 cnd_wait(&s->cndQ, &s->mtxQ);
@@ -99,11 +112,11 @@ __ThreadPoolLoop(void* p)
             if (s->bDone) return thrd_success;
 
             task = *QueuePopFront(&s->qTasks);
-            s->nActiveTasksAtomic++; /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */
+            s->a_nActiveTasks++; /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */
         }
 
         task.pfn(task.pArgs);
-        s->nActiveTasksAtomic--;
+        s->a_nActiveTasks--;
 
         if (!ThreadPoolBusy(s))
             cnd_signal(&s->cndWait);
@@ -115,26 +128,37 @@ __ThreadPoolLoop(void* p)
 inline void
 ThreadPoolStart(ThreadPool* s)
 {
+    s->bDone = false;
+
     for (size_t i = 0; i < s->nThreads; i++)
-        thrd_create(&s->pThreads[i], __ThreadPoolLoop, s);
+    {
+        [[maybe_unused]] int t = thrd_create(&s->pThreads[i], _ThreadPoolLoop, s);
+#ifndef NDEBUG
+        fprintf(stderr, "[THREAD POOL]: creating thread '%lu'\n", s->pThreads[i]);
+        assert(t == 0 && "failed to create thread");
+#endif
+    }
 }
 
 inline bool
 ThreadPoolBusy(ThreadPool* s)
 {
-    mtx_lock(&s->mtxQ);
-    bool ret = !QueueEmpty(&s->qTasks);
-    mtx_unlock(&s->mtxQ);
+    bool ret;
+    {
+        guard::Mtx lock(&s->mtxQ);
+        ret = !QueueEmpty(&s->qTasks);
+    }
 
-    return ret || s->nActiveTasksAtomic > 0;
+    return ret || s->a_nActiveTasks > 0;
 }
 
 inline void
 ThreadPoolSubmit(ThreadPool* s, ThreadTask task)
 {
-    mtx_lock(&s->mtxQ);
-    QueuePushBack(&s->qTasks, task);
-    mtx_unlock(&s->mtxQ);
+    {
+        guard::Mtx lock(&s->mtxQ);
+        QueuePushBack(&s->qTasks, task);
+    }
 
     cnd_signal(&s->cndQ);
 }
@@ -150,15 +174,22 @@ ThreadPoolWait(ThreadPool* s)
 {
     while (ThreadPoolBusy(s))
     {
-        mtx_lock(&s->mtxWait);
+        guard::Mtx lock(&s->mtxWait);
         cnd_wait(&s->cndWait, &s->mtxWait);
-        mtx_unlock(&s->mtxWait);
     }
 }
 
 inline void
-__ThreadPoolStop(ThreadPool* s)
+_ThreadPoolStop(ThreadPool* s)
 {
+    if (s->bDone)
+    {
+#ifndef NDEBUG
+        fprintf(stderr, "[THREAD POOL]: trying to stop multiple times\n");
+#endif
+        return;
+    }
+
     s->bDone = true;
     cnd_broadcast(&s->cndQ);
     for (u32 i = 0; i < s->nThreads; i++)
@@ -168,7 +199,7 @@ __ThreadPoolStop(ThreadPool* s)
 inline void
 ThreadPoolDestroy(ThreadPool* s)
 {
-    __ThreadPoolStop(s);
+    _ThreadPoolStop(s);
 
     free(s->qTasks.pAlloc, s->pThreads);
     QueueDestroy(&s->qTasks);
