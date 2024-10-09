@@ -728,20 +728,20 @@ TTFRasterizeTEST(TTF* s, parser::ttf::Glyph* pGlyph, u32 width, u32 height)
         f32 scanline = f32(i);
         for (u32 j = 1; j < VecSize(&aCurvyPoints); ++j)
         {
-            /*f32 x0 = aCurvyPoints[j - 1].pos.x;*/
-            /*f32 y0 = aCurvyPoints[j - 1].pos.y;*/
-            /*f32 x1 = aCurvyPoints[j - 0].pos.x;*/
-            /*f32 y1 = aCurvyPoints[j - 0].pos.y;*/
+            f32 scale = f32(height)/f32(pGlyph->yMax - pGlyph->yMin);
 
-            f32 x0 = (aCurvyPoints[j - 1].pos.x / pGlyph->xMax) * height;
-            f32 y0 = (aCurvyPoints[j - 1].pos.y / pGlyph->yMax) * width;
+            /*f32 x0 = (aCurvyPoints[j - 1].pos.x / pGlyph->xMax) * height;*/
+            /*f32 y0 = (aCurvyPoints[j - 1].pos.y / pGlyph->yMax) * width;*/
+            /*f32 x1 = (aCurvyPoints[j].pos.x / pGlyph->xMax) * height;*/
+            /*f32 y1 = (aCurvyPoints[j].pos.y / pGlyph->yMax) * width;*/
 
-            f32 x1 = (aCurvyPoints[j].pos.x / pGlyph->xMax) * height;
-            f32 y1 = (aCurvyPoints[j].pos.y / pGlyph->yMax) * width;
+            f32 x0 = (aCurvyPoints[j - 1].pos.x) * scale;
+            f32 y0 = (aCurvyPoints[j - 1].pos.y) * scale;
+            f32 x1 = (aCurvyPoints[j].pos.x) * scale;
+            f32 y1 = (aCurvyPoints[j].pos.y) * scale;
 
             y0 = roundf(utils::clamp(y0, 0.0f, f32(width - 1)));
             x0 = roundf(utils::min(x0, f32(height - 1)));
-
             y1 = roundf(utils::clamp(y1, 0.0f, f32(width - 1)));
             x1 = roundf(utils::min(x1, f32(height - 1)));
 
@@ -777,45 +777,10 @@ TTFRasterizeTEST(TTF* s, parser::ttf::Glyph* pGlyph, u32 width, u32 height)
                 int endIdx = aIntersections[m + 1];
 
                 for (int j = startIdx; j <= endIdx; ++j)
-                {
-                    /*COUT("i, j: [{}, {}]\n", i, j);*/
                     AT(i, j) = 0xff;
-                }
             }
         }
     }
-
-    // bool bPrevWasEnd = false;
-    // for (u32 idx = 1; idx < VecSize(&aCurvyPoints); ++idx)
-    // {
-    //     auto& point = aCurvyPoints[idx];
-
-    //     f32 x0 = (aCurvyPoints[idx - 1].pos.x / pGlyph->xMax) * height;
-    //     f32 y0 = (aCurvyPoints[idx - 1].pos.y / pGlyph->yMax) * width;
-
-    //     f32 x1 = (aCurvyPoints[idx].pos.x / pGlyph->xMax) * height;
-    //     f32 y1 = (aCurvyPoints[idx].pos.y / pGlyph->yMax) * width;
-
-    //     int cy0 = roundf(utils::clamp(y0, 0.0f, f32(width - 1)));
-    //     int cx0 = roundf(utils::min(x0, f32(height - 1)));
-
-    //     int cy1 = roundf(utils::clamp(y1, 0.0f, f32(width - 1)));
-    //     int cx1 = roundf(utils::min(x1, f32(height - 1)));
-
-    //     if (idx != 0 && !bPrevWasEnd)
-    //         drawLine(pTempBitmap, width, height, cx0, cy0, cx1, cy1);
-
-    //     if (point.bEndOfCurve)
-    //     {
-    //         bPrevWasEnd = true;
-
-    //         /*scanline(pTempBitmap, width, height);*/
-    //         blit(pTexture, pTempBitmap, width, height, BLIT_MODE::XOR);
-
-    //         memset(pTempBitmap, 0, width*height);
-    //     }
-    //     else bPrevWasEnd = false;
-    // }
 
     return pBitmap;
 }
