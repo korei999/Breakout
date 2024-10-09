@@ -730,11 +730,6 @@ TTFRasterizeTEST(TTF* s, parser::ttf::Glyph* pGlyph, u32 width, u32 height)
         {
             f32 scale = f32(height)/f32(pGlyph->yMax - pGlyph->yMin);
 
-            /*f32 x0 = (aCurvyPoints[j - 1].pos.x / pGlyph->xMax) * height;*/
-            /*f32 y0 = (aCurvyPoints[j - 1].pos.y / pGlyph->yMax) * width;*/
-            /*f32 x1 = (aCurvyPoints[j].pos.x / pGlyph->xMax) * height;*/
-            /*f32 y1 = (aCurvyPoints[j].pos.y / pGlyph->yMax) * width;*/
-
             f32 x0 = (aCurvyPoints[j - 1].pos.x) * scale;
             f32 y0 = (aCurvyPoints[j - 1].pos.y) * scale;
             f32 x1 = (aCurvyPoints[j].pos.x) * scale;

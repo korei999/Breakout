@@ -68,7 +68,7 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '@');
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '&');
 
     u32 width = 512, height = 512;
     u8* pTestBitmap = text::TTFRasterizeTEST(&s_ttfTest, &glyphA, width, height);
