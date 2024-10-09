@@ -13,15 +13,15 @@ namespace adt
 namespace math
 {
 
-constexpr f64 PI = 3.14159265358979323846;
-constexpr f32 PI_F = f32(PI);
+constexpr f64 PI64 = 3.14159265358979323846;
+constexpr f32 PI32 = f32(PI64);
 constexpr f64 EPS64 = std::numeric_limits<f64>::epsilon();
 constexpr f32 EPS32 = std::numeric_limits<f32>::epsilon();
 
-constexpr f64 toDeg(f64 x) { return x * 180.0 / PI; }
-constexpr f64 toRad(f64 x) { return x * PI / 180.0; }
-constexpr f32 toDeg(f32 x) { return x * 180.0f / PI_F; }
-constexpr f32 toRad(f32 x) { return x * PI_F / 180.0f; }
+constexpr f64 toDeg(f64 x) { return x * 180.0 / PI64; }
+constexpr f64 toRad(f64 x) { return x * PI64 / 180.0; }
+constexpr f32 toDeg(f32 x) { return x * 180.0f / PI32; }
+constexpr f32 toRad(f32 x) { return x * PI32 / 180.0f; }
 
 constexpr f64 toRad(long x) { return toRad(f64(x)); }
 constexpr f64 toDeg(long x) { return toDeg(f64(x)); }

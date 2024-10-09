@@ -2,8 +2,8 @@
 
 #include "adt/Arena.hh"
 #include "adt/Vec.hh"
-#include "frame.hh"
 #include "adt/defer.hh"
+#include "frame.hh"
 
 namespace text
 {
@@ -243,7 +243,7 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cur
                     math::V2 p0 {aNonCurvyPoints[idx - 1].pos};
                     math::V2 p1 {aNonCurvyPoints[idx - 0].pos};
                     math::V2 p2 {aNonCurvyPoints[firstInCurveIdx].pos};
-                    insertPoints(pAlloc, &aNew, p0, p1, p2, 3);
+                    insertPoints(pAlloc, &aNew, p0, p1, p2, 6);
                 }
             }
         }
@@ -255,7 +255,7 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cur
                 math::V2 p0 {aNonCurvyPoints[idx - 2].pos};
                 math::V2 p1 {aNonCurvyPoints[idx - 1].pos};
                 math::V2 p2 {aNonCurvyPoints[idx - 0].pos};
-                insertPoints(pAlloc, &aNew, p0, p1, p2, 3);
+                insertPoints(pAlloc, &aNew, p0, p1, p2, 6);
             }
         }
 
@@ -264,7 +264,7 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cur
             VecPush(&aNew, pAlloc, {
                 .pos = p.pos,
                 .bOnCurve = p.bOnCurve,
-                .bEndOfCurve = p.bEndOfCurve
+                .bEndOfCurve = false
             });
         }
 
@@ -273,7 +273,7 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cur
             VecPush(&aNew, pAlloc, {
                 .pos = aNonCurvyPoints[firstInCurveIdx].pos,
                 .bOnCurve = true,
-                .bEndOfCurve = false,
+                .bEndOfCurve = true,
             });
 
             if (endIdx < 8) pEndIdxs->aIdxs[endIdx++] = VecLastI(&aNew);
@@ -433,6 +433,195 @@ TTFDrawCorrectLines(TTF* s, const CurveEndIdx& ends)
     }
 }
 
+#define AT(x, y) pBitmap[width*int(x) + int(y)]
+
+static void
+drawLineH(
+    u8* pBitmap,
+    const u32 width,
+    const u32 height,
+    int x0,
+    int y0,
+    int x1,
+    int y1
+)
+{
+    if (x0 > x1)
+    {
+        utils::swap(&x0, &x1);
+        utils::swap(&y0, &y1);
+    }
+
+    int dx = x1 - x0;
+    int dy = y1 - y0;
+
+    int dir = dy < 0 ? -1 : 1;
+    dy *= dir;
+
+    if (dx != 0)
+    {
+        int y = y0;
+        int p = 2*dy - dx;
+        for (int i = 0; i < dx+1; ++i)
+        {
+            AT(y, x0 + i) = 0xff;
+            /*AT(x0 + i, y) = 0xff;*/
+            if (p >= 0)
+            {
+                y += dir;
+                p = p - 2*dx;
+            }
+            p = p + 2*dy;
+        }
+    }
+}
+
+static void
+drawLineV(
+    u8* pBitmap,
+    const u32 width,
+    const u32 height,
+    int x0,
+    int y0,
+    int x1,
+    int y1
+)
+{
+    if (y0 > y1)
+    {
+        utils::swap(&x0, &x1);
+        utils::swap(&y0, &y1);
+    }
+
+    int dx = x1 - x0;
+    int dy = y1 - y0;
+
+    int dir = dx < 0 ? -1 : 1;
+    dx *= dir;
+
+    if (dy != 0)
+    {
+        int x = x0;
+        int p = 2*dx - dy;
+        for (int i = 0; i < dy+1; ++i)
+        {
+            /*AT(utils::clamp(x, 0, int(height-1)), y0 + i) = 0xff;*/
+            AT(y0 + i, utils::clamp(x, 0, int(width-1))) = 0xff;
+            if (p >= 0)
+            {
+                x += dir;
+                p = p - 2*dy;
+            }
+            p = p + 2*dx;
+        }
+    }
+}
+
+static void
+drawLine(
+    u8* pBitmap,
+    const u32 width,
+    const u32 height,
+    int x0,
+    int y0,
+    int x1,
+    int y1
+)
+{
+    if (abs(x1 - x0) > abs(y1 - y0))
+        drawLineH(pBitmap, width, height, x0, y0, x1, y1);
+    else
+        drawLineV(pBitmap, width, height, x0, y0, x1, y1);
+}
+
+static void
+scanLineThing(Allocator* pAlloc, u8* pBitmap, const u32 width, const u32 height)
+{
+    Vec<u16> aIntersections(pAlloc, 50);
+
+    for (u16 i = 0; i < height; ++i)
+    {
+        VecSetSize(&aIntersections, 0);
+        for (u16 j = 0; j < width; ++j)
+        {
+            /* find all the white point on the line */
+            /*if (AT(i, j) == 0xff)*/
+            /*    VecPush(&aIntersections, j);*/
+
+            /* TODO: actually just push lastest consecutive white */
+
+            if (AT(i, j) == 0xff)
+            {
+                while (AT(i, j) == 0xff && j < width)
+                    ++j;
+                --j;
+
+                VecPush(&aIntersections, j);
+            }
+        }
+
+        COUT("i({}, size: {}): ", i, VecSize(&aIntersections));
+        for (auto ip : aIntersections)
+            COUT("{}, ", ip);
+        COUT("\n");
+        
+        if (VecSize(&aIntersections) > 1)
+        {
+            /* treat one consetive row of white points as one point */
+            for (u16 it = 1; it < VecSize(&aIntersections); ++it)
+            {
+
+            }
+        }
+    }
+}
+
+enum class FLOOD_FILL_MODE : u8
+{
+    XOR = 0, OR
+};
+
+static void
+floodFillBFS(u8* pBitmap, const u32 width, const u32 height, Pair<u16, u16> pos)
+{
+    AT(pos.x, pos.y) = 0xff;
+
+    if (AT(pos.x + 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x + 1, pos.y + 0});
+    if (AT(pos.x + 0, pos.y + 1) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x + 0, pos.y + 1});
+    if (AT(pos.x - 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x - 1, pos.y + 0});
+    if (AT(pos.x - 0, pos.y - 1) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x - 0, pos.y - 1});
+}
+
+static void
+floodFillThing(Allocator* pAlloc, u8* pBitmap, const u32 width, const u32 height, FLOOD_FILL_MODE eMode)
+{
+    Pair<u16, u16> picked = {NPOS16, NPOS16};
+    for (u32 i = 0; i < height; ++i)
+    {
+        for (u32 j = 0; j < width; ++j)
+        {
+            if (AT(i, j) == 0xff)
+            {
+                /* NOTE: stupid heuristic */
+                u32 off = 0;
+                while (AT(i, j + off) == 0xff)
+                    ++off;
+
+                picked = {i + 1, (j + j+off) / 2};
+
+                goto skip;
+            }
+        }
+    }
+
+skip:
+
+    if (picked == Pair{NPOS16, NPOS16} && picked < Pair{u16(width), u16(height)})
+        assert(false && "no white points?");
+    else
+        floodFillBFS(pBitmap, width, height, picked);
+}
+
 /* TODO: rasterize string later */
 u8*
 TTFRasterizeTEST(TTF* s, parser::ttf::Glyph* pGlyph, u32 width, u32 height)
@@ -444,30 +633,56 @@ TTFRasterizeTEST(TTF* s, parser::ttf::Glyph* pGlyph, u32 width, u32 height)
     u32 size = VecSize(&aGlyphPoints);
 
     CurveEndIdx endIdxs;
+
     VecBase<PointOnCurve> aPoints = getPointsWithMissingOnCurve(&arena.base, pGlyph);
     auto aCurvyPoints = makeItCurvy(&arena.base, aPoints, &endIdxs, true);
+    /*auto& aCurvyPoints = aPoints;*/
 
     u8* pBitmap = (u8*)::calloc(1, width*height);
 
-    auto at = [&](int x, int y) -> u8& {
+    auto AT = [&](int x, int y) -> u8& {
         assert(u32(x) < width && u32(y) < height);
         return pBitmap[width*x + y];
     };
 
     COUT("xMin: {}, xMax: {}, yMin: {}, yMax: {}\n", pGlyph->xMin, pGlyph->xMax, pGlyph->yMin, pGlyph->yMax);
+
+    bool bPrevWasEnd = false;
+    int cyPrev = 0;
+    int cxPrev = 0;
     for (const auto& p : aCurvyPoints)
     {
+        const u32 idx = VecIdx(&aCurvyPoints, &p);
         const auto& pos = p.pos;
 
         f32 x = (pos.x / pGlyph->xMax) * width;
         f32 y = (pos.y / pGlyph->yMax) * height;
 
-        at(utils::clamp(y, 0.0f, f32(width - 1)), utils::min(x, f32(height - 1))) = 0xff;
+        int cy = roundf(utils::clamp(y, 0.0f, f32(width - 1)));
+        int cx = roundf(utils::min(x, f32(height - 1)));
 
-        // TODO: now draw line beetween this and prev points
+        if (idx != 0 && !bPrevWasEnd)
+        {
+            /*AT(cy, cx) = 0xff;*/
+            drawLine(pBitmap, width, height, cxPrev, cyPrev, cx, cy);
+        }
+
+        if (p.bEndOfCurve)
+            bPrevWasEnd = true;
+        else bPrevWasEnd = false;
+
+        /*if (p.bEndOfCurve)*/
+        /*    break;*/
+
+        cyPrev = cy;
+        cxPrev = cx;
     }
+
+    floodFillThing(&arena.base, pBitmap, width, height, FLOOD_FILL_MODE::XOR);
 
     return pBitmap;
 }
+
+#undef AT
 
 } /* namespace text */

@@ -68,12 +68,11 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '@');
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '&');
 
-    text::TTFGenMesh(&s_ttfTest, &glyphA);
-
-    u32 width = 128*2, height = 128*2;
+    u32 width = 256, height = 256;
     u8* pTestBitmap = text::TTFRasterizeTEST(&s_ttfTest, &glyphA, width, height);
+    defer(::free(pTestBitmap));
 
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
@@ -535,7 +534,7 @@ drawTTF([[maybe_unused]] Allocator* pAlloc)
 static void
 drawTestImg([[maybe_unused]] Allocator* pAlloc)
 {
-    math::M4 proj = math::M4Ortho(-0.0f, 4.0f, -0.0f, 4.0f, -1.0f, 1.0f);
+    math::M4 proj = math::M4Ortho(-0.0f, 2.0f, -0.0f, 2.0f, -1.0f, 1.0f);
 
     auto* sh = &s_sh1Col;
     ShaderUse(sh);
