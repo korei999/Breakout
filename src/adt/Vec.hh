@@ -153,7 +153,9 @@ template<typename T>
 inline u32
 VecIdx(const VecBase<T>* s, const T* x)
 {
-    return u32(x - s->pData);
+    u32 r = u32(x - s->pData);
+    assert(r < s->cap);
+    return r;
 }
 
 template<typename T>

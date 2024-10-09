@@ -9,14 +9,14 @@ namespace adt
 {
 
 /* statically sized array */
-template<typename T, u32 SIZE>
+template<typename T, u32 CAP>
 struct Arr
 {
-    T pData[SIZE] {};
+    T pData[CAP] {};
     u32 size {};
 
-    T& operator[](u32 i)             { assert(i < SIZE && "[Arr]: out of range access"); return pData[i]; }
-    const T& operator[](u32 i) const { assert(i < SIZE && "[Arr]: out of range access"); return pData[i]; }
+    T& operator[](u32 i)             { assert(i < CAP && "[Arr]: out of range access"); return pData[i]; }
+    const T& operator[](u32 i) const { assert(i < CAP && "[Arr]: out of range access"); return pData[i]; }
 
     struct It
     {
@@ -48,37 +48,46 @@ struct Arr
     const It rend() const { return {this->pData - 1}; }
 };
 
-template<typename T, u32 SIZE>
+template<typename T, u32 CAP>
 inline u32
-ArrPush(Arr<T, SIZE>* s, const T& x)
+ArrPush(Arr<T, CAP>* s, const T& x)
 {
-    assert(SIZE > 0 && "[Arr]: ininitialized push");
-    assert(s->size < SIZE && "[Arr]: pushing over capacity");
+    assert(CAP > 0 && "[Arr]: ininitialized push");
+    assert(s->size < CAP && "[Arr]: pushing over capacity");
 
     s->pData[s->size++] = x;
     return s->size - 1;
 }
 
-template<typename T, u32 SIZE>
+template<typename T, u32 CAP>
 inline u64
-ArrCap(Arr<T, SIZE>* s)
+ArrCap(Arr<T, CAP>* s)
 {
     return utils::size(s->pData);
 }
 
-template<typename T, u32 SIZE>
+template<typename T, u32 CAP>
 inline u32
-ArrSize(Arr<T, SIZE>* s)
+ArrSize(Arr<T, CAP>* s)
 {
     return s->size;
 }
 
-template<typename T, u32 SIZE>
+template<typename T, u32 CAP>
 inline void
-ArrSetSize(Arr<T, SIZE>* s, u32 newSize)
+ArrSetSize(Arr<T, CAP>* s, u32 newSize)
 {
-    assert(newSize <= SIZE && "[Arr]: cannot enlarge static array");
+    assert(newSize <= CAP && "[Arr]: cannot enlarge static array");
     s->size = newSize;
+}
+
+template<typename T, u32 CAP>
+inline u32
+ArrIdx(Arr<T, CAP>* s, const T* p)
+{
+    u32 r = u32(p - s->pData);
+    assert(r < s->cap);
+    return r;
 }
 
 } /* namespace adt */
