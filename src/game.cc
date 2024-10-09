@@ -68,7 +68,7 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '&');
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '%');
 
     u32 width = 256, height = 256;
     u8* pTestBitmap = text::TTFRasterizeTEST(&s_ttfTest, &glyphA, width, height);
@@ -101,18 +101,6 @@ loadAssets()
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
-    /*u32 testSize = 64;*/
-    /*u8* aTestImg = (u8*)::calloc(1, math::sq(testSize));*/
-    /*defer(::free(aTestImg));*/
-    /**/
-    /*aTestImg[0] = 255;*/
-    /*aTestImg[testSize*((testSize)/2) + (testSize)/2] = 255;*/
-    /*aTestImg[testSize*(testSize-1) + testSize-1] = 255;*/
-
-    /*for (int i = 0; i < 64; ++i)*/
-    /*    for (int j = 0; j < 64; ++j)*/
-    /*        aTestImg[64*i + j] = ((j+1.0f)/64.0f) * 255.0f;*/
-
     texture::ImgSetMonochrome(&s_tTest, pTestBitmap, width, height);
 
     texture::ImgLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp"};
@@ -134,7 +122,7 @@ loadAssets()
 }
 
 template<typename T>
-inline math::V2
+static inline math::V2
 nextPos(const T& e, bool bNormalizeDir)
 {
     auto dir = bNormalizeDir ? math::normalize(e.dir) : e.dir;
@@ -315,7 +303,7 @@ outOfBounds()
         audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 }
 
-inline math::V2
+static inline math::V2
 tilePosToImagePos(u32 x, u32 y)
 {
     namespace f = frame;

@@ -1,6 +1,7 @@
 #include "text.hh"
 
 #include "adt/Arena.hh"
+#include "adt/Arr.hh"
 #include "adt/Vec.hh"
 #include "adt/defer.hh"
 #include "frame.hh"
@@ -535,65 +536,20 @@ drawLine(
 }
 
 static void
-scanLineThing(Allocator* pAlloc, u8* pBitmap, const u32 width, const u32 height)
-{
-    Vec<u16> aIntersections(pAlloc, 50);
-
-    for (u16 i = 0; i < height; ++i)
-    {
-        VecSetSize(&aIntersections, 0);
-        for (u16 j = 0; j < width; ++j)
-        {
-            /* find all the white point on the line */
-            /*if (AT(i, j) == 0xff)*/
-            /*    VecPush(&aIntersections, j);*/
-
-            /* TODO: actually just push lastest consecutive white */
-
-            if (AT(i, j) == 0xff)
-            {
-                while (AT(i, j) == 0xff && j < width)
-                    ++j;
-                --j;
-
-                VecPush(&aIntersections, j);
-            }
-        }
-
-        COUT("i({}, size: {}): ", i, VecSize(&aIntersections));
-        for (auto ip : aIntersections)
-            COUT("{}, ", ip);
-        COUT("\n");
-        
-        if (VecSize(&aIntersections) > 1)
-        {
-            /* treat one consetive row of white points as one point */
-            for (u16 it = 1; it < VecSize(&aIntersections); ++it)
-            {
-
-            }
-        }
-    }
-}
-
-enum class FLOOD_FILL_MODE : u8
-{
-    XOR = 0, OR
-};
-
-static void
 floodFillBFS(u8* pBitmap, const u32 width, const u32 height, Pair<u16, u16> pos)
 {
+    if (pos.x >= height || pos.y >= width) return;
+
     AT(pos.x, pos.y) = 0xff;
 
-    if (AT(pos.x + 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x + 1, pos.y + 0});
-    if (AT(pos.x + 0, pos.y + 1) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x + 0, pos.y + 1});
-    if (AT(pos.x - 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x - 1, pos.y + 0});
-    if (AT(pos.x - 0, pos.y - 1) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x - 0, pos.y - 1});
+    if ((pos.x + 1) < height && AT(pos.x + 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x + 1, pos.y + 0});
+    if ((pos.y + 1) < width  && AT(pos.x + 0, pos.y + 1) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x + 0, pos.y + 1});
+    if ((pos.x - 1) < height && AT(pos.x - 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x - 1, pos.y + 0});
+    if ((pos.y - 1) < width  && AT(pos.x - 0, pos.y - 1) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x - 0, pos.y - 1});
 }
 
-static void
-floodFillThing(Allocator* pAlloc, u8* pBitmap, const u32 width, const u32 height, FLOOD_FILL_MODE eMode)
+static Pair<u16, u16>
+pickPosition(u8* pBitmap, const u32 width, const u32 height)
 {
     Pair<u16, u16> picked = {NPOS16, NPOS16};
     for (u32 i = 0; i < height; ++i)
@@ -618,67 +574,248 @@ skip:
 
     if (picked == Pair{NPOS16, NPOS16} && picked < Pair{u16(width), u16(height)})
         assert(false && "no white points?");
-    else
-        floodFillBFS(pBitmap, width, height, picked);
+
+    return picked;
+}
+
+/* https://en.wikipedia.org/wiki/Centroid#Of_a_polygon */
+/* NOTE: this doesn't actually work for filling shapes like 'U' or 'G' etc... */
+static Pair<u16, u16>
+polygonCentroid(
+    parser::ttf::Glyph* pGlyph,
+    const VecBase<PointOnCurve>& aPoints,
+    u32 startIdx,
+    u32 width,
+    u32 height
+)
+{
+    f32 area = 0;
+    f32 scx = 0;
+    f32 scy = 0;
+
+    for (u32 i = startIdx + 1; i < VecSize(&aPoints); ++i)
+    {
+        auto& pos0 = aPoints[i - 1].pos;
+        auto& pos1 = aPoints[i - 0].pos;
+
+        f32 x0 = (pos0.x / pGlyph->xMax) * width;
+        f32 y0 = (pos0.y / pGlyph->yMax) * height;
+        f32 x1 = (pos1.x / pGlyph->xMax) * width;
+        f32 y1 = (pos1.y / pGlyph->yMax) * height;
+
+        x0 = roundf(utils::min(x0, f32(height - 1)));
+        y0 = roundf(utils::clamp(y0, 0.0f, f32(width - 1)));
+        x1 = roundf(utils::min(x1, f32(height - 1)));
+        y1 = roundf(utils::clamp(y1, 0.0f, f32(width - 1)));
+
+        f32 a = x0*y1 - x1*y0;
+        area += a;
+        scx += (x0 + x1) * a;
+        scy += (y0 + y1) * a;
+
+        if (aPoints[i].bEndOfCurve)
+            break;
+    }
+
+    f32 _Cx = (1.0 / (6.0 * area/2.0)) * (scx);
+    f32 _Cy = (1.0 / (6.0 * area/2.0)) * (scy);
+
+    return {u16(roundf(_Cx)), u16(roundf(_Cy))};
+}
+
+
+static void
+floodFillThing(u8* pBitmap, const u32 width, const u32 height)
+{
+    /*floodFillBFS(pBitmap, width, height, pickPosition(pBitmap, width, height));*/
+    floodFillBFS(pBitmap, width, height, pickPosition(pBitmap, width, height));
+}
+
+static int
+polygonArea(const VecBase<PointOnCurve>& aPoints, u32 startIdx)
+{
+    int area = 0;
+    for (u32 i = startIdx + 1; i < VecSize(&aPoints) && !aPoints[i].bEndOfCurve; ++i)
+    {
+        int x0 = aPoints[i - 1].pos.x;
+        int x1 = aPoints[i - 0].pos.x;
+        int y0 = aPoints[i - 1].pos.y;
+        int y1 = aPoints[i - 0].pos.y;
+
+        area += (x1 - x0) * (y1 + y0);
+    }
+    return area / 2;
+}
+
+static int
+polygonWindingOrder(const VecBase<PointOnCurve>& aPoints, u32 startIdx)
+{
+    if (VecSize(&aPoints) - startIdx <= 2)
+    {
+        LOG_FATAL("How can you get area of a LINE/DOT?\n");
+        return 0;
+    }
+
+    return polygonArea(aPoints, startIdx);
+}
+
+enum class BLIT_MODE : u8
+{
+    XOR = 0, OR
+};
+
+/* TODO: limit copy ranges */
+static void
+blit(u8* pDst, u8* pSrc, u32 width, u32 height, BLIT_MODE eMode)
+{
+
+    if (eMode == BLIT_MODE::XOR)
+    {
+        for (u32 i = 0; i < width*height; ++i)
+            pDst[i] ^= pSrc[i]; /* should work with full white/black pixels */
+    }
+    else if (eMode == BLIT_MODE::OR)
+    {
+        for (u32 i = 0; i < width*height; ++i)
+            pDst[i] |= pSrc[i];
+    }
+}
+
+static void
+scanline(u8* pBitmap, u32 width, u32 height)
+{
+    for (u32 i = 0; i < height; ++i)
+    {
+        int nHits = 0;
+        for (u32 j = 0; j < width; ++j)
+        {
+            if (AT(i, j) == 0xff)
+                ++nHits;
+
+            while (AT(i, j) == 0xff && j < width)
+                ++j;
+
+            /*COUT("j: {}\n", j);*/
+
+            if (utils::odd(nHits))
+                AT(i, j) = 0xff;
+        }
+    }
 }
 
 /* TODO: rasterize string later */
 u8*
 TTFRasterizeTEST(TTF* s, parser::ttf::Glyph* pGlyph, u32 width, u32 height)
 {
-    Arena arena(SIZE_8K);
+    Arena arena(width*height * 2);
     defer(ArenaFreeAll(&arena));
 
     const auto& aGlyphPoints = pGlyph->uGlyph.simple.aPoints;
     u32 size = VecSize(&aGlyphPoints);
 
     CurveEndIdx endIdxs;
-
     VecBase<PointOnCurve> aPoints = getPointsWithMissingOnCurve(&arena.base, pGlyph);
     auto aCurvyPoints = makeItCurvy(&arena.base, aPoints, &endIdxs, true);
-    /*auto& aCurvyPoints = aPoints;*/
 
     u8* pBitmap = (u8*)::calloc(1, width*height);
+    u8* pTempBitmap = (u8*)ArenaAlloc(&arena, 1, width*height);
 
-    auto AT = [&](int x, int y) -> u8& {
-        assert(u32(x) < width && u32(y) < height);
-        return pBitmap[width*x + y];
-    };
+    Arr<f32, 32> aIntersections {};
 
-    COUT("xMin: {}, xMax: {}, yMin: {}, yMax: {}\n", pGlyph->xMin, pGlyph->xMax, pGlyph->yMin, pGlyph->yMax);
-
-    bool bPrevWasEnd = false;
-    int cyPrev = 0;
-    int cxPrev = 0;
-    for (const auto& p : aCurvyPoints)
+    for (u32 i = 0; i < height; ++i)
     {
-        const u32 idx = VecIdx(&aCurvyPoints, &p);
-        const auto& pos = p.pos;
-
-        f32 x = (pos.x / pGlyph->xMax) * width;
-        f32 y = (pos.y / pGlyph->yMax) * height;
-
-        int cy = roundf(utils::clamp(y, 0.0f, f32(width - 1)));
-        int cx = roundf(utils::min(x, f32(height - 1)));
-
-        if (idx != 0 && !bPrevWasEnd)
+        ArrSetSize(&aIntersections, 0);
+        f32 scanline = f32(i);
+        for (u32 j = 1; j < VecSize(&aCurvyPoints); ++j)
         {
-            /*AT(cy, cx) = 0xff;*/
-            drawLine(pBitmap, width, height, cxPrev, cyPrev, cx, cy);
+            /*f32 x0 = aCurvyPoints[j - 1].pos.x;*/
+            /*f32 y0 = aCurvyPoints[j - 1].pos.y;*/
+            /*f32 x1 = aCurvyPoints[j - 0].pos.x;*/
+            /*f32 y1 = aCurvyPoints[j - 0].pos.y;*/
+
+            f32 x0 = (aCurvyPoints[j - 1].pos.x / pGlyph->xMax) * height;
+            f32 y0 = (aCurvyPoints[j - 1].pos.y / pGlyph->yMax) * width;
+
+            f32 x1 = (aCurvyPoints[j].pos.x / pGlyph->xMax) * height;
+            f32 y1 = (aCurvyPoints[j].pos.y / pGlyph->yMax) * width;
+
+            y0 = roundf(utils::clamp(y0, 0.0f, f32(width - 1)));
+            x0 = roundf(utils::min(x0, f32(height - 1)));
+
+            y1 = roundf(utils::clamp(y1, 0.0f, f32(width - 1)));
+            x1 = roundf(utils::min(x1, f32(height - 1)));
+
+            f32 biggerY = utils::max(y0, y1);
+            f32 smallerY = utils::min(y0, y1);
+
+            if (aCurvyPoints[j].bEndOfCurve)
+                j += 1;
+
+            if (scanline <= smallerY) continue;
+            if (scanline > biggerY) continue;
+
+            f32 dx = x1 - x0;
+            f32 dy = y1 - y0;
+
+            if (dy == 0.0f) continue;
+
+            f32 intersection = -1.0f;
+
+            if (dx == 0.0f) intersection = x1;
+            else intersection = (scanline - y1)*(dx/dy) + x1;
+
+            ArrPush(&aIntersections, intersection);
         }
 
-        if (p.bEndOfCurve)
-            bPrevWasEnd = true;
-        else bPrevWasEnd = false;
+        utils::qSort(&aIntersections);
 
-        /*if (p.bEndOfCurve)*/
-        /*    break;*/
+        if (aIntersections.size > 1)
+        {
+            for (int m = 0; m < int(aIntersections.size); m += 2)
+            {
+                int startIdx = aIntersections[m];
+                int endIdx = aIntersections[m + 1];
 
-        cyPrev = cy;
-        cxPrev = cx;
+                for (int j = startIdx; j <= endIdx; ++j)
+                {
+                    /*COUT("i, j: [{}, {}]\n", i, j);*/
+                    AT(i, j) = 0xff;
+                }
+            }
+        }
     }
 
-    floodFillThing(&arena.base, pBitmap, width, height, FLOOD_FILL_MODE::XOR);
+    // bool bPrevWasEnd = false;
+    // for (u32 idx = 1; idx < VecSize(&aCurvyPoints); ++idx)
+    // {
+    //     auto& point = aCurvyPoints[idx];
+
+    //     f32 x0 = (aCurvyPoints[idx - 1].pos.x / pGlyph->xMax) * height;
+    //     f32 y0 = (aCurvyPoints[idx - 1].pos.y / pGlyph->yMax) * width;
+
+    //     f32 x1 = (aCurvyPoints[idx].pos.x / pGlyph->xMax) * height;
+    //     f32 y1 = (aCurvyPoints[idx].pos.y / pGlyph->yMax) * width;
+
+    //     int cy0 = roundf(utils::clamp(y0, 0.0f, f32(width - 1)));
+    //     int cx0 = roundf(utils::min(x0, f32(height - 1)));
+
+    //     int cy1 = roundf(utils::clamp(y1, 0.0f, f32(width - 1)));
+    //     int cx1 = roundf(utils::min(x1, f32(height - 1)));
+
+    //     if (idx != 0 && !bPrevWasEnd)
+    //         drawLine(pTempBitmap, width, height, cx0, cy0, cx1, cy1);
+
+    //     if (point.bEndOfCurve)
+    //     {
+    //         bPrevWasEnd = true;
+
+    //         /*scanline(pTempBitmap, width, height);*/
+    //         blit(pTexture, pTempBitmap, width, height, BLIT_MODE::XOR);
+
+    //         memset(pTempBitmap, 0, width*height);
+    //     }
+    //     else bPrevWasEnd = false;
+    // }
 
     return pBitmap;
 }
