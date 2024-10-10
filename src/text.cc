@@ -542,10 +542,10 @@ floodFillBFS(u8* pBitmap, const u32 width, const u32 height, Pair<u16, u16> pos)
 
     AT(pos.x, pos.y) = 0xff;
 
-    if ((pos.x + 1) < height && AT(pos.x + 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x + 1, pos.y + 0});
-    if ((pos.y + 1) < width  && AT(pos.x + 0, pos.y + 1) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x + 0, pos.y + 1});
-    if ((pos.x - 1) < height && AT(pos.x - 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x - 1, pos.y + 0});
-    if ((pos.y - 1) < width  && AT(pos.x - 0, pos.y - 1) != 0xff) floodFillBFS(pBitmap, width, height, {pos.x - 0, pos.y - 1});
+    if ((pos.x + 1) < height && AT(pos.x + 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {u16(pos.x + 1), u16(pos.y + 0)});
+    if ((pos.y + 1) < width  && AT(pos.x + 0, pos.y + 1) != 0xff) floodFillBFS(pBitmap, width, height, {u16(pos.x + 0), u16(pos.y + 1)});
+    if ((pos.x - 1) < height && AT(pos.x - 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {u16(pos.x - 1), u16(pos.y + 0)});
+    if ((pos.y - 1) < width  && AT(pos.x - 0, pos.y - 1) != 0xff) floodFillBFS(pBitmap, width, height, {u16(pos.x - 0), u16(pos.y - 1)});
 }
 
 static Pair<u16, u16>
@@ -563,7 +563,7 @@ pickPosition(u8* pBitmap, const u32 width, const u32 height)
                 while (AT(i, j + off) == 0xff)
                     ++off;
 
-                picked = {i + 1, (j + j+off) / 2};
+                picked = {u16(i + 1), u16((j + j+off) / 2)};
 
                 goto skip;
             }
@@ -603,10 +603,10 @@ polygonCentroid(
         f32 x1 = (pos1.x / pGlyph->xMax) * width;
         f32 y1 = (pos1.y / pGlyph->yMax) * height;
 
-        x0 = roundf(utils::min(x0, f32(height - 1)));
-        y0 = roundf(utils::clamp(y0, 0.0f, f32(width - 1)));
-        x1 = roundf(utils::min(x1, f32(height - 1)));
-        y1 = roundf(utils::clamp(y1, 0.0f, f32(width - 1)));
+        x0 = round(utils::min(x0, f32(height - 1)));
+        y0 = round(utils::clamp(y0, 0.0f, f32(width - 1)));
+        x1 = round(utils::min(x1, f32(height - 1)));
+        y1 = round(utils::clamp(y1, 0.0f, f32(width - 1)));
 
         f32 a = x0*y1 - x1*y0;
         area += a;
@@ -620,7 +620,7 @@ polygonCentroid(
     f32 _Cx = (1.0 / (6.0 * area/2.0)) * (scx);
     f32 _Cy = (1.0 / (6.0 * area/2.0)) * (scy);
 
-    return {u16(roundf(_Cx)), u16(roundf(_Cy))};
+    return {u16(round(_Cx)), u16(round(_Cy))};
 }
 
 
@@ -738,10 +738,10 @@ TTFRasterizeTEST(TTF* s, parser::ttf::Glyph* pGlyph, u32 width, u32 height)
             if (aCurvyPoints[j].bEndOfCurve)
                 j += 1;
 
-            y0 = roundf(utils::clamp(y0, 0.0f, f32(width - 1)));
-            x0 = roundf(utils::min(x0, f32(height - 1)));
-            y1 = roundf(utils::clamp(y1, 0.0f, f32(width - 1)));
-            x1 = roundf(utils::min(x1, f32(height - 1)));
+            y0 = round(utils::clamp(y0, 0.0f, f32(width - 1)));
+            x0 = round(utils::min(x0, f32(height - 1)));
+            y1 = round(utils::clamp(y1, 0.0f, f32(width - 1)));
+            x1 = round(utils::min(x1, f32(height - 1)));
 
             f32 biggerY = utils::max(y0, y1);
             f32 smallerY = utils::min(y0, y1);
