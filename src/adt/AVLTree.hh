@@ -5,8 +5,8 @@
 #include "utils.hh"
 #include "Pair.hh"
 
-#include <stdio.h>
-#include <assert.h>
+#include <cstdio>
+#include <cassert>
 
 namespace adt
 {

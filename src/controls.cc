@@ -3,7 +3,7 @@
 #include "logs.hh"
 #include "app.hh"
 
-#include <math.h>
+#include <cmath>
 
 namespace controls
 {

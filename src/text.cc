@@ -728,12 +728,15 @@ TTFRasterizeTEST(TTF* s, parser::ttf::Glyph* pGlyph, u32 width, u32 height)
         f32 scanline = f32(i);
         for (u32 j = 1; j < VecSize(&aCurvyPoints); ++j)
         {
-            f32 scale = f32(height)/f32(pGlyph->yMax - pGlyph->yMin);
+            f32 scale = f32(height) / f32(pGlyph->yMax - pGlyph->yMin);
 
             f32 x0 = (aCurvyPoints[j - 1].pos.x) * scale;
             f32 y0 = (aCurvyPoints[j - 1].pos.y) * scale;
             f32 x1 = (aCurvyPoints[j].pos.x) * scale;
             f32 y1 = (aCurvyPoints[j].pos.y) * scale;
+
+            if (aCurvyPoints[j].bEndOfCurve)
+                j += 1;
 
             y0 = roundf(utils::clamp(y0, 0.0f, f32(width - 1)));
             x0 = roundf(utils::min(x0, f32(height - 1)));
@@ -743,35 +746,39 @@ TTFRasterizeTEST(TTF* s, parser::ttf::Glyph* pGlyph, u32 width, u32 height)
             f32 biggerY = utils::max(y0, y1);
             f32 smallerY = utils::min(y0, y1);
 
-            if (aCurvyPoints[j].bEndOfCurve)
-                j += 1;
-
             if (scanline <= smallerY) continue;
             if (scanline > biggerY) continue;
 
             f32 dx = x1 - x0;
             f32 dy = y1 - y0;
 
-            if (dy == 0.0f) continue;
+            if (math::eq(dy, 0.0f)) continue;
 
             f32 intersection = -1.0f;
 
-            if (dx == 0.0f) intersection = x1;
+            if (math::eq(dx, 0.0f)) intersection = x1;
             else intersection = (scanline - y1)*(dx/dy) + x1;
 
             ArrPush(&aIntersections, intersection);
         }
 
+        if (aIntersections.size > 0)
+        {
+            COUT("aIntersections: ");
+            for (auto e : aIntersections)
+                COUT("{}, ", e);
+            COUT("\n");
+        }
         utils::qSort(&aIntersections);
 
         if (aIntersections.size > 1)
         {
-            for (int m = 0; m < int(aIntersections.size); m += 2)
+            for (u32 m = 0; m < aIntersections.size; m += 2)
             {
-                int startIdx = aIntersections[m];
-                int endIdx = aIntersections[m + 1];
+                int start = round(aIntersections[m]);
+                int end = round(aIntersections[m + 1]);
 
-                for (int j = startIdx; j <= endIdx; ++j)
+                for (int j = start; j <= end; ++j)
                     AT(i, j) = 0xff;
             }
         }

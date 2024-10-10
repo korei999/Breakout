@@ -2,8 +2,8 @@
 
 #include "Allocator.hh"
 
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
 namespace adt
 {

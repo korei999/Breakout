@@ -1,6 +1,6 @@
 #include "ttf.hh"
 
-#include <math.h>
+#include <cmath>
 
 namespace parser
 {

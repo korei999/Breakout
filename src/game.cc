@@ -2,18 +2,18 @@
 
 #include "Model.hh"
 #include "Shader.hh"
-#include "controls.hh"
-#include "text.hh"
-#include "texture.hh"
 #include "Window.hh"
 #include "adt/AllocatorPool.hh"
 #include "adt/Arena.hh"
 #include "adt/ThreadPool.hh"
 #include "adt/defer.hh"
 #include "app.hh"
+#include "controls.hh"
 #include "frame.hh"
 #include "parser/Wave.hh"
 #include "parser/ttf.hh"
+#include "text.hh"
+#include "texture.hh"
 
 namespace game
 {
@@ -68,9 +68,9 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '&');
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '@');
 
-    u32 width = 512, height = 512;
+    u32 width = 128, height = 128;
     u8* pTestBitmap = text::TTFRasterizeTEST(&s_ttfTest, &glyphA, width, height);
     defer(::free(pTestBitmap));
 

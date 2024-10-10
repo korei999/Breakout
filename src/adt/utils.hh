@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef __linux__
-    #include <time.h>
+    #include <ctime>
     #include <unistd.h>
 #elif _WIN32
     #ifndef WIN32_LEAN_AND_MEAN
@@ -24,7 +24,7 @@
 
 #include "types.hh"
 
-#include <string.h>
+#include <cstring>
 
 namespace adt
 {

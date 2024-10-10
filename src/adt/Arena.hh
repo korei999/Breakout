@@ -2,13 +2,13 @@
 
 #include "Allocator.hh"
 
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stddef.h>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <cstddef>
 
 #ifndef NDEBUG
-    #include <stdio.h>
+    #include <cstdio>
 #endif
 
 #define ADT_ARENA_FIRST(A) ((A)->pBlocksHead)

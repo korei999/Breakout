@@ -2,7 +2,7 @@
 
 #include "Allocator.hh"
 
-#include <assert.h>
+#include <cassert>
 
 namespace adt
 {

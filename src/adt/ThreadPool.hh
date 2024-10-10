@@ -3,8 +3,8 @@
 #include "Queue.hh"
 #include "guard.hh"
 
-#include <stdio.h>
-#include <stdatomic.h>
+#include <cstdio>
+#include <atomic>
 
 namespace adt
 {
@@ -71,8 +71,8 @@ struct ThreadPool
     u32 nThreads = 0;
     cnd_t cndQ, cndWait;
     mtx_t mtxQ, mtxWait;
-    _Atomic(int) a_nActiveTasks;
-    _Atomic(bool) bDone;
+    std::atomic<int> a_nActiveTasks;
+    std::atomic<bool> bDone;
 
     ThreadPool() = default;
     ThreadPool(Allocator* pAlloc, u32 _nThreads = ADT_GET_NCORES());

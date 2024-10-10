@@ -3,7 +3,7 @@
 #include "Allocator.hh"
 #include "utils.hh"
 
-#include <assert.h>
+#include <cassert>
 
 namespace adt
 {

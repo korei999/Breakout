@@ -4,9 +4,10 @@
 #include "adt/utils.hh"
 #include "app.hh"
 
+#include <cmath>
+
 #include <emmintrin.h>
 #include <immintrin.h>
-#include <math.h>
 
 namespace platform
 {

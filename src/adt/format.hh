@@ -2,8 +2,8 @@
 
 #include "String.hh"
 
-#include <assert.h>
-#include <math.h>
+#include <cassert>
+#include <cmath>
 
 namespace adt
 {

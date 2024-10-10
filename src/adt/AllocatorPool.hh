@@ -1,12 +1,11 @@
 #pragma once
 
-#include <assert.h>
-
 #include "List.hh"
 #include "Allocator.hh"
 #include "ChunkAllocator.hh"
 
-#include <stddef.h>
+#include <cassert>
+#include <cstddef>
 
 namespace adt
 {

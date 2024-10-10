@@ -32,7 +32,7 @@
 #include "utils.hh"
 #include "Pair.hh"
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace adt
 {

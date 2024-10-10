@@ -4,7 +4,7 @@
 #include "adt/types.hh"
 #include "colors.hh"
 
-#include <assert.h>
+#include <cassert>
 
 using namespace adt;
 

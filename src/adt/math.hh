@@ -2,9 +2,9 @@
 
 #include "adt/utils.hh"
 #include <adt/types.hh>
-#include <assert.h>
-#include <math.h>
 
+#include <cassert>
+#include <cmath>
 #include <concepts>
 #include <limits>
 

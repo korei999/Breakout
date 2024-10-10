@@ -4,8 +4,8 @@
 
 #include <fmt/base.h>
 
-#include <assert.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdlib>
 
 #define COL_NORM  "\x1B[0m"
 #define COL_RED  "\x1B[31m"
