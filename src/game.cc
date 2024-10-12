@@ -454,7 +454,7 @@ drawFPSCounterTTF(Allocator* pAlloc)
     ShaderUse(sh);
 
     ShaderSetM4(sh, "uProj", proj);
-    ShaderSetV4(sh, "uColor", colors::hexToV4(0x56FFFFff));
+    ShaderSetV4(sh, "uColor", colors::hexToV4(0xeeeeeeff));
 
     texture::ImgBind(s_ttfTest.texId, GL_TEXTURE0);
 

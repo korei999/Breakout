@@ -17,7 +17,7 @@ static void mainLoop();
 
 Pair<f32, f32> g_unit; /* draw size unit */
 
-f32 g_uiWidth = 192.0f * 0.75f;
+f32 g_uiWidth = 192.0f * 0.55f;
 f32 g_uiHeight; /* set in prepareDraw */
 
 long g_currTime = 0;

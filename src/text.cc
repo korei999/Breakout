@@ -685,8 +685,6 @@ TTFUpdateStringMesh(
         return (c*s->scale) / (128*s->scale);
     };
 
-    COUT("width: {}, height: {}\n", width, height);
-
     VecBase<CharQuad3Pos2UV> aQuads(pAlloc, s->maxSize);
 
     f32 xOff = 0.0f;
@@ -718,8 +716,6 @@ TTFUpdateStringMesh(
         /* br */
         f32 x2 = 1.0f;
         f32 y2 = getUV(c + 0);
-
-        COUT("xy0123: [{}, {}], [{}, {}], [{}, {}], [{}, {}]\n", x0, y0, x1, y1, x2, y2, x3, y3);
 
         if (c == '\n')
         {
@@ -779,7 +775,10 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
 
     static char test[100] {};
     for (int c = '!', i = 0; c <= '~'; ++c, ++i)
+    {
+        if (i == 40) test[i++] = '\n';
         test[i] = c;
+    }
 
     auto aQuads = TTFUpdateStringMesh(s, &arena.base, test, 0, 0, 1.0f);
 
