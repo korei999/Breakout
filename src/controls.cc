@@ -36,9 +36,9 @@ procMouse()
         g_mouse.pitch = -89.9;
 
     g_camera.front = math::V3Norm({
-        f32(cos(math::toRad(g_mouse.yaw)) * cos(math::toRad(g_mouse.pitch))),
-        f32(sin(math::toRad(g_mouse.pitch))),
-        f32(sin(math::toRad(g_mouse.yaw)) * cos(math::toRad(g_mouse.pitch)))
+        f32(std::cos(math::toRad(g_mouse.yaw)) * std::cos(math::toRad(g_mouse.pitch))),
+        f32(std::sin(math::toRad(g_mouse.pitch))),
+        f32(std::sin(math::toRad(g_mouse.yaw)) * std::cos(math::toRad(g_mouse.pitch)))
     });
 
     g_camera.right = V3Norm(V3Cross(g_camera.front, g_camera.up));

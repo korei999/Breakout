@@ -41,9 +41,9 @@ static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_assetArenas, SIZE_1M * 35));
 static Plain s_plain;
 
 static text::Bitmap s_textFPS;
-static parser::ttf::Font s_fLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
+static parser::ttf::Font s_fontLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
 
-static text::TTF s_ttfTest {};
+static text::TTF s_ttfTest(AllocatorPoolGet(&s_assetArenas, SIZE_1K));
 
 Player g_player {
     .enIdx = 0,
@@ -60,6 +60,7 @@ Ball g_ball {
 };
 
 static void drawFPSCounter(Allocator* pAlloc);
+static void drawFPSCounterTTF(Allocator* pAlloc);
 static void drawEntities(Allocator* pAlloc);
 static void drawTTF(Allocator* pAlloc);
 static void drawTestImg(Allocator* pAlloc);
@@ -67,13 +68,14 @@ static void drawTestImg(Allocator* pAlloc);
 void
 loadAssets()
 {
-    parser::ttf::FontLoadAndParse(&s_fLiberation, "test-assets/LiberationMono-Regular.ttf");
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fLiberation, '@');
+    parser::ttf::FontLoadAndParse(&s_fontLiberation, "test-assets/LiberationMono-Regular.ttf");
+    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fontLiberation, '&');
 
     u32 width = 128, height = 128;
-    u8* pTestBitmap = text::TTFRasterizeTEST(&s_ttfTest, &glyphA, width, height);
-    defer(::free(pTestBitmap));
+    u8* pTestBitmap = (u8*)::calloc(1, width*height);
+    defer( ::free(pTestBitmap) );
 
+    /*text::TTFRasterizeGlyphTEST(&s_ttfTest, &glyphA, pTestBitmap, width, height);*/
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
     s_plain = Plain(GL_STATIC_DRAW);
@@ -96,12 +98,15 @@ loadAssets()
 
     /* unbind before creating threads */
     WindowUnbindGlContext(app::g_pWindow);
-    defer(WindowBindGlContext(app::g_pWindow));
+    defer( WindowBindGlContext(app::g_pWindow) );
 
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
     texture::ImgSetMonochrome(&s_tTest, pTestBitmap, width, height);
+    /*texture::ImgSetMonochrome(&s_tTest, s_ttfTest.pBitmap + '@'*64*64, 64*1, 64*1);*/
+
+    text::TTFRasterizeAsciiTEST(&s_ttfTest, &s_fontLiberation);
 
     texture::ImgLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp"};
     texture::ImgLoadArg argBox {&s_tBox, "test-assets/box3.bmp"};
@@ -428,7 +433,7 @@ draw(Allocator *pAlloc)
 {
     if (controls::g_bTTFDebugScreen)
     {
-        drawTestImg(pAlloc);
+        /*drawTestImg(pAlloc);*/
         /*drawTTF(pAlloc);*/
     }
     else
@@ -436,19 +441,37 @@ draw(Allocator *pAlloc)
         drawEntities(pAlloc);
     }
 
-    drawFPSCounter(pAlloc);
+    /*drawFPSCounter(pAlloc);*/
+    drawFPSCounterTTF(pAlloc);
+}
+
+static void
+drawFPSCounterTTF(Allocator* pAlloc)
+{
+    math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
+
+    auto* sh = &s_sh1Col;
+    ShaderUse(sh);
+
+    ShaderSetM4(sh, "uProj", proj);
+    ShaderSetV4(sh, "uColor", colors::hexToV4(0x56FFFFff));
+
+    texture::ImgBind(s_ttfTest.texId, GL_TEXTURE0);
+
+    text::TTFDrawAscii(&s_ttfTest);
 }
 
 static void
 drawFPSCounter(Allocator* pAlloc)
 {
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
-    ShaderUse(&s_shFontBitmap);
+    auto* sh = &s_shFontBitmap;
+    ShaderUse(sh);
 
     texture::ImgBind(&s_tAsciiMap, GL_TEXTURE0);
 
-    ShaderSetM4(&s_shFontBitmap, "uProj", proj);
-    ShaderSetV4(&s_shFontBitmap, "uColor", {colors::hexToV4(0xeeeeeeff)});
+    ShaderSetM4(sh, "uProj", proj);
+    ShaderSetV4(sh, "uColor", {colors::hexToV4(0xeeeeeeff)});
 
     f64 currTime = utils::timeNowMS();
     if (currTime >= frame::g_prevTime + 1000.0)

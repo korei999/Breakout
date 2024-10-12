@@ -53,7 +53,7 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
 
     {
         mtx_lock(&s_mtxAllTextures);
-        defer(mtx_unlock(&s_mtxAllTextures));
+        defer( mtx_unlock(&s_mtxAllTextures) );
 
         auto fTried = MapSearch(&g_mAllTexturesIdxs, {path});
         if (fTried)
@@ -73,7 +73,7 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
     if (s->id != 0) LOG_FATAL("id != 0: '{}'\n", s->id);
 
     Arena al(SIZE_1M * 5);
-    defer(ArenaFreeAll(&al));
+    defer( ArenaFreeAll(&al) );
     Data img = loadBMP(&al.base, path, bFlip);
 
     s->texPath = path;
@@ -274,7 +274,7 @@ CubeMap
 skyBoxCreate(String sFaces[6])
 {
     Arena al(SIZE_1M * 6);
-    defer(ArenaFreeAll(&al));
+    defer( ArenaFreeAll(&al) );
 
     CubeMap cmNew {};
 

@@ -7,10 +7,10 @@
 #include "gl/gl.hh"
 #include "adt/math.hh"
 
-using namespace adt;
-
 namespace texture
 {
+
+using namespace adt;
 
 struct Img;
 struct Hash;
@@ -149,8 +149,8 @@ ImgSubmit(void* p)
 } /* namespace texure */
 
 template<>
-inline u64
-hash::func(const texture::Hash& x)
+inline adt::u64
+adt::hash::func(const texture::Hash& x)
 {
     return hash::func(x.sPathKey);
 }

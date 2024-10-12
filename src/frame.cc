@@ -17,7 +17,7 @@ static void mainLoop();
 
 Pair<f32, f32> g_unit; /* draw size unit */
 
-f32 g_uiWidth = 192.0f * 0.75;
+f32 g_uiWidth = 192.0f * 0.34f;
 f32 g_uiHeight; /* set in prepareDraw */
 
 long g_currTime = 0;
@@ -35,8 +35,8 @@ Ubo g_uboProjView;
 
 static Pair<f32, f32> s_aspect(16.0f, 9.0f);
 
-static u8 s_aFrameMemGame[SIZE_8K / 2] {};
-static u8 s_aFrameMemDraw[SIZE_8K / 2] {};
+static u8 s_aMemGame[SIZE_8K / 2] {};
+static u8 s_aMemDraw[SIZE_8K / 2] {};
 
 static void
 updateDeltaTime()
@@ -115,7 +115,7 @@ run()
 static int
 gameStateLoop([[maybe_unused]] void* pNull)
 {
-    FixedAllocator alFrame(s_aFrameMemGame, sizeof(s_aFrameMemGame));
+    FixedAllocator alFrame(s_aMemGame, sizeof(s_aMemGame));
 
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
@@ -137,11 +137,11 @@ gameStateLoop([[maybe_unused]] void* pNull)
 static void
 mainLoop()
 {
-    FixedAllocator alloc(s_aFrameMemDraw, sizeof(s_aFrameMemGame));
+    FixedAllocator alloc(s_aMemDraw, sizeof(s_aMemGame));
 
-    thrd_t thrdUpdateGameState;
+    thrd_t thrdUpdateGameState {};
     thrd_create(&thrdUpdateGameState, gameStateLoop, nullptr);
-    defer(thrd_join(thrdUpdateGameState, nullptr));
+    defer( thrd_join(thrdUpdateGameState, nullptr) );
 
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {

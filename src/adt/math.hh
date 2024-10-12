@@ -28,12 +28,14 @@ constexpr f64 toDeg(long x) { return toDeg(f64(x)); }
 constexpr f32 toRad(int x) { return toRad(f32(x)); }
 constexpr f32 toDeg(int x) { return toDeg(f32(x)); }
 
+/* epsilon float comparison */
 inline bool
 eq(f64 l, f64 r)
 {
     return fabsl(l - r) <= EPS64*(fabsl(l) + fabsl(r) + 1.0);
 }
 
+/* epsilon float comparison */
 inline bool
 eq(f32 l, f32 r)
 {
@@ -757,7 +759,7 @@ V4Dot(const V4& l, const V4& r)
 inline f32
 V3Rad(const V3& l, const V3& r)
 {
-    return acosf(V3Dot(l, r) / (V3Length(l) * V3Length(r)));
+    return std::acos(V3Dot(l, r) / (V3Length(l) * V3Length(r)));
 }
 
 inline f32
@@ -785,6 +787,18 @@ M4Translate(const M4& m, const V3& tv)
     return m * tm;
 }
 
+inline M3
+M3Scale(const M3& m, const f32 s)
+{
+    M3 sm {
+        s, 0, 0,
+        0, s, 0,
+        0, 0, 1
+    };
+
+    return m * sm;
+}
+
 inline M4
 M4Scale(const M4& m, const f32 s)
 {
@@ -793,6 +807,18 @@ M4Scale(const M4& m, const f32 s)
         0, s, 0, 0,
         0, 0, s, 0,
         0, 0, 0, 1
+    };
+
+    return m * sm;
+}
+
+inline M3
+M3Scale(const M3& m, const V2& s)
+{
+    M3 sm {
+        s.x, 0,   0,
+        0,   s.y, 0,
+        0,   0,   1
     };
 
     return m * sm;
@@ -815,7 +841,7 @@ inline M4
 M4Pers(const f32 fov, const f32 asp, const f32 n, const f32 f)
 {
     /* b(back), l(left) are not needed if viewing volume is symmetric */
-    f32 t = n * tanf(fov / 2);
+    f32 t = n * std::tan(fov / 2);
     f32 r = t * asp;
 
     return M4 {
@@ -863,8 +889,8 @@ m4LookAt(const V3& R, const V3& U, const V3& D, const V3& P)
 inline M4
 M4Rot(const M4& m, const f32 th, const V3& ax)
 {
-    const f32 c = cosf(th);
-    const f32 s = sinf(th);
+    const f32 c = std::cos(th);
+    const f32 s = std::sin(th);
 
     const f32 x = ax.x;
     const f32 y = ax.y;
@@ -884,10 +910,10 @@ inline M4
 M4RotX(const M4& m, const f32 angle)
 {
     M4 axisX {
-        1, 0,            0,           0,
-        0, cosf(angle),  sinf(angle), 0,
-        0, -sinf(angle), cosf(angle), 0,
-        0, 0,            0,           1
+        1, 0,                0,               0,
+        0, std::cos(angle),  std::sin(angle), 0,
+        0, -std::sin(angle), std::cos(angle), 0,
+        0, 0,                0,               1
     };
 
     return m * axisX;
@@ -897,10 +923,10 @@ inline M4
 M4RotY(const M4& m, const f32 angle)
 {
     M4 axisY {
-        cosf(angle), 0,  -sinf(angle), 0,
-        0,               1, 0,         0,
-        sinf(angle), 0,  cosf(angle),  0,
-        0,               0, 0,         1
+        std::cos(angle), 0, -std::sin(angle), 0,
+        0,               1, 0,                0,
+        std::sin(angle), 0, std::cos(angle),  0,
+        0,               0, 0,                1
     };
 
     return m * axisY;
@@ -910,10 +936,10 @@ inline M4
 M4RotZ(const M4& m, const f32 angle)
 {
     M4 axisZ {
-        cosf(angle),  sinf(angle), 0, 0,
-        -sinf(angle), cosf(angle), 0, 0,
-        0,            0,           1, 0,
-        0,            0,           0, 1
+        std::cos(angle),  std::sin(angle), 0, 0,
+        -std::sin(angle), std::cos(angle), 0, 0,
+        0,                0,               1, 0,
+        0,                0,               0, 1
     };
 
     return m * axisZ;
@@ -932,13 +958,13 @@ M4LookAt(const V3& eyeV, const V3& centerV, const V3& upV)
 inline Qt
 QtAxisAngle(const V3& axis, f32 th)
 {
-    f32 sinTh = f32(sin(th / 2));
+    f32 sinTh = std::sin(th / 2.0f);
 
     return {
         axis.x * sinTh,
         axis.y * sinTh,
         axis.z * sinTh,
-        f32(cos(th / 2))
+        std::cos(th / 2.0f)
     };
 }
 

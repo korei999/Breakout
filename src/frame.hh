@@ -3,8 +3,6 @@
 #include "Model.hh"
 #include "adt/Pair.hh"
 
-using namespace adt;
-
 namespace frame
 {
 

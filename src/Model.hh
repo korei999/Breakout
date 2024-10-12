@@ -7,8 +7,6 @@
 
 #include <limits.h>
 
-using namespace adt;
-
 enum DRAW : int
 {
     NONE     = 0,

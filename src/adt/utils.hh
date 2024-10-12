@@ -163,7 +163,7 @@ partition(T a[], int l, int h)
 
 template<typename T>
 constexpr void
-qSort(T a[], int l, int h)
+qSort(T* a, int l, int h)
 {
     int p;
 
