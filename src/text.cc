@@ -20,8 +20,6 @@ struct CharQuad
 struct CharQuad3Pos2UV
 {
     f32 vs[30]; /* 6(2 triangles) * 5(3 pos, 2 uv coords) */
-    /*math::V3 pos;*/
-    /*math::V2 uv;*/
 };
 
 struct Point
@@ -137,7 +135,7 @@ BitmapUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y)
     VecBase<CharQuad> aQuads = TextUpdateBuffer(s, pAlloc, str, s->maxSize, x, y);
 
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(f32) * 4 * 6, VecData(&aQuads));
+    glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(f32)*4*6, VecData(&aQuads));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -586,23 +584,27 @@ blit(u8* pDst, u8* pSrc, u32 width, u32 height, BLIT_MODE eMode)
 }
 
 /* https://sharo.dev/post/reading-ttf-files-and-rasterizing-them-using-a-handmade- */
-void
-TTFRasterizeGlyphTEST(TTF* s, parser::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height)
+static void
+TTFRasterizeGlyphTEST(TTF* s, Allocator* pAlloc, parser::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height)
 {
-    Arena arena(width*height * 2);
-    defer( ArenaFreeAll(&arena) );
-
     const auto& aGlyphPoints = pGlyph->uGlyph.simple.aPoints;
     u32 size = VecSize(&aGlyphPoints);
 
     CurveEndIdx endIdxs;
-    VecBase<PointOnCurve> aPoints = getPointsWithMissingOnCurve(&arena.base, pGlyph);
-    auto aCurvyPoints = makeItCurvy(&arena.base, aPoints, &endIdxs, true);
+    VecBase<PointOnCurve> aPoints = getPointsWithMissingOnCurve(pAlloc, pGlyph);
+    auto aCurvyPoints = makeItCurvy(pAlloc, aPoints, &endIdxs, true);
+
+    f32 xMax = s->pFont->head.xMax;
+    f32 xMin = s->pFont->head.xMin;
+    f32 yMax = s->pFont->head.yMax;
+    f32 yMin = s->pFont->head.yMin;
 
     Arr<f32, 32> aIntersections {};
 
-    f32 vScale = f32(height) / f32(pGlyph->yMax - pGlyph->yMin);
-    f32 hScale = f32(width) / f32(pGlyph->xMax - pGlyph->xMin);
+    /*f32 vScale = f32(height) / f32(pGlyph->yMax - pGlyph->yMin);*/
+    /*f32 hScale = f32(width) / f32(pGlyph->xMax - pGlyph->xMin);*/
+    f32 vScale = f32(height) / f32(yMax - yMin);
+    f32 hScale = f32(width) / f32(xMax - xMin);
 
     for (u32 i = 0; i < height; ++i)
     {
@@ -618,10 +620,24 @@ TTFRasterizeGlyphTEST(TTF* s, parser::ttf::Glyph* pGlyph, u8* pBitmap, u32 width
             if (aCurvyPoints[j].bEndOfCurve)
                 j += 1;
 
-            y0 = std::round(utils::clamp(y0, 0.0f, f32(width - 1)));
-            x0 = std::round(utils::min(x0, f32(height - 1)));
-            y1 = std::round(utils::clamp(y1, 0.0f, f32(width - 1)));
-            x1 = std::round(utils::min(x1, f32(height - 1)));
+            // y0 = std::round(utils::clamp(y0, 0.0f, f32(width - 1)));
+            // x0 = std::round(utils::min(x0, f32(height - 1)));
+            // y1 = std::round(utils::clamp(y1, 0.0f, f32(width - 1)));
+            // x1 = std::round(utils::min(x1, f32(height - 1)));
+
+            x0 = std::round(x0);
+            y0 = std::round(y0);
+            x1 = std::round(x1);
+            y1 = std::round(y1);
+
+            /*COUT("width: {}, height: {}, xy0: [{}, {}], xy1: [{}, {}]\n", width, height, x0, y0, x1, y0);*/
+
+            /*assert(x0 >= 0.0f && x0 < height);*/
+            /*assert(y0 >= 0.0f && y0 < width);*/
+            /*assert(x1 >= 0.0f && x1 < height);*/
+            /*assert(y1 >= 0.0f && y1 < width);*/
+
+            /*COUT("x0: {}, y0: {}, x1: {}, y1: {}\n", x0, y0, x1, y0);*/
 
             /* for the intersection all we need is to find what X is when our y = scanline or when our y is equal to i of our loop
              *
@@ -669,7 +685,7 @@ TTFRasterizeGlyphTEST(TTF* s, parser::ttf::Glyph* pGlyph, u8* pBitmap, u32 width
 
 [[nodiscard]]
 static VecBase<CharQuad3Pos2UV>
-TTFUpdateStringMesh(
+TTFGenStringMesh(
     TTF* s,
     Allocator* pAlloc,
     const String str,
@@ -678,9 +694,6 @@ TTFUpdateStringMesh(
     const f32 zOff
 )
 {
-    f32 width = math::sq(s->scale) * 128;
-    f32 height = s->scale;
-
     auto getUV = [&](int c) -> f32 {
         return (c*s->scale) / (128*s->scale);
     };
@@ -690,30 +703,25 @@ TTFUpdateStringMesh(
     f32 xOff = 0.0f;
     f32 yOff = 0.0f;
 
-    struct UV
-    {
-        f32 u {};
-        f32 v {};
-    };
-
     for (char c : str)
     {
         auto g = FontReadGlyph(s->pFont, c);
 
-        /* FIXME: these are messed up */
-        /* tl */
+        /* FIXME: uv ordering is messed up (but works correctly) */
+
+        /* tr */
         f32 x0 = 0.0f;
         f32 y0 = getUV(c + 1);
 
-        /* tr */
+        /* br */
         f32 x3 = 1.0f;
         f32 y3 = getUV(c + 1);
 
-        /* bl */
+        /* tl */
         f32 x1 = 0.0f;
         f32 y1 = getUV(c + 0);
 
-        /* br */
+        /* bl */
         f32 x2 = 1.0f;
         f32 y2 = getUV(c + 0);
 
@@ -725,17 +733,17 @@ TTFUpdateStringMesh(
         }
 
         VecPush(&aQuads, pAlloc, {
-             0.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin, zOff,     x0, y0, /* tl */
-             0.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin, zOff,     x1, y1, /* bl */
-             2.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin, zOff,     x2, y2, /* br */
+             0.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x0, y0,
+             0.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x1, y1,
+             2.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x2, y2,
 
-             0.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin, zOff,     x0, y0, /* tl */
-             2.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin, zOff,     x2, y2, /* br */
-             2.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin, zOff,     x3, y3, /* tr */
+             0.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x0, y0,
+             2.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x2, y2,
+             2.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x3, y3,
         });
 
         /* TODO: account for aspect ratio */
-        xOff += 2.5f;
+        xOff += 1.1f;
     }
 
     s->vboSize = VecSize(&aQuads) * 6; /* 6 vertices for 1 quad */
@@ -746,7 +754,7 @@ TTFUpdateStringMesh(
 void
 TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
 {
-    const f32 scale = 32.0f;
+    const f32 scale = 64.0f;
     const int iScale = std::round(scale);
     s->scale = scale;
     s->maxSize = 100;
@@ -759,28 +767,29 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
     Arena arena(SIZE_1M);
     defer( ArenaFreeAll(&arena) );
 
-    u8* pTmp = (u8*)::alloc(&arena.base, 1, math::sq(iScale));
-
     for (int character = '!'; character <= '~'; ++character)
     {
+        u8* pTmp = (u8*)::alloc(&arena.base, 1, math::sq(iScale));
         auto g = FontReadGlyph(pFont, character);
-        TTFRasterizeGlyphTEST(s, &g, pTmp, iScale, iScale);
+        TTFRasterizeGlyphTEST(s, &arena.base, &g, pTmp, iScale, iScale);
         memcpy(s->pBitmap + character*math::sq(iScale), pTmp, math::sq(iScale));
+
         memset(pTmp, 0, math::sq(iScale));
+        ArenaReset(&arena);
     }
 
     texture::Img img {};
     texture::ImgSetMonochrome(&img, s->pBitmap, iScale, iScale*128);
     s->texId = img.id;
 
-    static char test[100] {};
+    char test[100] {};
     for (int c = '!', i = 0; c <= '~'; ++c, ++i)
     {
         if (i == 40) test[i++] = '\n';
         test[i] = c;
     }
 
-    auto aQuads = TTFUpdateStringMesh(s, &arena.base, test, 0, 0, 1.0f);
+    auto aQuads = TTFGenStringMesh(s, &arena.base, test, 0, 0, 1.0f);
 
     mtx_lock(&gl::g_mtxGlContext);
     WindowBindGlContext(app::g_pWindow);
@@ -795,14 +804,27 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
 
     glGenBuffers(1, &s->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(CharQuad), VecData(&aQuads), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(CharQuad3Pos2UV), VecData(&aQuads), GL_DYNAMIC_DRAW);
 
     /* positions */
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(f32)*5, (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(f32)*5, (void*)0); /* 3 pos 2 uv */
     /* texture coords */
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(f32)*5, (void*)(sizeof(math::V3)));
+}
+
+void
+TTFUpdate(TTF* s, Allocator* pAlloc, const String str, const int x, const int y, const f32 z)
+{
+    assert(str.size <= s->maxSize);
+
+    s->str = str;
+    auto aQuads = TTFGenStringMesh(s, pAlloc, str, x, y, z);
+
+    glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(CharQuad3Pos2UV), VecData(&aQuads));
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void

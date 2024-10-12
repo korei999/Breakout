@@ -458,6 +458,19 @@ drawFPSCounterTTF(Allocator* pAlloc)
 
     texture::ImgBind(s_ttfTest.texId, GL_TEXTURE0);
 
+    f64 currTime = utils::timeNowMS();
+    if (currTime >= frame::g_prevTime + 1000.0)
+    {
+        String s = StringAlloc(pAlloc, s_ttfTest.maxSize);
+        utils::fill(s.pData, '\0', s.size);
+        snprintf(s.pData, s.size, "FPS: %u\nFrame time: %.3f ms", frame::g_nfps, frame::g_frameTime);
+
+        frame::g_nfps = 0;
+        frame::g_prevTime = currTime;
+
+        text::TTFUpdate(&s_ttfTest, pAlloc, s, 0, 0, 1.0f);
+    }
+
     text::TTFDrawAscii(&s_ttfTest);
 }
 

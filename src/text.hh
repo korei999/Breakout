@@ -58,8 +58,8 @@ CurveEndIdx TTFGenMesh(TTF* s, parser::ttf::Glyph* g);
 void TTFDrawOutline(TTF* s, u32 max = 0);
 void TTFDrawDots(TTF* s, u32 max = 0);
 void TTFDrawCorrectLines(TTF* s, const CurveEndIdx& ends);
-void TTFRasterizeGlyphTEST(TTF* s, parser::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height);
 void TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont);
+void TTFUpdate(TTF* s, Allocator* pAlloc, const String str, const int x, const int y, const f32 z);
 void TTFDrawAscii(TTF* s);
 
 } /* namespace text */

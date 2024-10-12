@@ -462,7 +462,6 @@ getGlyphIdx(Font* s, u16 code)
             {
                 glyphIndexAddr = std::byteswap(c.idRangeOffset[i]) +
                     2 * (code - std::byteswap(c.startCode[i]));
-                COUT("glyphIndexAddr: {}\n", glyphIndexAddr);
                 s->p.pos = glyphIndexAddr;
                 idx = BinRead16Rev(&s->p);
             }

@@ -17,7 +17,7 @@ static void mainLoop();
 
 Pair<f32, f32> g_unit; /* draw size unit */
 
-f32 g_uiWidth = 192.0f * 0.55f;
+f32 g_uiWidth = 192.0f * 0.50f;
 f32 g_uiHeight; /* set in prepareDraw */
 
 long g_currTime = 0;
@@ -36,7 +36,7 @@ Ubo g_uboProjView;
 static Pair<f32, f32> s_aspect(16.0f, 9.0f);
 
 static u8 s_aMemGame[SIZE_8K / 2] {};
-static u8 s_aMemDraw[SIZE_8K / 2] {};
+static u8 s_aMemDraw[SIZE_1M / 2] {};
 
 static void
 updateDeltaTime()
@@ -137,7 +137,7 @@ gameStateLoop([[maybe_unused]] void* pNull)
 static void
 mainLoop()
 {
-    FixedAllocator alloc(s_aMemDraw, sizeof(s_aMemGame));
+    FixedAllocator alloc(s_aMemDraw, sizeof(s_aMemDraw));
 
     thrd_t thrdUpdateGameState {};
     thrd_create(&thrdUpdateGameState, gameStateLoop, nullptr);
