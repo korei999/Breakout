@@ -678,14 +678,10 @@ TTFUpdateStringMesh(
     const f32 zOff
 )
 {
-    auto getUV = [&](int p) -> f32 {
-        return (1.0f / s->scale) * p;
-    };
-
     f32 width = math::sq(s->scale) * 128;
     f32 height = s->scale;
 
-    auto texCoord = [&](int c) -> f32 {
+    auto getUV = [&](int c) -> f32 {
         return (c*s->scale) / (128*s->scale);
     };
 
@@ -696,30 +692,32 @@ TTFUpdateStringMesh(
     f32 xOff = 0.0f;
     f32 yOff = 0.0f;
 
+    struct UV
+    {
+        f32 u {};
+        f32 v {};
+    };
+
     for (char c : str)
     {
         auto g = FontReadGlyph(s->pFont, c);
 
+        /* FIXME: these are messed up */
         /* tl */
-        f32 x0 = texCoord(c + 0);
-        f32 y0 = 1.0f;
-
-        /* bl */
-        f32 x1 = texCoord(c + 0);
-        f32 y1 = 0.0f;
-
-        /* br */
-        f32 x2 = texCoord(c + 1);
-        f32 y2 = 0.0f;
+        f32 x0 = 0.0f;
+        f32 y0 = getUV(c + 1);
 
         /* tr */
-        f32 x3 = texCoord(c + 1);
-        f32 y3 = 1.0f;
+        f32 x3 = 1.0f;
+        f32 y3 = getUV(c + 1);
 
-        utils::swap(&x0, &y0);
-        utils::swap(&x1, &y1);
-        utils::swap(&x2, &y2);
-        utils::swap(&x3, &y3);
+        /* bl */
+        f32 x1 = 0.0f;
+        f32 y1 = getUV(c + 0);
+
+        /* br */
+        f32 x2 = 1.0f;
+        f32 y2 = getUV(c + 0);
 
         COUT("xy0123: [{}, {}], [{}, {}], [{}, {}], [{}, {}]\n", x0, y0, x1, y1, x2, y2, x3, y3);
 
@@ -741,7 +739,7 @@ TTFUpdateStringMesh(
         });
 
         /* TODO: account for aspect ratio */
-        xOff += 2.0f;
+        xOff += 2.5f;
     }
 
     s->vboSize = VecSize(&aQuads) * 6; /* 6 vertices for 1 quad */
@@ -752,10 +750,10 @@ TTFUpdateStringMesh(
 void
 TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
 {
-    const f32 scale = 16.0f;
+    const f32 scale = 32.0f;
     const int iScale = std::round(scale);
     s->scale = scale;
-    s->maxSize = 40;
+    s->maxSize = 100;
 
     s->pFont = pFont;
 
@@ -779,7 +777,11 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
     texture::ImgSetMonochrome(&img, s->pBitmap, iScale, iScale*128);
     s->texId = img.id;
 
-    auto aQuads = TTFUpdateStringMesh(s, &arena.base, "!\"#$", 0, 0, 1.0f);
+    static char test[100] {};
+    for (int c = '!', i = 0; c <= '~'; ++c, ++i)
+        test[i] = c;
+
+    auto aQuads = TTFUpdateStringMesh(s, &arena.base, test, 0, 0, 1.0f);
 
     mtx_lock(&gl::g_mtxGlContext);
     WindowBindGlContext(app::g_pWindow);
