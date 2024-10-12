@@ -675,7 +675,7 @@ TTFUpdateStringMesh(
     const String str,
     const int xOrigin,
     const int yOrigin,
-    const int zOff
+    const f32 zOff
 )
 {
     auto getUV = [&](int p) -> f32 {
@@ -715,6 +715,11 @@ TTFUpdateStringMesh(
         /* tr */
         f32 x3 = texCoord(c + 1);
         f32 y3 = 1.0f;
+
+        utils::swap(&x0, &y0);
+        utils::swap(&x1, &y1);
+        utils::swap(&x2, &y2);
+        utils::swap(&x3, &y3);
 
         COUT("xy0123: [{}, {}], [{}, {}], [{}, {}], [{}, {}]\n", x0, y0, x1, y1, x2, y2, x3, y3);
 
@@ -771,7 +776,7 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
     }
 
     texture::Img img {};
-    texture::ImgSetMonochrome(&img, s->pBitmap, 16*iScale, 16*8);
+    texture::ImgSetMonochrome(&img, s->pBitmap, iScale, iScale*128);
     s->texId = img.id;
 
     auto aQuads = TTFUpdateStringMesh(s, &arena.base, "!\"#$", 0, 0, 1.0f);
