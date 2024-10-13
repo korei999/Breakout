@@ -350,7 +350,6 @@ drawLineH(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1
         for (int i = 0; i < dx+1; ++i)
         {
             AT(pBitmap, y, x0 + i) = 0xff;
-            /*AT(x0 + i, y) = 0xff;*/
             if (p >= 0)
             {
                 y += dir;
@@ -382,7 +381,6 @@ drawLineV(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1
         int p = 2*dx - dy;
         for (int i = 0; i < dy+1; ++i)
         {
-            /*AT(utils::clamp(x, 0, int(height-1)), y0 + i) = 0xff;*/
             AT(pBitmap, y0 + i, utils::clamp(x, 0, int(width-1))) = 0xff;
             if (p >= 0)
             {
