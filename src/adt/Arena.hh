@@ -85,7 +85,6 @@ ArenaAlloc(Arena* s, u64 mCount, u64 mSize)
     u64 requested = mCount * mSize;
     u64 aligned = align8(requested) + sizeof(ArenaNode);
 
-    /* TODO: find block that can fit */
     ArenaBlock* pFreeBlock = s->pBlocksHead;
 
     while (aligned >= pFreeBlock->size)

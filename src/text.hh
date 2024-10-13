@@ -53,13 +53,8 @@ struct TTF
     TTF(Allocator* p) : pAlloc(p) {}
 };
 
-void TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2& p2, int steps);
-CurveEndIdx TTFGenMesh(TTF* s, parser::ttf::Glyph* g);
-void TTFDrawOutline(TTF* s, u32 max = 0);
-void TTFDrawDots(TTF* s, u32 max = 0);
-void TTFDrawCorrectLines(TTF* s, const CurveEndIdx& ends);
 void TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont);
-void TTFUpdate(TTF* s, Allocator* pAlloc, const String str, const int x, const int y, const f32 z);
+void TTFUpdateText(TTF* s, Allocator* pAlloc, const String str, const int x, const int y, const f32 z);
 void TTFDrawAscii(TTF* s);
 
 } /* namespace text */

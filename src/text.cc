@@ -171,42 +171,6 @@ getBeizerPoints(
     return aPoints;
 }
 
-void
-TTFGenBezierMesh(TTF* s, const math::V2& p0, const math::V2& p1, const math::V2& p2, int nSteps)
-{
-    Arena al(SIZE_1K);
-    defer( ArenaFreeAll(&al) );
-
-    glGenVertexArrays(1, &s->vao);
-    glBindVertexArray(s->vao);
-    defer( glBindVertexArray(0) );
-
-    glGenBuffers(1, &s->vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-
-    VecBase<Point> aPoints = getBeizerPoints(&al.base, p0, p1, p2, nSteps);
-    s->maxSize = VecSize(&aPoints);
-
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        sizeof(Point) * VecSize(&aPoints),
-        VecData(&aPoints),
-        GL_DYNAMIC_DRAW
-    );
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(
-        0, 2, GL_FLOAT, GL_FALSE,
-        4 * sizeof(f32), (void*)0
-    );
-
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(
-        1, 2, GL_FLOAT, GL_FALSE,
-        4 * sizeof(f32), (void*)(sizeof(f32) * 2)
-    );
-}
-
 static void
 insertPoints(
     Allocator* pAlloc,
@@ -815,7 +779,7 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
 }
 
 void
-TTFUpdate(TTF* s, Allocator* pAlloc, const String str, const int x, const int y, const f32 z)
+TTFUpdateText(TTF* s, Allocator* pAlloc, const String str, const int x, const int y, const f32 z)
 {
     assert(str.size <= s->maxSize);
 

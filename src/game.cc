@@ -40,10 +40,9 @@ static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_assetArenas, SIZE_1M * 35));
 
 static Plain s_plain;
 
-static text::Bitmap s_textFPS;
 static parser::ttf::Font s_fontLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
-
-static text::TTF s_ttfTest(AllocatorPoolGet(&s_assetArenas, SIZE_1K));
+static text::Bitmap s_textFPS;
+static text::TTF s_ttfTest(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 520));
 
 Player g_player {
     .enIdx = 0,
@@ -63,7 +62,6 @@ static void drawFPSCounter(Allocator* pAlloc);
 static void drawFPSCounterTTF(Allocator* pAlloc);
 static void drawEntities(Allocator* pAlloc);
 static void drawTTF(Allocator* pAlloc);
-static void drawTestImg(Allocator* pAlloc);
 
 void
 loadAssets()
@@ -433,8 +431,6 @@ draw(Allocator *pAlloc)
 {
     if (controls::g_bTTFDebugScreen)
     {
-        /*drawTestImg(pAlloc);*/
-        /*drawTTF(pAlloc);*/
     }
     else
     {
@@ -468,7 +464,7 @@ drawFPSCounterTTF(Allocator* pAlloc)
         frame::g_nfps = 0;
         frame::g_prevTime = currTime;
 
-        text::TTFUpdate(&s_ttfTest, pAlloc, s, 0, 0, 1.0f);
+        text::TTFUpdateText(&s_ttfTest, pAlloc, s, 0, 0, 1.0f);
     }
 
     text::TTFDrawAscii(&s_ttfTest);
@@ -527,48 +523,6 @@ drawEntities([[maybe_unused]] Allocator* pAlloc)
         ShaderSetV3(&s_shSprite, "uColor", blockColorToV3(e.eColor));
         PlainDraw(&s_plain);
     }
-}
-
-static void
-drawTTF([[maybe_unused]] Allocator* pAlloc)
-{
-    auto* sh = &s_shFontBitmap;
-    ShaderUse(sh);
-
-    auto f = MapSearch(&texture::g_mAllTexturesIdxs, {"test-assets/WhitePixel.bmp"});
-    assert(f);
-    texture::ImgBind(texture::g_aAllTextures[f.pData->vecIdx].id, GL_TEXTURE0);
-
-    math::M4 proj = math::M4Ortho(-500.0f, 3000.0f, -500.0f, 2000.0f, -1.0f, 1.0f);
-
-    ShaderSetM4(sh, "uProj", proj);
-    ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'ff'00'ff)});
-
-    static f64 s_dotsTime {};
-    static u32 nDots {};
-
-    if (controls::g_nDots < 0) controls::g_nDots = controls::g_nDots = s_ttfTest.maxSize - 1;
-    if (controls::g_nDots > int(s_ttfTest.maxSize)) controls::g_nDots = 0;
-
-    if (controls::g_bTTFDebugDots)
-        text::TTFDrawDots(&s_ttfTest, controls::g_nDots);
-    else text::TTFDrawOutline(&s_ttfTest, controls::g_nDots);
-}
-
-static void
-drawTestImg([[maybe_unused]] Allocator* pAlloc)
-{
-    math::M4 proj = math::M4Ortho(-0.0f, 2.0f, -0.0f, 2.0f, -1.0f, 1.0f);
-
-    auto* sh = &s_sh1Col;
-    ShaderUse(sh);
-
-    texture::ImgBind(&s_tTest, GL_TEXTURE0);
-
-    ShaderSetM4(sh, "uProj", proj);
-    ShaderSetV4(sh, "uColor", {colors::hexToV4(0xff'ff'ff'ff)});
-
-    PlainDraw(&s_plain);
 }
 
 void
