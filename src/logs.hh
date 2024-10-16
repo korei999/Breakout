@@ -15,8 +15,8 @@
 #define COL_CYAN  "\x1B[36m"
 #define COL_WHITE  "\x1B[37m"
 
-#define COUT(...) adt::print::toFILE(stdout, __VA_ARGS__)
-#define CERR(...) adt::print::toFILE(stderr, __VA_ARGS__)
+#define COUT(...) adt::print::cout(__VA_ARGS__)
+#define CERR(...) adt::print::cerr(__VA_ARGS__)
 
 #ifndef NDEBUG
     #define DCOUT(...) COUT(__VA_ARGS__)

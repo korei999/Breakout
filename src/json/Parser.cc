@@ -218,7 +218,7 @@ parseBool(Parser* s, TagVal* pTV)
 }
 
 void
-ParserPrint(FILE* fp, Parser* s)
+ParserPrint(Parser* s, FILE* fp)
 {
     ParserPrintNode(fp, s->pHead, "", 0);
     fputc('\n', fp);

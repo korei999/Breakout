@@ -200,18 +200,21 @@ blockHit()
             switch (side)
             {
                 default: break;
-            
+
                 case REFLECT_SIDE::UP:
+                {
                     enBall.pos.y -= f::g_unit.y / off;
                     g_ball.dir.y = -g_ball.dir.y;
-                    break;
+                } break;
 
                 case REFLECT_SIDE::DOWN:
+                {
                     enBall.pos.y += f::g_unit.y / off;
                     g_ball.dir.y = -g_ball.dir.y;
-                    break;
-            
+                } break;
+
                 case REFLECT_SIDE::LEFT:
+                {
                     enBall.pos.x += f::g_unit.x / off;
                     if (math::eq(g_ball.dir.x, 0))
                     {
@@ -220,9 +223,10 @@ blockHit()
                     }
 
                     g_ball.dir.x = -g_ball.dir.x;
-                    break;
+                } break;
 
                 case REFLECT_SIDE::RIGHT:
+                {
                     enBall.pos.x -= f::g_unit.x / off;
                     if (math::eq(g_ball.dir.x, 0))
                     {
@@ -231,10 +235,8 @@ blockHit()
                     }
 
                     g_ball.dir.x = -g_ball.dir.x;
-                    break;
+                } break;
             }
-
-            break;
         }
     }
 
@@ -458,7 +460,7 @@ drawFPSCounterTTF(Allocator* pAlloc)
     {
         String s = StringAlloc(pAlloc, s_ttfTest.maxSize);
         utils::fill(s.pData, '\0', s.size);
-        snprintf(s.pData, s.size, "FPS: %u\nFrame time: %.3f ms", frame::g_nfps, frame::g_frameTime);
+        print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
 
         frame::g_nfps = 0;
         frame::g_prevTime = currTime;

@@ -24,7 +24,7 @@ void ParserPrintNode(FILE* fp, Object* pNode, adt::String svEnd, int depth);
 void ParserLoad(Parser* s, adt::String path);
 void ParserParse(Parser* s);
 void ParserLoadAndParse(Parser* s, adt::String path);
-void ParserPrint(FILE* fp, Parser* s);
+void ParserPrint(Parser* s, FILE* fp);
 void ParserTraverse(Parser* s, Object* pNode, bool (*pfn)(Object* p, void* a), void* args);
 inline void ParserTraverse(Parser* s, bool (*pfn)(Object* p, void* a), void* args) { ParserTraverse(s, s->pHead, pfn, args); }
 inline Object* ParserGetHeadObj(Parser* s) { return s->pHead; }

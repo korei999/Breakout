@@ -50,11 +50,13 @@ getTargetString(enum TARGET t)
     {
         default:
         case TARGET::NONE:
-            return "NONE";
+        return "NONE";
+
         case TARGET::ARRAY_BUFFER:
-            return "ARRAY_BUFFER";
+        return "ARRAY_BUFFER";
+
         case TARGET::ELEMENT_ARRAY_BUFFER:
-            return "ELEMENT_ARRAY_BUFFER";
+        return "ELEMENT_ARRAY_BUFFER";
     }
 }
 
@@ -76,17 +78,22 @@ stringToAccessorType(String sv)
     {
         default:
         case (u64)(HASH_CODES::SCALAR):
-            return ACCESSOR_TYPE::SCALAR;
+        return ACCESSOR_TYPE::SCALAR;
+
         case (u64)(HASH_CODES::VEC2):
-            return ACCESSOR_TYPE::VEC2;
+        return ACCESSOR_TYPE::VEC2;
+
         case (u64)(HASH_CODES::VEC3):
-            return ACCESSOR_TYPE::VEC3;
+        return ACCESSOR_TYPE::VEC3;
+
         case (u64)(HASH_CODES::VEC4):
-            return ACCESSOR_TYPE::VEC4;
+        return ACCESSOR_TYPE::VEC4;
+
         case (u64)(HASH_CODES::MAT3):
-            return ACCESSOR_TYPE::MAT3;
+        return ACCESSOR_TYPE::MAT3;
+
         case (u64)(HASH_CODES::MAT4):
-            return ACCESSOR_TYPE::MAT4;
+        return ACCESSOR_TYPE::MAT4;
     }
 }
 
@@ -114,29 +121,32 @@ accessorTypeToUnionType(enum ACCESSOR_TYPE t, json::Object* obj)
     {
         default:
         case ACCESSOR_TYPE::SCALAR:
-            {
-                auto& arr = json::getArray(obj);
-                if (arr[0].tagVal.tag == json::TAG::LONG)
-                    type.SCALAR = f64(json::getLong(&arr[0]));
-                else
-                    type.SCALAR = f64(json::getDouble(&arr[0]));
-            }
-            break;
+        {
+            auto& arr = json::getArray(obj);
+            if (arr[0].tagVal.tag == json::TAG::LONG)
+                type.SCALAR = f64(json::getLong(&arr[0]));
+            else type.SCALAR = f64(json::getDouble(&arr[0]));
+        } break;
+
         case ACCESSOR_TYPE::VEC2:
-            type = assignUnionType(obj, 2);
-            break;
+        type = assignUnionType(obj, 2);
+        break;
+
         case ACCESSOR_TYPE::VEC3:
-            type = assignUnionType(obj, 3);
-            break;
+        type = assignUnionType(obj, 3);
+        break;
+
         case ACCESSOR_TYPE::VEC4:
-            type = assignUnionType(obj, 4);
-            break;
+        type = assignUnionType(obj, 4);
+        break;
+
         case ACCESSOR_TYPE::MAT3:
-            type = assignUnionType(obj, 3*3);
-            break;
+        type = assignUnionType(obj, 3*3);
+        break;
+
         case ACCESSOR_TYPE::MAT4:
-            type = assignUnionType(obj, 4*4);
-            break;
+        type = assignUnionType(obj, 4*4);
+        break;
     }
 
     return type;
@@ -170,50 +180,63 @@ ModelProcJSONObjs(Model* s)
     {
         switch (hashFNV(node.svKey))
         {
-            default:
-                break;
+            default: break;
+
             case (u64)(HASH_CODES::scene):
-                s->jsonObjs.scene = &node;
-                break;
+            s->jsonObjs.scene = &node;
+            break;
+
             case (u64)(HASH_CODES::scenes):
-                s->jsonObjs.scenes = &node;
-                break;
+            s->jsonObjs.scenes = &node;
+            break;
+
             case (u64)(HASH_CODES::nodes):
-                s->jsonObjs.nodes = &node;
-                break;
+            s->jsonObjs.nodes = &node;
+            break;
+
             case (u64)(HASH_CODES::meshes):
-                s->jsonObjs.meshes = &node;
-                break;
+            s->jsonObjs.meshes = &node;
+            break;
+
             case (u64)(HASH_CODES::cameras):
-                s->jsonObjs.cameras = &node;
-                break;
+            s->jsonObjs.cameras = &node;
+            break;
+
             case (u64)(HASH_CODES::buffers):
-                s->jsonObjs.buffers = &node;
-                break;
+            s->jsonObjs.buffers = &node;
+            break;
+
             case (u64)(HASH_CODES::bufferViews):
-                s->jsonObjs.bufferViews = &node;
-                break;
+            s->jsonObjs.bufferViews = &node;
+            break;
+
             case (u64)(HASH_CODES::accessors):
-                s->jsonObjs.accessors = &node;
-                break;
+            s->jsonObjs.accessors = &node;
+            break;
+
             case (u64)(HASH_CODES::materials):
-                s->jsonObjs.materials = &node;
-                break;
+            s->jsonObjs.materials = &node;
+            break;
+
             case (u64)(HASH_CODES::textures):
-                s->jsonObjs.textures = &node;
-                break;
+            s->jsonObjs.textures = &node;
+            break;
+
             case (u64)(HASH_CODES::images):
-                s->jsonObjs.images = &node;
-                break;
+            s->jsonObjs.images = &node;
+            break;
+
             case (u64)(HASH_CODES::samplers):
-                s->jsonObjs.samplers = &node;
-                break;
+            s->jsonObjs.samplers = &node;
+            break;
+
             case (u64)(HASH_CODES::skins):
-                s->jsonObjs.skins = &node;
-                break;
+            s->jsonObjs.skins = &node;
+            break;
+
             case (u64)(HASH_CODES::animations):
-                s->jsonObjs.animations = &node;
-                break;
+            s->jsonObjs.animations = &node;
+            break;
         }
     }
 

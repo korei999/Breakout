@@ -12,6 +12,8 @@ constexpr u32
 nullTermStringSize(const char* str)
 {
     u32 i = 0;
+    if (!str) return i;
+
     while (str[i] != '\0')
         i++;
 
