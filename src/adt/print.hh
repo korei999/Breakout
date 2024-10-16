@@ -99,9 +99,9 @@ parseFormatArg(const String fmt, u32 fmtIdx, FormatArgs* pArgs)
 
             pArgs->maxFloatLen = atoi(buff);
         }
-        else if (bColon)
+
+        if (bColon)
         {
-            bColon = false;
             if (fmt[i] == '.')
             {
                 bFloatPresicion = true;
@@ -184,11 +184,10 @@ intToBuffer(INT_T x, char* pDest, u32 dstSize, FormatArgs fmtArgs)
     {
         if (tmpVal >= 0)
             pushChar('+');
-        else
-            pushChar('-');
+        else pushChar('-');
     }
 
-    if (fmtArgs.eBase == 16 && fmtArgs.bHexHash)
+    if (fmtArgs.eBase == BASE::SIXTEEN && fmtArgs.bHexHash)
     {
         pushChar('x');
         pushChar('0');
@@ -325,7 +324,7 @@ printArgs(Context ctx, const T& tFirst, const ARGS_T&... tArgs)
     {
         if (buffIdx >= buffSize) return nRead;
 
-        FormatArgs args {};
+        FormatArgs fmtArgs {};
 
         if (fmt[i] == '{')
         {
@@ -339,8 +338,8 @@ printArgs(Context ctx, const T& tFirst, const ARGS_T&... tArgs)
 
         if (bArg)
         {
-            u32 add = parseFormatArg(fmt, i, &args);
-            u32 addBuff = formatToContext(ctx, args, tFirst);
+            u32 add = parseFormatArg(fmt, i, &fmtArgs);
+            u32 addBuff = formatToContext(ctx, fmtArgs, tFirst);
             buffIdx += addBuff;
             i += add;
             nRead += addBuff;
