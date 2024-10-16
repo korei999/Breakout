@@ -46,10 +46,10 @@ struct ListBase
     It rbegin() { return {this->pLast}; }
     It rend() { return nullptr; }
 
-    const It begin() const { return begin(); }
-    const It end() const { return end(); }
-    const It rbegin() const { return rbegin(); }
-    const It rend() const { return rend(); }
+    const It begin() const { return {this->pFirst}; }
+    const It end() const { return nullptr; }
+    const It rbegin() const { return {this->pLast}; }
+    const It rend() const { return nullptr; }
 };
 
 template<typename T>

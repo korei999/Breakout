@@ -1,7 +1,8 @@
 #pragma once
 
+#include "adt/print.hh"
 #include "adt/utils.hh"
-#include <adt/types.hh>
+#include "adt/types.hh"
 
 #include <cassert>
 #include <cmath>
@@ -1075,145 +1076,73 @@ bezier(
 } /* namespace math */
 } /* namespace adt */
 
-#ifdef ADT_FMTLIB_INCLUDED
-    #include <fmt/base.h>
-
-template<>
-class fmt::formatter<adt::math::V2>
+namespace adt
 {
-  public:
-    constexpr auto
-    parse(format_parse_context& ctx)
-    {
-        return ctx.begin();
-    }
-
-    template<typename CONTEXT_T>
-    constexpr auto format(const adt::math::V2& s, CONTEXT_T& ctx) const
-    {
-        return format_to(
-            ctx.out(),
-            "[{}, {}]",
-            s.e[0], s.e[1]
-        );
-    }
-};
-
-template<>
-class fmt::formatter<adt::math::V3>
+namespace print
 {
-  public:
-    constexpr auto
-    parse(format_parse_context& ctx)
-    {
-        return ctx.begin();
-    }
 
-    template<typename CONTEXT_T>
-    constexpr auto format(const adt::math::V3& s, CONTEXT_T& ctx) const
-    {
-        return format_to(
-            ctx.out(),
-            "[{}, {}, {}]",
-            s.e[0], s.e[1], s.e[2]
-        );
-    }
-};
-
-template<>
-class fmt::formatter<adt::math::V4>
+inline u32
+formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const math::V2& x)
 {
-  public:
-    constexpr auto
-    parse(format_parse_context& ctx)
-    {
-        return ctx.begin();
-    }
+    ctx.fmt = "[{:.3}, {:.3}]";
+    ctx.fmtIdx = 0;
+    return printArgs(ctx, x.x, x.y);
+}
 
-    template<typename CONTEXT_T>
-    constexpr auto format(const adt::math::V4& s, CONTEXT_T& ctx) const
-    {
-        return format_to(
-            ctx.out(),
-            "[{}, {}, {}, {}]",
-            s.e[0], s.e[1], s.e[2], s.e[3]
-        );
-    }
-};
-
-template<>
-class fmt::formatter<adt::math::M2>
+inline u32
+formatToContext(Context ctx, [[maybe_unused]]  FormatArgs fmtArgs, const math::V3& x)
 {
-  public:
-    constexpr auto
-    parse(format_parse_context& ctx)
-    {
-        return ctx.begin();
-    }
+    ctx.fmt = "[{:.3}, {:.3}, {:.3}]";
+    ctx.fmtIdx = 0;
+    return printArgs(ctx, x.x, x.y, x.z);
+}
 
-    template<typename CONTEXT_T>
-    constexpr auto format(const adt::math::M2& s, CONTEXT_T& ctx) const
-    {
-        return format_to(
-            ctx.out(),
-            "\n\t[{:.3}, {:.3}"
-            "\n\t {:.3}, {:.3}]",
-            s.e[0][0], s.e[0][1],
-            s.e[1][0], s.e[1][1]
-        );
-    }
-};
-
-template<>
-class fmt::formatter<adt::math::M3>
+inline u32
+formatToContext(Context ctx, [[maybe_unused]]  FormatArgs fmtArgs, const math::V4& x)
 {
-  public:
-    constexpr auto
-    parse(format_parse_context& ctx)
-    {
-        return ctx.begin();
-    }
+    ctx.fmt = "[{:.3}, {:.3}, {:.3}, {:.3}]";
+    ctx.fmtIdx = 0;
+    return printArgs(ctx, x.x, x.y, x.z, x.w);
+}
 
-    template<typename CONTEXT_T>
-    constexpr auto format(const adt::math::M3& s, CONTEXT_T& ctx) const
-    {
-        return format_to(
-            ctx.out(),
-            "\n\t[{:.3}, {:.3}, {:.3}"
-            "\n\t {:.3}, {:.3}, {:.3}"
-            "\n\t {:.3}, {:.3}, {:.3}]",
-            s.e[0][0], s.e[0][1], s.e[0][2],
-            s.e[1][0], s.e[1][1], s.e[1][2],
-            s.e[2][0], s.e[2][1], s.e[2][2]
-        );
-    }
-};
-
-template<>
-class fmt::formatter<adt::math::M4>
+inline u32
+formatToContext(Context ctx, [[maybe_unused]]  FormatArgs fmtArgs, const math::M2& x)
 {
-  public:
-    constexpr auto
-    parse(format_parse_context& ctx)
-    {
-        return ctx.begin();
-    }
+    ctx.fmt = "\n\t[{:.3}, {:.3}"
+              "\n\t {:.3}, {:.3}]";
+    ctx.fmtIdx = 0;
+    return printArgs(ctx, x.d[0], x.d[1], x.d[2], x.d[3]);
+}
 
-    template<typename CONTEXT_T>
-    constexpr auto format(const adt::math::M4& s, CONTEXT_T& ctx) const
-    {
-        return format_to(
-            ctx.out(),
-            "\n\t[{:.3}, {:.3}, {:.3}, {:.3}"
-            "\n\t {:.3}, {:.3}, {:.3}, {:.3}"
-            "\n\t {:.3}, {:.3}, {:.3}, {:.3}"
-            "\n\t {:.3}, {:.3}, {:.3}, {:.3}]",
-            s.e[0][0], s.e[0][1], s.e[0][2], s.e[0][3],
-            s.e[1][0], s.e[1][1], s.e[1][2], s.e[1][3],
-            s.e[2][0], s.e[2][1], s.e[2][2], s.e[2][3],
-            s.e[3][0], s.e[3][1], s.e[3][2], s.e[3][3]
-        );
-    }
-};
+inline u32
+formatToContext(Context ctx, [[maybe_unused]]  FormatArgs fmtArgs, const math::M3& x)
+{
+    ctx.fmt = "\n\t[{:.3}, {:.3}, {:.3}"
+              "\n\t {:.3}, {:.3}, {:.3}"
+              "\n\t {:.3}, {:.3}, {:.3}]";
+    ctx.fmtIdx = 0;
+    return printArgs(ctx,
+        x.d[0], x.d[1], x.d[2],
+        x.d[3], x.d[4], x.d[5],
+        x.d[6], x.d[7], x.d[8]
+    );
+}
 
-#endif
+inline u32
+formatToContext(Context ctx, [[maybe_unused]]  FormatArgs fmtArgs, const math::M4& x)
+{
+    ctx.fmt = "\n\t[{:.3}, {:.3}, {:.3}, {:.3}"
+              "\n\t {:.3}, {:.3}, {:.3}, {:.3}"
+              "\n\t {:.3}, {:.3}, {:.3}, {:.3}"
+              "\n\t {:.3}, {:.3}, {:.3}, {:.3}]";
+    ctx.fmtIdx = 0;
+    return printArgs(ctx,
+        x.d[0], x.d[1], x.d[2], x.d[3],
+        x.d[4], x.d[5], x.d[6], x.d[7],
+        x.d[8], x.d[9], x.d[10], x.d[11],
+        x.d[12], x.d[13], x.d[14], x.d[15]
+    );
+}
+
+} /* namespace print */
+} /* namespace adt */

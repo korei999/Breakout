@@ -194,7 +194,7 @@ readCmapFormat4(Font* s)
     auto segCount = c.segCountX2 / 2;
     c.mGlyphIndices = {s->p.pAlloc, u32(segCount)};
 
-    auto searchRangeCheck = 2*(pow(2, floor(log2(segCount))));
+    auto searchRangeCheck = 2*(pow(2, std::floor(log2(segCount))));
     assert(c.searchRange == searchRangeCheck);
 
     /* just set pointer and skip bytes, swap bytes after */
@@ -574,10 +574,10 @@ FontParse(Font* s)
         LOG_FATAL("Unable to read this ('{}') ttf header: sfntVersion: {}'\n", s->p.sPath, td.sfntVersion);
 
 #ifdef D_TTF
-    u16 _searchRangeCheck = pow(2, floor(log2(td.numTables))) * 16;
+    u16 _searchRangeCheck = pow(2, std::floor(log2(td.numTables))) * 16;
     assert(td.searchRange == _searchRangeCheck);
 
-    u16 _entrySelectorCheck = (u16)floor(log2(td.numTables));
+    u16 _entrySelectorCheck = (u16)std::floor(log2(td.numTables));
     assert(td.entrySelector == _entrySelectorCheck);
 
     u16 _rangeShiftCheck = td.numTables*16 - td.searchRange;

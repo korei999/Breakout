@@ -35,9 +35,10 @@ template<typename T>
 constexpr void
 swap(T* l, T* r)
 {
-    auto tmp = *l;
-    *l = *r;
-    *r = tmp;
+    auto t0 = *l;
+    auto t1 = *r;
+    *l = t1;
+    *r = t0;
 }
 
 [[nodiscard]]

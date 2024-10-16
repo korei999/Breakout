@@ -73,7 +73,6 @@ loadAssets()
     u8* pTestBitmap = (u8*)::calloc(1, width*height);
     defer( ::free(pTestBitmap) );
 
-    /*text::TTFRasterizeGlyphTEST(&s_ttfTest, &glyphA, pTestBitmap, width, height);*/
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
     s_plain = Plain(GL_STATIC_DRAW);

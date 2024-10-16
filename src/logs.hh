@@ -1,8 +1,7 @@
 #pragma once
 
 #include "adt/String.hh"
-
-#include <fmt/base.h>
+#include "adt/print.hh"
 
 #include <cassert>
 #include <cstdlib>
@@ -16,8 +15,8 @@
 #define COL_CYAN  "\x1B[36m"
 #define COL_WHITE  "\x1B[37m"
 
-#define COUT(...) fmt::print(stdout, __VA_ARGS__)
-#define CERR(...) fmt::print(stderr, __VA_ARGS__)
+#define COUT(...) adt::print::toFILE(stdout, __VA_ARGS__)
+#define CERR(...) adt::print::toFILE(stderr, __VA_ARGS__)
 
 #ifndef NDEBUG
     #define DCOUT(...) COUT(__VA_ARGS__)
@@ -88,10 +87,3 @@ inline const char* _LOG_SEV_STR[] = {
     #define LOG_BAD(...) (void)0
     #define LOG_FATAL(...) (void)0
 #endif
-
-/* TODO: */
-// #ifdef _WIN32
-//     #define ASSERT assert
-// #else
-//     #define ASSERT(EXPR, ...)
-// #endif

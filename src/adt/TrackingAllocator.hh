@@ -66,7 +66,7 @@ inline const AllocatorInterface __MapAllocatorVTable {
 
 inline
 TrackingAllocator::TrackingAllocator(u64 pre)
-    : base {&__MapAllocatorVTable}, mAllocations(&in_OsAllocator.base, pre * 2) {}
+    : base {&__MapAllocatorVTable}, mAllocations(&inl_OsAllocator.base, pre * 2) {}
 
 inline void* alloc(TrackingAllocator* s, u64 mCount, u64 mSize) { return TrackingAlloc(s, mCount, mSize); }
 inline void* realloc(TrackingAllocator* s, void* p, u64 mCount, u64 mSize) { return TrackingRealloc(s, p, mCount, mSize); }

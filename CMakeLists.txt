@@ -22,8 +22,6 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 include_directories(BEFORE "src")
-include_directories(BEFORE "ThirdParty/fmtlib")
-# include_directories(BEFORE "ThirdParty/mimalloc/include")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_definitions("-D_CRT_SECURE_NO_WARNINGS")
@@ -48,11 +46,7 @@ add_executable(
     src/app.cc
     src/audio.cc
     src/test.cc
-    # ThirdParty/mimalloc/src/static.c
 )
-
-add_definitions("-DADT_FMTLIB_INCLUDED")
-add_definitions("-DFMT_USE_EXCEPTIONS=0")
 
 if (CMAKE_BUILD_TYPE MATCHES "Release" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
     set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY WIN32_EXECUTABLE TRUE)
@@ -64,10 +58,6 @@ endif()
 
 if (LOGS)
     add_definitions("-DLOGS")
-endif()
-
-if (FMT_HEADER_ONLY)
-    add_definitions("-DFMT_HEADER_ONLY")
 endif()
 
 # debug logs defines
@@ -118,6 +108,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(CMAKE_C_FLAGS "/utf-8")
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+    # if (NOT CMAKE_BUILD_TYPE MATCHES "Debug")
+    #     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nodefaultlibs -lc -lm")
+    # endif()
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fms-extensions -Wno-missing-braces")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fms-extensions -Wno-missing-braces")
@@ -150,13 +143,6 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         ${CMAKE_PROJECT_NAME} PRIVATE
         ${LINUX_PKGS_LIBRARIES} 
     )
-
-    if (NOT FMT_HEADER_ONLY)
-        target_link_libraries(
-            ${CMAKE_PROJECT_NAME} PRIVATE
-            ${CMAKE_SOURCE_DIR}/ThirdParty/fmtlib/libfmt.a
-        )
-    endif()
 
     set(WLP "./src/platform/wayland")
     set(WLPD "${WLP}/wayland-protocols")
@@ -210,20 +196,6 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Windows")
         ${CMAKE_PROJECT_NAME} PRIVATE
         ${OPENGL_gl_LIBRARY}
     )
-
-    if (NOT FMT_HEADER_ONLY)
-        if (CMAKE_BUILD_TYPE MATCHES "Debug")
-            target_link_libraries(
-                ${CMAKE_PROJECT_NAME} PRIVATE
-                ${CMAKE_SOURCE_DIR}/ThirdParty/fmtlib/fmtd.lib
-            )
-        else()
-            target_link_libraries(
-                ${CMAKE_PROJECT_NAME} PRIVATE
-                ${CMAKE_SOURCE_DIR}/ThirdParty/fmtlib/fmt.lib
-            )
-        endif()
-    endif()
 
     target_sources(
         ${CMAKE_PROJECT_NAME}

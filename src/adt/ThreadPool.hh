@@ -86,7 +86,7 @@ inline void ThreadPoolWait(ThreadPool* s); /* wait for active tasks to finish, w
 
 inline
 ThreadPool::ThreadPool(Allocator* pAlloc, u32 _nThreads)
-    : qTasks(pAlloc, _nThreads), nThreads(_nThreads), a_nActiveTasks(0), bDone(false)
+    : qTasks(pAlloc, _nThreads), nThreads(_nThreads), a_nActiveTasks(0), bDone(true)
 {
     pThreads = (thrd_t*)alloc(pAlloc, _nThreads, sizeof(thrd_t));
     cnd_init(&cndQ);
@@ -185,7 +185,7 @@ _ThreadPoolStop(ThreadPool* s)
     if (s->bDone)
     {
 #ifndef NDEBUG
-        fprintf(stderr, "[THREAD POOL]: trying to stop multiple times\n");
+        fprintf(stderr, "[THREAD POOL]: trying to stop multiple times or stopping without starting at all\n");
 #endif
         return;
     }

@@ -3,6 +3,8 @@
 #include "Allocator.hh"
 #include "hash.hh"
 
+#include <cstdio>
+
 namespace adt
 {
 
@@ -197,6 +199,37 @@ StringAppend(String* l, const String r)
     l->size += r.size;
 }
 
+constexpr void
+StringTrimEnd(String* s)
+{
+    auto isWhiteSpace = [&](int i) -> bool {
+        char c = s->pData[i];
+        /*fprintf(stderr, "char: '%d'\n", c);*/
+        if (c == '\n' || c == ' ' || c == '\r' || c == '\t' || c == '\0')
+            return true;
+
+        return false;
+    };
+
+    for (int i = s->size - 1; i >= 0; --i)
+        if (isWhiteSpace(i))
+        {
+            s->pData[i] = 0;
+            --s->size;
+        }
+        else break;
+}
+
+/* removes nextline character if it ends with one */
+constexpr void
+StringRemoveNLEnd(String* s)
+{
+    if (s->pData[s->size - 1] == '\n')
+        s->pData[--s->size] = '\0';
+    else if (s->pData[s->size - 1] == '\r' && s->pData[s->size - 2] == '\n')
+        s->pData[s->size -= 2] = '\0';
+}
+
 template<>
 constexpr u64
 hash::func<String>(String& str)
@@ -212,28 +245,3 @@ hash::func<const String>(const String& str)
 }
 
 } /* namespace adt */
-
-
-#ifdef ADT_FMTLIB_INCLUDED
-    #include <fmt/base.h>
-
-template<>
-class fmt::formatter<adt::String>
-{
-  public:
-
-    constexpr auto
-    parse(format_parse_context& ctx)
-    {
-        return ctx.begin();
-    }
-
-    template<typename CONTEXT>
-    constexpr auto
-    format(const adt::String& s, CONTEXT& ctx) const
-    {
-        return format_to(ctx.out(), "{:.{}}", s.pData ? s.pData : "", s.size);
-    }
-};
-
-#endif
