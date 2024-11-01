@@ -3,6 +3,7 @@
 #include "Allocator.hh"
 #include "Vec.hh"
 #include "utils.hh"
+#include "sort.hh"
 
 namespace adt
 {
@@ -18,9 +19,6 @@ struct Heap
 };
 
 template<typename T> inline void HeapDestroy(Heap<T>* s);
-inline u32 HeapParentI(u32 i);
-inline u32 HeapLeftI(u32 i);
-inline u32 HeapRightI(u32 i);
 template<typename T> inline void HeapMinBubbleUp(Heap<T>* s, u32 i);
 template<typename T> inline void HeapMaxBubbleUp(Heap<T>* s, u32 i);
 template<typename T> inline void HeapMinBubbleDown(Heap<T>* s, u32 i);
@@ -39,24 +37,6 @@ inline void
 HeapDestroy(Heap<T>* s)
 {
     VecDestroy(&s->a);
-}
-
-inline u32
-HeapParentI(u32 i)
-{
-    return ((i + 1) / 2) - 1;
-}
-
-inline u32
-HeapLeftI(u32 i)
-{
-    return ((i + 1) * 2) - 1;
-}
-
-inline u32
-HeapRightI(u32 i)
-{
-    return HeapLeftI(i) + 1;
 }
 
 template<typename T>

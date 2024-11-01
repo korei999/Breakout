@@ -3,8 +3,11 @@
 #include "String.hh"
 #include "utils.hh"
 
+#include <climits>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
+#include <cuchar>
 #include <type_traits>
 
 namespace adt
@@ -17,9 +20,9 @@ enum BASE : u8 { TWO = 2, EIGHT = 8, TEN = 10, SIXTEEN = 16 };
 struct FormatArgs
 {
     u16 maxLen = NPOS16;
-    u16 maxFloatLen = NPOS16;
+    u8 maxFloatLen = NPOS8;
     BASE eBase = BASE::TEN;
-    bool bHexHash = false;
+    bool bHash = false;
     bool bAlwaysShowSign = false;
 };
 
@@ -32,8 +35,8 @@ struct Context
     u32 fmtIdx {};
 };
 
-template<typename... ARGS_T> constexpr void cout(const String fmt, const ARGS_T&... tArgs);
-template<typename... ARGS_T> constexpr void cerr(const String fmt, const ARGS_T&... tArgs);
+template<typename... ARGS_T> constexpr u32 cout(const String fmt, const ARGS_T&... tArgs);
+template<typename... ARGS_T> constexpr u32 cerr(const String fmt, const ARGS_T&... tArgs);
 
 constexpr u32
 printArgs(Context ctx)
@@ -49,7 +52,7 @@ printArgs(Context ctx)
 }
 
 inline u32
-parseFormatArg(const String fmt, u32 fmtIdx, FormatArgs* pArgs)
+parseFormatArg(FormatArgs* pArgs, const String fmt, u32 fmtIdx)
 {
     u32 nRead = 1;
     bool bDone = false;
@@ -66,12 +69,13 @@ parseFormatArg(const String fmt, u32 fmtIdx, FormatArgs* pArgs)
     {
         if (bDone) break;
 
-        if (bHash && bHex)
+        if (bHash)
         {
-            bHash = bHex = false;
+            bHash =  false;
             pArgs->eBase = BASE::SIXTEEN;
-            pArgs->bHexHash = true;
+            pArgs->bHash = true;
         }
+
         else if (bHex)
         {
             bHex = false;
@@ -138,87 +142,85 @@ parseFormatArg(const String fmt, u32 fmtIdx, FormatArgs* pArgs)
     return nRead;
 }
 
-/* C++ version 0.4 char* style "itoa":
- * Written by Lukás Chmela
- * Released under GPLv3. */
 template<typename INT_T> requires std::is_integral_v<INT_T>
 constexpr char*
-intToBuffer(INT_T x, char* pDest, u32 dstSize, FormatArgs fmtArgs)
+intToBuffer(INT_T x, char* pDst, u32 dstSize, FormatArgs fmtArgs)
 {
-    if (fmtArgs.eBase < 2 || fmtArgs.eBase > 36)
-    {
-        *pDest = '\0';
-        return pDest;
-    }
-
-    char* p0 = pDest, * p1 = pDest;
-    char tmpChar {};
-    INT_T tmpVal {};
-
-    constexpr String map = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz";
+    bool bNegative = false;
 
     u32 i = 0;
-
-    auto pushChar = [&](char c) -> bool {
+    auto push = [&](char c) -> bool {
         if (i < dstSize)
         {
-            *p0++ = c;
-            ++i;
+            pDst[i++] = c;
             return true;
         }
 
         return false;
     };
-
-    do {
-        tmpVal = x;
-        x /= fmtArgs.eBase;
-        if (!pushChar(map[35 + (tmpVal - x*fmtArgs.eBase)])) break;
-    } while (x);
-
-    if (tmpVal < 0 && !fmtArgs.bAlwaysShowSign)
-        if (!fmtArgs.bHexHash)
-            pushChar('-');
-
+ 
+    if (x == 0) {
+        push('0');
+        return pDst;
+    }
+ 
+    if (x < 0 && fmtArgs.eBase != 10)
+    {
+        x = -x;
+    }
+    else if (x < 0 && fmtArgs.eBase == 10)
+    {
+        bNegative = true;
+        x = -x;
+    }
+ 
+    while (x != 0)
+    {
+        int rem = x % fmtArgs.eBase;
+        char c = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
+        push(c);
+        x = x / fmtArgs.eBase;
+    }
+ 
     if (fmtArgs.bAlwaysShowSign)
     {
-        if (tmpVal >= 0)
-            pushChar('+');
-        else pushChar('-');
+        if (bNegative)
+            push('-');
+        else push('+');
     }
+    else if (bNegative) push('-');
 
-    if (fmtArgs.eBase == BASE::SIXTEEN && fmtArgs.bHexHash)
+    if (fmtArgs.bHash)
     {
-        pushChar('x');
-        pushChar('0');
+        if (fmtArgs.eBase == BASE::SIXTEEN)
+        {
+            push('x');
+            push('0');
+        }
+        else if (fmtArgs.eBase == BASE::TWO)
+        {
+            push('b');
+            push('0');
+        }
     }
 
-    *p0-- = '\0';
-
-    /* Reverse the string */
-    while (p1 < p0)
-    {
-        tmpChar = *p0;
-        *p0-- = *p1;
-        *p1++ = tmpChar;
-    }
-
-    return pDest;
+    utils::reverse(pDst, i);
+ 
+    return pDst;
 }
 
 constexpr u32
 copyBackToBuffer(Context ctx, char* pSrc, u32 srcSize)
 {
-    u32 nRead = 0;
-
-    for (u32 i = 0; pSrc[i] != '\0' && i < srcSize && ctx.buffIdx < ctx.buffSize; ++i, ++nRead)
+    u32 i = 0;
+    for (; pSrc[i] != '\0' && i < srcSize && ctx.buffIdx < ctx.buffSize; ++i)
         ctx.pBuff[ctx.buffIdx++] = pSrc[i];
 
-    return nRead;
+    return i;
 }
 
 constexpr u32
-formatToContext(Context ctx, [[maybe_unused]]  FormatArgs fmtArgs, const String& str)
+formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const String& str)
 {
     auto& pBuff = ctx.pBuff;
     auto& buffSize = ctx.buffSize;
@@ -243,9 +245,15 @@ formatToContext(Context ctx, FormatArgs fmtArgs, char* const& pNullTerm)
     return formatToContext(ctx, fmtArgs, String(pNullTerm));
 }
 
+constexpr u32
+formatToContext(Context ctx, FormatArgs fmtArgs, bool b)
+{
+    return formatToContext(ctx, fmtArgs, b ? "true" : "false");
+}
+
 template<typename INT_T> requires std::is_integral_v<INT_T>
 constexpr u32
-formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const INT_T& x)
+formatToContext(Context ctx, FormatArgs fmtArgs, const INT_T& x)
 {
     char buff[32] {};
     char* p = intToBuffer(x, buff, sizeof(buff), fmtArgs);
@@ -281,6 +289,16 @@ formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const wchar_t 
 }
 
 inline u32
+formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const char32_t x)
+{
+    char nbuff[MB_LEN_MAX] {};
+    mbstate_t ps {};
+    c32rtomb(nbuff, x, &ps);
+
+    return copyBackToBuffer(ctx, nbuff, sizeof(nbuff));
+}
+
+inline u32
 formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const char x)
 {
     char nbuff[4] {};
@@ -299,7 +317,7 @@ template<typename PTR_T> requires std::is_pointer_v<PTR_T>
 inline u32
 formatToContext(Context ctx, FormatArgs fmtArgs, PTR_T p)
 {
-    fmtArgs.bHexHash = true;
+    fmtArgs.bHash = true;
     fmtArgs.eBase = BASE::SIXTEEN;
     return formatToContext(ctx, fmtArgs, u64(p));
 }
@@ -338,7 +356,7 @@ printArgs(Context ctx, const T& tFirst, const ARGS_T&... tArgs)
 
         if (bArg)
         {
-            u32 add = parseFormatArg(fmt, i, &fmtArgs);
+            u32 add = parseFormatArg(&fmtArgs, fmt, i);
             u32 addBuff = formatToContext(ctx, fmtArgs, tFirst);
             buffIdx += addBuff;
             i += add;
@@ -355,43 +373,44 @@ printArgs(Context ctx, const T& tFirst, const ARGS_T&... tArgs)
 }
 
 template<typename... ARGS_T>
-constexpr void
+constexpr u32
 toFILE(FILE* fp, const String fmt, const ARGS_T&... tArgs)
 {
     /* TODO: set size / allow allocation maybe */
     char aBuff[1024] {};
     Context ctx {fmt, aBuff, utils::size(aBuff) - 1};
-    printArgs(ctx, tArgs...);
+    auto r = printArgs(ctx, tArgs...);
     fputs(aBuff, fp);
+    return r;
 }
 
 template<typename... ARGS_T>
-constexpr void
+constexpr u32
 toBuffer(char* pBuff, u32 buffSize, const String fmt, const ARGS_T&... tArgs)
 {
     Context ctx {fmt, pBuff, buffSize};
-    printArgs(ctx, tArgs...);
+    return printArgs(ctx, tArgs...);
 }
 
 template<typename... ARGS_T>
-constexpr void
+constexpr u32
 toString(String* pDest, const String fmt, const ARGS_T&... tArgs)
 {
-    toBuffer(pDest->pData, pDest->size, fmt, tArgs...);
+    return toBuffer(pDest->pData, pDest->size, fmt, tArgs...);
 }
 
 template<typename... ARGS_T>
-constexpr void
+constexpr u32
 cout(const String fmt, const ARGS_T&... tArgs)
 {
-    toFILE(stdout, fmt, tArgs...);
+    return toFILE(stdout, fmt, tArgs...);
 }
 
 template<typename... ARGS_T>
-constexpr void
+constexpr u32
 cerr(const String fmt, const ARGS_T&... tArgs)
 {
-    toFILE(stderr, fmt, tArgs...);
+    return toFILE(stderr, fmt, tArgs...);
 }
 
 } /* namespace print */

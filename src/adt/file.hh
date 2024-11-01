@@ -36,12 +36,20 @@ load(Allocator* pAlloc, String sPath)
 }
 
 [[nodiscard]]
+constexpr String
+getPathEnding(String sPath)
+{
+    u32 lastSlash = StringLastOf(sPath, '/');
+    return String(&sPath[lastSlash + 1], &sPath[sPath.size - 1] - &sPath[lastSlash]);
+}
+
+[[nodiscard]]
 inline String
 replacePathEnding(Allocator* pAlloc, String sPath, String sEnding)
 {
-    auto lastSlash = StringLastOf(sPath, '/');
+    u32 lastSlash = StringLastOf(sPath, '/');
     String sNoEnding = {&sPath[0], lastSlash + 1};
-    auto r = StringCat(pAlloc, sNoEnding, sEnding);
+    String r = StringCat(pAlloc, sNoEnding, sEnding);
     return r;
 }
 

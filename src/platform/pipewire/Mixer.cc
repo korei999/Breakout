@@ -117,7 +117,7 @@ MixerRunThread(Mixer* s, int argc, char** argv)
         pw_properties_new(
             PW_KEY_MEDIA_TYPE, "Audio",
             PW_KEY_MEDIA_CATEGORY, "Playback",
-            PW_KEY_MEDIA_ROLE, "Music",
+            PW_KEY_MEDIA_ROLE, "Game",
             nullptr
         ),
         &s->s_streamEvents,

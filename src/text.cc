@@ -6,6 +6,7 @@
 #include "adt/defer.hh"
 #include "app.hh"
 #include "frame.hh"
+#include "adt/sort.hh"
 
 using namespace adt;
 
@@ -626,8 +627,7 @@ TTFRasterizeGlyphTEST(TTF* s, Allocator* pAlloc, parser::ttf::Glyph* pGlyph, u8*
             ArrPush(&aIntersections, intersection);
         }
 
-        /* it won't be in the correct order */
-        utils::qSort(&aIntersections);
+        sort::quick(&aIntersections);
 
         if (aIntersections.size > 1)
         {

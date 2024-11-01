@@ -49,10 +49,11 @@ main(int argc, char** argv)
 #elif _WIN32
 
 int WINAPI
-WinMain([[maybe_unused]] HINSTANCE instance,
-        [[maybe_unused]] HINSTANCE previnstance,
-        [[maybe_unused]] LPSTR cmdline,
-        [[maybe_unused]] int cmdshow)
+WinMain(
+    HINSTANCE instance,
+    [[maybe_unused]] HINSTANCE previnstance,
+    [[maybe_unused]] LPSTR cmdline,
+    [[maybe_unused]] int cmdshow)
 {
     platform::win32::Mixer mixer(&s_arena.base);
     platform::win32::Win32Window app("Breakout", instance);

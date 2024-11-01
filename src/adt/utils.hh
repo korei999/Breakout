@@ -25,6 +25,7 @@
 #include "types.hh"
 
 #include <cstring>
+#include <cassert>
 
 namespace adt
 {
@@ -55,10 +56,9 @@ min(const auto& l, const auto& r)
     return l < r ? l : r;
 }
 
-template<typename T>
 [[nodiscard]]
 constexpr u64
-size(const T& a)
+size(const auto& a)
 {
     return sizeof(a) / sizeof(a[0]);
 }
@@ -71,10 +71,9 @@ odd(const T& a)
     return a & 1;
 }
 
-template<typename T>
 [[nodiscard]]
 constexpr bool
-even(const T& a)
+even(const auto& a)
 {
     return !odd(a);
 }
@@ -143,55 +142,30 @@ sleepMS(f64 ms)
 #endif
 }
 
-template<typename T>
-[[nodiscard]]
-constexpr int
-partition(T a[], int l, int h)
-{
-    int p = h, firstHigh = l;
-
-    for (int i = l; i < h; i++)
-        if (a[i] < a[p])
-        {
-            swap(&a[i], &a[firstHigh]);
-            firstHigh++;
-        }
-
-    swap(&a[p], &a[firstHigh]);
-
-    return firstHigh;
-}
-
-template<typename T>
 constexpr void
-qSort(T* a, int l, int h)
+addNSToTimespec(timespec* const pTs, const long nsec)
 {
-    int p;
-
-    if (l < h)
+    constexpr long nsecMax = 1000000000;
+    /* overflow check */
+    if (pTs->tv_nsec + nsec >= nsecMax)
     {
-        p = partition(a, l, h);
-        qSort(a, l, p - 1);
-        qSort(a, p + 1, h);
+        pTs->tv_sec += 1;
+        pTs->tv_nsec = (pTs->tv_nsec + nsec) - nsecMax;
     }
-}
-
-template<typename T>
-constexpr void
-qSort(T* a)
-{
-    qSort(a->pData, 0, a->size - 1);
+    else pTs->tv_nsec += nsec;
 }
 
 template<typename T>
 inline void
 copy(T* pDest, T* pSrc, u64 size)
 {
+    assert(pDest != nullptr);
+    assert(pSrc != nullptr);
     memcpy(pDest, pSrc, size * sizeof(T));
 }
 
 template<typename T>
-inline void
+constexpr void
 fill(T* pData, T x, u64 size)
 {
     for (u64 i = 0; i < size; ++i)
@@ -200,7 +174,7 @@ fill(T* pData, T x, u64 size)
 
 template<typename T>
 [[nodiscard]]
-constexpr T
+constexpr auto
 clamp(const T& x, const T& _min, const T& _max)
 {
     return max(_min, min(_max, x));
@@ -227,6 +201,20 @@ searchMin(CON<T>& s)
 
     return *_min;
 }
+
+constexpr void
+reverse(auto* a, const u32 size)
+{
+    for (u32 i = 0; i < size / 2; ++i)
+        swap(&a[i], &a[size - 1 - i]);
+}
+
+constexpr void
+reverse(auto* a)
+{
+    reverse(a->pData, a->size);
+}
+
 
 } /* namespace utils */
 } /* namespace adt */

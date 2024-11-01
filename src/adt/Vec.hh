@@ -2,6 +2,7 @@
 
 #include "Allocator.hh"
 #include "utils.hh"
+#include "print.hh"
 
 #include <cassert>
 
@@ -25,8 +26,8 @@ struct VecBase
           size {0},
           cap {prealloc} {}
 
-    T& operator[](u32 i)             { assert(i < cap && "out of range vec access"); return pData[i]; }
-    const T& operator[](u32 i) const { assert(i < cap && "out of range vec access"); return pData[i]; }
+    T& operator[](u32 i)             { assert(i < size && "[Vec]: out of size access"); return pData[i]; }
+    const T& operator[](u32 i) const { assert(i < size && "[Vec]: out of size access"); return pData[i]; }
 
     struct It
     {
@@ -169,7 +170,7 @@ template<typename T>
 inline T&
 VecAt(VecBase<T>* s, u32 at)
 {
-    assert(at < s->size && "VecBase: out of size range");
+    assert(at < s->cap && "[Vec]: out of capacity access");
     return s->pData[at];
 }
 
@@ -177,7 +178,7 @@ template<typename T>
 inline const T&
 VecAt(const VecBase<T>* s, u32 at)
 {
-    assert(at < s->size && "VecBase: out of size range");
+    assert(at < s->cap && "[Vec]: out of capacity access");
     return s->pData[at];
 }
 
@@ -366,5 +367,32 @@ VecData(Vec<T>* s)
 {
     return VecData(&s->base);
 }
+
+namespace print
+{
+
+template<typename T>
+inline u32
+formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const VecBase<T>& x)
+{
+    if (x.size == 0)
+    {
+        ctx.fmt = "{}";
+        ctx.fmtIdx = 0;
+        return printArgs(ctx, "(empty)");
+    }
+
+    char aBuff[1024] {};
+    u32 nRead = 0;
+    for (u32 i = 0; i < x.size; ++i)
+    {
+        const char* fmt = i == x.size - 1 ? "{}" : "{}, ";
+        nRead += toBuffer(aBuff + nRead, utils::size(aBuff) - nRead, fmt, x[i]);
+    }
+
+    return print::copyBackToBuffer(ctx, aBuff, utils::size(aBuff));
+}
+
+} /* namespace print */
 
 } /* namespace adt */

@@ -49,7 +49,10 @@ struct MapBase
     MapBase() = default;
     MapBase(Allocator* pAllocator, u32 prealloc = SIZE_MIN)
         : aBuckets(pAllocator, prealloc * MAP_DEFAULT_LOAD_FACTOR_INV),
-          maxLoadFactor(MAP_DEFAULT_LOAD_FACTOR) {}
+          maxLoadFactor(MAP_DEFAULT_LOAD_FACTOR)
+    {
+        VecSetSize(&aBuckets, pAllocator, prealloc * MAP_DEFAULT_LOAD_FACTOR_INV);
+    }
 
     struct It
     {

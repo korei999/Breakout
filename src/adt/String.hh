@@ -3,10 +3,24 @@
 #include "Allocator.hh"
 #include "hash.hh"
 
-#include <cstdio>
+#include <immintrin.h>
 
 namespace adt
 {
+
+/* https://github.com/termbox/termbox2/blob/master/termbox2.h */
+constexpr u8 mapUtf8CharLength[256] {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 1, 1
+};
 
 constexpr u32
 nullTermStringSize(const char* str)
@@ -14,8 +28,7 @@ nullTermStringSize(const char* str)
     u32 i = 0;
     if (!str) return i;
 
-    while (str[i] != '\0')
-        i++;
+    while (str[i] != '\0') ++i;
 
     return i;
 }
@@ -27,9 +40,9 @@ struct String
     u32 size = 0;
 
     constexpr String() = default;
-    constexpr String(char* sNullTerminated) : pData (sNullTerminated), size (nullTermStringSize(sNullTerminated)) {}
-    constexpr String(const char* sNullTerminated) : pData (const_cast<char*>(sNullTerminated)), size (nullTermStringSize(sNullTerminated)) {}
-    constexpr String(char* pStr, u32 len) : pData (pStr), size (len) {}
+    constexpr String(char* sNullTerminated) : pData(sNullTerminated), size(nullTermStringSize(sNullTerminated)) {}
+    constexpr String(const char* sNullTerminated) : pData(const_cast<char*>(sNullTerminated)), size(nullTermStringSize(sNullTerminated)) {}
+    constexpr String(char* pStr, u32 len) : pData(pStr), size(len) {}
 
     constexpr char& operator[](u32 i) { return pData[i]; }
     constexpr const char& operator[](u32 i) const { return pData[i]; }
@@ -63,21 +76,21 @@ struct String
     constexpr const It rend() const { return {this->pData - 1}; }
 };
 
-constexpr bool StringEndsWith(String l, String r);
-constexpr bool operator==(const String& l, const String& r);
-constexpr bool operator==(const String& l, const char* r);
-constexpr bool operator!=(const String& l, const String& r);
-constexpr s64 operator-(const String& l, const String& r);
-constexpr u32 StringLastOf(String sv, char c);
-constexpr String StringAlloc(Allocator* p, const char* str, u32 size);
-constexpr String StringAlloc(Allocator* p, u32 size);
-constexpr String StringAlloc(Allocator* p, const char* str);
-constexpr String StringAlloc(Allocator* p, String s);
-constexpr u64 hashFNV(String str);
-constexpr String StringCat(Allocator* p, String l, String r);
-
-template<> constexpr u64 hash::func<String>(String& str);
-template<> constexpr u64 hash::func<const String>(const String& str);
+// constexpr bool StringEndsWith(String l, String r);
+// inline bool operator==(const String& l, const String& r);
+// inline bool operator==(const String& l, const char* r);
+// inline bool operator!=(const String& l, const String& r);
+// constexpr s64 operator-(const String& l, const String& r);
+// constexpr u32 StringLastOf(String sv, char c);
+// constexpr String StringAlloc(Allocator* p, const char* str, u32 size);
+// constexpr String StringAlloc(Allocator* p, u32 size);
+// constexpr String StringAlloc(Allocator* p, const char* str);
+// constexpr String StringAlloc(Allocator* p, String s);
+// constexpr u64 hashFNV(String str);
+// constexpr String StringCat(Allocator* p, String l, String r);
+// 
+// template<> constexpr u64 hash::func<String>(String& str);
+// template<> constexpr u64 hash::func<const String>(const String& str);
 
 constexpr bool
 StringEndsWith(String l, String r)
@@ -85,7 +98,7 @@ StringEndsWith(String l, String r)
     if (l.size < r.size)
         return false;
 
-    for (int i = r.size - 1, j = l.size - 1; i >= 0; i--, j--)
+    for (int i = r.size - 1, j = l.size - 1; i >= 0; --i, --j)
         if (r[i] != l[j])
             return false;
 
@@ -93,24 +106,137 @@ StringEndsWith(String l, String r)
 }
 
 constexpr bool
-operator==(const String& l, const String& r)
+StringCmpSlow(const String l, const String r)
 {
     if (l.size != r.size) return false;
 
-    for (u32 i = 0; i < l.size; i++)
+    for (u32 i = 0; i < l.size; ++i)
         if (l[i] != r[i]) return false;
 
     return true;
 }
 
+inline bool
+StringCmpFast(const String& l, const String& r)
+{
+    if (l.size != r.size) return false;
+
+    const u64* p0 = (u64*)l.pData;
+    const u64* p1 = (u64*)r.pData;
+    u32 len = l.size / 8;
+
+    u32 i = 0;
+    for (; i < len; ++i)
+        if (p0[i] - p1[i] != 0) return false;
+
+    if (l.size > 8)
+    {
+        const u64* t0 = (u64*)&l.pData[l.size - 9];
+        const u64* t1 = (u64*)&r.pData[l.size - 9];
+        return *t0 == *t1;
+    }
+
+    u32 leftOver = l.size - i*8;
+    String nl(&l.pData[i*8], leftOver);
+    String nr(&r.pData[i*8], leftOver);
+
+    return StringCmpSlow(nl, nr);
+}
+
+#ifdef ADT_SSE4_2
+inline bool
+StringCmpSSE(const String& l, const String& r)
+{
+    if (l.size != r.size) return false;
+
+    const __m128i* p0 = (__m128i*)l.pData;
+    const __m128i* p1 = (__m128i*)r.pData;
+    u32 len = l.size / 16;
+
+    u32 i = 0;
+    for (; i < len; ++i)
+    {
+        auto res = _mm_xor_si128(_mm_loadu_si128(&p0[i]), _mm_loadu_si128(&p1[i]));
+        if (_mm_testz_si128(res, res) != 1) return false;
+    }
+
+    if (l.size > 16)
+    {
+        auto lv = _mm_loadu_si128((__m128i*)&l.pData[l.size - 17]);
+        auto rv = _mm_loadu_si128((__m128i*)&r.pData[l.size - 17]);
+        auto res = _mm_xor_si128(lv, rv);
+        return _mm_testz_si128(res, res) == 1;
+    }
+
+    u32 leftOver = l.size - i*16;
+    String nl(&l.pData[i*16], leftOver);
+    String nr(&r.pData[i*16], leftOver);
+
+    return StringCmpFast(nl, nr);
+}
+#endif
+
+#ifdef ADT_AVX2
 constexpr bool
+StringCmpAVX2(const String& l, const String& r)
+{
+    if (l.size != r.size) return false;
+
+    const __m256i* p0 = (__m256i*)l.pData;
+    const __m256i* p1 = (__m256i*)r.pData;
+    u32 len = l.size / 32;
+
+    u32 i = 0;
+    for (; i < len; ++i)
+    {
+        __m256i res = _mm256_xor_si256(_mm256_loadu_si256(&p0[i]), _mm256_loadu_si256(&p1[i]));
+        if (_mm256_testz_si256(res, res) != 1) return false;
+    }
+
+    if (l.size > 32)
+    {
+        auto lv = _mm256_loadu_si256((__m256i*)&l.pData[l.size - 33]);
+        auto rv = _mm256_loadu_si256((__m256i*)&r.pData[l.size - 33]);
+        __m256i res = _mm256_xor_si256(lv, rv);
+        return _mm256_testz_si256(res, res) == 1;
+    }
+
+    u32 leftOver = l.size - i*32;
+    String nl(&l.pData[i*32], leftOver);
+    String nr(&r.pData[i*32], leftOver);
+
+    return StringCmpFast(nl, nr);
+}
+#endif
+
+inline bool
+operator==(const String& l, const String& r)
+{
+#if defined(ADT_SSE4_2) && !defined(ADT_AVX2)
+    return StringCmpSSE(l, r);
+#endif
+
+#ifdef ADT_AVX2
+    if (l.size >= 32)
+        return StringCmpAVX2(l, r);
+    else if (l.size >= 16)
+        return StringCmpSSE(l, r);
+    else return StringCmpFast(l, r);
+#endif
+
+#if !defined(ADT_SSE4_2) && !defined(ADT_AVX2)
+    return StringCmpFast(l, r);
+#endif
+}
+
+inline bool
 operator==(const String& l, const char* r)
 {
     auto sr = String(r);
     return l == sr;
 }
 
-constexpr bool
+inline bool
 operator!=(const String& l, const String& r)
 {
     return !(l == r);
@@ -169,6 +295,12 @@ StringAlloc(Allocator* p, const String s)
     return StringAlloc(p, s.pData, s.size);
 }
 
+constexpr void
+StringDestroy(Allocator* p, String* s)
+{
+    free(p, s->pData);
+}
+
 constexpr u64
 hashFNV(const String str)
 {
@@ -182,9 +314,9 @@ StringCat(Allocator* p, const String l, const String r)
     char* ret = (char*)alloc(p, len + 1, sizeof(char));
 
     u32 pos = 0;
-    for (u32 i = 0; i < l.size; i++, pos++)
+    for (u32 i = 0; i < l.size; ++i, ++pos)
         ret[pos] = l[i];
-    for (u32 i = 0; i < r.size; i++, pos++)
+    for (u32 i = 0; i < r.size; ++i, ++pos)
         ret[pos] = r[i];
 
     ret[len] = '\0';
@@ -195,7 +327,7 @@ StringCat(Allocator* p, const String l, const String r)
 constexpr void
 StringAppend(String* l, const String r)
 {
-    for (long i = l->size, j = 0; i < long(l->size + r.size); i++, j++)
+    for (long i = l->size, j = 0; i < long(l->size + r.size); ++i, ++j)
         (*l)[i] = r[j];
 
     l->size += r.size;
@@ -206,7 +338,6 @@ StringTrimEnd(String* s)
 {
     auto isWhiteSpace = [&](int i) -> bool {
         char c = s->pData[i];
-        /*fprintf(stderr, "char: '%d'\n", c);*/
         if (c == '\n' || c == ' ' || c == '\r' || c == '\t' || c == '\0')
             return true;
 
@@ -226,10 +357,25 @@ StringTrimEnd(String* s)
 constexpr void
 StringRemoveNLEnd(String* s)
 {
-    if (s->pData[s->size - 1] == '\n')
+    if (s->size > 0 && s->pData[s->size - 1] == '\n')
         s->pData[--s->size] = '\0';
-    else if (s->pData[s->size - 1] == '\r' && s->pData[s->size - 2] == '\n')
-        s->pData[s->size -= 2] = '\0';
+    if (s->size > 0 && s->pData[s->size - 1] == '\r')
+        s->pData[--s->size] = '\0';
+}
+
+constexpr bool
+StringContains(String l, const String r)
+{
+    if (l.size < r.size) return false;
+
+    for (u32 i = 0; i < l.size; ++i)
+    {
+        if (i + r.size > l.size) break;
+        const String sub(&l[i], l.size - i);
+        if (sub == r) return true;
+    }
+
+    return false;
 }
 
 template<>

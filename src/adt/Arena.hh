@@ -130,11 +130,13 @@ ArenaRealloc(Arena* s, void* p, u64 mCount, u64 mSize)
 
     /* figure out which block this node belongs to */
     ADT_ARENA_FOREACH(s, pB)
+    {
         if ((u8*)p > (u8*)pB && ((u8*)pB + pB->size) > (u8*)p)
         {
             pBlock = pB;
             break;
         }
+    }
 
     assert(pBlock != nullptr && "block not found, bad pointer");
 
@@ -153,7 +155,8 @@ ArenaRealloc(Arena* s, void* p, u64 mCount, u64 mSize)
     else
     {
         void* pR = ArenaAlloc(s, mCount, mSize);
-        memcpy(pR, p, ((u8*)pNode->pNext - (u8*)pNode));
+        /* BUG?: sanitizer sees heap-overflow without - sizeof(ArenaNode) */
+        memcpy(pR, p, ((u8*)pNode->pNext - (u8*)pNode) - sizeof(ArenaNode));
 
         return pR;
     }
