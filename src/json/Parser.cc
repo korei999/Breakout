@@ -133,13 +133,13 @@ parseObject(Parser* s, Object* pNode)
 
     for (; s->tCurr.type != Token::RBRACE; next(s))
     {
-        expect(s, Token::IDENT, LOGS_FILE, __LINE__);
+        expect(s, Token::IDENT, ADT_LOGS_FILE, __LINE__);
         Object ob {.svKey = s->tCurr.sLiteral, .tagVal = {}};
         adt::VecPush(&aObjs, s->pAlloc, ob);
 
         /* skip identifier and ':' */
         next(s);
-        expect(s, Token::ASSIGN, LOGS_FILE, __LINE__);
+        expect(s, Token::ASSIGN, ADT_LOGS_FILE, __LINE__);
         next(s);
 
         parseNode(s, &adt::VecLast(&aObjs));

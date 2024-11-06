@@ -26,18 +26,18 @@
     #define DCERR(...) (void)0
 #endif
 
-enum _LOG_SEV
+enum _ADT_LOG_SEV
 {
-    _LOG_SEV_OK,
-    _LOG_SEV_GOOD,
-    _LOG_SEV_NOTIFY,
-    _LOG_SEV_WARN,
-    _LOG_SEV_BAD,
-    _LOG_SEV_FATAL,
-    _LOG_SEV_ENUM_SIZE
+    _ADT_LOG_SEV_OK,
+    _ADT_LOG_SEV_GOOD,
+    _ADT_LOG_SEV_NOTIFY,
+    _ADT_LOG_SEV_WARN,
+    _ADT_LOG_SEV_BAD,
+    _ADT_LOG_SEV_FATAL,
+    _ADT_LOG_SEV_ENUM_SIZE
 };
 
-inline const char* _LOG_SEV_STR[] = {
+constexpr adt::String _ADT_LOG_SEV_STR[] = {
     "",
     ADT_COL_GREEN "GOOD: " ADT_COL_NORM,
     ADT_COL_CYAN "NOTIFY: " ADT_COL_NORM,
@@ -47,41 +47,52 @@ inline const char* _LOG_SEV_STR[] = {
 };
 
 #if defined __clang__ || __GNUC__
-    #define LOGS_FILE __FILE_NAME__
+    #define ADT_LOGS_FILE __FILE_NAME__
 #else
-    #define LOGS_FILE __FILE__
+    #define ADT_LOGS_FILE __FILE__
 #endif
 
 #ifdef LOGS
-    #define _LOG(SEV, ...)                                                                                             \
+    #define _ADT_LOG(SEV, ...)                                                                                         \
         do                                                                                                             \
         {                                                                                                              \
-            assert(SEV >= 0 && SEV < _LOG_SEV_ENUM_SIZE && "wrong _LOG_SEV*");                                         \
-            CERR("({}{}, {}): ", _LOG_SEV_STR[SEV], LOGS_FILE, __LINE__);                                              \
+            assert(SEV >= 0 && SEV < _ADT_LOG_SEV_ENUM_SIZE && "wrong _ADT_LOG_SEV*");                                 \
+            CERR("({}{}, {}): ", _ADT_LOG_SEV_STR[SEV], ADT_LOGS_FILE, __LINE__);                                      \
             CERR(__VA_ARGS__);                                                                                         \
             switch (SEV)                                                                                               \
             {                                                                                                          \
                 default:                                                                                               \
                     break;                                                                                             \
-                case _LOG_SEV_FATAL:                                                                                   \
+                case _ADT_LOG_SEV_FATAL:                                                                               \
                     abort();                                                                                           \
             }                                                                                                          \
         } while (0)
 
-    #define LOG(...) _LOG(_LOG_SEV_OK, __VA_ARGS__)
-    #define LOG_OK(...) _LOG(_LOG_SEV_OK, __VA_ARGS__)
-    #define LOG_GOOD(...) _LOG(_LOG_SEV_GOOD, __VA_ARGS__)
-    #define LOG_NOTIFY(...) _LOG(_LOG_SEV_NOTIFY, __VA_ARGS__)
-    #define LOG_WARN(...) _LOG(_LOG_SEV_WARN, __VA_ARGS__)
-    #define LOG_BAD(...) _LOG(_LOG_SEV_BAD, __VA_ARGS__)
-    #define LOG_FATAL(...) _LOG(_LOG_SEV_FATAL, __VA_ARGS__)
+    #define ADT_LOG(...) _ADT_LOG(_ADT_LOG_SEV_OK, __VA_ARGS__)
+    #define ADT_LOG_OK(...) _ADT_LOG(_ADT_LOG_SEV_OK, __VA_ARGS__)
+    #define ADT_LOG_GOOD(...) _ADT_LOG(_ADT_LOG_SEV_GOOD, __VA_ARGS__)
+    #define ADT_LOG_NOTIFY(...) _ADT_LOG(_ADT_LOG_SEV_NOTIFY, __VA_ARGS__)
+    #define ADT_LOG_WARN(...) _ADT_LOG(_ADT_LOG_SEV_WARN, __VA_ARGS__)
+    #define ADT_LOG_BAD(...) _ADT_LOG(_ADT_LOG_SEV_BAD, __VA_ARGS__)
+    #define ADT_LOG_FATAL(...) _ADT_LOG(_ADT_LOG_SEV_FATAL, __VA_ARGS__)
 #else
-    #define _LOG (void)0
-    #define LOG(...) (void)0
-    #define LOG_OK(...) (void)0
-    #define LOG_GOOD(...) (void)0
-    #define LOG_NOTIFY(...) (void)0
-    #define LOG_WARN(...) (void)0
-    #define LOG_BAD(...) (void)0
-    #define LOG_FATAL(...) (void)0
+    #define _ADT_LOG (void)0
+    #define ADT_LOG(...) (void)0
+    #define ADT_LOG_OK(...) (void)0
+    #define ADT_LOG_GOOD(...) (void)0
+    #define ADT_LOG_NOTIFY(...) (void)0
+    #define ADT_LOG_WARN(...) (void)0
+    #define ADT_LOG_BAD(...) (void)0
+    #define ADT_LOG_FATAL(...) (void)0
+#endif
+
+#ifdef ADT_LOGS_LESS_TYPING
+    #define _LOG(...) _ADT_LOG(__VA_ARGS__)
+    #define LOG(...) ADT_LOG(__VA_ARGS__)
+    #define LOG_OK(...) ADT_LOG_OK(__VA_ARGS__)
+    #define LOG_GOOD(...) ADT_LOG_GOOD(__VA_ARGS__)
+    #define LOG_NOTIFY(...) ADT_LOG_NOTIFY(__VA_ARGS__)
+    #define LOG_WARN(...) ADT_LOG_WARN(__VA_ARGS__)
+    #define LOG_BAD(...) ADT_LOG_BAD(__VA_ARGS__)
+    #define LOG_FATAL(...) ADT_LOG_FATAL(__VA_ARGS__)
 #endif

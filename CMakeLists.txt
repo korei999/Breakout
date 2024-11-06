@@ -48,6 +48,9 @@ add_executable(
     src/test.cc
 )
 
+add_definitions("-DADT_DEFER_LESS_TYPING")
+add_definitions("-DADT_LOGS_LESS_TYPING")
+
 if (CMAKE_BUILD_TYPE MATCHES "Release" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
     set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY WIN32_EXECUTABLE TRUE)
 
