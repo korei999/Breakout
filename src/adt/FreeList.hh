@@ -47,7 +47,7 @@ inline void
 _FreeListPrintTree(FreeList* s)
 {
     auto pfn = +[](const FreeList::Node* pNode, [[maybe_unused]] void* pArgs) -> void {
-        fprintf(stderr, "%s" COL_NORM " %lu\n", pNode->color == RB_COL::RED ? COL_RED "(R)" : COL_BLUE "(B)", pNode->data.size);
+        CERR("{}" COL_NORM " {}\n", pNode->color == RB_COL::RED ? COL_RED "(R)" : COL_BLUE "(B)", pNode->data.size);
     };
 
     Arena arena(SIZE_1K);

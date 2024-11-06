@@ -3,7 +3,8 @@
 #include "String.hh"
 #include "utils.hh"
 
-#include <cctype>
+#include <ctype.h> /* win32 */
+
 #include <climits>
 #include <cmath>
 #include <cstdio>

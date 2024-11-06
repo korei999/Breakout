@@ -32,7 +32,11 @@
 #include "utils.hh"
 #include "Pair.hh"
 
-#include <cstdio>
+#include <stdio.h>
+
+#ifdef _WIN32
+#undef IN
+#endif
 
 namespace adt
 {
