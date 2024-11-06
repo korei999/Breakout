@@ -1,7 +1,7 @@
 #include "input.hh"
 
 #include "Client.hh"
-#include "logs.hh"
+#include "adt/logs.hh"
 #include "adt/utils.hh"
 #include "controls.hh"
 

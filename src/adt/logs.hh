@@ -1,19 +1,19 @@
 #pragma once
 
-#include "adt/String.hh"
-#include "adt/print.hh"
+#include "String.hh"
+#include "print.hh"
 
 #include <cassert>
 #include <cstdlib>
 
-#define COL_NORM  "\x1B[0m"
-#define COL_RED  "\x1B[31m"
-#define COL_GREEN  "\x1B[32m"
-#define COL_YELLOW  "\x1B[33m"
-#define COL_BLUE  "\x1B[34m"
-#define COL_MAGENTA  "\x1B[35m"
-#define COL_CYAN  "\x1B[36m"
-#define COL_WHITE  "\x1B[37m"
+#define ADT_COL_NORM  "\x1B[0m"
+#define ADT_COL_RED  "\x1B[31m"
+#define ADT_COL_GREEN  "\x1B[32m"
+#define ADT_COL_YELLOW  "\x1B[33m"
+#define ADT_COL_BLUE  "\x1B[34m"
+#define ADT_COL_MAGENTA  "\x1B[35m"
+#define ADT_COL_CYAN  "\x1B[36m"
+#define ADT_COL_WHITE  "\x1B[37m"
 
 #define COUT(...) adt::print::cout(__VA_ARGS__)
 #define CERR(...) adt::print::cerr(__VA_ARGS__)
@@ -39,11 +39,11 @@ enum _LOG_SEV
 
 inline const char* _LOG_SEV_STR[] = {
     "",
-    COL_GREEN "GOOD: " COL_NORM,
-    COL_CYAN "NOTIFY: " COL_NORM,
-    COL_YELLOW "WARNING: " COL_NORM,
-    COL_RED "BAD: " COL_NORM,
-    COL_RED "FATAL: " COL_NORM
+    ADT_COL_GREEN "GOOD: " ADT_COL_NORM,
+    ADT_COL_CYAN "NOTIFY: " ADT_COL_NORM,
+    ADT_COL_YELLOW "WARNING: " ADT_COL_NORM,
+    ADT_COL_RED "BAD: " ADT_COL_NORM,
+    ADT_COL_RED "FATAL: " ADT_COL_NORM
 };
 
 #if defined __clang__ || __GNUC__

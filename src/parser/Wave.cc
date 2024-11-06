@@ -1,5 +1,6 @@
 #include "Wave.hh"
-#include "logs.hh"
+
+#include "adt/logs.hh"
 
 namespace parser
 {

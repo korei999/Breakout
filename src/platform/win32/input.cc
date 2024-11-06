@@ -1,5 +1,6 @@
 #include "input.hh"
-#include "logs.hh"
+
+#include "adt/logs.hh"
 #include "controls.hh" 
 #include "app.hh"
 

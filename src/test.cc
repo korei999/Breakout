@@ -4,7 +4,7 @@
 #include "adt/defer.hh"
 #include "adt/guard.hh"
 #include "adt/math.hh"
-#include "logs.hh"
+#include "adt/logs.hh"
 
 using namespace adt;
 

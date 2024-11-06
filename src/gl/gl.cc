@@ -1,6 +1,6 @@
 #include "gl.hh"
 
-#include "logs.hh"
+#include "adt/logs.hh"
 
 namespace gl
 {

@@ -14,11 +14,12 @@
 #include "parser/ttf.hh"
 #include "text.hh"
 #include "texture.hh"
+#include "adt/FreeList.hh"
 
 namespace game
 {
 
-static AllocatorPool<Arena> s_assetArenas(10);
+static AllocatorPool<FreeList> s_assetArenas(10);
 
 static Vec<Entity> s_aEntities(AllocatorPoolGet(&s_assetArenas, SIZE_8K));
 static Vec<game::Block> s_aBlocks(AllocatorPoolGet(&s_assetArenas, SIZE_1K));

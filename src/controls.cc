@@ -1,7 +1,7 @@
 #include "controls.hh"
 
-#include "logs.hh"
 #include "app.hh"
+#include "adt/logs.hh"
 
 #include <cmath>
 

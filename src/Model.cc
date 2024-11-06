@@ -3,7 +3,7 @@
 #include "adt/MutexArena.hh"
 #include "adt/ThreadPool.hh"
 #include "adt/file.hh"
-#include "logs.hh"
+#include "adt/logs.hh"
 #include "adt/utils.hh"
 #include "app.hh"
 

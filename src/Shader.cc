@@ -2,7 +2,7 @@
 
 #include "adt/Arena.hh"
 #include "adt/file.hh"
-#include "logs.hh"
+#include "adt/logs.hh"
 #include "adt/OsAllocator.hh"
 
 Vec<Shader> g_aAllShaders;

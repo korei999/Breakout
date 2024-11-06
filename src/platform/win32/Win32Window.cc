@@ -1,6 +1,7 @@
 #include "Win32Window.hh"
+
 #include "input.hh"
-#include "logs.hh"
+#include "adt/logs.hh"
 #include "gl/gl.hh"
 #include "wglext.h" /* https://www.khronos.org/registry/OpenGL/api/GL/wglext.h */
 

@@ -1,6 +1,6 @@
 #include "Parser.hh"
 
-#include "logs.hh"
+#include "adt/logs.hh"
 
 using namespace adt;
 

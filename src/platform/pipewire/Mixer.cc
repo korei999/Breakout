@@ -1,6 +1,6 @@
 #include "Mixer.hh"
 
-#include "logs.hh"
+#include "adt/logs.hh"
 #include "adt/utils.hh"
 #include "app.hh"
 

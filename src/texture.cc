@@ -3,7 +3,7 @@
 #include "Window.hh"
 #include "adt/Arena.hh"
 #include "adt/OsAllocator.hh"
-#include "logs.hh"
+#include "adt/logs.hh"
 #include "app.hh"
 #include "parser/Bin.hh"
 

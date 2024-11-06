@@ -8,7 +8,7 @@
 #include "adt/Vec.hh"
 #include "adt/defer.hh"
 #include "input.hh"
-#include "logs.hh"
+#include "adt/logs.hh"
 
 #include <string.h>
 
