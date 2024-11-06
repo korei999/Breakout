@@ -67,6 +67,7 @@ void
 loadAssets()
 {
     parser::ttf::FontLoadAndParse(&s_fontLiberation, "test-assets/LiberationMono-Regular.ttf");
+
     parser::ttf::Glyph glyphA = FontReadGlyph(&s_fontLiberation, '&');
 
     u32 width = 128, height = 128;

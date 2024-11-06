@@ -185,7 +185,7 @@ _ThreadPoolStop(ThreadPool* s)
     if (s->bDone)
     {
 #ifndef NDEBUG
-        fprintf(stderr, "[ThreadPool]: trying to stop multiple times or stopping without starting at all\n");
+        fprintf(stderr, "[THREAD POOL]: trying to stop multiple times or stopping without starting at all\n");
 #endif
         return;
     }

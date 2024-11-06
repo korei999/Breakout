@@ -63,8 +63,6 @@ inline const char* _LOG_SEV_STR[] = {
             {                                                                                                          \
                 default:                                                                                               \
                     break;                                                                                             \
-                case _LOG_SEV_BAD:                                                                                     \
-                    exit(int(SEV));                                                                                    \
                 case _LOG_SEV_FATAL:                                                                                   \
                     abort();                                                                                           \
             }                                                                                                          \
