@@ -175,46 +175,46 @@ FreeListFindFittingNode(FreeList* s, const u64 size)
     return pLastFitting;
 }
 
-// #ifndef NDEBUG
-// inline void
-// _FreeListVerify(FreeList* s)
-// {
-//     auto* pBlock = s->pBlocks;
-//     while (pBlock)
-//     {
-//         auto* pListNode = &FreeListNodeFromBlock(pBlock)->data;
-//         auto* pPrev = pListNode;
-// 
-//         while (pListNode)
-//         {
-//             if (pListNode->pNext)
-//             {
-//                 bool bNextAdjecent = ((u8*)pListNode + pListNode->getSize()) == ((u8*)pListNode->pNext);
-//                 assert(bNextAdjecent);
-//             }
-// 
-//             pPrev = pListNode;
-//             pListNode = pListNode->pNext;
-//         }
-//         pListNode = pPrev;
-//         while (pListNode)
-//         {
-//             if (pListNode->pPrev)
-//             {
-//                 bool bPrevAdjecent = ((u8*)pListNode->pPrev + pListNode->pPrev->getSize()) == ((u8*)pListNode);
-//                 assert(bPrevAdjecent);
-//             }
-// 
-//             pPrev = pListNode;
-//             pListNode = pListNode->pPrev;
-//         }
-// 
-//         pBlock = pBlock->pNext;
-//     }
-// }
-// #else
-// #define _FreeListVerify //
-// #endif
+#ifndef NDEBUG
+inline void
+_FreeListVerify(FreeList* s)
+{
+    auto* pBlock = s->pBlocks;
+    while (pBlock)
+    {
+        auto* pListNode = &FreeListNodeFromBlock(pBlock)->data;
+        auto* pPrev = pListNode;
+
+        while (pListNode)
+        {
+            if (pListNode->pNext)
+            {
+                bool bNextAdjecent = ((u8*)pListNode + pListNode->getSize()) == ((u8*)pListNode->pNext);
+                assert(bNextAdjecent);
+            }
+
+            pPrev = pListNode;
+            pListNode = pListNode->pNext;
+        }
+        pListNode = pPrev;
+        while (pListNode)
+        {
+            if (pListNode->pPrev)
+            {
+                bool bPrevAdjecent = ((u8*)pListNode->pPrev + pListNode->pPrev->getSize()) == ((u8*)pListNode);
+                assert(bPrevAdjecent);
+            }
+
+            pPrev = pListNode;
+            pListNode = pListNode->pPrev;
+        }
+
+        pBlock = pBlock->pNext;
+    }
+}
+#else
+#define _FreeListVerify //
+#endif
 
 inline void*
 FreeListAlloc(FreeList* s, u64 nMembers, u64 mSize)
@@ -255,14 +255,11 @@ again:
 
     if (splitSize <= (long)sizeof(FreeList::Node))
     {
-        /*pFree->data.bFree = false;*/
         pFree->data.setFree(false);
         return pFree->data.pMem;
     }
 
     FreeList::Node* pSplit = (FreeList::Node*)((u8*)pFree + splitSize);
-    /*pSplit->data.size = realSize;*/
-    /*pSplit->data.bFree = false;*/
     pSplit->data.setSizeSetFree(realSize, false);
 
     pSplit->data.pNext = pFree->data.pNext;
@@ -270,11 +267,7 @@ again:
 
     if (pFree->data.pNext) pFree->data.pNext->pPrev = &pSplit->data;
     pFree->data.pNext = &pSplit->data;
-    /*pFree->data.size = splitSize;*/
     pFree->data.setSizeSetFree(splitSize, true);
-
-    /*LOG("mem: {}, off: {}\n", pFree->data.pNext, pFree - pFree->data.pMem);*/
-    assert((u8*)pFree->data.pNext == (u8*)&pFree->data + pFree->data.getSize());
 
     RBInsert(&s->tree, pFree, true);
 
@@ -288,15 +281,12 @@ FreeListFree(FreeList* s, void* ptr)
 
     assert(!pThis->data.isFree());
 
-    /*pThis->data.bFree = true;*/
     pThis->data.setFree(true);
 
     if (pThis->data.pNext && pThis->data.pNext->isFree())
     {
         RBRemove(&s->tree, FreeListTreeNodeFromPtr(pThis->data.pNext->pMem));
 
-        /*pThis->data.size += pThis->data.pNext->size;*/
-        /*pThis->data.setSize(pThis->data.getSize() + pThis->data.pNext->getSize());*/
         pThis->data.addSize(pThis->data.pNext->getSize());
         if (pThis->data.pNext->pNext)
             pThis->data.pNext->pNext->pPrev = &pThis->data;
@@ -310,8 +300,6 @@ FreeListFree(FreeList* s, void* ptr)
 
         pThis = pPrev;
 
-        /*pThis->data.size += pThis->data.pNext->size;*/
-        /*pThis->data.setSize(pThis->data.getSize() + pThis->data.pNext->getSize());*/
         pThis->data.addSize(pThis->data.pNext->getSize());
         if (pThis->data.pNext->pNext)
             pThis->data.pNext->pNext->pPrev = &pThis->data;
