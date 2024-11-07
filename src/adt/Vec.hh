@@ -4,8 +4,6 @@
 #include "utils.hh"
 #include "print.hh"
 
-#include "logs.hh"
-
 #include <cassert>
 
 namespace adt
@@ -28,8 +26,8 @@ struct VecBase
           size {0},
           capacity {prealloc} {}
 
-    T& operator[](u32 i)             { assert(i < capacity && "out of range vec access"); return pData[i]; }
-    const T& operator[](u32 i) const { assert(i < capacity && "out of range vec access"); return pData[i]; }
+    T& operator[](u32 i)             { assert(i < size && "[Vec] out of size"); return pData[i]; }
+    const T& operator[](u32 i) const { assert(i < size && "[Vec] out of size"); return pData[i]; }
 
     struct It
     {
@@ -88,7 +86,7 @@ VecPush(VecBase<T>* s, Allocator* p, const T& data)
 {
     if (s->capacity == 0) *s = {p, SIZE_MIN};
 
-    assert(s->capacity > 0 && "VecBase: uninitialized push");
+    assert(s->capacity > 0 && "[Vec]: uninitialized push");
 
     if (s->size >= s->capacity) VecGrow(s, p, s->capacity * 2);
 
@@ -128,7 +126,7 @@ template<typename T>
 inline T*
 VecPop(VecBase<T>* s)
 {
-    assert(s->size > 0 && "VecBase: empty pop");
+    assert(s->size > 0 && "[Vec]: empty pop");
     return &s->pData[--s->size];
 }
 
@@ -185,7 +183,7 @@ template<typename T>
 inline T&
 VecAt(VecBase<T>* s, u32 at)
 {
-    assert(at < s->size && "VecBase: out of size range");
+    assert(at < s->size && "[Vec]: out of size");
     return s->pData[at];
 }
 
@@ -193,7 +191,7 @@ template<typename T>
 inline const T&
 VecAt(const VecBase<T>* s, u32 at)
 {
-    assert(at < s->size && "VecBase: out of size range");
+    assert(at < s->size && "[Vec]: out of size");
     return s->pData[at];
 }
 

@@ -11,7 +11,7 @@ constexpr f32 MAP_DEFAULT_LOAD_FACTOR_INV = 1.0 / MAP_DEFAULT_LOAD_FACTOR;
 
 template<typename T> struct MapBase;
 
-template<typename T> inline void __MapRehash(MapBase<T>* s, Allocator* p, u32 size);
+template<typename T> inline void _MapRehash(MapBase<T>* s, Allocator* p, u32 size);
 
 template<typename T>
 struct Bucket
@@ -47,9 +47,7 @@ struct MapBase
     u32 bucketCount = 0;
 
     MapBase() = default;
-    MapBase(Allocator* pAllocator, u32 prealloc = SIZE_MIN)
-        : aBuckets(pAllocator, prealloc * MAP_DEFAULT_LOAD_FACTOR_INV),
-          maxLoadFactor(MAP_DEFAULT_LOAD_FACTOR) {}
+    MapBase(Allocator* pAllocator, u32 prealloc = SIZE_MIN);
 
     struct It
     {
@@ -58,8 +56,8 @@ struct MapBase
 
         It(MapBase* _s, u32 _i) : s {_s}, i {_i} {}
 
-        T& operator*() { return s->aBuckets[i].data; }
-        T* operator->() { return &s->aBuckets[i].data; }
+        T& operator*() { return s->aBuckets.pData[i].data; }
+        T* operator->() { return &s->aBuckets.pData[i].data; }
 
         It operator++()
         {
@@ -91,7 +89,7 @@ inline u32
 MapFirstI(MapBase<T>* s)
 {
     u32 i = 0;
-    while (i < VecCap(&s->aBuckets) && !s->aBuckets[i].bOccupied)
+    while (i < VecCap(&s->aBuckets) && !s->aBuckets.pData[i].bOccupied)
         i++;
 
     if (i >= VecCap(&s->aBuckets)) i = NPOS;
@@ -104,7 +102,7 @@ inline u32
 MapNextI(MapBase<T>* s, u32 i)
 {
     ++i;
-    while (i < VecCap(&s->aBuckets) && !s->aBuckets[i].bOccupied)
+    while (i < VecCap(&s->aBuckets) && !s->aBuckets.pData[i].bOccupied)
         i++;
 
     if (i >= VecCap(&s->aBuckets)) i = NPOS;
@@ -126,25 +124,25 @@ MapInsert(MapBase<T>* s, Allocator* p, const T& value)
     if (VecCap(&s->aBuckets) == 0) *s = {p};
 
     if (MapLoadFactor(s) >= s->maxLoadFactor)
-        __MapRehash(s, p, VecCap(&s->aBuckets) * 2);
+        _MapRehash(s, p, VecCap(&s->aBuckets) * 2);
 
     u64 hash = hash::func(value);
     u32 idx = u32(hash % VecCap(&s->aBuckets));
 
-    while (s->aBuckets[idx].bOccupied)
+    while (s->aBuckets.pData[idx].bOccupied)
     {
         idx++;
         if (idx >= VecCap(&s->aBuckets))
             idx = 0;
     }
 
-    s->aBuckets[idx].data = value;
-    s->aBuckets[idx].bOccupied = true;
-    s->aBuckets[idx].bDeleted = false;
+    s->aBuckets.pData[idx].data = value;
+    s->aBuckets.pData[idx].bOccupied = true;
+    s->aBuckets.pData[idx].bDeleted = false;
     s->bucketCount++;
 
     return {
-        .pData = &s->aBuckets[idx].data,
+        .pData = &s->aBuckets.pData[idx].data,
         .hash = hash,
         /*.idx = idx,*/
         .bInserted = true
@@ -167,11 +165,11 @@ MapSearch(MapBase<T>* s, const T& value)
     ret.pData = nullptr;
     ret.bInserted = false;
 
-    while (s->aBuckets[idx].bOccupied || s->aBuckets[idx].bDeleted)
+    while (s->aBuckets.pData[idx].bOccupied || s->aBuckets.pData[idx].bDeleted)
     {
-        if (s->aBuckets[idx].data == value)
+        if (s->aBuckets.pData[idx].data == value)
         {
-            ret.pData = &s->aBuckets[idx].data;
+            ret.pData = &s->aBuckets.pData[idx].data;
             break;
         }
 
@@ -187,8 +185,8 @@ template<typename T>
 inline void
 MapRemove(MapBase<T>*s, u32 i)
 {
-    s->aBuckets[i].bDeleted = true;
-    s->aBuckets[i].bOccupied = false;
+    s->aBuckets.pData[i].bDeleted = true;
+    s->aBuckets.pData[i].bOccupied = false;
 
     s->bucketCount--;
 }
@@ -203,13 +201,13 @@ MapRemove(MapBase<T>*s, const T& x)
 
 template<typename T>
 inline void
-__MapRehash(MapBase<T>* s, Allocator* p, u32 size)
+_MapRehash(MapBase<T>* s, Allocator* p, u32 size)
 {
     auto mNew = MapBase<T>(p, size);
 
     for (u32 i = 0; i < VecCap(&s->aBuckets); i++)
-        if (s->aBuckets[i].bOccupied)
-            MapInsert(&mNew, p, s->aBuckets[i].data);
+        if (s->aBuckets.pData[i].bOccupied)
+            MapInsert(&mNew, p, s->aBuckets.pData[i].data);
 
     MapDestroy(s, p);
     *s = mNew;
@@ -229,6 +227,14 @@ inline void
 MapDestroy(MapBase<T>* s, Allocator* p)
 {
     VecDestroy(&s->aBuckets, p);
+}
+
+template<typename T>
+MapBase<T>::MapBase(Allocator* pAllocator, u32 prealloc)
+    : aBuckets(pAllocator, prealloc * MAP_DEFAULT_LOAD_FACTOR_INV),
+      maxLoadFactor(MAP_DEFAULT_LOAD_FACTOR)
+{
+    VecSetSize(&aBuckets, pAllocator, prealloc);
 }
 
 template<typename T>
@@ -312,7 +318,7 @@ template<typename T>
 inline void
 __MapRehash(Map<T>* s, u32 size)
 {
-    __MapRehash(&s->base, s->pA, size);
+    _MapRehash(&s->base, s->pA, size);
 }
 
 template<typename T>
@@ -328,6 +334,5 @@ MapDestroy(Map<T>* s)
 {
     MapDestroy(&s->base, s->pA);
 }
-
 
 } /* namespace adt */

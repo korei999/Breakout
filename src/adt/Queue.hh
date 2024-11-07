@@ -37,8 +37,8 @@ struct QueueBase
         : pData {(T*)alloc(p, prealloc, sizeof(T))},
           cap (prealloc) {}
 
-    T& operator[](int i) { return pData[i]; }
-    const T& operator[](int i) const { return pData[i]; }
+    T& operator[](int i)             { assert(i < cap && "[Queue]: out of size"); return pData[i]; }
+    const T& operator[](int i) const { assert(i < cap && "[Queue]: out of size"); return pData[i]; }
 
     struct It
     {
@@ -90,7 +90,7 @@ template<typename T>
 inline void
 QueueDestroy(QueueBase<T>*s, Allocator* p)
 {
-    free(p, s->base.pData);
+    free(p, s->pData);
 }
 
 template<typename T>
@@ -183,7 +183,7 @@ template<typename T>
 inline void
 QueueDestroy(Queue<T>*s)
 {
-    free(s->pAlloc, s->base.pData);
+    QueueDestroy(&s->base, s->pAlloc);
 }
 
 template<typename T>
