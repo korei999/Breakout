@@ -38,10 +38,10 @@ struct VecBase
         T& operator*() { return *s; }
         T* operator->() { return s; }
 
-        It operator++() { s++; return *this; }
+        It operator++() { ++s; return *this; }
         It operator++(int) { T* tmp = s++; return tmp; }
 
-        It operator--() { s--; return *this; }
+        It operator--() { --s; return *this; }
         It operator--(int) { T* tmp = s--; return tmp; }
 
         friend constexpr bool operator==(const It& l, const It& r) { return l.s == r.s; }
@@ -58,6 +58,13 @@ struct VecBase
     const It rbegin() const { return {&this->pData[this->size - 1]}; }
     const It rend() const { return {this->pData - 1}; }
 };
+
+template<typename T>
+inline bool
+VecEmpty(VecBase<T>* s)
+{
+    return s->size > 0;
+}
 
 template<typename T>
 inline void
@@ -237,6 +244,13 @@ struct Vec
 };
 
 template<typename T>
+inline bool
+VecEmpty(Vec<T>* s)
+{
+    return VecEmpty(&s->base);
+}
+
+template<typename T>
 inline void
 VecGrow(Vec<T>* s, u32 size)
 {
@@ -368,6 +382,25 @@ VecData(Vec<T>* s)
 {
     return VecData(&s->base);
 }
+
+namespace utils
+{
+
+template<typename T>
+inline bool
+empty(VecBase<T>* s)
+{
+    return s->size == 0;
+}
+
+template<typename T>
+inline bool
+empty(Vec<T>* s)
+{
+    return empty(&s->base);
+}
+
+} /* namespace utils */
 
 namespace print
 {

@@ -12,16 +12,10 @@ namespace adt
 
 template<typename T> struct QueueBase;
 
-template<typename T> inline bool QueueEmpty(QueueBase<T>* s);
 template<typename T> inline T* QueuePushBack(QueueBase<T>* s, Allocator* p, const T& val);
 template<typename T> inline void QueueResize(QueueBase<T>* s, Allocator* p, u32 size);
 template<typename T> inline T* QueuePopFront(QueueBase<T>* s);
 template<typename T> inline T* QueuePopBack(QueueBase<T>* s);
-
-template<typename T> inline int QueueNextI(QueueBase<T>*s, int i) { return (i + 1) >= s->cap ? 0 : (i + 1); }
-template<typename T> inline int QueuePrevI(QueueBase<T>* s, int i) { return (i - 1) < 0 ? s->cap - 1 : (i - 1); }
-template<typename T> inline int QueueFirstI(QueueBase<T>* s) { return QueueEmpty(s) ? -1 : s->first; }
-template<typename T> inline int QueueLastI(QueueBase<T>* s) { return QueueEmpty(s) ? 0 : s->last - 1; }
 
 template<typename T>
 struct QueueBase
@@ -91,13 +85,6 @@ inline void
 QueueDestroy(QueueBase<T>*s, Allocator* p)
 {
     free(p, s->pData);
-}
-
-template<typename T>
-inline bool
-QueueEmpty(QueueBase<T>* s)
-{
-    return s->size == 0;
 }
 
 template<typename T>
@@ -187,13 +174,6 @@ QueueDestroy(Queue<T>*s)
 }
 
 template<typename T>
-inline bool
-QueueEmpty(Queue<T>* s)
-{
-    return QueueEmpty(&s->base);
-}
-
-template<typename T>
 inline T*
 QueuePushBack(Queue<T>* s, const T& val)
 {
@@ -220,6 +200,30 @@ QueuePopBack(Queue<T>* s)
 {
     return QueuePopBack(&s->base);
 }
+
+namespace utils
+{
+
+template<typename T>
+inline bool
+empty(QueueBase<T>* s)
+{
+    return s->size == 0;
+}
+
+template<typename T>
+inline bool
+empty(Queue<T>* s)
+{
+    return empty(&s->base);
+}
+
+} /* namespace utils */
+
+template<typename T> inline int QueueNextI(QueueBase<T>*s, int i) { return (i + 1) >= s->cap ? 0 : (i + 1); }
+template<typename T> inline int QueuePrevI(QueueBase<T>* s, int i) { return (i - 1) < 0 ? s->cap - 1 : (i - 1); }
+template<typename T> inline int QueueFirstI(QueueBase<T>* s) { return utils::empty(s) ? -1 : s->first; }
+template<typename T> inline int QueueLastI(QueueBase<T>* s) { return utils::empty(s) ? 0 : s->last - 1; }
 
 template<typename T> inline int QueueNextI(Queue<T>*s, int i) { return QueueNextI(&s->base, i); }
 template<typename T> inline int QueuePrevI(Queue<T>* s, int i) { return QueuePrevI(&s->base, i); }

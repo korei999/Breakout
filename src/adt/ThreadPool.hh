@@ -61,8 +61,8 @@ getNCores()
 
 enum class WAIT_FLAG : u64 { DONT_WAIT, WAIT };
 
-/* wait for individual task completion without joining or waiting for the whole ThreadPool */
-struct Future
+/* wait for individual task completion without ThreadPoolWait */
+struct ThreadPoolLock
 {
     atomic_bool bDone = false;
     mtx_t mtx {};
@@ -70,7 +70,7 @@ struct Future
 };
 
 inline void
-FutureInit(Future* s)
+ThreadPoolLockInit(ThreadPoolLock* s)
 {
     s->bDone = false;
     mtx_init(&s->mtx, mtx_plain);
@@ -78,7 +78,7 @@ FutureInit(Future* s)
 }
 
 inline void
-FutureWait(Future* s)
+ThreadPoolLockWait(ThreadPoolLock* s)
 {
     if (!s->bDone)
     {
@@ -88,7 +88,7 @@ FutureWait(Future* s)
 }
 
 inline void
-FutureDestroy(Future* s)
+ThreadPoolLockDestroy(ThreadPoolLock* s)
 {
     mtx_destroy(&s->mtx);
     cnd_destroy(&s->cnd);
@@ -99,7 +99,7 @@ struct ThreadTask
     thrd_start_t pfn {};
     void* pArgs {};
     WAIT_FLAG eWait {};
-    Future* pFuture {};
+    ThreadPoolLock* pFuture {};
 };
 
 struct ThreadPool
@@ -120,7 +120,7 @@ inline void ThreadPoolStart(ThreadPool* s);
 inline bool ThreadPoolBusy(ThreadPool* s);
 inline void ThreadPoolSubmit(ThreadPool* s, ThreadTask task);
 inline void ThreadPoolSubmit(ThreadPool* s, thrd_start_t pfnTask, void* pArgs);
-inline void ThreadPoolFuture(ThreadPool* s, thrd_start_t pfnTask, void* pArgs, Future* pFuture);
+inline void ThreadPoolSubmitLocked(ThreadPool* s, thrd_start_t pfnTask, void* pArgs, ThreadPoolLock* pTpLock); /* signal ThreadPoolLock after completion */
 inline void ThreadPoolWait(ThreadPool* s); /* wait for active tasks to finish, without joining */
 
 inline
@@ -145,7 +145,7 @@ _ThreadPoolLoop(void* p)
         {
             guard::Mtx lock(&s->mtxQ);
 
-            while (QueueEmpty(&s->qTasks) && !s->bDone)
+            while (utils::empty(&s->qTasks) && !s->bDone)
                 cnd_wait(&s->cndQ, &s->mtxQ);
 
             if (s->bDone) return thrd_success;
@@ -190,7 +190,7 @@ ThreadPoolBusy(ThreadPool* s)
     bool ret;
     {
         guard::Mtx lock(&s->mtxQ);
-        ret = !QueueEmpty(&s->qTasks) || s->nActiveTasks > 0;
+        ret = !utils::empty(&s->qTasks) || s->nActiveTasks > 0;
     }
 
     return ret;
@@ -214,9 +214,9 @@ ThreadPoolSubmit(ThreadPool* s, thrd_start_t pfnTask, void* pArgs)
 }
 
 inline void
-ThreadPoolFuture(ThreadPool* s, thrd_start_t pfnTask, void* pArgs, Future* pFuture)
+ThreadPoolSubmitLocked(ThreadPool* s, thrd_start_t pfnTask, void* pArgs, ThreadPoolLock* pTpLock)
 {
-    ThreadPoolSubmit(s, {pfnTask, pArgs, WAIT_FLAG::WAIT, pFuture});
+    ThreadPoolSubmit(s, {pfnTask, pArgs, WAIT_FLAG::WAIT, pTpLock});
 }
 
 inline void

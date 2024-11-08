@@ -6,8 +6,8 @@
 namespace adt
 {
 
-constexpr f32 MAP_DEFAULT_LOAD_FACTOR = 0.5;
-constexpr f32 MAP_DEFAULT_LOAD_FACTOR_INV = 1.0 / MAP_DEFAULT_LOAD_FACTOR;
+constexpr f32 MAP_DEFAULT_LOAD_FACTOR = 0.5f;
+constexpr f32 MAP_DEFAULT_LOAD_FACTOR_INV = 1.0f / MAP_DEFAULT_LOAD_FACTOR;
 
 template<typename T> struct MapBase;
 
@@ -27,7 +27,6 @@ struct MapResult
 {
     T* pData;
     u64 hash;
-    /*u32 idx;*/ /* can be calculated from pData */
     bool bInserted;
 
     constexpr explicit operator bool() const
@@ -82,6 +81,13 @@ inline u32
 MapIdx(MapBase<T>* s, T* p)
 {
     return p - VecData(&s->aBuckets);
+}
+
+template<typename T>
+inline u32
+MapIdx(MapBase<T>* s, MapResult<T>* pRes)
+{
+    return pRes->pData - VecData(&s->aBuckets);
 }
 
 template<typename T>
@@ -262,6 +268,13 @@ inline u32
 MapIdx(Map<T>* s, T* p)
 {
     return MapIdx(&s->base, p);
+}
+
+template<typename T>
+inline u32
+MapIdx(Map<T>* s, MapResult<T>* pRes)
+{
+    return MapIdx(s->base, pRes);
 }
 
 template<typename T>
