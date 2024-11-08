@@ -1,5 +1,5 @@
 #ifdef _WIN32
-    /* has to be included on top because of amazing win32 macros... */
+    /* win32: must be ontop */
     #include "platform/win32/Mixer.hh"
     #include "platform/win32/Win32Window.hh"
 #endif
@@ -55,6 +55,10 @@ WinMain(
     [[maybe_unused]] LPSTR cmdline,
     [[maybe_unused]] int cmdshow)
 {
+    auto tpool = ThreadPool(&s_arena.base, utils::max(getNCores() - 2, 2));
+    ThreadPoolStart(&tpool);
+    app::g_pThreadPool = &tpool;
+
     platform::win32::Mixer mixer(&s_arena.base);
     platform::win32::Win32Window app("Breakout", instance);
 
@@ -75,10 +79,6 @@ int
 main(int argc, char** argv)
 {
     app::g_argc = argc, app::g_argv = argv;
-
-    auto tpool = ThreadPool(&s_arena.base, utils::max(getNCores() - 2, 2));
-    ThreadPoolStart(&tpool);
-    app::g_pThreadPool = &tpool;
 
     return WinMain(GetModuleHandle(NULL), NULL, GetCommandLineA(), SW_SHOWNORMAL);
 }

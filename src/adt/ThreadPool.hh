@@ -4,8 +4,8 @@
 #include "Vec.hh"
 #include "guard.hh"
 
-#include <cstdio>
 #include <stdatomic.h>
+#include <cstdio>
 
 namespace adt
 {
@@ -151,15 +151,15 @@ _ThreadPoolLoop(void* p)
             if (s->bDone) return thrd_success;
 
             task = *QueuePopFront(&s->qTasks);
-            s->nActiveTasks++; /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */
+            atomic_fetch_add(&s->nActiveTasks, 1); /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */
         }
 
         task.pfn(task.pArgs);
-        s->nActiveTasks--;
+        atomic_fetch_sub(&s->nActiveTasks, 1);
         if (task.eWait == WAIT_FLAG::WAIT)
         {
             cnd_signal(&task.pFuture->cnd);
-            task.pFuture->bDone = true;
+            atomic_store(&task.pFuture->bDone, true);
         }
 
         if (!ThreadPoolBusy(s))
@@ -172,7 +172,7 @@ _ThreadPoolLoop(void* p)
 inline void
 ThreadPoolStart(ThreadPool* s)
 {
-    s->bDone = false;
+    atomic_store(&s->bDone, false);
 
     fprintf(stderr, "[ThreadPool]: staring %d threads\n", VecSize(&s->aThreads));
     for (auto& thread : s->aThreads)
@@ -190,10 +190,10 @@ ThreadPoolBusy(ThreadPool* s)
     bool ret;
     {
         guard::Mtx lock(&s->mtxQ);
-        ret = !QueueEmpty(&s->qTasks);
+        ret = !QueueEmpty(&s->qTasks) || s->nActiveTasks > 0;
     }
 
-    return ret || s->nActiveTasks > 0;
+    return ret;
 }
 
 inline void
@@ -240,7 +240,7 @@ _ThreadPoolStop(ThreadPool* s)
         return;
     }
 
-    s->bDone = true;
+    atomic_store(&s->bDone, true);
     cnd_broadcast(&s->cndQ);
     for (auto& thread : s->aThreads)
         thrd_join(thread, nullptr);

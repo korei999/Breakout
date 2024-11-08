@@ -56,8 +56,8 @@ struct MapBase
 
         It(MapBase* _s, u32 _i) : s {_s}, i {_i} {}
 
-        T& operator*() { return s->aBuckets.pData[i].data; }
-        T* operator->() { return &s->aBuckets.pData[i].data; }
+        T& operator*() { return s->aBuckets[i].data; }
+        T* operator->() { return &s->aBuckets[i].data; }
 
         It operator++()
         {
@@ -89,7 +89,7 @@ inline u32
 MapFirstI(MapBase<T>* s)
 {
     u32 i = 0;
-    while (i < VecCap(&s->aBuckets) && !s->aBuckets.pData[i].bOccupied)
+    while (i < VecCap(&s->aBuckets) && !s->aBuckets[i].bOccupied)
         i++;
 
     if (i >= VecCap(&s->aBuckets)) i = NPOS;
@@ -102,7 +102,7 @@ inline u32
 MapNextI(MapBase<T>* s, u32 i)
 {
     ++i;
-    while (i < VecCap(&s->aBuckets) && !s->aBuckets.pData[i].bOccupied)
+    while (i < VecCap(&s->aBuckets) && !s->aBuckets[i].bOccupied)
         i++;
 
     if (i >= VecCap(&s->aBuckets)) i = NPOS;
@@ -129,22 +129,21 @@ MapInsert(MapBase<T>* s, Allocator* p, const T& value)
     u64 hash = hash::func(value);
     u32 idx = u32(hash % VecCap(&s->aBuckets));
 
-    while (s->aBuckets.pData[idx].bOccupied)
+    while (s->aBuckets[idx].bOccupied)
     {
         idx++;
         if (idx >= VecCap(&s->aBuckets))
             idx = 0;
     }
 
-    s->aBuckets.pData[idx].data = value;
-    s->aBuckets.pData[idx].bOccupied = true;
-    s->aBuckets.pData[idx].bDeleted = false;
+    s->aBuckets[idx].data = value;
+    s->aBuckets[idx].bOccupied = true;
+    s->aBuckets[idx].bDeleted = false;
     s->bucketCount++;
 
     return {
-        .pData = &s->aBuckets.pData[idx].data,
+        .pData = &s->aBuckets[idx].data,
         .hash = hash,
-        /*.idx = idx,*/
         .bInserted = true
     };
 }
@@ -165,11 +164,11 @@ MapSearch(MapBase<T>* s, const T& value)
     ret.pData = nullptr;
     ret.bInserted = false;
 
-    while (s->aBuckets.pData[idx].bOccupied || s->aBuckets.pData[idx].bDeleted)
+    while (s->aBuckets[idx].bOccupied || s->aBuckets[idx].bDeleted)
     {
-        if (s->aBuckets.pData[idx].data == value)
+        if (s->aBuckets[idx].data == value)
         {
-            ret.pData = &s->aBuckets.pData[idx].data;
+            ret.pData = &s->aBuckets[idx].data;
             break;
         }
 
@@ -185,8 +184,8 @@ template<typename T>
 inline void
 MapRemove(MapBase<T>*s, u32 i)
 {
-    s->aBuckets.pData[i].bDeleted = true;
-    s->aBuckets.pData[i].bOccupied = false;
+    s->aBuckets[i].bDeleted = true;
+    s->aBuckets[i].bOccupied = false;
 
     s->bucketCount--;
 }
@@ -206,8 +205,8 @@ _MapRehash(MapBase<T>* s, Allocator* p, u32 size)
     auto mNew = MapBase<T>(p, size);
 
     for (u32 i = 0; i < VecCap(&s->aBuckets); i++)
-        if (s->aBuckets.pData[i].bOccupied)
-            MapInsert(&mNew, p, s->aBuckets.pData[i].data);
+        if (s->aBuckets[i].bOccupied)
+            MapInsert(&mNew, p, s->aBuckets[i].data);
 
     MapDestroy(s, p);
     *s = mNew;
@@ -234,7 +233,7 @@ MapBase<T>::MapBase(Allocator* pAllocator, u32 prealloc)
     : aBuckets(pAllocator, prealloc * MAP_DEFAULT_LOAD_FACTOR_INV),
       maxLoadFactor(MAP_DEFAULT_LOAD_FACTOR)
 {
-    VecSetSize(&aBuckets, pAllocator, prealloc);
+    VecSetSize(&aBuckets, pAllocator, prealloc * MAP_DEFAULT_LOAD_FACTOR_INV);
 }
 
 template<typename T>
@@ -316,7 +315,7 @@ MapRemove(Map<T>*s, const T& x)
 
 template<typename T>
 inline void
-__MapRehash(Map<T>* s, u32 size)
+_MapRehash(Map<T>* s, u32 size)
 {
     _MapRehash(&s->base, s->pA, size);
 }
