@@ -64,15 +64,15 @@ enum class WAIT_FLAG : u64 { DONT_WAIT, WAIT };
 /* wait for individual task completion without ThreadPoolWait */
 struct ThreadPoolLock
 {
-    atomic_bool bDone = false;
-    mtx_t mtx {};
-    cnd_t cnd {};
+    atomic_bool bSignaled;
+    mtx_t mtx;
+    cnd_t cnd;
 };
 
 inline void
 ThreadPoolLockInit(ThreadPoolLock* s)
 {
-    s->bDone = false;
+    atomic_store_explicit(&s->bSignaled, false, memory_order_relaxed);
     mtx_init(&s->mtx, mtx_plain);
     cnd_init(&s->cnd);
 }
@@ -80,11 +80,10 @@ ThreadPoolLockInit(ThreadPoolLock* s)
 inline void
 ThreadPoolLockWait(ThreadPoolLock* s)
 {
-    if (!s->bDone)
-    {
-        guard::Mtx lock(&s->mtx);
-        cnd_wait(&s->cnd, &s->mtx);
-    }
+    guard::Mtx lock(&s->mtx);
+    cnd_wait(&s->cnd, &s->mtx);
+    /* notify thread pool's spinlock that we have woken up */
+    atomic_store_explicit(&s->bSignaled, true, memory_order_relaxed);
 }
 
 inline void
@@ -99,7 +98,7 @@ struct ThreadTask
     thrd_start_t pfn {};
     void* pArgs {};
     WAIT_FLAG eWait {};
-    ThreadPoolLock* pFuture {};
+    ThreadPoolLock* pLock {};
 };
 
 struct ThreadPool
@@ -120,8 +119,11 @@ inline void ThreadPoolStart(ThreadPool* s);
 inline bool ThreadPoolBusy(ThreadPool* s);
 inline void ThreadPoolSubmit(ThreadPool* s, ThreadTask task);
 inline void ThreadPoolSubmit(ThreadPool* s, thrd_start_t pfnTask, void* pArgs);
-inline void ThreadPoolSubmitLocked(ThreadPool* s, thrd_start_t pfnTask, void* pArgs, ThreadPoolLock* pTpLock); /* signal ThreadPoolLock after completion */
-inline void ThreadPoolWait(ThreadPool* s); /* wait for active tasks to finish, without joining */
+/* Signal ThreadPoolLock after completion.
+ * If ThreadPoolLockWait was never called for this pTpLock, the task will spinlock forever,
+ * unless pTpLock->bSignaled is manually set to true; */
+inline void ThreadPoolSubmitSignal(ThreadPool* s, thrd_start_t pfnTask, void* pArgs, ThreadPoolLock* pTpLock);
+inline void ThreadPoolWait(ThreadPool* s); /* wait for all active tasks to finish, without joining */
 
 inline
 ThreadPool::ThreadPool(Allocator* _pAlloc, u32 _nThreads)
@@ -151,15 +153,18 @@ _ThreadPoolLoop(void* p)
             if (s->bDone) return thrd_success;
 
             task = *QueuePopFront(&s->qTasks);
-            atomic_fetch_add(&s->nActiveTasks, 1); /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */
+            /* increment before unlocking mtxQ to avoid 0 tasks and 0 q possibility */
+            atomic_fetch_add_explicit(&s->nActiveTasks, 1, memory_order_relaxed);
         }
 
         task.pfn(task.pArgs);
-        atomic_fetch_sub(&s->nActiveTasks, 1);
+        atomic_fetch_sub_explicit(&s->nActiveTasks, 1, memory_order_relaxed);
+
         if (task.eWait == WAIT_FLAG::WAIT)
         {
-            cnd_signal(&task.pFuture->cnd);
-            atomic_store(&task.pFuture->bDone, true);
+            /* keep signaling until it's truly awakaned */
+            while (atomic_load_explicit(&task.pLock->bSignaled, memory_order_relaxed) == false)
+                cnd_signal(&task.pLock->cnd);
         }
 
         if (!ThreadPoolBusy(s))
@@ -172,9 +177,12 @@ _ThreadPoolLoop(void* p)
 inline void
 ThreadPoolStart(ThreadPool* s)
 {
-    atomic_store(&s->bDone, false);
+    atomic_store_explicit(&s->bDone, false, memory_order_relaxed);
 
+#ifndef NDEBUG
     fprintf(stderr, "[ThreadPool]: staring %d threads\n", VecSize(&s->aThreads));
+#endif
+
     for (auto& thread : s->aThreads)
     {
         [[maybe_unused]] int t = thrd_create(&thread, _ThreadPoolLoop, s);
@@ -214,7 +222,7 @@ ThreadPoolSubmit(ThreadPool* s, thrd_start_t pfnTask, void* pArgs)
 }
 
 inline void
-ThreadPoolSubmitLocked(ThreadPool* s, thrd_start_t pfnTask, void* pArgs, ThreadPoolLock* pTpLock)
+ThreadPoolSubmitSignal(ThreadPool* s, thrd_start_t pfnTask, void* pArgs, ThreadPoolLock* pTpLock)
 {
     ThreadPoolSubmit(s, {pfnTask, pArgs, WAIT_FLAG::WAIT, pTpLock});
 }

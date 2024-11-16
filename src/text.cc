@@ -6,7 +6,6 @@
 #include "adt/defer.hh"
 #include "app.hh"
 #include "frame.hh"
-#include "adt/sort.hh"
 
 using namespace adt;
 
@@ -403,16 +402,16 @@ drawLine(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1,
 }
 
 static void
-floodFillBFS(u8* pBitmap, const u32 width, const u32 height, Pair<u16, u16> pos)
+floodFillDFS(u8* pBitmap, const u32 width, const u32 height, Pair<u16, u16> pos)
 {
     if (pos.x >= height || pos.y >= width) return;
 
     AT(pBitmap, pos.x, pos.y) = 0xff;
 
-    if ((pos.x + 1) < height && AT(pBitmap, pos.x + 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {u16(pos.x + 1), u16(pos.y + 0)});
-    if ((pos.y + 1) < width  && AT(pBitmap, pos.x + 0, pos.y + 1) != 0xff) floodFillBFS(pBitmap, width, height, {u16(pos.x + 0), u16(pos.y + 1)});
-    if ((pos.x - 1) < height && AT(pBitmap, pos.x - 1, pos.y + 0) != 0xff) floodFillBFS(pBitmap, width, height, {u16(pos.x - 1), u16(pos.y + 0)});
-    if ((pos.y - 1) < width  && AT(pBitmap, pos.x - 0, pos.y - 1) != 0xff) floodFillBFS(pBitmap, width, height, {u16(pos.x - 0), u16(pos.y - 1)});
+    if ((pos.x + 1) < height && AT(pBitmap, pos.x + 1, pos.y + 0) != 0xff) floodFillDFS(pBitmap, width, height, {u16(pos.x + 1), u16(pos.y + 0)});
+    if ((pos.y + 1) < width  && AT(pBitmap, pos.x + 0, pos.y + 1) != 0xff) floodFillDFS(pBitmap, width, height, {u16(pos.x + 0), u16(pos.y + 1)});
+    if ((pos.x - 1) < height && AT(pBitmap, pos.x - 1, pos.y + 0) != 0xff) floodFillDFS(pBitmap, width, height, {u16(pos.x - 1), u16(pos.y + 0)});
+    if ((pos.y - 1) < width  && AT(pBitmap, pos.x - 0, pos.y - 1) != 0xff) floodFillDFS(pBitmap, width, height, {u16(pos.x - 0), u16(pos.y - 1)});
 }
 
 static Pair<u16, u16>
@@ -494,7 +493,7 @@ polygonCentroid(
 static void
 floodFillThing(u8* pBitmap, const u32 width, const u32 height)
 {
-    floodFillBFS(pBitmap, width, height, pickPosition(pBitmap, width, height));
+    floodFillDFS(pBitmap, width, height, pickPosition(pBitmap, width, height));
 }
 
 static int
@@ -621,13 +620,14 @@ TTFRasterizeGlyphTEST(TTF* s, Allocator* pAlloc, parser::ttf::Glyph* pGlyph, u8*
 
             f32 intersection = -1.0f;
 
+
             if (math::eq(dx, 0.0f)) intersection = x1;
             else intersection = (scanline - y1)*(dx/dy) + x1;
 
             ArrPush(&aIntersections, intersection);
         }
 
-        sort::quick(&aIntersections);
+        sort::insertion(&aIntersections);
 
         if (aIntersections.size > 1)
         {
@@ -732,11 +732,12 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
     for (int character = '!'; character <= '~'; ++character)
     {
         u8* pTmp = (u8*)::alloc(&arena.base, 1, math::sq(iScale));
+        memset(pTmp, 0, math::sq(iScale));
+
         auto g = FontReadGlyph(pFont, character);
         TTFRasterizeGlyphTEST(s, &arena.base, &g, pTmp, iScale, iScale);
         memcpy(s->pBitmap + character*math::sq(iScale), pTmp, math::sq(iScale));
 
-        memset(pTmp, 0, math::sq(iScale));
         ArenaReset(&arena);
     }
 

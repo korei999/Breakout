@@ -460,7 +460,7 @@ drawFPSCounterTTF(Allocator* pAlloc)
     if (currTime >= frame::g_prevTime + 1000.0)
     {
         String s = StringAlloc(pAlloc, s_ttfTest.maxSize);
-        utils::fill(s.pData, '\0', s.size);
+        memset(s.pData, 0, s.size);
         print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
 
         frame::g_nfps = 0;
@@ -488,8 +488,8 @@ drawFPSCounter(Allocator* pAlloc)
     if (currTime >= frame::g_prevTime + 1000.0)
     {
         String s = StringAlloc(pAlloc, s_textFPS.maxSize);
-        utils::fill(s.pData, '\0', s.size);
-        snprintf(s.pData, s.size, "FPS: %u\nFrame time: %.3f ms", frame::g_nfps, frame::g_frameTime);
+        memset(s.pData, 0, s.size);
+        print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
 
         frame::g_nfps = 0;
         frame::g_prevTime = currTime;

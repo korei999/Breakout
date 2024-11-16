@@ -60,7 +60,7 @@ if (CMAKE_BUILD_TYPE MATCHES "Release" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
 endif()
 
 if (LOGS)
-    add_definitions("-DLOGS")
+    add_definitions("-DADT_LOGS")
 endif()
 
 # debug logs defines
@@ -155,7 +155,7 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmissing-field-initializers -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable -Wno-cast-function-type-mismatch")
     endif()
 
-    add_definitions("-DLOGS")
+    add_definitions("-DADT_LOGS")
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

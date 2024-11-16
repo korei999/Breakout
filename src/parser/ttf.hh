@@ -27,7 +27,7 @@ using longDateTime = s64; /* Date and time represented in number of seconds
                            * The value is represented as a signed 64-bit integer. */
 using Offset8 = u8; /* 8-bit offset to a table, same as uint8, NULL offset = 0x00 */
 using Offset16 = u16; /* Short offset to a table, same as uint16, NULL offset = 0x0000 */
-using Offset24 = u24; /* 24-bit offset to a table, same as uint24, NULL offset = 0x000000 */
+// using Offset24 = u24; /* 24-bit offset to a table, same as uint24, NULL offset = 0x000000 */
 using Offset32 = u32; /* Long offset to a table, same as uint32, NULL offset = 0x00000000 */
 using Version16Dot16 = struct { u16 maj; u16 min; }; /*Packed 32-bit value with major and minor version numbers. */
 

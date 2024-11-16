@@ -79,12 +79,19 @@ even(const auto& a)
     return !odd(a);
 }
 
-/* negative is l < r, positive if l > r, 0 if l == r */
+/* negative if l < r, positive if l > r, 0 if l == r */
 template<typename T>
 [[nodiscard]] constexpr s64
 compare(const T& l, const T& r)
 {
     return l - r;
+}
+
+template<typename T>
+[[nodiscard]] constexpr s64
+compareRev(const T& l, const T& r)
+{
+    return r - l;
 }
 
 [[nodiscard]] inline long
@@ -178,7 +185,7 @@ clamp(const T& x, const T& _min, const T& _max)
 
 template<template<typename> typename CON_T, typename T>
 [[nodiscard]] constexpr bool
-empty(CON_T<T>* s)
+empty(const CON_T<T>* s)
 {
     return s->size == 0;
 }

@@ -2,6 +2,7 @@
 
 #include "adt/FixedAllocator.hh"
 #include "adt/defer.hh"
+#include "adt/logs.hh"
 #include "app.hh"
 #include "colors.hh"
 #include "controls.hh"
@@ -117,17 +118,27 @@ gameStateLoop([[maybe_unused]] void* pNull)
 {
     FixedAllocator alFrame(s_aMemGame, sizeof(s_aMemGame));
 
+    /* fixed update/tick rate */
+    f64 t = 0.0;
+    f64 dt = 1.0 / 120.0;
+    g_deltaTime = dt;
+
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
         updateDeltaTime();
+        /*long deltaTime = g_lastTime - utils::timeNowUS();*/
+        /*f64 sleepTime = utils::max(targetUpdateTime + f64(deltaTime / 1000000.0), 0.0);*/
+        /*utils::sleepMS(sleepTime);*/
+
+        /*LOG("targetUpdateTime: {:.3}, g_deltaTime: {:.3}, sleepTime: {:.3}\n", targetUpdateTime, g_deltaTime, sleepTime);*/
+
         controls::procKeys();
 
         controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
 
         game::updateState();
 
-        FixedAllocatorReset(&alFrame);
-
+        FixedReset(&alFrame);
         utils::sleepMS(game::SLEEP_TIME_MS);
     }
 
@@ -156,7 +167,7 @@ mainLoop()
 
         game::draw(&alloc.base);
 
-        FixedAllocatorReset(&alloc);
+        FixedReset(&alloc);
         WindowSwapBuffers(app::g_pWindow);
         g_nfps++;
     }

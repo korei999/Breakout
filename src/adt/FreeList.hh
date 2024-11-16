@@ -2,11 +2,7 @@
 
 #include "RBTree.hh"
 
-#ifndef NDEBUG
-    #include "Arena.hh"
-    #include "defer.hh"
-    #include "logs.hh"
-#endif
+#include "logs.hh"
 
 namespace adt
 {
@@ -51,9 +47,8 @@ struct FreeList
     FreeList(u64 _blockSize);
 };
 
-#ifndef NDEBUG
 inline void
-_FreeListPrintTree(FreeList* s)
+_FreeListPrintTree(FreeList* s, Allocator* pAlloc)
 {
     auto pfn = +[](const FreeList::Node* pNode, [[maybe_unused]] void* pArgs) -> void {
         CERR(
@@ -62,13 +57,8 @@ _FreeListPrintTree(FreeList* s)
         );
     };
 
-    Arena arena(SIZE_1K);
-    defer( freeAll(&arena) );
-    RBPrintNodes(&arena.base, &s->tree, s->tree.pRoot, pfn, {}, stderr, {}, false);
+    RBPrintNodes(pAlloc, &s->tree, s->tree.pRoot, pfn, {}, stderr, {}, false);
 }
-#else
-#define _FreeListPrintTree //
-#endif
 
 template<>
 constexpr s64
@@ -134,6 +124,7 @@ FreeListFreeAll(FreeList* s)
         ::free(it);
         it = next;
     }
+    s->pBlocks = nullptr;
 }
 
 inline FreeListData*
