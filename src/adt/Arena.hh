@@ -21,14 +21,13 @@ struct ArenaBlock
     u64 nBytesOccupied {};
     u8* pLastAlloc {};
     u64 lastAllocSize {};
-    u64 nBytesProtected {};
     u8 pMem[];
 };
 
 struct Arena
 {
     Allocator base {};
-    u64 defaultCapacity = 0;
+    u64 defaultCapacity {};
     ArenaBlock* pBlocks {};
 
     Arena() = default;
@@ -52,7 +51,7 @@ _ArenaFindBlockFromPtr(Arena* s, u8* ptr)
     auto* it = s->pBlocks;
     while (it)
     {
-        if (ptr >= it->pMem && ptr < (it->pMem + it->size))
+        if (ptr >= it->pMem && ptr < &it->pMem[it->size])
             return it;
 
         it = it->pNext;
@@ -109,11 +108,11 @@ ArenaAlloc(Arena* s, u64 mCount, u64 mSize)
 
     if (!pBlock) pBlock = _ArenaPrependBlock(s, utils::max(s->defaultCapacity, realSize*2));
 
-    pBlock->nBytesOccupied += realSize;
     auto* pRet = pBlock->pLastAlloc + pBlock->lastAllocSize;
 
-    pBlock->lastAllocSize = realSize;
     pBlock->pLastAlloc = pRet;
+    pBlock->nBytesOccupied += realSize;
+    pBlock->lastAllocSize = realSize;
 
     return pRet;
 }
@@ -137,15 +136,17 @@ ArenaRealloc(Arena* s, void* ptr, u64 mCount, u64 mSize)
         pBlock->nBytesOccupied -= pBlock->lastAllocSize;
         pBlock->nBytesOccupied += realSize;
         pBlock->lastAllocSize = realSize;
+
         return ptr;
     }
     else
     {
         auto* pRet = ArenaAlloc(s, mCount, mSize);
-        u64 nBytesUntilEndOfBlock = pBlock->size - u64((u8*)ptr - pBlock->pMem);
+        u64 nBytesUntilEndOfBlock = &pBlock->pMem[pBlock->size] - (u8*)ptr;
         u64 nBytesToCopy = utils::min(requested, nBytesUntilEndOfBlock); /* out of range memcpy */
         nBytesToCopy = utils::min(nBytesToCopy, u64((u8*)pRet - (u8*)ptr)); /* overlap memcpy */
         memcpy(pRet, ptr, nBytesToCopy);
+
         return pRet;
     }
 }
@@ -176,6 +177,7 @@ ArenaReset(Arena* s)
     while (it)
     {
         it->nBytesOccupied = 0;
+        it->lastAllocSize = 0;
         it->pLastAlloc = it->pMem;
 
         it = it->pNext;

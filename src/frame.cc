@@ -1,5 +1,6 @@
 #include "frame.hh"
 
+#include "adt/Arena.hh"
 #include "adt/FixedAllocator.hh"
 #include "adt/defer.hh"
 #include "adt/logs.hh"
@@ -8,6 +9,7 @@
 #include "controls.hh"
 #include "game.hh"
 #include "test.hh"
+#include "adt/FreeList.hh"
 
 using namespace adt;
 
@@ -36,8 +38,8 @@ Ubo g_uboProjView;
 
 static Pair<f32, f32> s_aspect(16.0f, 9.0f);
 
-static u8 s_aMemGame[SIZE_8K / 2] {};
-static u8 s_aMemDraw[SIZE_1M / 2] {};
+// static u8 s_aMemGame[SIZE_8K / 2] {};
+static u8 s_aMemDraw[SIZE_1K * 12] {};
 
 static void
 updateDeltaTime()
@@ -116,21 +118,16 @@ run()
 static int
 gameStateLoop([[maybe_unused]] void* pNull)
 {
-    FixedAllocator alFrame(s_aMemGame, sizeof(s_aMemGame));
+    /*FixedAllocator alFrame(s_aMemGame, sizeof(s_aMemGame));*/
 
     /* fixed update/tick rate */
     f64 t = 0.0;
     f64 dt = 1.0 / 120.0;
-    g_deltaTime = dt;
+    /*g_deltaTime = dt;*/
 
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
         updateDeltaTime();
-        /*long deltaTime = g_lastTime - utils::timeNowUS();*/
-        /*f64 sleepTime = utils::max(targetUpdateTime + f64(deltaTime / 1000000.0), 0.0);*/
-        /*utils::sleepMS(sleepTime);*/
-
-        /*LOG("targetUpdateTime: {:.3}, g_deltaTime: {:.3}, sleepTime: {:.3}\n", targetUpdateTime, g_deltaTime, sleepTime);*/
 
         controls::procKeys();
 
@@ -138,8 +135,8 @@ gameStateLoop([[maybe_unused]] void* pNull)
 
         game::updateState();
 
-        FixedReset(&alFrame);
-        utils::sleepMS(game::SLEEP_TIME_MS);
+        /*FixedReset(&alFrame);*/
+        utils::sleepMS(0.1);
     }
 
     return thrd_success;
@@ -148,7 +145,8 @@ gameStateLoop([[maybe_unused]] void* pNull)
 static void
 mainLoop()
 {
-    FixedAllocator alloc(s_aMemDraw, sizeof(s_aMemDraw));
+    /*FixedAllocator alloc(s_aMemDraw, sizeof(s_aMemDraw));*/
+    Arena arena(SIZE_1K * 20);
 
     thrd_t thrdUpdateGameState {};
     thrd_create(&thrdUpdateGameState, gameStateLoop, nullptr);
@@ -165,9 +163,10 @@ mainLoop()
 
         UboBufferData(&g_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
 
-        game::draw(&alloc.base);
+        game::draw(&arena.base);
 
-        FixedReset(&alloc);
+        ArenaReset(&arena);
+
         WindowSwapBuffers(app::g_pWindow);
         g_nfps++;
     }

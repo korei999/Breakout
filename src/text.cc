@@ -73,7 +73,6 @@ static VecBase<CharQuad>
 TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin)
 {
     VecBase<CharQuad> aQuads(pAlloc, size);
-    /*memset(VecData(&aQuads), 0, sizeof(CharQuad) * size);*/
 
     /* 16/16 bitmap aka extended ascii */
     auto getUV = [](int p) -> f32 {
@@ -667,6 +666,8 @@ TTFGenStringMesh(
 
     for (char c : str)
     {
+        if (c == '\0') break;
+
         auto g = FontReadGlyph(s->pFont, c);
 
         /* FIXME: uv ordering is messed up (but works correctly) */
@@ -731,7 +732,7 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
 
     for (int character = '!'; character <= '~'; ++character)
     {
-        u8* pTmp = (u8*)::alloc(&arena.base, 1, math::sq(iScale));
+        u8* pTmp = (u8*)alloc(&arena.base, 1, math::sq(iScale));
         memset(pTmp, 0, math::sq(iScale));
 
         auto g = FontReadGlyph(pFont, character);
@@ -786,7 +787,8 @@ TTFUpdateText(TTF* s, Allocator* pAlloc, const String str, const int x, const in
     auto aQuads = TTFGenStringMesh(s, pAlloc, str, x, y, z);
 
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(CharQuad3Pos2UV), VecData(&aQuads));
+    /*glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(CharQuad3Pos2UV), VecData(&aQuads));*/
+    glBufferSubData(GL_ARRAY_BUFFER, 0, VecSize(&aQuads) * sizeof(aQuads[0]), VecData(&aQuads));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 

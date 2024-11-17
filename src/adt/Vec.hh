@@ -22,9 +22,9 @@ struct VecBase
 
     VecBase() = default;
     VecBase(Allocator* p, u32 prealloc = 1)
-        : pData {(T*)alloc(p, prealloc, sizeof(T))},
-          size {0},
-          capacity {prealloc} {}
+        : pData((T*)alloc(p, prealloc, sizeof(T))),
+          size(0),
+          capacity(prealloc) {}
 
     T& operator[](u32 i)             { assert(i < size && "[Vec] out of size"); return pData[i]; }
     const T& operator[](u32 i) const { assert(i < size && "[Vec] out of size"); return pData[i]; }
@@ -66,6 +66,13 @@ VecGrow(VecBase<T>* s, Allocator* p, u32 size)
     assert(s->size * sizeof(T) > 0);
     s->capacity = size;
     s->pData = (T*)realloc(p, s->pData, size, sizeof(T));
+
+    /*auto nVec = VecBase<T>(p, size);*/
+    /*nVec.size = s->size;*/
+    /*memcpy(nVec.pData, s->pData, s->size * sizeof(T));*/
+    /**/
+    /*VecDestroy(s, p);*/
+    /**s = nVec;*/
 }
 
 template<typename T>

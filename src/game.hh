@@ -12,7 +12,6 @@ namespace game
 using namespace adt;
 
 constexpr u32 ASSET_MAX_COUNT = 256;
-constexpr f64 SLEEP_TIME_MS = 0.5;
 
 enum REFLECT_SIDE : s8
 {

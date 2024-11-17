@@ -459,14 +459,22 @@ drawFPSCounterTTF(Allocator* pAlloc)
     f64 currTime = utils::timeNowMS();
     if (currTime >= frame::g_prevTime + 1000.0)
     {
-        String s = StringAlloc(pAlloc, s_ttfTest.maxSize);
-        memset(s.pData, 0, s.size);
-        print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
+        char* pBuff = (char*)alloc(pAlloc, sizeof(char), s_ttfTest.maxSize);
+        memset(pBuff, 0, s_ttfTest.maxSize);
+        print::toBuffer(pBuff, s_ttfTest.maxSize - 1, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
+
+        //String str = StringAlloc(pAlloc, s_ttfTest.maxSize);
+        //memset(str.pData, 0, str.size);
+        //print::toString(&str, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
+
+        /*String str = StringAlloc(pAlloc, s_textFPS.maxSize);*/
+        /*utils::fill(str.pData, '\0', str.size);*/
+        /*snprintf(str.pData, str.size, "FPS: %u\nFrame time: %.3f ms", frame::g_nfps, frame::g_frameTime);*/
 
         frame::g_nfps = 0;
         frame::g_prevTime = currTime;
 
-        text::TTFUpdateText(&s_ttfTest, pAlloc, s, 0, 0, 1.0f);
+        text::TTFUpdateText(&s_ttfTest, pAlloc, pBuff, 0, 0, 1.0f);
     }
 
     text::TTFDrawAscii(&s_ttfTest);

@@ -105,9 +105,11 @@ MixerRunThread(Mixer* s, int argc, char** argv)
 {
     pw_init(&argc, &argv);
 
-    u8 setupBuffer[1024] {};
+    u8 aBuff[1024] {};
     const spa_pod* params[1] {};
-    spa_pod_builder b = SPA_POD_BUILDER_INIT(setupBuffer, sizeof(setupBuffer));
+    spa_pod_builder b = {
+        aBuff, sizeof(aBuff), {}, {}, {}
+    };
 
     s->pLoop = pw_main_loop_new(nullptr);
 
