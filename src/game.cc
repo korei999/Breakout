@@ -463,14 +463,6 @@ drawFPSCounterTTF(Allocator* pAlloc)
         memset(pBuff, 0, s_ttfTest.maxSize);
         print::toBuffer(pBuff, s_ttfTest.maxSize - 1, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
 
-        //String str = StringAlloc(pAlloc, s_ttfTest.maxSize);
-        //memset(str.pData, 0, str.size);
-        //print::toString(&str, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
-
-        /*String str = StringAlloc(pAlloc, s_textFPS.maxSize);*/
-        /*utils::fill(str.pData, '\0', str.size);*/
-        /*snprintf(str.pData, str.size, "FPS: %u\nFrame time: %.3f ms", frame::g_nfps, frame::g_frameTime);*/
-
         frame::g_nfps = 0;
         frame::g_prevTime = currTime;
 
