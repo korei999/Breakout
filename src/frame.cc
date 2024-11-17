@@ -1,15 +1,12 @@
 #include "frame.hh"
 
 #include "adt/Arena.hh"
-#include "adt/FixedAllocator.hh"
 #include "adt/defer.hh"
-#include "adt/logs.hh"
 #include "app.hh"
 #include "colors.hh"
 #include "controls.hh"
 #include "game.hh"
 #include "test.hh"
-#include "adt/FreeList.hh"
 
 using namespace adt;
 
@@ -37,9 +34,6 @@ int g_nfps = 0;
 Ubo g_uboProjView;
 
 static Pair<f32, f32> s_aspect(16.0f, 9.0f);
-
-// static u8 s_aMemGame[SIZE_8K / 2] {};
-static u8 s_aMemDraw[SIZE_1K * 12] {};
 
 static void
 updateDeltaTime()
@@ -118,9 +112,6 @@ run()
 static int
 gameStateLoop([[maybe_unused]] void* pNull)
 {
-    /*FixedAllocator alFrame(s_aMemGame, sizeof(s_aMemGame));*/
-
-    /* fixed update/tick rate */
     f64 t = 0.0;
     f64 dt = 1.0 / 120.0;
     /*g_deltaTime = dt;*/
@@ -135,7 +126,6 @@ gameStateLoop([[maybe_unused]] void* pNull)
 
         game::updateState();
 
-        /*FixedReset(&alFrame);*/
         utils::sleepMS(0.1);
     }
 
@@ -147,6 +137,7 @@ mainLoop()
 {
     /*FixedAllocator alloc(s_aMemDraw, sizeof(s_aMemDraw));*/
     Arena arena(SIZE_1K * 20);
+    defer( freeAll(&arena) );
 
     thrd_t thrdUpdateGameState {};
     thrd_create(&thrdUpdateGameState, gameStateLoop, nullptr);
@@ -159,7 +150,7 @@ mainLoop()
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, app::g_pWindow->wWidth, app::g_pWindow->wHeight);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
         UboBufferData(&g_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
 
