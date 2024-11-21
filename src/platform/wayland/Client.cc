@@ -361,7 +361,7 @@ ClientInit(Client* s)
     };
 
     EGLint n = 0;
-    Vec<EGLConfig> configs(&arena.base, count);
+    Vec<EGLConfig> configs(&arena.super, count);
     VecSetSize(&configs, count);
     EGLD( eglChooseConfig(s->eglDisplay, configAttribs, VecData(&configs), count, &n) );
     if (n == 0)

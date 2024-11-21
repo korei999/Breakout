@@ -21,11 +21,11 @@ main(int argc, char** argv)
 {
     app::g_argc = argc, app::g_argv = argv;
 
-    auto tpool = ThreadPool(&s_arena.base, utils::max(getNCores() - 2, 2));
+    auto tpool = ThreadPool(&s_arena.super, utils::max(getNCores() - 2, 2));
     ThreadPoolStart(&tpool);
     app::g_pThreadPool = &tpool;
 
-    platform::pipewire::Mixer mixer(&s_arena.base);
+    platform::pipewire::Mixer mixer(&s_arena.super);
     platform::wayland::Client window("Breakout");
 
     WindowInit(&window);
@@ -59,7 +59,7 @@ WinMain(
     ThreadPoolStart(&tpool);
     app::g_pThreadPool = &tpool;
 
-    platform::win32::Mixer mixer(&s_arena.base);
+    platform::win32::Mixer mixer(&s_arena.super);
     platform::win32::Win32Window app("Breakout", instance);
 
     app::g_pMixer = &mixer.base;

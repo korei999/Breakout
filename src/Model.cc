@@ -28,7 +28,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     defer(MutexArenaFreeAll(&atmAl));
 
     /* load buffers first */
-    Vec<GLuint> aBufferMap(&atmAl.arena.base);
+    Vec<GLuint> aBufferMap(&atmAl.arena.super);
     for (u32 i = 0; i < VecSize(&a.aBuffers); i++)
     {
         mtx_lock(&gl::g_mtxGlContext);
@@ -46,12 +46,12 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         VecPush(&aBufferMap, b);
     }
 
-    ThreadPool tp(&atmAl.arena.base);
+    ThreadPool tp(&atmAl.arena.super);
     ThreadPoolStart(&tp);
     defer(ThreadPoolDestroy(&tp));
 
     /* preload texures */
-    Vec<texture::Img> aTex(&atmAl.arena.base, VecSize(&a.aImages));
+    Vec<texture::Img> aTex(&atmAl.arena.super, VecSize(&a.aImages));
     VecSetSize(&aTex, VecSize(&a.aImages));
 
     for (u32 i = 0; i < VecSize(&a.aImages); i++)
@@ -74,7 +74,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         auto* arg = (Args*)MutexArenaAlloc(&atmAl, 1, sizeof(Args));
         *arg = {
             .p = &aTex[i],
-            .pAlloc = &atmAl.arena.base,
+            .pAlloc = &atmAl.arena.super,
             .path = file::replacePathEnding(s->pAlloc, path, uri),
             .type = texture::TYPE::DIFFUSE,
             .flip = true,

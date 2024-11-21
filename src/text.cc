@@ -47,10 +47,10 @@ Bitmap::Bitmap(String s, u64 size, int x, int y, GLint drawMode)
 static void
 TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode)
 {
-    Arena allocScope(SIZE_1M);
-    defer( ArenaFreeAll(&allocScope) );
+    Arena arena(SIZE_1M);
+    defer( ArenaFreeAll(&arena) );
 
-    auto aQuads = TextUpdateBuffer(s, &allocScope.base, s->str, s->maxSize, xOrigin, yOrigin);
+    auto aQuads = TextUpdateBuffer(s, &arena.super, s->str, s->maxSize, xOrigin, yOrigin);
 
     glGenVertexArrays(1, &s->vao);
     glBindVertexArray(s->vao);
@@ -732,11 +732,11 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
 
     for (int character = '!'; character <= '~'; ++character)
     {
-        u8* pTmp = (u8*)alloc(&arena.base, 1, math::sq(iScale));
+        u8* pTmp = (u8*)alloc(&arena.super, 1, math::sq(iScale));
         memset(pTmp, 0, math::sq(iScale));
 
         auto g = FontReadGlyph(pFont, character);
-        TTFRasterizeGlyphTEST(s, &arena.base, &g, pTmp, iScale, iScale);
+        TTFRasterizeGlyphTEST(s, &arena.super, &g, pTmp, iScale, iScale);
         memcpy(s->pBitmap + character*math::sq(iScale), pTmp, math::sq(iScale));
 
         ArenaReset(&arena);
@@ -753,7 +753,7 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
         test[i] = c;
     }
 
-    auto aQuads = TTFGenStringMesh(s, &arena.base, test, 0, 0, 1.0f);
+    auto aQuads = TTFGenStringMesh(s, &arena.super, test, 0, 0, 1.0f);
 
     mtx_lock(&gl::g_mtxGlContext);
     WindowBindGlContext(app::g_pWindow);

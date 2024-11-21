@@ -18,7 +18,7 @@ static void
 addToMap()
 {
     call_once(&s_onceFlagAllShaders, +[]{
-        g_aAllShaders = {&inl_OsAllocator.base};
+        g_aAllShaders = {inl_pOsAlloc};
     });
 
     /* TODO: hash by something */
@@ -82,7 +82,7 @@ static void
 loadVertGeomFrag(Shader* s, String vertexPath, String geometryPath, String fragmentPath)
 {
     call_once(&s_onceFlagAllShaders, +[]{
-        g_aAllShaders = {&inl_OsAllocator.base};
+        g_aAllShaders = {inl_pOsAlloc};
     });
 
     GLint linked;
@@ -200,7 +200,7 @@ ShaderLoadOne(GLenum type, String path)
 
     Arena al(SIZE_8K);
 
-    Option<String> src = file::load(&al.base, path);
+    Option<String> src = file::load(&al.super, path);
     if (!src) LOG_FATAL("error opening shader file: '{}'\n", path);
 
     const char* srcData = src.data.pData;

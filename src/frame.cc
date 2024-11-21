@@ -154,7 +154,7 @@ mainLoop()
 
         UboBufferData(&g_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
 
-        game::draw(&arena.base);
+        game::draw(&arena);
 
         ArenaReset(&arena);
 

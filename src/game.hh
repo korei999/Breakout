@@ -1,6 +1,6 @@
 #pragma once
 
-#include "adt/Allocator.hh"
+#include "adt/Arena.hh"
 #include "adt/types.hh"
 #include "colors.hh"
 
@@ -102,7 +102,7 @@ struct Level
 void loadAssets();
 void loadLevel();
 void updateState();
-void draw(Allocator* pAlloc);
+void draw(Arena* pAlloc);
 void cleanup();
 
 constexpr math::V3

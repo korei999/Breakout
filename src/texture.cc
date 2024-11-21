@@ -45,8 +45,8 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
 {
     call_once(&s_onceFlagAllTextures, +[]{
         mtx_init(&s_mtxAllTextures, mtx_plain);
-        g_aAllTextures = {&inl_OsAllocator.base};
-        g_mAllTexturesIdxs = {&inl_OsAllocator.base};
+        g_aAllTextures = {&inl_OsAllocator.super};
+        g_mAllTexturesIdxs = {&inl_OsAllocator.super};
     });
 
     u32 vecIdx = NPOS;
@@ -74,7 +74,7 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
 
     Arena al(SIZE_1M * 5);
     defer( ArenaFreeAll(&al) );
-    Data img = loadBMP(&al.base, path, bFlip);
+    Data img = loadBMP(&al.super, path, bFlip);
 
     s->texPath = path;
     s->type = type;
@@ -283,7 +283,7 @@ skyBoxCreate(String sFaces[6])
 
     for (u32 i = 0; i < 6; i++)
     {
-        Data tex = loadBMP(&al.base, sFaces[i], true);
+        Data tex = loadBMP(&al.super, sFaces[i], true);
         glTexImage2D(
             GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
             0, tex.format, tex.width, tex.height,

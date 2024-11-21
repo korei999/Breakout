@@ -58,10 +58,10 @@ Ball g_ball {
     .dir {},
 };
 
-static void drawFPSCounter(Allocator* pAlloc);
-static void drawFPSCounterTTF(Allocator* pAlloc);
-static void drawEntities(Allocator* pAlloc);
-static void drawTTF(Allocator* pAlloc);
+static void drawFPSCounter(Arena* pAlloc);
+static void drawFPSCounterTTF(Arena* pAlloc);
+static void drawEntities(Arena* pAlloc);
+static void drawTTF(Arena* pAlloc);
 
 void
 loadAssets()
@@ -429,7 +429,7 @@ updateState()
 }
 
 void
-draw(Allocator *pAlloc)
+draw(Arena* pAlloc)
 {
     if (controls::g_bTTFDebugScreen)
     {
@@ -444,7 +444,7 @@ draw(Allocator *pAlloc)
 }
 
 static void
-drawFPSCounterTTF(Allocator* pAlloc)
+drawFPSCounterTTF(Arena* pAlloc)
 {
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
 
@@ -466,14 +466,14 @@ drawFPSCounterTTF(Allocator* pAlloc)
         frame::g_nfps = 0;
         frame::g_prevTime = currTime;
 
-        text::TTFUpdateText(&s_ttfTest, pAlloc, pBuff, 0, 0, 1.0f);
+        text::TTFUpdateText(&s_ttfTest, &pAlloc->super, pBuff, 0, 0, 1.0f);
     }
 
     text::TTFDrawAscii(&s_ttfTest);
 }
 
 static void
-drawFPSCounter(Allocator* pAlloc)
+drawFPSCounter(Arena* pAlloc)
 {
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
     auto* sh = &s_shFontBitmap;
@@ -487,21 +487,21 @@ drawFPSCounter(Allocator* pAlloc)
     f64 currTime = utils::timeNowMS();
     if (currTime >= frame::g_prevTime + 1000.0)
     {
-        String s = StringAlloc(pAlloc, s_textFPS.maxSize);
+        String s = StringAlloc((Allocator*)pAlloc, s_textFPS.maxSize);
         memset(s.pData, 0, s.size);
         print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
 
         frame::g_nfps = 0;
         frame::g_prevTime = currTime;
 
-        text::BitmapUpdate(&s_textFPS, pAlloc, s, 0, 0);
+        text::BitmapUpdate(&s_textFPS, &pAlloc->super, s, 0, 0);
     }
 
     text::BitmapDraw(&s_textFPS);
 }
 
 static void
-drawEntities([[maybe_unused]] Allocator* pAlloc)
+drawEntities([[maybe_unused]] Arena* pAlloc)
 {
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;

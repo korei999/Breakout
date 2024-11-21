@@ -307,7 +307,10 @@ inline u32
 formatToContext(Context ctx, FormatArgs fmtArgs, const f32 x)
 {
     char aBuff[64] {};
-    snprintf(aBuff, utils::size(aBuff), "%.*f", fmtArgs.maxFloatLen, x);
+    const char* sFmt = "%.*f";
+    if (fmtArgs.maxFloatLen == NPOS8) sFmt = "%g";
+
+    snprintf(aBuff, utils::size(aBuff), sFmt, fmtArgs.maxFloatLen, x);
 
     return copyBackToBuffer(ctx, aBuff, utils::size(aBuff));
 }
@@ -316,7 +319,15 @@ inline u32
 formatToContext(Context ctx, FormatArgs fmtArgs, const f64 x)
 {
     char aBuff[64] {};
-    snprintf(aBuff, utils::size(aBuff), "%.*lf", fmtArgs.maxFloatLen, x);
+    const char* sFmt = "%.*lf";
+    if (fmtArgs.maxFloatLen == NPOS8) sFmt = "%g";
+
+#if defined __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-truncation"
+snprintf(aBuff, utils::size(aBuff), sFmt, fmtArgs.maxFloatLen, x);
+    #pragma GCC diagnostic pop
+#endif
 
     return copyBackToBuffer(ctx, aBuff, utils::size(aBuff));
 }
