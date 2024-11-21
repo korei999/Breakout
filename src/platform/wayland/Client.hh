@@ -23,7 +23,7 @@ namespace wayland
 
 struct Client
 {
-    Window base;
+    Window super;
     wl_display* display {};
     wl_registry* registry {};
 

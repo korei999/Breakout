@@ -4,8 +4,23 @@
 #include "adt/Vec.hh"
 
 #include <threads.h>
+
+#ifdef __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wmissing-field-initializers"
+#elif defined __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
+
 #include <pipewire/pipewire.h>
 #include <spa/param/audio/format-utils.h>
+
+#ifdef __clang__
+    #pragma clang diagnostic pop
+#elif defined __GNUC__
+    #pragma GCC diagnostic pop
+#endif
 
 namespace platform
 {
@@ -28,27 +43,29 @@ inline const audio::MixerInterface __PwMixerVTable {
 
 struct Mixer
 {
-    audio::Mixer base;
+    audio::Mixer super {};
     u32 sampleRate = 48000;
     u8 channels = 2;
-    enum spa_audio_format eformat;
+    enum spa_audio_format eformat {};
 
-    static const pw_stream_events s_streamEvents;
-    pw_core* pCore = nullptr;
-    pw_context* pCtx = nullptr;
-    pw_main_loop* pLoop = nullptr;
+    pw_core* pCore {};
+    pw_context* pCtx {};
+    pw_thread_loop* pThrdLoop {};
     pw_stream* pStream = nullptr;
-    u32 lastNFrames = 0;
+    u32 lastNFrames {};
 
     mtx_t mtxAdd {};
     Vec<audio::Track> aTracks {};
-    u32 currentBackgroundTrackIdx = 0;
+    u32 currentBackgroundTrackIdx {};
     Vec<audio::Track> aBackgroundTracks {};
 
     thrd_t threadLoop {};
 
     Mixer() = default;
-    Mixer(Allocator* pA) : base {&__PwMixerVTable}, aTracks(pA, audio::MAX_TRACK_COUNT), aBackgroundTracks(pA, audio::MAX_TRACK_COUNT) {}
+    Mixer(Allocator* pA)
+        : super(&__PwMixerVTable),
+          aTracks(pA, audio::MAX_TRACK_COUNT),
+          aBackgroundTracks(pA, audio::MAX_TRACK_COUNT) {}
 };
 
 } /* namespace pipewire */

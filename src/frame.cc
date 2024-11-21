@@ -162,6 +162,8 @@ mainLoop()
         g_nfps++;
     }
 
+    audio::MixerDestroy(app::g_pMixer);
+
 #ifndef NDEBUG
     UboDestroy(&g_uboProjView);
     game::cleanup();

@@ -113,7 +113,7 @@ xdgSurfaceConfigureHandler(
 {
     auto app = (Client*)data;
     xdg_surface_ack_configure(xdgSurface, serial);
-    app->base.bConfigured = true;
+    app->super.bConfigured = true;
 }
 
 static void
@@ -129,11 +129,11 @@ xdgToplevelConfigureHandler(
 
     if (width > 0 && height > 0)
     {
-        if (width != app->base.wWidth || height != app->base.wHeight)
+        if (width != app->super.wWidth || height != app->super.wHeight)
         {
             wl_egl_window_resize(app->eglWindow, width, height, 0, 0);
-            app->base.wWidth = width;
-            app->base.wHeight = height;
+            app->super.wWidth = width;
+            app->super.wHeight = height;
         }
     }
 }
@@ -145,7 +145,7 @@ xdgToplevelCloseHandler(
 )
 {
     auto app = (Client*)data;
-    app->base.bRunning = false;
+    app->super.bRunning = false;
     LOG_OK("closing...\n");
 }
 
@@ -276,10 +276,10 @@ Client::Client(String name)
         .destroy = (decltype(WindowInterface::destroy))ClientDestroy,
     };
 
-    base = {};
-    base.pVTable = {&vTable};
+    super = {};
+    super.pVTable = {&vTable};
 
-    base.sName = name;
+    super.sName = name;
 }
 
 void
@@ -287,7 +287,7 @@ ClientDestroy(Client* s)
 {
     LOG_OK("cleanup ...\n");
 
-    if (s->base.bPointerRelativeMode) ClientDisableRelativeMode(s);
+    if (s->super.bPointerRelativeMode) ClientDisableRelativeMode(s);
     if (s->eglDisplay) eglTerminate(s->eglDisplay);
     if (s->pointer) wl_pointer_destroy(s->pointer);
     if (s->cursorTheme) wl_cursor_theme_destroy(s->cursorTheme);
@@ -386,27 +386,27 @@ ClientInit(Client* s)
     s->xdgSurface = xdg_wm_base_get_xdg_surface(s->xdgWmBase, s->surface);
     s->xdgToplevel = xdg_surface_get_toplevel(s->xdgSurface);
 
-    xdg_toplevel_set_title(s->xdgToplevel, s->base.sName.pData);
-    xdg_toplevel_set_app_id(s->xdgToplevel, s->base.sName.pData);
+    xdg_toplevel_set_title(s->xdgToplevel, s->super.sName.pData);
+    xdg_toplevel_set_app_id(s->xdgToplevel, s->super.sName.pData);
 
     xdg_surface_add_listener(s->xdgSurface, &xdgSurfaceListener, s);
     xdg_toplevel_add_listener(s->xdgToplevel, &xdgToplevelListener, s);
 
-    s->eglWindow = wl_egl_window_create(s->surface, s->base.wWidth, s->base.wHeight);
+    s->eglWindow = wl_egl_window_create(s->surface, s->super.wWidth, s->super.wHeight);
     EGLD( s->eglSurface = eglCreateWindowSurface(s->eglDisplay, eglConfig, (EGLNativeWindowType)(s->eglWindow), nullptr) );
 
     wl_surface_commit(s->surface);
     wl_display_roundtrip(s->display);
 
-    s->base.bRunning = true;
+    s->super.bRunning = true;
 }
 
 void
 ClientEnableRelativeMode(Client* s)
 {
-    if (s->base.bPointerRelativeMode) return;
+    if (s->super.bPointerRelativeMode) return;
 
-    s->base.bPointerRelativeMode = true;
+    s->super.bPointerRelativeMode = true;
 
     ClientHideCursor(s);
 
@@ -423,9 +423,9 @@ ClientEnableRelativeMode(Client* s)
 void
 ClientDisableRelativeMode(Client* s)
 {
-    if (!s->base.bPointerRelativeMode) return;
+    if (!s->super.bPointerRelativeMode) return;
 
-    s->base.bPointerRelativeMode = false;
+    s->super.bPointerRelativeMode = false;
 
     zwp_locked_pointer_v1_destroy(s->lockedPointer);
     zwp_relative_pointer_v1_destroy(s->relativePointer);
@@ -436,7 +436,7 @@ ClientDisableRelativeMode(Client* s)
 void
 ClientHideCursor(Client* s)
 {
-    s->base.bHideCursor = true;
+    s->super.bHideCursor = true;
     wl_pointer_set_cursor(s->pointer, s->_pointerSerial, nullptr, 0, 0);
 }
 
@@ -473,33 +473,33 @@ ClientSetCursorImage(Client* s, String cursorType)
 void 
 ClientSetFullscreen(Client* s)
 {
-    if (s->base.bFullscreen) return;
+    if (s->super.bFullscreen) return;
 
-    s->base.bFullscreen = true;
+    s->super.bFullscreen = true;
     xdg_toplevel_set_fullscreen(s->xdgToplevel, s->output);
 }
 
 void
 ClientUnsetFullscreen(Client* s)
 {
-    if (!s->base.bFullscreen) return;
+    if (!s->super.bFullscreen) return;
 
-    s->base.bFullscreen = false;
+    s->super.bFullscreen = false;
     xdg_toplevel_unset_fullscreen(s->xdgToplevel);
 }
 
 void
 ClientTogglePointerRelativeMode(Client* s)
 {
-    s->base.bPointerRelativeMode ? ClientDisableRelativeMode(s) : ClientEnableRelativeMode(s);
-    LOG_OK("relative mode: {}\n", s->base.bPointerRelativeMode);
+    s->super.bPointerRelativeMode ? ClientDisableRelativeMode(s) : ClientEnableRelativeMode(s);
+    LOG_OK("relative mode: {}\n", s->super.bPointerRelativeMode);
 }
 
 void
 ClientToggleFullscreen(Client* s)
 {
-    s->base.bFullscreen ? ClientUnsetFullscreen(s) : ClientSetFullscreen(s);
-    LOG_OK("fullscreen mode: {}\n", s->base.bFullscreen);
+    s->super.bFullscreen ? ClientUnsetFullscreen(s) : ClientSetFullscreen(s);
+    LOG_OK("fullscreen mode: {}\n", s->super.bFullscreen);
 }
 
 void 
@@ -517,16 +517,16 @@ ClientUnbindGlContext(Client* s)
 void
 ClientSetSwapInterval(Client* s, int interval)
 {
-    s->base.swapInterval = interval;
+    s->super.swapInterval = interval;
     EGLD( eglSwapInterval(s->eglDisplay, interval) );
 }
 
 void
 ClientToggleVSync(Client* s)
 {
-    s->base.swapInterval = !s->base.swapInterval;
-    EGLD( eglSwapInterval(s->eglDisplay, s->base.swapInterval) );
-    LOG_OK("swapInterval: {}\n", s->base.swapInterval);
+    s->super.swapInterval = !s->super.swapInterval;
+    EGLD( eglSwapInterval(s->eglDisplay, s->super.swapInterval) );
+    LOG_OK("swapInterval: {}\n", s->super.swapInterval);
 
     /*auto hint = s->base.swapInterval == 0 ? WP_TEARING_CONTROL_V1_PRESENTATION_HINT_VSYNC : WP_TEARING_CONTROL_V1_PRESENTATION_HINT_ASYNC;*/
     /*wp_tearing_control_v1_set_presentation_hint(s->tearingConrol, hint);*/

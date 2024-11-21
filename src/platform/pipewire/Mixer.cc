@@ -14,11 +14,20 @@ namespace platform
 namespace pipewire
 {
 
+struct ThrdLoopLockGuard
+{
+    pw_thread_loop* p;
+
+    ThrdLoopLockGuard() = delete;
+    ThrdLoopLockGuard(pw_thread_loop* _p) : p(_p) { pw_thread_loop_lock(_p); }
+    ~ThrdLoopLockGuard() { pw_thread_loop_unlock(p); }
+};
+
 static void MixerRunThread(Mixer* s, int argc, char** argv);
 static void onProcess(void* data);
 static bool MixerEmpty(Mixer* s);
 
-const pw_stream_events Mixer::s_streamEvents {
+static const pw_stream_events s_streamEvents {
     .version = PW_VERSION_STREAM_EVENTS,
     .destroy {},
     .state_changed {},
@@ -36,46 +45,40 @@ const pw_stream_events Mixer::s_streamEvents {
 void
 MixerInit(Mixer* s)
 {
-    s->base.bRunning = true;
-    s->base.bMuted = false;
-    s->base.volume = 0.1f;
+    s->super.bRunning = true;
+    s->super.bMuted = false;
+    s->super.volume = 0.1f;
 
     s->sampleRate = 48000;
     s->channels = 2;
     s->eformat = SPA_AUDIO_FORMAT_S16_LE;
 
     mtx_init(&s->mtxAdd, mtx_plain);
+    /*mtx_init(&s->mtxDestroy, mtx_plain);*/
 
-    struct Args
-    {
-        Mixer* s;
-        int argc;
-        char** argv;
-    };
-
-    static Args a {
-        .s = s,
-        .argc = app::g_argc,
-        .argv = app::g_argv
-    };
-
-    auto fnp = +[](void* arg) -> int {
-        auto a = *(Args*)arg;
-        MixerRunThread(a.s, a.argc, a.argv);
-
-        return thrd_success;
-    };
-
-    thrd_create(&s->threadLoop, fnp, &a);
-    thrd_detach(s->threadLoop);
+    MixerRunThread(s, app::g_argc, app::g_argv);
 }
 
 void
 MixerDestroy(Mixer* s)
 {
-    mtx_destroy(&s->mtxAdd);
+    {
+        ThrdLoopLockGuard tLock(s->pThrdLoop);
+        pw_stream_set_active(s->pStream, true);
+    }
+
+    pw_thread_loop_stop(s->pThrdLoop);
+    LOG_NOTIFY("pw_thread_loop_stop()\n");
+
+    s->super.bRunning = false;
+
+    pw_stream_destroy(s->pStream);
+    pw_thread_loop_destroy(s->pThrdLoop);
+    pw_deinit();
+
     VecDestroy(&s->aTracks);
     VecDestroy(&s->aBackgroundTracks);
+    mtx_destroy(&s->mtxAdd);
 }
 
 void
@@ -106,15 +109,14 @@ MixerRunThread(Mixer* s, int argc, char** argv)
     pw_init(&argc, &argv);
 
     u8 aBuff[1024] {};
-    const spa_pod* params[1] {};
-    spa_pod_builder b = {
-        aBuff, sizeof(aBuff), {}, {}, {}
-    };
+    const spa_pod* aParams[1] {};
+    spa_pod_builder b {};
+    spa_pod_builder_init(&b, aBuff, sizeof(aBuff));
 
-    s->pLoop = pw_main_loop_new(nullptr);
+    s->pThrdLoop = pw_thread_loop_new("BreakoutThreadLoop", {});
 
     s->pStream = pw_stream_new_simple(
-        pw_main_loop_get_loop(s->pLoop),
+        pw_thread_loop_get_loop(s->pThrdLoop),
         "BreakoutAudioSource",
         pw_properties_new(
             PW_KEY_MEDIA_TYPE, "Audio",
@@ -122,7 +124,7 @@ MixerRunThread(Mixer* s, int argc, char** argv)
             PW_KEY_MEDIA_ROLE, "Game",
             nullptr
         ),
-        &s->s_streamEvents,
+        &s_streamEvents,
         s
     );
 
@@ -134,26 +136,24 @@ MixerRunThread(Mixer* s, int argc, char** argv)
         .position {}
     };
 
-    params[0] = spa_format_audio_raw_build(&b, SPA_PARAM_EnumFormat, &rawInfo);
+    aParams[0] = spa_format_audio_raw_build(&b, SPA_PARAM_EnumFormat, &rawInfo);
 
     pw_stream_connect(
         s->pStream,
         PW_DIRECTION_OUTPUT,
         PW_ID_ANY,
-        (enum pw_stream_flags)(PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS | PW_STREAM_FLAG_ASYNC),
-        params,
-        utils::size(params)
+        (pw_stream_flags)(PW_STREAM_FLAG_AUTOCONNECT|PW_STREAM_FLAG_INACTIVE|PW_STREAM_FLAG_MAP_BUFFERS),
+        aParams,
+        utils::size(aParams)
     );
 
-    pw_main_loop_run(s->pLoop);
+    pw_thread_loop_start(s->pThrdLoop);
 
-    pw_stream_destroy(s->pStream);
-    pw_main_loop_destroy(s->pLoop);
-    pw_deinit();
-    s->base.bRunning = false;
+    ThrdLoopLockGuard tLock(s->pThrdLoop);
+    pw_stream_set_active(s->pStream, true);
 }
 
-__attribute__((target("default")))
+//__attribute__((target("default")))
 static void
 writeFrames(Mixer* s, void* pBuff, u32 nFrames)
 {
@@ -166,7 +166,7 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
         if (VecSize(&s->aBackgroundTracks) > 0)
         {
             auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
-            f32 vol = powf(t.volume * audio::g_globalVolume, 3.0f);
+            f32 vol = std::pow(t.volume * audio::g_globalVolume, 3.0f);
 
             if (t.pcmPos + 8 <= t.pcmSize)
             {
@@ -238,125 +238,125 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
     }
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-function"
-
-__attribute__((target("avx2")))
-static void
-writeFrames(Mixer* s, void* pBuff, u32 nFrames)
-{
-    __m256i_u* pSimdDest = (__m256i_u*)pBuff;
-
-    for (u32 i = 0; i < nFrames / 8; i++)
-    {
-        __m256i packed16Samples {};
-
-        if (VecSize(&s->aBackgroundTracks) > 0)
-        {
-            auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
-            f32 vol = powf(t.volume * audio::g_globalVolume, 3.0f);
-
-            if (t.pcmPos + 16 <= t.pcmSize)
-            {
-                auto what = _mm256_set_epi16(
-                    t.pData[t.pcmPos + 15] * vol,
-                    t.pData[t.pcmPos + 14] * vol,
-                    t.pData[t.pcmPos + 13] * vol,
-                    t.pData[t.pcmPos + 12] * vol,
-                    t.pData[t.pcmPos + 11] * vol,
-                    t.pData[t.pcmPos + 10] * vol,
-                    t.pData[t.pcmPos + 9 ] * vol,
-                    t.pData[t.pcmPos + 8 ] * vol,
-                    t.pData[t.pcmPos + 7 ] * vol,
-                    t.pData[t.pcmPos + 6 ] * vol,
-                    t.pData[t.pcmPos + 5 ] * vol,
-                    t.pData[t.pcmPos + 4 ] * vol,
-                    t.pData[t.pcmPos + 3 ] * vol,
-                    t.pData[t.pcmPos + 2 ] * vol,
-                    t.pData[t.pcmPos + 1 ] * vol,
-                    t.pData[t.pcmPos + 0 ] * vol
-                );
-
-                packed16Samples = _mm256_add_epi16(packed16Samples, what);
-
-                t.pcmPos += 16;
-            }
-            else
-            {
-                t.pcmPos = 0;
-                auto current = s->currentBackgroundTrackIdx + 1;
-                if (current > VecSize(&s->aBackgroundTracks) - 1) current = 0;
-                s->currentBackgroundTrackIdx = current;
-            }
-        }
-
-        for (u32 i = 0; i < VecSize(&s->aTracks); i++)
-        {
-            auto& t = s->aTracks[i];
-            f32 vol = powf(t.volume, 3.0f);
-
-            if (t.pcmPos + 16 <= t.pcmSize)
-            {
-                auto what = _mm256_set_epi16(
-                    t.pData[t.pcmPos + 15] * vol,
-                    t.pData[t.pcmPos + 14] * vol,
-                    t.pData[t.pcmPos + 13] * vol,
-                    t.pData[t.pcmPos + 12] * vol,
-                    t.pData[t.pcmPos + 11] * vol,
-                    t.pData[t.pcmPos + 10] * vol,
-                    t.pData[t.pcmPos + 9 ] * vol,
-                    t.pData[t.pcmPos + 8 ] * vol,
-                    t.pData[t.pcmPos + 7 ] * vol,
-                    t.pData[t.pcmPos + 6 ] * vol,
-                    t.pData[t.pcmPos + 5 ] * vol,
-                    t.pData[t.pcmPos + 4 ] * vol,
-                    t.pData[t.pcmPos + 3 ] * vol,
-                    t.pData[t.pcmPos + 2 ] * vol,
-                    t.pData[t.pcmPos + 1 ] * vol,
-                    t.pData[t.pcmPos + 0 ] * vol
-                );
-
-                packed16Samples = _mm256_add_epi16(packed16Samples, what);
-
-                t.pcmPos += 16;
-            }
-            else
-            {
-                if (t.bRepeat)
-                {
-                    t.pcmPos = 0;
-                }
-                else
-                {
-                    mtx_lock(&s->mtxAdd);
-                    VecPopAsLast(&s->aTracks, i);
-                    --i;
-                    mtx_unlock(&s->mtxAdd);
-                }
-            }
-        }
-
-        _mm256_storeu_si256(pSimdDest, packed16Samples);
-
-        pSimdDest++;
-    }
-}
-
-#pragma clang diagnostic pop
+//#pragma clang diagnostic push
+//#pragma clang diagnostic ignored "-Wunused-function"
+//
+//__attribute__((target("avx2")))
+//static void
+//writeFrames(Mixer* s, void* pBuff, u32 nFrames)
+//{
+//    __m256i_u* pSimdDest = (__m256i_u*)pBuff;
+//
+//    for (u32 i = 0; i < nFrames / 8; i++)
+//    {
+//        __m256i packed16Samples {};
+//
+//        if (VecSize(&s->aBackgroundTracks) > 0)
+//        {
+//            auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
+//            f32 vol = powf(t.volume * audio::g_globalVolume, 3.0f);
+//
+//            if (t.pcmPos + 16 <= t.pcmSize)
+//            {
+//                auto what = _mm256_set_epi16(
+//                    t.pData[t.pcmPos + 15] * vol,
+//                    t.pData[t.pcmPos + 14] * vol,
+//                    t.pData[t.pcmPos + 13] * vol,
+//                    t.pData[t.pcmPos + 12] * vol,
+//                    t.pData[t.pcmPos + 11] * vol,
+//                    t.pData[t.pcmPos + 10] * vol,
+//                    t.pData[t.pcmPos + 9 ] * vol,
+//                    t.pData[t.pcmPos + 8 ] * vol,
+//                    t.pData[t.pcmPos + 7 ] * vol,
+//                    t.pData[t.pcmPos + 6 ] * vol,
+//                    t.pData[t.pcmPos + 5 ] * vol,
+//                    t.pData[t.pcmPos + 4 ] * vol,
+//                    t.pData[t.pcmPos + 3 ] * vol,
+//                    t.pData[t.pcmPos + 2 ] * vol,
+//                    t.pData[t.pcmPos + 1 ] * vol,
+//                    t.pData[t.pcmPos + 0 ] * vol
+//                );
+//
+//                packed16Samples = _mm256_add_epi16(packed16Samples, what);
+//
+//                t.pcmPos += 16;
+//            }
+//            else
+//            {
+//                t.pcmPos = 0;
+//                auto current = s->currentBackgroundTrackIdx + 1;
+//                if (current > VecSize(&s->aBackgroundTracks) - 1) current = 0;
+//                s->currentBackgroundTrackIdx = current;
+//            }
+//        }
+//
+//        for (u32 i = 0; i < VecSize(&s->aTracks); i++)
+//        {
+//            auto& t = s->aTracks[i];
+//            f32 vol = powf(t.volume, 3.0f);
+//
+//            if (t.pcmPos + 16 <= t.pcmSize)
+//            {
+//                auto what = _mm256_set_epi16(
+//                    t.pData[t.pcmPos + 15] * vol,
+//                    t.pData[t.pcmPos + 14] * vol,
+//                    t.pData[t.pcmPos + 13] * vol,
+//                    t.pData[t.pcmPos + 12] * vol,
+//                    t.pData[t.pcmPos + 11] * vol,
+//                    t.pData[t.pcmPos + 10] * vol,
+//                    t.pData[t.pcmPos + 9 ] * vol,
+//                    t.pData[t.pcmPos + 8 ] * vol,
+//                    t.pData[t.pcmPos + 7 ] * vol,
+//                    t.pData[t.pcmPos + 6 ] * vol,
+//                    t.pData[t.pcmPos + 5 ] * vol,
+//                    t.pData[t.pcmPos + 4 ] * vol,
+//                    t.pData[t.pcmPos + 3 ] * vol,
+//                    t.pData[t.pcmPos + 2 ] * vol,
+//                    t.pData[t.pcmPos + 1 ] * vol,
+//                    t.pData[t.pcmPos + 0 ] * vol
+//                );
+//
+//                packed16Samples = _mm256_add_epi16(packed16Samples, what);
+//
+//                t.pcmPos += 16;
+//            }
+//            else
+//            {
+//                if (t.bRepeat)
+//                {
+//                    t.pcmPos = 0;
+//                }
+//                else
+//                {
+//                    mtx_lock(&s->mtxAdd);
+//                    VecPopAsLast(&s->aTracks, i);
+//                    --i;
+//                    mtx_unlock(&s->mtxAdd);
+//                }
+//            }
+//        }
+//
+//        _mm256_storeu_si256(pSimdDest, packed16Samples);
+//
+//        pSimdDest++;
+//    }
+//}
+//
+//#pragma clang diagnostic pop
 
 static void
 onProcess(void* data)
 {
     auto* s = (Mixer*)data;
 
-    pw_buffer* b;
-    if ((b = pw_stream_dequeue_buffer(s->pStream)) == nullptr)
+    pw_buffer* pPwBuffer = pw_stream_dequeue_buffer(s->pStream);
+    if (!pPwBuffer)
     {
         pw_log_warn("out of buffers: %m");
         return;
     }
 
-    auto pBuffData = b->buffer->datas[0];
+    auto pBuffData = pPwBuffer->buffer->datas[0];
     s16* pDest = (s16*)pBuffData.data;
 
     if (!pDest)
@@ -367,7 +367,7 @@ onProcess(void* data)
 
     u32 stride = sizeof(s16) * s->channels;
     u32 nFrames = pBuffData.maxsize / stride;
-    if (b->requested) nFrames = SPA_MIN(b->requested, (u64)nFrames);
+    if (pPwBuffer->requested) nFrames = SPA_MIN(pPwBuffer->requested, (u64)nFrames);
 
     if (nFrames > 1024*4) nFrames = 1024*4; /* limit to arbitrary number */
 
@@ -379,9 +379,9 @@ onProcess(void* data)
     pBuffData.chunk->stride = stride;
     pBuffData.chunk->size = nFrames * stride;
 
-    pw_stream_queue_buffer(s->pStream, b);
+    pw_stream_queue_buffer(s->pStream, pPwBuffer);
 
-    if (!app::g_pWindow->bRunning) pw_main_loop_quit(s->pLoop);
+    /*if (!app::g_pWindow->bRunning) pw_main_loop_quit(s->pLoop);*/
     /* set bRunning for the mixer outside */
 }
 

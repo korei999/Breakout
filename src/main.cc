@@ -31,17 +31,18 @@ main(int argc, char** argv)
     WindowInit(&window);
     audio::MixerInit(&mixer);
 
-    app::g_pWindow = &window.base;
-    app::g_pMixer = &mixer.base;
+    app::g_pWindow = &window.super;
+    app::g_pMixer = &mixer.super;
 
     frame::run();
 
     ThreadPoolWait(&tpool);
     ThreadPoolDestroy(&tpool);
 
-#ifndef NDEBUG
-    audio::MixerDestroy(&mixer);
+    /* mixer is destroyed after frame::mainLoop() */
     WindowDestroy(&window);
+
+#ifndef NDEBUG
     ArenaFreeAll(&s_arena);
 #endif
 }
@@ -67,9 +68,9 @@ WinMain(
 
     frame::run();
 
+    WindowDestroy(&app);
+
 #ifndef NDEBUG
-    platform::win32::MixerDestroy(&mixer);
-    platform::win32::Win32Destroy(&app);
     ArenaFreeAll(&s_arena);
 #endif
 }
