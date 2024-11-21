@@ -25,6 +25,7 @@ include_directories(BEFORE "src")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_definitions("-D_CRT_SECURE_NO_WARNINGS")
+    add_definitions("-DADT_STD_TYPES")
 endif()
 
 add_executable(

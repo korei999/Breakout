@@ -6,7 +6,6 @@
 #include <ctype.h> /* win32 */
 
 #include <climits>
-#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cuchar>
@@ -336,7 +335,11 @@ inline u32
 formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const wchar_t x)
 {
     char aBuff[4] {};
+#ifdef _WIN32
+    snprintf(aBuff, utils::size(aBuff), "%lc", (wint_t)x);
+#else
     snprintf(aBuff, utils::size(aBuff), "%lc", x);
+#endif
 
     return copyBackToBuffer(ctx, aBuff, utils::size(aBuff));
 }

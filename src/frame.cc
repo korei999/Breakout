@@ -88,7 +88,7 @@ run()
     updateDrawTime();
 
     WindowSetSwapInterval(app::g_pWindow, 1);
-    WindowSetFullscreen(app::g_pWindow);
+    // WindowSetFullscreen(app::g_pWindow);
 
 #ifndef NDEBUG
     test::math();

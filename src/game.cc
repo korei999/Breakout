@@ -14,6 +14,8 @@
 #include "parser/ttf.hh"
 #include "text.hh"
 #include "texture.hh"
+#include "adt/FreeList.hh"
+#include "adt/OsAllocator.hh"
 
 namespace game
 {
