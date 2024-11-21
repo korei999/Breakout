@@ -1,11 +1,13 @@
 #pragma once
 
 #ifdef ADT_STD_TYPES
-
     #include <cstdint>
+#endif
 
 namespace adt
 {
+
+#ifdef ADT_STD_TYPES
 
 using s8 = ::int8_t;
 using u8 = ::uint8_t;
