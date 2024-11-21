@@ -288,6 +288,7 @@ ClientDestroy(Client* s)
     LOG_OK("cleanup ...\n");
 
     if (s->base.bPointerRelativeMode) ClientDisableRelativeMode(s);
+    if (s->eglDisplay) eglTerminate(s->eglDisplay);
     if (s->pointer) wl_pointer_destroy(s->pointer);
     if (s->cursorTheme) wl_cursor_theme_destroy(s->cursorTheme);
     if (s->keyboard) wl_keyboard_destroy(s->keyboard);
