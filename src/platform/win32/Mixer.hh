@@ -28,7 +28,7 @@ void MixerAddBackground(Mixer* s, audio::Track t);
 
 struct Mixer
 {
-    audio::Mixer base;
+    audio::Mixer super;
     IXAudio2* pXAudio2 = nullptr;
     IXAudio2SourceVoice* pSourceVoice = nullptr;
 

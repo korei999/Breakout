@@ -50,7 +50,7 @@ ADT_NO_UB constexpr void MixerAddBackground(Mixer* s, Track t) { s->pVTable->add
 
 struct DummyMixer
 {
-    Mixer base;
+    Mixer super;
 
     constexpr DummyMixer();
 };
@@ -79,7 +79,7 @@ DummyMixerAddBackground([[maybe_unused]] DummyMixer* s, [[maybe_unused]] Track t
     //
 }
 
-inline const MixerInterface __DummyMixerVTable {
+inline const MixerInterface inl_DummyMixerVTable {
     .init = decltype(MixerInterface::init)(DummyMixerInit),
     .destroy = decltype(MixerInterface::destroy)(DummyMixerDestroy),
     .add = decltype(MixerInterface::add)(DummyMixerAdd),
@@ -88,6 +88,6 @@ inline const MixerInterface __DummyMixerVTable {
 
 constexpr
 DummyMixer::DummyMixer()
-    : base {&__DummyMixerVTable} {}
+    : super {&inl_DummyMixerVTable} {}
 
 } /* namespace audio */

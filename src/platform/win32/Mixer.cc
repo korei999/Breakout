@@ -29,14 +29,14 @@ static XAudio2VoiceInterface s_aVoices[audio::MAX_TRACK_COUNT];
 /*static XAudio2Voice s_xVoice {};*/
 /*static s16 s_chunk[audio::CHUNK_SIZE] {};*/
 
-static const audio::MixerInterface __XAudio2MixerVTable {
+static const audio::MixerInterface inl_XAudio2MixerVTable {
     .init = decltype(audio::MixerInterface::init)(MixerInit),
     .destroy = decltype(audio::MixerInterface::destroy)(MixerDestroy),
     .add = decltype(audio::MixerInterface::add)(MixerAdd),
     .addBackground = decltype(audio::MixerInterface::addBackground)(MixerAddBackground),
 };
 
-Mixer::Mixer(Allocator* pA) : base {&__XAudio2MixerVTable}, aTracks(pA, audio::MAX_TRACK_COUNT), aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
+Mixer::Mixer(Allocator* pA) : super {&inl_XAudio2MixerVTable}, aTracks(pA, audio::MAX_TRACK_COUNT), aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
 {
     MixerInit(this, {}, {});
 }
@@ -44,9 +44,9 @@ Mixer::Mixer(Allocator* pA) : base {&__XAudio2MixerVTable}, aTracks(pA, audio::M
 void
 MixerInit(Mixer* s, int argc, char** argv)
 {
-    s->base.bRunning = true;
-    s->base.bMuted = false;
-    s->base.volume = 0.1f;
+    s->super.bRunning = true;
+    s->super.bMuted = false;
+    s->super.volume = 0.1f;
 
     mtx_init(&s->mtxAdd, mtx_plain);
 

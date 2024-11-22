@@ -114,9 +114,9 @@ Win32Window::Win32Window(String sName, HINSTANCE hInstance)
         .destroy = (decltype(WindowInterface::destroy))Win32Destroy,
     };
 
-    this->base.pVTable = {&vTable};
+    this->super.pVTable = {&vTable};
 
-    this->base.sName = sName;
+    this->super.sName = sName;
     this->hInstance = hInstance;
     Win32Init(this);
 }
@@ -143,16 +143,16 @@ Win32Init(Win32Window* s)
     ATOM atom = RegisterClassExW(&s->windowClass);
     if (!atom) LOG_FATAL("RegisterClassExW failed\n");
 
-    s->base.wWidth = 1280;
-    s->base.wHeight = 960;
+    s->super.wWidth = 1280;
+    s->super.wHeight = 960;
     DWORD exstyle = WS_EX_APPWINDOW;
     DWORD style = WS_OVERLAPPEDWINDOW;
 
     // style &= ~WS_THICKFRAME & ~WS_MAXIMIZEBOX;
     RECT rect = { 0, 0, 1280, 960 };
     AdjustWindowRectEx(&rect, style, false, exstyle);
-    s->base.wWidth = rect.right - rect.left;
-    s->base.wHeight = rect.bottom - rect.top;
+    s->super.wWidth = rect.right - rect.left;
+    s->super.wHeight = rect.bottom - rect.top;
 
     s->hWindow = CreateWindowExW(exstyle,
         s->windowClass.lpszClassName,
@@ -160,8 +160,8 @@ Win32Init(Win32Window* s)
         style,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        s->base.wWidth,
-        s->base.wHeight,
+        s->super.wWidth,
+        s->super.wHeight,
         nullptr,
         nullptr,
         s->windowClass.hInstance,
@@ -226,38 +226,38 @@ Win32Init(Win32Window* s)
 
     Win32UnbindGlContext(s);
 
-    s->base.bPointerRelativeMode = false;
-    s->base.bPaused = false;
+    s->super.bPointerRelativeMode = false;
+    s->super.bPaused = false;
 }
 
 void
 Win32DisableRelativeMode(Win32Window* s)
 {
-    s->base.bPointerRelativeMode = false;
+    s->super.bPointerRelativeMode = false;
     input::registerRawMouseDevice(s, false);
 }
 
 void
 Win32EnableRelativeMode(Win32Window* s)
 {
-    s->base.bPointerRelativeMode = true;
+    s->super.bPointerRelativeMode = true;
     input::registerRawMouseDevice(s, true);
 }
 
 void
 Win32TogglePointerRelativeMode(Win32Window* s)
 {
-    s->base.bPointerRelativeMode = !s->base.bPointerRelativeMode;
-    s->base.bPointerRelativeMode ? Win32EnableRelativeMode(s) : Win32DisableRelativeMode(s);
-    LOG_OK("relative mode: {}\n", s->base.bPointerRelativeMode);
+    s->super.bPointerRelativeMode = !s->super.bPointerRelativeMode;
+    s->super.bPointerRelativeMode ? Win32EnableRelativeMode(s) : Win32DisableRelativeMode(s);
+    LOG_OK("relative mode: {}\n", s->super.bPointerRelativeMode);
 }
 
 void
 Win32ToggleFullscreen(Win32Window* s)
 {
-    s->base.bFullscreen = !s->base.bFullscreen;
-    s->base.bFullscreen ? Win32SetFullscreen(s) : Win32UnsetFullscreen(s);
-    LOG_OK("fullscreen: {}\n", s->base.bPointerRelativeMode);
+    s->super.bFullscreen = !s->super.bFullscreen;
+    s->super.bFullscreen ? Win32SetFullscreen(s) : Win32UnsetFullscreen(s);
+    LOG_OK("fullscreen: {}\n", s->super.bPointerRelativeMode);
 }
 
 void 
@@ -275,7 +275,7 @@ Win32SetCursorImage([[maybe_unused]] Win32Window* s, [[maybe_unused]] String cur
 void 
 Win32SetFullscreen(Win32Window* s) 
 {
-    s->base.bFullscreen = true;
+    s->super.bFullscreen = true;
 
     input::enterFullscreen(
         s->hWindow,
@@ -289,7 +289,7 @@ Win32SetFullscreen(Win32Window* s)
 void
 Win32UnsetFullscreen(Win32Window* s)
 {
-    s->base.bFullscreen = false;
+    s->super.bFullscreen = false;
 
     input::exitFullscreen(s->hWindow, 0, 0, 800, 600, 0, 0);
 }
@@ -309,16 +309,16 @@ Win32UnbindGlContext([[maybe_unused]] Win32Window* s)
 void
 Win32SetSwapInterval(Win32Window* s, int interval)
 {
-    s->base.swapInterval = interval;
+    s->super.swapInterval = interval;
     wglSwapIntervalEXT(interval);
 }
 
 void 
 Win32ToggleVSync(Win32Window* s)
 {
-    s->base.swapInterval = !s->base.swapInterval;
-    wglSwapIntervalEXT(s->base.swapInterval);
-    LOG_OK("swapInterval: {}\n", s->base.swapInterval);
+    s->super.swapInterval = !s->super.swapInterval;
+    wglSwapIntervalEXT(s->super.swapInterval);
+    LOG_OK("swapInterval: {}\n", s->super.swapInterval);
 }
 
 void
@@ -336,7 +336,7 @@ Win32ProcEvents(Win32Window* s)
         switch (msg.message)
         {
             case WM_QUIT:
-                s->base.bRunning = false;
+                s->super.bRunning = false;
                 break;
 
             default:

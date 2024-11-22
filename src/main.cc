@@ -63,8 +63,8 @@ WinMain(
     platform::win32::Mixer mixer(&s_arena.super);
     platform::win32::Win32Window app("Breakout", instance);
 
-    app::g_pMixer = &mixer.base;
-    app::g_pWindow = &app.base;
+    app::g_pMixer = &mixer.super;
+    app::g_pWindow = &app.super;
 
     frame::run();
 

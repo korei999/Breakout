@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 
 project(Breakout VERSION 0.1 LANGUAGES CXX C)
 message(STATUS "CMAKE_PROJECT_VERSION: '${CMAKE_PROJECT_VERSION}'")
@@ -46,7 +46,6 @@ add_executable(
     src/game.cc
     src/app.cc
     src/audio.cc
-    src/test.cc
 )
 
 add_definitions("-DADT_DEFER_LESS_TYPING")
@@ -148,6 +147,12 @@ else()
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
+
+    target_sources(
+        ${CMAKE_PROJECT_NAME}
+        PRIVATE
+        src/test.cc
+    )
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267 /wd4101 /wd4200 /wd4244")
