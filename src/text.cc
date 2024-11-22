@@ -725,15 +725,14 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
     s->pFont = pFont;
 
     /* width*height*128 */
-    s->pBitmap = (u8*)alloc(s->pAlloc, 1, math::sq(iScale)*128);
+    s->pBitmap = (u8*)zalloc(s->pAlloc, 1, math::sq(iScale)*128);
 
     Arena arena(SIZE_1M);
     defer( ArenaFreeAll(&arena) );
 
     for (int character = '!'; character <= '~'; ++character)
     {
-        u8* pTmp = (u8*)alloc(&arena.super, 1, math::sq(iScale));
-        memset(pTmp, 0, math::sq(iScale));
+        u8* pTmp = (u8*)zalloc(&arena.super, 1, math::sq(iScale));
 
         auto g = FontReadGlyph(pFont, character);
         TTFRasterizeGlyphTEST(s, &arena.super, &g, pTmp, iScale, iScale);
@@ -787,13 +786,12 @@ TTFUpdateText(TTF* s, Allocator* pAlloc, const String str, const int x, const in
     auto aQuads = TTFGenStringMesh(s, pAlloc, str, x, y, z);
 
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    /*glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(CharQuad3Pos2UV), VecData(&aQuads));*/
     glBufferSubData(GL_ARRAY_BUFFER, 0, VecSize(&aQuads) * sizeof(aQuads[0]), VecData(&aQuads));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void
-TTFDrawAscii(TTF* s)
+TTFDraw(TTF* s)
 {
     glBindVertexArray(s->vao);
     glDrawArrays(GL_TRIANGLES, 0, s->vboSize);

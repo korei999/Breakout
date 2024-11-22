@@ -19,7 +19,7 @@ F2Dot14Tof32(F2Dot14 x)
 }
 
 bool
-FontLoadAndParse(Font* s, String path)
+FontLoadParse(Font* s, String path)
 {
     auto bSuc = BinLoadFile(&s->p, path);
     if (!bSuc) LOG_FATAL("BinLoadFile failed: '{}'\n", path);
@@ -506,7 +506,7 @@ FontReadGlyph(Font* s, u32 code)
         .yMax = readFWord(s),
     };
 
-    assert(g.numberOfContours >= - 1);
+    assert(g.numberOfContours >= -1);
 
     if (g.numberOfContours == -1)
         readCompoundGlyph(s, &g);
@@ -518,7 +518,7 @@ FontReadGlyph(Font* s, u32 code)
 };
 
 void
-FontPrintGlyph(Font* s, const Glyph& g, bool bNormalize)
+FontPrintGlyphDBG(Font* s, const Glyph& g, bool bNormalize)
 {
     auto& sg = g.uGlyph.simple;
     COUT("xMin: {}, yMin: {}, xMax: {}, yMax: {}\n", g.xMin, g.yMin, g.xMax, g.yMax);

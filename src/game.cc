@@ -14,8 +14,6 @@
 #include "parser/ttf.hh"
 #include "text.hh"
 #include "texture.hh"
-#include "adt/FreeList.hh"
-#include "adt/OsAllocator.hh"
 
 namespace game
 {
@@ -34,8 +32,6 @@ static texture::Img s_tBox(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
 static texture::Img s_tBall(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
 static texture::Img s_tPaddle(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
 static texture::Img s_tWhitePixel(AllocatorPoolGet(&s_assetArenas, 250));
-
-static texture::Img s_tTest;
 
 static parser::Wave s_sndBeep(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 400));
 static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_assetArenas, SIZE_1M * 35));
@@ -68,14 +64,6 @@ static void drawTTF(Arena* pAlloc);
 void
 loadAssets()
 {
-    parser::ttf::FontLoadAndParse(&s_fontLiberation, "test-assets/LiberationMono-Regular.ttf");
-
-    parser::ttf::Glyph glyphA = FontReadGlyph(&s_fontLiberation, '&');
-
-    u32 width = 128, height = 128;
-    u8* pTestBitmap = (u8*)::calloc(1, width*height);
-    defer( ::free(pTestBitmap) );
-
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
 
     s_plain = Plain(GL_STATIC_DRAW);
@@ -95,24 +83,24 @@ loadAssets()
     UboBindShader(&frame::g_uboProjView, &s_shSprite, "ubProjView", 0);
 
     s_textFPS = text::Bitmap("", 40, 0, 0, GL_DYNAMIC_DRAW);
+    parser::ttf::FontLoadParse(&s_fontLiberation, "test-assets/LiberationMono-Regular.ttf");
 
     /* unbind before creating threads */
     WindowUnbindGlContext(app::g_pWindow);
     defer( WindowBindGlContext(app::g_pWindow) );
 
+    text::TTFRasterizeArg argTTF {&s_ttfTest, &s_fontLiberation};
+
     parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
-
-    texture::ImgSetMonochrome(&s_tTest, pTestBitmap, width, height);
-    /*texture::ImgSetMonochrome(&s_tTest, s_ttfTest.pBitmap + '@'*64*64, 64*1, 64*1);*/
-
-    text::TTFRasterizeAsciiTEST(&s_ttfTest, &s_fontLiberation);
 
     texture::ImgLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp"};
     texture::ImgLoadArg argBox {&s_tBox, "test-assets/box3.bmp"};
     texture::ImgLoadArg argBall {&s_tBall, "test-assets/ball.bmp"};
     texture::ImgLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp"};
     texture::ImgLoadArg argWhitePixel {&s_tWhitePixel, "test-assets/WhitePixel.bmp"};
+
+    ThreadPoolSubmit(app::g_pThreadPool, text::TTFRasterizeSubmit, &argTTF);
 
     ThreadPoolSubmit(app::g_pThreadPool, parser::WaveSubmit, &argBeep);
     ThreadPoolSubmit(app::g_pThreadPool, parser::WaveSubmit, &argUnatco);
@@ -145,18 +133,18 @@ getReflectionSide(math::V2 tar)
     };
     f32 max = 0.0f;
 
-    REFLECT_SIDE bestMatch = NONE;
+    REFLECT_SIDE eBestMatch = NONE;
     for (int i = 0; i < 4; i++)
     {
         f32 dot = V2Dot(V2Norm(tar), compass[i]);
         if (dot >= max)
         {
             max = dot;
-            bestMatch = REFLECT_SIDE(i);
+            eBestMatch = REFLECT_SIDE(i);
         }
     }
 
-    return bestMatch;
+    return eBestMatch;
 }
 
 static void
@@ -471,7 +459,7 @@ drawFPSCounterTTF(Arena* pAlloc)
         text::TTFUpdateText(&s_ttfTest, &pAlloc->super, pBuff, 0, 0, 1.0f);
     }
 
-    text::TTFDrawAscii(&s_ttfTest);
+    text::TTFDraw(&s_ttfTest);
 }
 
 static void

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "adt/String.hh"
-#include "gl/gl.hh"
 #include "adt/math.hh"
+#include "gl/gl.hh"
 #include "parser/ttf.hh"
 
 using namespace adt;
@@ -55,6 +55,21 @@ struct TTF
 
 void TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont);
 void TTFUpdateText(TTF* s, Allocator* pAlloc, const String str, const int x, const int y, const f32 z);
-void TTFDrawAscii(TTF* s);
+void TTFDraw(TTF* s);
+
+struct TTFRasterizeArg
+{
+    TTF* self {};
+    parser::ttf::Font* pFont {};
+};
+
+inline int
+TTFRasterizeSubmit(void* pArg)
+{
+    auto arg = *(TTFRasterizeArg*)pArg;
+    TTFRasterizeAsciiTEST(arg.self, arg.pFont);
+
+    return thrd_success;
+}
 
 } /* namespace text */

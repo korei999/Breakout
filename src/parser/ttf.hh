@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Bin.hh"
+#include "adt/Map.hh"
 #include "adt/String.hh"
 #include "adt/Vec.hh"
-#include "adt/Map.hh"
 
 namespace parser
 {
@@ -492,10 +492,25 @@ struct Font
     Font(Allocator* _pA) : p(_pA), mOffsetToGlyph(_pA, 128) {}
 };
 
-bool FontLoadAndParse(Font* s, String path);
+bool FontLoadParse(Font* s, String sPath);
 Glyph FontReadGlyph(Font* s, u32 codePoint);
-void FontPrintGlyph(Font* s, const Glyph& g, bool bNormalize = false);
+void FontPrintGlyphDBG(Font* s, const Glyph& g, bool bNormalize = false);
 void FontDestroy(Font* s);
+
+struct FontLoadParseArg
+{
+    Font* self {};
+    String sPath {};
+};
+
+inline int
+FontLoadParseSubmit(void* pArg)
+{
+    auto arg = *(FontLoadParseArg*)pArg;
+    FontLoadParse(arg.self, arg.sPath);
+
+    return 0;
+}
 
 } /* namespace ttf */
 } /* namespace parser */
