@@ -3,6 +3,8 @@
 #include "adt/logs.hh"
 #include "input.hh"
 
+#include <X11/Xatom.h>
+
 namespace platform
 {
 namespace x11
@@ -141,7 +143,8 @@ WindowStart(Window* s)
         PointerMotionMask|
         EnterWindowMask|
         LeaveWindowMask|
-        FocusChangeMask
+        FocusChangeMask|
+        StructureNotifyMask
     );
 
     input::storeAtoms(s);
@@ -179,6 +182,11 @@ WindowSetCursorImage(Window* s, String cursorType)
 void
 WindowSetFullscreen(Window* s)
 {
+    // s->super.bFullscreen = true;
+    // Atom atomWmState = XInternAtom(s->pDisplay, "_NET_WM_STATE", true);
+    // Atom atomWmFullscreen = XInternAtom(s->pDisplay, "_NET_WM_STATE_FULLSCREEN", true);
+
+    // XChangeProperty(s->pDisplay, s->window, atomWmState, XA_ATOM, 32, PropModeReplace, (unsigned char*)&atomWmFullscreen, 1);
 }
 
 void
