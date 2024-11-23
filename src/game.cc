@@ -8,7 +8,6 @@
 #include "adt/ThreadPool.hh"
 #include "adt/defer.hh"
 #include "app.hh"
-#include "controls.hh"
 #include "frame.hh"
 #include "parser/Wave.hh"
 #include "parser/ttf.hh"
@@ -58,6 +57,7 @@ Ball g_ball {
 
 static void drawFPSCounter(Arena* pAlloc);
 static void drawFPSCounterTTF(Arena* pAlloc);
+static void drawInfo(Arena* pArena);
 static void drawEntities(Arena* pAlloc);
 static void drawTTF(Arena* pAlloc);
 
@@ -119,7 +119,7 @@ static inline math::V2
 nextPos(const T& e, bool bNormalizeDir)
 {
     auto dir = bNormalizeDir ? math::normalize(e.dir) : e.dir;
-    return s_aEntities[e.enIdx].pos + (dir * (frame::g_deltaTime * e.speed));
+    return s_aEntities[e.enIdx].pos + (dir * (frame::g_deltaTimeS * e.speed));
 }
 
 static REFLECT_SIDE
@@ -209,7 +209,7 @@ blockHit()
                     enBall.pos.x += f::g_unit.x / off;
                     if (math::eq(g_ball.dir.x, 0))
                     {
-                        g_ball.dir.x = 0.25;
+                        g_ball.dir.x = 0.1f;
                         break;
                     }
 
@@ -221,7 +221,7 @@ blockHit()
                     enBall.pos.x -= f::g_unit.x / off;
                     if (math::eq(g_ball.dir.x, 0))
                     {
-                        g_ball.dir.x = -0.25;
+                        g_ball.dir.x = -0.1f;
                         break;
                     }
 
@@ -255,7 +255,7 @@ paddleHit()
 
         g_ball.dir.y = 1.0f;
         if (math::V2Length(g_player.dir) > 0.0f)
-            g_ball.dir += g_player.dir * 0.25f;
+            g_ball.dir += g_player.dir * 0.1f;
     }
 }
 
@@ -419,47 +419,12 @@ updateState()
 }
 
 void
-draw(Arena* pAlloc)
+draw(Arena* pArena)
 {
-    if (controls::g_bTTFDebugScreen)
-    {
-    }
-    else
-    {
-        drawEntities(pAlloc);
-    }
+    drawEntities(pArena);
 
-    /*drawFPSCounter(pAlloc);*/
-    drawFPSCounterTTF(pAlloc);
-}
-
-static void
-drawFPSCounterTTF(Arena* pAlloc)
-{
-    math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
-
-    auto* sh = &s_sh1Col;
-    ShaderUse(sh);
-
-    ShaderSetM4(sh, "uProj", proj);
-    ShaderSetV4(sh, "uColor", colors::hexToV4(0xeeeeeeff));
-
-    texture::ImgBind(s_ttfTest.texId, GL_TEXTURE0);
-
-    f64 currTime = utils::timeNowMS();
-    if (currTime >= frame::g_prevTime + 1000.0)
-    {
-        char* pBuff = (char*)alloc(pAlloc, sizeof(char), s_ttfTest.maxSize);
-        memset(pBuff, 0, s_ttfTest.maxSize);
-        print::toBuffer(pBuff, s_ttfTest.maxSize - 1, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
-
-        frame::g_nfps = 0;
-        frame::g_prevTime = currTime;
-
-        text::TTFUpdateText(&s_ttfTest, &pAlloc->super, pBuff, 0, 0, 1.0f);
-    }
-
-    text::TTFDraw(&s_ttfTest);
+    drawFPSCounterTTF(pArena);
+    drawInfo(pArena);
 }
 
 static void
@@ -478,8 +443,7 @@ drawFPSCounter(Arena* pAlloc)
     if (currTime >= frame::g_prevTime + 1000.0)
     {
         String s = StringAlloc((Allocator*)pAlloc, s_textFPS.maxSize);
-        memset(s.pData, 0, s.size);
-        print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
+        s.size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
 
         frame::g_nfps = 0;
         frame::g_prevTime = currTime;
@@ -488,6 +452,66 @@ drawFPSCounter(Arena* pAlloc)
     }
 
     text::BitmapDraw(&s_textFPS);
+}
+
+static void
+drawFPSCounterTTF(Arena* pAlloc)
+{
+    math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
+
+    auto* sh = &s_sh1Col;
+    ShaderUse(sh);
+
+    ShaderSetM4(sh, "uProj", proj);
+    ShaderSetV4(sh, "uColor", colors::hexToV4(0xeeeeeeff));
+
+    texture::ImgBind(s_ttfTest.texId, GL_TEXTURE0);
+
+    static int nLastFps = frame::g_nfps;
+
+    f64 currTime = utils::timeNowMS();
+    if (currTime >= frame::g_prevTime + 1000.0)
+    {
+        nLastFps = frame::g_nfps; 
+    }
+
+    String s = StringAlloc((Allocator*)pAlloc, s_ttfTest.maxSize);
+    s.size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", nLastFps, frame::g_frameTime);
+
+    text::TTFUpdateText(&s_ttfTest, &pAlloc->super, s, 0, 0, 1.0f);
+
+    if (currTime >= frame::g_prevTime + 1000.0)
+    {
+        frame::g_nfps = 0;
+        frame::g_prevTime = currTime;
+    }
+
+    text::TTFDraw(&s_ttfTest);
+}
+
+static void
+drawInfo(Arena* pArena)
+{
+    math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
+    auto* sh = &s_sh1Col;
+    ShaderUse(sh);
+
+    ShaderSetM4(sh, "uProj", proj);
+    ShaderSetV4(sh, "uColor", {colors::hexToV4(0x666666ff)});
+
+    texture::ImgBind(s_ttfTest.texId, GL_TEXTURE0);
+
+    String s = StringAlloc(&pArena->super, 256);
+    s.size = print::toString(&s,
+        "TOGGLE FULLSCREEN: F\n"
+        "UNLOCK MOUSE: Q\n"
+        "QUIT: ESC\n"
+    );
+    int nSpaces = 0;
+    for (auto c : s) if (c == '\n') ++nSpaces;
+
+    text::TTFUpdateText(&s_ttfTest, &pArena->super, s, 0, frame::g_uiHeight - (nSpaces*2), 1.0f);
+    text::TTFDraw(&s_ttfTest);
 }
 
 static void

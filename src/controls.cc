@@ -62,7 +62,6 @@ procKeysOnce(u32 key, u32 pressed)
             break;
 
         case KEY_ESC:
-        case KEY_CAPSLOCK:
             if (pressed)
             {
                 app::g_pWindow->bRunning = false;

@@ -17,7 +17,7 @@ extern f32 g_uiWidth;
 extern f32 g_uiHeight;
 
 extern long g_currTime;
-extern f64 g_deltaTime;
+extern f64 g_deltaTimeS;
 extern long g_lastTime;
 
 extern f64 g_currDrawTime;

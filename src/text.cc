@@ -709,8 +709,6 @@ TTFGenStringMesh(
         xOff += 1.1f;
     }
 
-    s->vboSize = VecSize(&aQuads) * 6; /* 6 vertices for 1 quad */
-
     return aQuads;
 }
 
@@ -753,6 +751,7 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
     }
 
     auto aQuads = TTFGenStringMesh(s, &arena.super, test, 0, 0, 1.0f);
+    s->vboSize = VecSize(&aQuads) * 6; /* 6 vertices for 1 quad */
 
     mtx_lock(&gl::g_mtxGlContext);
     WindowBindGlContext(app::g_pWindow);
@@ -784,6 +783,7 @@ TTFUpdateText(TTF* s, Allocator* pAlloc, const String str, const int x, const in
 
     s->str = str;
     auto aQuads = TTFGenStringMesh(s, pAlloc, str, x, y, z);
+    s->vboSize = VecSize(&aQuads) * 6; /* 6 vertices for 1 quad */
 
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, VecSize(&aQuads) * sizeof(aQuads[0]), VecData(&aQuads));

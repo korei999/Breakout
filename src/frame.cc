@@ -21,7 +21,7 @@ f32 g_uiWidth = 192.0f * 0.50f;
 f32 g_uiHeight; /* set in prepareDraw */
 
 long g_currTime = 0;
-f64 g_deltaTime = 0.0;
+f64 g_deltaTimeS = 0.0;
 long g_lastTime = 0;
 
 f64 g_currDrawTime = 0.0;
@@ -39,7 +39,7 @@ static void
 updateDeltaTime()
 {
     g_currTime = utils::timeNowUS();
-    g_deltaTime = (g_currTime - g_lastTime) / 1000000.0;
+    g_deltaTimeS = (g_currTime - g_lastTime) / 1000.0;
     g_lastTime = g_currTime;
 }
 
@@ -112,18 +112,17 @@ run()
 static int
 gameStateLoop([[maybe_unused]] void* pNull)
 {
-    f64 t = 0.0;
-    f64 dt = 1.0 / 120.0;
-    /*g_deltaTime = dt;*/
+    constexpr f64 timeSlice = 1.0 / (60.0 * 1000000.0);
+    f64 accum {};
 
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
         updateDeltaTime();
+        accum += g_deltaTimeS;
 
         controls::procKeys();
-
         controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
-
+        
         game::updateState();
 
         utils::sleepMS(0.1);
