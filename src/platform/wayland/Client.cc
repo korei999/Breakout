@@ -256,8 +256,8 @@ static const wl_registry_listener registryListener {
 
 Client::Client(String name)
 {
-    static WindowInterface vTable {
-        .init = (decltype(WindowInterface::init))ClientInit,
+    static WindowInterface s_vTable {
+        .start = (decltype(WindowInterface::start))ClientStart,
         .disableRelativeMode = (decltype(WindowInterface::disableRelativeMode))ClientDisableRelativeMode,
         .enableRelativeMode = (decltype(WindowInterface::enableRelativeMode))ClientEnableRelativeMode,
         .togglePointerRelativeMode = (decltype(WindowInterface::togglePointerRelativeMode))ClientTogglePointerRelativeMode,
@@ -276,9 +276,7 @@ Client::Client(String name)
         .destroy = (decltype(WindowInterface::destroy))ClientDestroy,
     };
 
-    super = {};
-    super.pVTable = {&vTable};
-
+    super.pVTable = &s_vTable;
     super.sName = name;
 }
 
@@ -307,7 +305,7 @@ ClientDestroy(Client* s)
 }
 
 void
-ClientInit(Client* s)
+ClientStart(Client* s)
 {
     Arena arena(SIZE_8K);
     defer(ArenaFreeAll(&arena));
@@ -536,14 +534,16 @@ void
 ClientSwapBuffers(Client* s)
 {
     EGLD( eglSwapBuffers(s->eglDisplay, s->eglSurface) );
-    if (wl_display_dispatch(s->display) == -1)
-        LOG_FATAL("wl_display_dispatch error\n");
 }
 
 void 
 ClientProcEvents([[maybe_unused]] Client* s)
 {
-    //
+    if (wl_display_dispatch(s->display) == -1)
+    {
+        CERR("wl_display_dispatch(): failed\n");
+        exit(1);
+    }
 }
 
 void

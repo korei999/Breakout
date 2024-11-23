@@ -23,7 +23,7 @@ namespace wayland
 
 struct Client
 {
-    Window super;
+    WindowAbstract super {};
     wl_display* display {};
     wl_registry* registry {};
 
@@ -59,12 +59,12 @@ struct Client
 
     bool bRestoreRelativeMode = false;
 
-    Client() = default;
+    Client() = delete;
     Client(String name);
 };
 
+void ClientStart(Client* s);
 void ClientDestroy(Client* s);
-void ClientInit(Client* s);
 void ClientEnableRelativeMode(Client* s);
 void ClientDisableRelativeMode(Client* s);
 void ClientHideCursor(Client* s);
@@ -84,7 +84,7 @@ void ClientShowWindow(Client* s);
 } /* namespace wayland */
 } /* namespace platform */
 
-inline void WindowInit(platform::wayland::Client* s) { ClientInit(s); }
+inline void WindowStart(platform::wayland::Client* s) { ClientStart(s); }
 inline void WindowDisableRelativeMode(platform::wayland::Client* s) { ClientDisableRelativeMode(s); }
 inline void WindowEnableRelativeMode(platform::wayland::Client* s) { ClientEnableRelativeMode(s); }
 inline void WindowTogglePointerRelativeMode(platform::wayland::Client* s) { ClientTogglePointerRelativeMode(s); }

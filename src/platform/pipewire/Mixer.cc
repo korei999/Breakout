@@ -43,7 +43,7 @@ static const pw_stream_events s_streamEvents {
 };
 
 void
-MixerInit(Mixer* s)
+MixerStart(Mixer* s)
 {
     s->super.bRunning = true;
     s->super.bMuted = false;

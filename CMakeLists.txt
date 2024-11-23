@@ -176,6 +176,23 @@ message(STATUS "CMAKE_SOURCE_DIR: '${CMAKE_SOURCE_DIR}'")
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(LINUX_PKGS REQUIRED gl egl wayland-client wayland-egl wayland-cursor libpipewire-0.3)
+
+    pkg_check_modules(X11_PKG x11)
+    if (${X11_PKG_FOUND})
+        add_definitions("-DX11_LIB")
+        include_directories(BEFORE ${X11_PKG_INCLUDE_DIRS})
+        target_link_libraries(
+            ${CMAKE_PROJECT_NAME} PRIVATE
+            ${X11_PKG_LIBRARIES}
+        )
+
+        target_sources(
+            ${CMAKE_PROJECT_NAME} PRIVATE
+            src/platform/x11/X11Window.cc
+            src/platform/x11/input.cc
+        )
+    endif()
+
     include_directories(BEFORE ${LINUX_PKGS_INCLUDE_DIRS})
     target_link_libraries(
         ${CMAKE_PROJECT_NAME} PRIVATE
@@ -216,8 +233,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     execute_process(COMMAND ${WAYLAND_SCANNER} private-code  ${XDG_SHELL}           ${CMAKE_SOURCE_DIR}/${WLPD}/xdg-shell.c)
 
     target_sources(
-        ${CMAKE_PROJECT_NAME}
-        PRIVATE
+        ${CMAKE_PROJECT_NAME} PRIVATE
         ${WLP}/Client.cc
         ${WLP}/input.cc
         ${WLPD}/pointer-constraints-unstable-v1.c

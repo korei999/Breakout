@@ -5,33 +5,33 @@
 using namespace adt;
 
 /* Platform abstracted application/window interface */
-struct Window;
+struct WindowAbstract;
 
 struct WindowInterface
 {
-    void (*init)(Window*);
-    void (*disableRelativeMode)(Window*);
-    void (*enableRelativeMode)(Window*);
-    void (*togglePointerRelativeMode)(Window*);
-    void (*toggleFullscreen)(Window*);
-    void (*hideCursor)(Window*);
-    void (*setCursorImage)(Window*, String cursorType);
-    void (*setFullscreen)(Window*);
-    void (*unsetFullscreen)(Window*);
-    void (*bindGlContext)(Window*);
-    void (*unbindGlContext)(Window*);
-    void (*setSwapInterval)(Window*, int interval);
-    void (*toggleVSync)(Window*);
-    void (*swapBuffers)(Window*);
-    void (*procEvents)(Window*);
-    void (*showWindow)(Window*);
-    void (*destroy)(Window*);
+    void (*start)(WindowAbstract*);
+    void (*disableRelativeMode)(WindowAbstract*);
+    void (*enableRelativeMode)(WindowAbstract*);
+    void (*togglePointerRelativeMode)(WindowAbstract*);
+    void (*toggleFullscreen)(WindowAbstract*);
+    void (*hideCursor)(WindowAbstract*);
+    void (*setCursorImage)(WindowAbstract*, String cursorType);
+    void (*setFullscreen)(WindowAbstract*);
+    void (*unsetFullscreen)(WindowAbstract*);
+    void (*bindGlContext)(WindowAbstract*);
+    void (*unbindGlContext)(WindowAbstract*);
+    void (*setSwapInterval)(WindowAbstract*, int interval);
+    void (*toggleVSync)(WindowAbstract*);
+    void (*swapBuffers)(WindowAbstract*);
+    void (*procEvents)(WindowAbstract*);
+    void (*showWindow)(WindowAbstract*);
+    void (*destroy)(WindowAbstract*);
 };
 
-struct Window
+struct WindowAbstract /* x11 window is also a 'Window' */
 {
-    const WindowInterface* pVTable;
-    String sName;
+    const WindowInterface* pVTable {};
+    String sName {};
     int wWidth = 1920;
     int wHeight = 1080;
     bool bRunning = false;
@@ -42,22 +42,26 @@ struct Window
     bool bFullscreen = false;
     int swapInterval = 1;
     f64 hideCursorTime = 0.0f;
+
+    constexpr WindowAbstract() = default;
+    constexpr WindowAbstract(WindowInterface* _pVTable, String _sName = "Breakout")
+        : pVTable(_pVTable), sName(_sName) {}
 };
 
-ADT_NO_UB constexpr void WindowInit(Window* s) { s->pVTable->init(s); }
-ADT_NO_UB constexpr void WindowDisableRelativeMode(Window* s) { s->pVTable->disableRelativeMode(s); }
-ADT_NO_UB constexpr void WindowEnableRelativeMode(Window* s) { s->pVTable->enableRelativeMode(s); }
-ADT_NO_UB constexpr void WindowTogglePointerRelativeMode(Window* s) { s->pVTable->togglePointerRelativeMode(s); }
-ADT_NO_UB constexpr void WindowToggleFullscreen(Window* s) { s->pVTable->toggleFullscreen(s); }
-ADT_NO_UB constexpr void WindowHideCursor(Window* s) { s->pVTable->hideCursor(s); }
-ADT_NO_UB constexpr void WindowSetCursorImage(Window* s, String cursorType) { s->pVTable->setCursorImage(s, cursorType); }
-ADT_NO_UB constexpr void WindowSetFullscreen(Window* s) { s->pVTable->setFullscreen(s); }
-ADT_NO_UB constexpr void WindowUnsetFullscreen(Window* s) { s->pVTable->unsetFullscreen(s); }
-ADT_NO_UB constexpr void WindowBindGlContext(Window* s) { s->pVTable->bindGlContext(s); }
-ADT_NO_UB constexpr void WindowUnbindGlContext(Window* s) { s->pVTable->unbindGlContext(s); }
-ADT_NO_UB constexpr void WindowSetSwapInterval(Window* c, int interval) { c->pVTable->setSwapInterval(c, interval); }
-ADT_NO_UB constexpr void WindowToggleVSync(Window* s) { s->pVTable->toggleVSync(s); }
-ADT_NO_UB constexpr void WindowSwapBuffers(Window* s) { s->pVTable->swapBuffers(s); }
-ADT_NO_UB constexpr void WindowProcEvents(Window* s) { s->pVTable->procEvents(s); }
-ADT_NO_UB constexpr void WindowShowWindow(Window* s) { s->pVTable->showWindow(s); }
-ADT_NO_UB constexpr void WindowDestroy(Window* s) { s->pVTable->destroy(s); }
+ADT_NO_UB constexpr void WindowStart(WindowAbstract* s) { s->pVTable->start(s); }
+ADT_NO_UB constexpr void WindowDisableRelativeMode(WindowAbstract* s) { s->pVTable->disableRelativeMode(s); }
+ADT_NO_UB constexpr void WindowEnableRelativeMode(WindowAbstract* s) { s->pVTable->enableRelativeMode(s); }
+ADT_NO_UB constexpr void WindowTogglePointerRelativeMode(WindowAbstract* s) { s->pVTable->togglePointerRelativeMode(s); }
+ADT_NO_UB constexpr void WindowToggleFullscreen(WindowAbstract* s) { s->pVTable->toggleFullscreen(s); }
+ADT_NO_UB constexpr void WindowHideCursor(WindowAbstract* s) { s->pVTable->hideCursor(s); }
+ADT_NO_UB constexpr void WindowSetCursorImage(WindowAbstract* s, String cursorType) { s->pVTable->setCursorImage(s, cursorType); }
+ADT_NO_UB constexpr void WindowSetFullscreen(WindowAbstract* s) { s->pVTable->setFullscreen(s); }
+ADT_NO_UB constexpr void WindowUnsetFullscreen(WindowAbstract* s) { s->pVTable->unsetFullscreen(s); }
+ADT_NO_UB constexpr void WindowBindGlContext(WindowAbstract* s) { s->pVTable->bindGlContext(s); }
+ADT_NO_UB constexpr void WindowUnbindGlContext(WindowAbstract* s) { s->pVTable->unbindGlContext(s); }
+ADT_NO_UB constexpr void WindowSetSwapInterval(WindowAbstract* c, int interval) { c->pVTable->setSwapInterval(c, interval); }
+ADT_NO_UB constexpr void WindowToggleVSync(WindowAbstract* s) { s->pVTable->toggleVSync(s); }
+ADT_NO_UB constexpr void WindowSwapBuffers(WindowAbstract* s) { s->pVTable->swapBuffers(s); }
+ADT_NO_UB constexpr void WindowProcEvents(WindowAbstract* s) { s->pVTable->procEvents(s); }
+ADT_NO_UB constexpr void WindowShowWindow(WindowAbstract* s) { s->pVTable->showWindow(s); }
+ADT_NO_UB constexpr void WindowDestroy(WindowAbstract* s) { s->pVTable->destroy(s); }

@@ -29,13 +29,13 @@ namespace pipewire
 
 struct Mixer;
 
-void MixerInit(Mixer* s);
+void MixerStart(Mixer* s);
 void MixerDestroy(Mixer* s);
 void MixerAdd(Mixer* s, audio::Track t);
 void MixerAddBackground(Mixer* s, audio::Track t);
 
-inline const audio::MixerInterface __PwMixerVTable {
-    .init = decltype(audio::MixerInterface::init)(MixerInit),
+inline const audio::MixerInterface inl_MixerVTable {
+    .start = decltype(audio::MixerInterface::start)(MixerStart),
     .destroy = decltype(audio::MixerInterface::destroy)(MixerDestroy),
     .add = decltype(audio::MixerInterface::add)(MixerAdd),
     .addBackground = decltype(audio::MixerInterface::addBackground)(MixerAddBackground),
@@ -63,7 +63,7 @@ struct Mixer
 
     Mixer() = default;
     Mixer(Allocator* pA)
-        : super(&__PwMixerVTable),
+        : super(&inl_MixerVTable),
           aTracks(pA, audio::MAX_TRACK_COUNT),
           aBackgroundTracks(pA, audio::MAX_TRACK_COUNT) {}
 };
@@ -74,7 +74,7 @@ struct Mixer
 namespace audio
 {
 
-inline void MixerInit(platform::pipewire::Mixer* s) { platform::pipewire::MixerInit(s); }
+inline void MixerStart(platform::pipewire::Mixer* s) { platform::pipewire::MixerStart(s); }
 inline void MixerDestroy(platform::pipewire::Mixer* s) { platform::pipewire::MixerDestroy(s); }
 inline void MixerAdd(platform::pipewire::Mixer* s, Track t) { platform::pipewire::MixerAdd(s, t); }
 inline void MixerAddBackground(platform::pipewire::Mixer* s, Track t) { platform::pipewire::MixerAddBackground(s, t); }
