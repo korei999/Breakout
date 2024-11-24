@@ -182,16 +182,19 @@ WindowSetCursorImage(Window* s, String cursorType)
 void
 WindowSetFullscreen(Window* s)
 {
-    // s->super.bFullscreen = true;
-    // Atom atomWmState = XInternAtom(s->pDisplay, "_NET_WM_STATE", true);
-    // Atom atomWmFullscreen = XInternAtom(s->pDisplay, "_NET_WM_STATE_FULLSCREEN", true);
+    if (s->super.bFullscreen) return;
 
-    // XChangeProperty(s->pDisplay, s->window, atomWmState, XA_ATOM, 32, PropModeReplace, (unsigned char*)&atomWmFullscreen, 1);
+    s->super.bFullscreen = true;
+    Atom atomWmState = XInternAtom(s->pDisplay, "_NET_WM_STATE", true);
+    Atom atomWmFullscreen = XInternAtom(s->pDisplay, "_NET_WM_STATE_FULLSCREEN", true);
+
+    XChangeProperty(s->pDisplay, s->window, atomWmState, XA_ATOM, 32, PropModeReplace, (unsigned char*)&atomWmFullscreen, 1);
 }
 
 void
 WindowUnsetFullscreen(Window* s)
 {
+    s->super.bFullscreen = false;
 }
 
 void
@@ -202,6 +205,10 @@ WindowTogglePointerRelativeMode(Window* s)
 void
 WindowToggleFullscreen(Window* s)
 {
+    if (s->super.bFullscreen) WindowUnsetFullscreen(s);
+    else WindowSetFullscreen(s);
+
+    LOG_NOTIFY("bFullscreen: {}\n", s->super.bFullscreen);
 }
 
 void

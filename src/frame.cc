@@ -6,7 +6,10 @@
 #include "colors.hh"
 #include "controls.hh"
 #include "game.hh"
-#include "test.hh"
+
+#ifndef NDEBUG
+    #include "test.hh"
+#endif
 
 using namespace adt;
 
@@ -32,8 +35,6 @@ f64 g_prevTime = 0.0;
 int g_nfps = 0;
 
 Ubo g_uboProjView;
-
-static Pair<f32, f32> s_aspect(16.0f, 9.0f);
 
 static void
 updateDeltaTime()
@@ -112,20 +113,18 @@ run()
 static int
 gameStateLoop([[maybe_unused]] void* pNull)
 {
-    constexpr f64 timeSlice = 1.0 / (60.0 * 1000000.0);
-    f64 accum {};
+    g_deltaTimeS = 1.0;
+
+    auto updateTask = +[](void* pArg) -> int {
+        game::updateState();
+
+        return thrd_success;
+    };
 
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
-        updateDeltaTime();
-        accum += g_deltaTimeS;
-
-        controls::procKeys();
-        controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
-        
-        game::updateState();
-
-        utils::sleepMS(0.1);
+        ThreadPoolSubmit(app::g_pThreadPool, updateTask, {});
+        utils::sleepMS(1.0);
     }
 
     return thrd_success;
@@ -146,6 +145,9 @@ mainLoop()
     {
         WindowProcEvents(app::g_pWindow);
         updateDrawTime();
+
+        controls::procKeys();
+        controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, app::g_pWindow->wWidth, app::g_pWindow->wHeight);
