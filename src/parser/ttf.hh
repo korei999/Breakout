@@ -17,7 +17,7 @@ namespace ttf
 /* https://gist.github.com/smhanov/f009a02c00eb27d99479a1e37c1b3354 */
 /* https://handmade.network/forums/articles/t/7330-implementing_a_font_reader_and_rasterizer_from_scratch%252C_part_1__ttf_font_reader. */
 
-using Fixed = struct { s16 l; s16 r; }; /* 32-bit signed fixed-point number (16.16) */
+struct Fixed { s16 l; s16 r; }; /* 32-bit signed fixed-point number (16.16) */
 using fixed32 = u32; /* TODO: wtf is this type? */
 using FWord = s16; /* int16 that describes a quantity in font design units. */
 using uFWord = u16; /* uint16 that describes a quantity in font design units. */

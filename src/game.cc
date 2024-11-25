@@ -194,13 +194,13 @@ blockHit()
 
                 case REFLECT_SIDE::UP:
                 {
-                    /*enBall.pos.y -= f::g_unit.y / off;*/
+                    enBall.pos.y -= f::g_unit.y / off;
                     g_ball.dir.y = -g_ball.dir.y;
                 } break;
 
                 case REFLECT_SIDE::DOWN:
                 {
-                    /*enBall.pos.y += f::g_unit.y / off;*/
+                    enBall.pos.y += f::g_unit.y / off;
                     g_ball.dir.y = -g_ball.dir.y;
                 } break;
 
@@ -218,7 +218,7 @@ blockHit()
 
                 case REFLECT_SIDE::RIGHT:
                 {
-                    /*enBall.pos.x -= f::g_unit.x / off;*/
+                    enBall.pos.x -= f::g_unit.x / off;
                     if (math::eq(g_ball.dir.x, 0))
                     {
                         g_ball.dir.x = -0.1f;

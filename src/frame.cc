@@ -114,6 +114,7 @@ static int
 gameStateLoop([[maybe_unused]] void* pNull)
 {
     g_deltaTimeS = 1.0;
+    f64 lastUpdateTime = utils::timeNowS();
 
     auto updateTask = +[](void* pArg) -> int {
         game::updateState();

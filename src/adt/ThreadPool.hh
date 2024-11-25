@@ -2,6 +2,7 @@
 
 #include "Queue.hh"
 #include "Vec.hh"
+#include "defer.hh"
 #include "guard.hh"
 
 #include <stdatomic.h>
@@ -109,6 +110,7 @@ struct ThreadPool
     cnd_t cndQ {}, cndWait {};
     mtx_t mtxQ {}, mtxWait {};
     atomic_int nActiveTasks {};
+    atomic_int nActiveThreadsInLoop {};
     atomic_bool bDone {};
 
     ThreadPool() = default;
@@ -127,9 +129,16 @@ inline void ThreadPoolWait(ThreadPool* s); /* wait for all active tasks to finis
 
 inline
 ThreadPool::ThreadPool(Allocator* _pAlloc, u32 _nThreads)
-    : pAlloc(_pAlloc), qTasks(_pAlloc, _nThreads), aThreads(_pAlloc, _nThreads), nActiveTasks(0), bDone(true)
+    : pAlloc(_pAlloc),
+      qTasks(_pAlloc, _nThreads),
+      aThreads(_pAlloc, _nThreads),
+      nActiveTasks(0),
+      nActiveThreadsInLoop(0),
+      bDone(true)
 {
+    assert(_nThreads != 0 && "can't have thread pool with zero threads");
     VecSetSize(&aThreads, _pAlloc, _nThreads);
+
     cnd_init(&cndQ);
     mtx_init(&mtxQ, mtx_plain);
     cnd_init(&cndWait);
@@ -140,6 +149,9 @@ inline int
 _ThreadPoolLoop(void* p)
 {
     auto* s = (ThreadPool*)p;
+
+    atomic_fetch_add_explicit(&s->nActiveThreadsInLoop, 1, memory_order_relaxed);
+    defer( atomic_fetch_sub_explicit(&s->nActiveThreadsInLoop, 1, memory_order_relaxed) );
 
     while (!s->bDone)
     {
@@ -249,7 +261,11 @@ _ThreadPoolStop(ThreadPool* s)
     }
 
     atomic_store(&s->bDone, true);
-    cnd_broadcast(&s->cndQ);
+
+    /* some threads might not cnd_wait() in time, so keep signaling untill all return from the loop */
+    while (atomic_load_explicit(&s->nActiveThreadsInLoop, memory_order_relaxed) > 0)
+        cnd_broadcast(&s->cndQ);
+
     for (auto& thread : s->aThreads)
         thrd_join(thread, nullptr);
 }
