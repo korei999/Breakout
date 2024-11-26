@@ -33,7 +33,7 @@ template<typename T, u32 CAP> inline s64 PoolLastIdx(Pool<T, CAP>* s);
 template<typename T, u32 CAP>
 struct Pool
 {
-    Arr<PoolNode<T>, CAP> aData {};
+    Arr<PoolNode<T>, CAP> aNodes {};
     Arr<PoolHnd, CAP> aFreeIdxs {};
     u32 nOccupied {};
     mtx_t mtx;
@@ -41,15 +41,15 @@ struct Pool
     T&
     operator[](s64 i)
     {
-        assert(!aData[i].bDeleted && "[MemPool]: accessing deleted node");
-        return aData[i].data;
+        assert(!aNodes[i].bDeleted && "[MemPool]: accessing deleted node");
+        return aNodes[i].data;
     }
 
     const T&
     operator[](s64 i) const
     {
-        assert(!aData[i].bDeleted && "[MemPool]: accessing deleted node");
-        return aData[i];
+        assert(!aNodes[i].bDeleted && "[MemPool]: accessing deleted node");
+        return aNodes[i];
     }
 
     Pool() = default;
@@ -67,8 +67,8 @@ struct Pool
 
         It(Pool* _self, s64 _i) : s(_self), i(_i) {}
 
-        T& operator*() { return s->aData[i].data; }
-        T* operator->() { return &s->aData[i].data; }
+        T& operator*() { return s->aNodes[i].data; }
+        T* operator->() { return &s->aNodes[i].data; }
 
         It
         operator++()
@@ -119,20 +119,20 @@ template<typename T, u32 CAP>
 inline s64
 PoolFirstIdx(Pool<T, CAP>* s)
 {
-    for (u32 i = 0; i < s->aData.size; ++i)
-        if (!s->aData[i].bDeleted) return i;
+    for (u32 i = 0; i < s->aNodes.size; ++i)
+        if (!s->aNodes[i].bDeleted) return i;
 
-    return s->aData.size;
+    return s->aNodes.size;
 }
 
 template<typename T, u32 CAP>
 inline s64
 PoolLastIdx(Pool<T, CAP>* s)
 {
-    for (s64 i = s->aData.size - 1; i >= 0; --i)
-        if (!s->aData[i].bDeleted) return i;
+    for (s64 i = s->aNodes.size - 1; i >= 0; --i)
+        if (!s->aNodes[i].bDeleted) return i;
 
-    return s->aData.size;
+    return s->aNodes.size;
 }
 
 template<typename T, u32 CAP>
@@ -140,7 +140,7 @@ inline s64
 PoolNextIdx(Pool<T, CAP>* s, s64 i)
 {
     do ++i;
-    while (i < s->aData.size && s->aData[i].bDeleted);
+    while (i < s->aNodes.size && s->aNodes[i].bDeleted);
 
     return i;
 }
@@ -150,7 +150,7 @@ inline s64
 PoolPrevIdx(Pool<T, CAP>* s, s64 i)
 {
     do --i;
-    while (i >= 0 && s->aData[i].bDeleted);
+    while (i >= 0 && s->aNodes[i].bDeleted);
 
     return i;
 }
@@ -181,9 +181,9 @@ PoolRent(Pool<T, CAP>* s)
     ++s->nOccupied;
 
     if (s->aFreeIdxs.size > 0) ret = *ArrPop(&s->aFreeIdxs);
-    else ret = ArrFakePush(&s->aData);
+    else ret = ArrFakePush(&s->aNodes);
 
-    s->aData[ret].bDeleted = false;
+    s->aNodes[ret].bDeleted = false;
     return ret;
 }
 
@@ -196,11 +196,11 @@ PoolReturn(Pool<T, CAP>* s, PoolHnd hnd)
     --s->nOccupied;
     assert(s->nOccupied < CAP && "[MemPool]: nothing to return");
 
-    if (hnd == ArrSize(&s->aData) - 1) ArrFakePop(&s->aData);
+    if (hnd == ArrSize(&s->aNodes) - 1) ArrFakePop(&s->aNodes);
     else
     {
         ArrPush(&s->aFreeIdxs, hnd);
-        s->aData[hnd].bDeleted = true;
+        s->aNodes[hnd].bDeleted = true;
     }
 }
 

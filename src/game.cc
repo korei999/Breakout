@@ -1,6 +1,5 @@
 #include "game.hh"
 
-#include "Model.hh"
 #include "Shader.hh"
 #include "Window.hh"
 #include "adt/AllocatorPool.hh"
@@ -519,15 +518,13 @@ drawInfo(Arena* pArena)
 }
 
 static void
-drawEntities([[maybe_unused]] Arena* pAlloc)
+drawEntities([[maybe_unused]] Arena* pArena)
 {
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
 
-    for (Entity& e : s_aEntities)
+    for (const Entity& e : s_aEntities)
     {
-        auto _idx = (PoolNode<Entity>*)&e - &s_aEntities.aData[0];
-
         if (e.bDead || e.eColor == COLOR::INVISIBLE) continue;
 
         math::M4 tm = math::M4Iden();

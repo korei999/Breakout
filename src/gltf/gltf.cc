@@ -152,11 +152,11 @@ accessorTypeToUnionType(enum ACCESSOR_TYPE t, json::Object* obj)
     return type;
 }
 
-void
+bool
 ModelLoad(Model* s, String path)
 {
-    json::ParserLoad(&s->parser, path);
-    json::ParserParse(&s->parser);
+    if (json::ParserLoad(&s->parser, path) == json::RESULT::FAIL) return false;
+    if (json::ParserParse(&s->parser) == json::RESULT::FAIL) return false;
 
     ModelProcJSONObjs(s);
     s->defaultSceneIdx = json::getLong(s->jsonObjs.scene);
@@ -170,13 +170,15 @@ ModelLoad(Model* s, String path)
     ModelProcMaterials(s);
     ModelProcImages(s);
     ModelProcNodes(s);
+
+    return true;
 }
 
 void
 ModelProcJSONObjs(Model* s)
 {
     /* collect all the top level objects */
-    for (auto& node : json::getObject(json::ParserGetHeadObj(&s->parser)))
+    for (auto& node : json::ParserGetHeadObj(&s->parser))
     {
         switch (hashFNV(node.svKey))
         {
@@ -241,10 +243,10 @@ ModelProcJSONObjs(Model* s)
     }
 
 #ifdef D_GLTF
-    LOG_OK("D_GLTF: '%.*s'\n", parser.sName.size, this->parser.sName.pData);
+    LOG_OK("D_GLTF: '{}'\n", this->parser.sName);
     auto check = [](String sv, json::Object* p) -> void {
         String s = p ? p->svKey : "(null)";
-        CERR("\t%.*s: '%.*s'\n", sv.size, sv.data(), s.size, s.pData);
+        CERR("\t{}: '{}'\n", sv, s);
     };
 
     check("scene", jsonObjs.scene);

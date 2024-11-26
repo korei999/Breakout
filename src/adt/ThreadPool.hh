@@ -112,6 +112,7 @@ struct ThreadPool
     atomic_int nActiveTasks {};
     atomic_int nActiveThreadsInLoop {};
     atomic_bool bDone {};
+    bool bStarted {};
 
     ThreadPool() = default;
     ThreadPool(Allocator* pAlloc, u32 _nThreads = ADT_GET_NCORES());
@@ -134,7 +135,8 @@ ThreadPool::ThreadPool(Allocator* _pAlloc, u32 _nThreads)
       aThreads(_pAlloc, _nThreads),
       nActiveTasks(0),
       nActiveThreadsInLoop(0),
-      bDone(true)
+      bDone(true),
+      bStarted(false)
 {
     assert(_nThreads != 0 && "can't have thread pool with zero threads");
     VecSetSize(&aThreads, _pAlloc, _nThreads);
@@ -189,6 +191,7 @@ _ThreadPoolLoop(void* p)
 inline void
 ThreadPoolStart(ThreadPool* s)
 {
+    s->bStarted = true;
     atomic_store_explicit(&s->bDone, false, memory_order_relaxed);
 
 #ifndef NDEBUG
@@ -230,6 +233,8 @@ ThreadPoolSubmit(ThreadPool* s, ThreadTask task)
 inline void
 ThreadPoolSubmit(ThreadPool* s, thrd_start_t pfnTask, void* pArgs)
 {
+    assert(s->bStarted && "[ThreadPool]: never called ThreadPoolStart()");
+
     ThreadPoolSubmit(s, {pfnTask, pArgs});
 }
 
@@ -242,6 +247,8 @@ ThreadPoolSubmitSignal(ThreadPool* s, thrd_start_t pfnTask, void* pArgs, ThreadP
 inline void
 ThreadPoolWait(ThreadPool* s)
 {
+    assert(s->bStarted && "[ThreadPool]: never called ThreadPoolStart()");
+
     while (ThreadPoolBusy(s))
     {
         guard::Mtx lock(&s->mtxWait);
@@ -252,6 +259,8 @@ ThreadPoolWait(ThreadPool* s)
 inline void
 _ThreadPoolStop(ThreadPool* s)
 {
+    s->bStarted = false;
+
     if (s->bDone)
     {
 #ifndef NDEBUG

@@ -105,7 +105,7 @@ struct Plain
 };
 
 void ModelLoad(Model* s, String path, GLint drawMode, GLint texMode);
-void ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode);
+bool ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode);
 void ModelDraw(
     Model* s,
     DRAW flags,

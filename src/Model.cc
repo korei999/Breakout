@@ -18,10 +18,11 @@ ModelLoad(Model* s, String path, GLint drawMode, GLint texMode)
     s->sSavedPath = path;
 }
 
-void
+bool
 ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 {
-    gltf::ModelLoad(&s->modelData, path);
+    if (!gltf::ModelLoad(&s->modelData, path)) return false;
+
     auto& a = s->modelData;;
 
     MutexArena atmAl(SIZE_1M * 10);
@@ -249,6 +250,8 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         for (auto& ch : node.children)
             s->aTmIdxs[at(ch, s->aTmCounters[ch]++)] = i; /* give each children it's parent's idx's */
     }
+
+    return true;
 }
 
 void

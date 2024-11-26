@@ -7,21 +7,23 @@ using namespace adt;
 namespace json
 {
 
-static void expect(Parser*s, enum Token::TYPE t, adt::String svFile, int line);
+#define OK_OR_RET(RES) do { if (RES == RESULT::FAIL) return FAIL; } while(false)
+
+static RESULT expect(Parser*s, enum Token::TYPE t, adt::String svFile, int line);
 static void next(Parser* s);
-static void parseNode(Parser* s, Object* pNode);
+static RESULT parseNode(Parser* s, Object* pNode);
+static RESULT parseObject(Parser* s, Object* pNode);
+static RESULT parseArray(Parser* s, Object* pNode); /* arrays are same as objects */
 static void parseIdent(Parser* s, TagVal* pTV);
 static void parseNumber(Parser* s, TagVal* pTV);
-static void parseObject(Parser* s, Object* pNode);
-static void parseArray(Parser* s, Object* pNode); /* arrays are same as objects */
 static void parseNull(Parser* s, TagVal* pTV);
 static void parseBool(Parser* s, TagVal* pTV);
 
-void
+RESULT
 ParserLoad(Parser* s, adt::String path)
 {
     s->sName = path;
-    LexerLoadFile(&s->l, path);
+    if (LexerLoadFile(&s->l, path) == FAIL) return FAIL;
 
     s->tCurr = LexerNext(&s->l);
     s->tNext = LexerNext(&s->l);
@@ -29,34 +31,50 @@ ParserLoad(Parser* s, adt::String path)
     if ((s->tCurr.type != Token::LBRACE) && (s->tCurr.type != Token::LBRACKET))
     {
         CERR("wrong first token\n");
-        exit(2);
+        return RESULT::FAIL;
     }
 
-    s->pHead = (Object*)adt::alloc(s->pAlloc, 1, sizeof(Object));
+    return RESULT::OK;
 }
 
-void
+RESULT
 ParserParse(Parser* s)
 {
-    parseNode(s, s->pHead);
+    do
+    {
+        VecPush(&s->aObjects, s->pAlloc, {});
+        if (parseNode(s, &VecLast(&s->aObjects)) == FAIL)
+        {
+            LOG_WARN("parseNode() failed\n");
+            return FAIL;
+        }
+
+    } while (s->tCurr.type == Token::LBRACE);
+
+    return OK;
 }
 
-void
-ParserLoadAndParse(Parser* s, adt::String path)
+RESULT
+ParserLoadParse(Parser* s, adt::String path)
 {
-    ParserLoad(s, path);
+    if (ParserLoad(s, path) == RESULT::FAIL)
+        return FAIL;
+
     ParserParse(s);
+    return OK;
 }
 
-static void
+static RESULT
 expect(Parser* s, enum Token::TYPE t, adt::String svFile, int line)
 {
     if (s->tCurr.type != t)
     {
         CERR("('{}', at {}): ({}): unexpected token: expected: '{}', got '{}'\n",
              svFile, line, s->sName, char(t), char(s->tCurr.type));
-        exit(2);
+        return FAIL;
     }
+
+    return OK;
 }
 
 static void
@@ -66,7 +84,7 @@ next(Parser* s)
     s->tNext = LexerNext(&s->l);
 }
 
-static void
+static RESULT
 parseNode(Parser* s, Object* pNode)
 {
     switch (s->tCurr.type)
@@ -85,12 +103,12 @@ parseNode(Parser* s, Object* pNode)
 
         case Token::LBRACE:
             next(s); /* skip brace */
-            parseObject(s, pNode);
+            OK_OR_RET(parseObject(s, pNode));
             break;
 
         case Token::LBRACKET:
             next(s); /* skip bracket */
-            parseArray(s, pNode);
+            OK_OR_RET(parseArray(s, pNode));
             break;
 
         case Token::NULL_:
@@ -102,6 +120,8 @@ parseNode(Parser* s, Object* pNode)
             parseBool(s, &pNode->tagVal);
             break;
     }
+
+    return OK;
 }
 
 static void
@@ -116,15 +136,13 @@ parseNumber(Parser* s, TagVal* pTV)
 {
     bool bReal = adt::StringLastOf(s->tCurr.sLiteral, '.') != adt::NPOS;
 
-    if (bReal)
-        *pTV = {.tag = TAG::DOUBLE, .val = {.d = atof(s->tCurr.sLiteral.pData)}};
-    else
-        *pTV = TagVal{.tag = TAG::LONG, .val = {.l = atol(s->tCurr.sLiteral.pData)}};
+    if (bReal) *pTV = {.tag = TAG::DOUBLE, .val = {.d = atof(s->tCurr.sLiteral.pData)}};
+    else *pTV = TagVal{.tag = TAG::LONG, .val = {.l = atol(s->tCurr.sLiteral.pData)}};
 
     next(s);
 }
 
-static void
+static RESULT
 parseObject(Parser* s, Object* pNode)
 {
     pNode->tagVal.tag = TAG::OBJECT;
@@ -133,16 +151,17 @@ parseObject(Parser* s, Object* pNode)
 
     for (; s->tCurr.type != Token::RBRACE; next(s))
     {
-        expect(s, Token::IDENT, ADT_LOGS_FILE, __LINE__);
+        OK_OR_RET(expect(s, Token::IDENT, ADT_LOGS_FILE, __LINE__));
+
         Object ob {.svKey = s->tCurr.sLiteral, .tagVal = {}};
         adt::VecPush(&aObjs, s->pAlloc, ob);
 
         /* skip identifier and ':' */
         next(s);
-        expect(s, Token::ASSIGN, ADT_LOGS_FILE, __LINE__);
+        OK_OR_RET(expect(s, Token::ASSIGN, ADT_LOGS_FILE, __LINE__));
         next(s);
 
-        parseNode(s, &adt::VecLast(&aObjs));
+        OK_OR_RET(parseNode(s, &adt::VecLast(&aObjs)));
 
         if (s->tCurr.type != Token::COMMA)
         {
@@ -152,9 +171,11 @@ parseObject(Parser* s, Object* pNode)
     }
 
     if (VecSize(&aObjs) == 0) next(s);
+
+    return OK;
 }
 
-static void
+static RESULT
 parseArray(Parser* s, Object* pNode)
 {
     pNode->tagVal.tag = TAG::ARRAY;
@@ -188,7 +209,7 @@ parseArray(Parser* s, Object* pNode)
 
             case Token::LBRACE:
                 next(s);
-                parseObject(s, &adt::VecLast(&aTVs));
+                OK_OR_RET(parseObject(s, &adt::VecLast(&aTVs)));
                 break;
         }
 
@@ -200,6 +221,8 @@ parseArray(Parser* s, Object* pNode)
     }
 
     if (VecSize(&aTVs) == 0) next(s);
+
+    return OK;
 }
 
 static void
@@ -218,10 +241,30 @@ parseBool(Parser* s, TagVal* pTV)
 }
 
 void
+ParserDestroy(Parser* s)
+{
+    auto fn = +[](Object* p, void* a) -> bool {
+        auto* pAlloc = (Allocator*)a;
+
+        if (p->tagVal.tag == TAG::ARRAY || p->tagVal.tag == TAG::OBJECT)
+            free(pAlloc, p->tagVal.val.a.pData);
+
+        return false;
+    };
+
+    ParserTraverseAll(s, fn, s->pAlloc);
+    LexerDestroy(&s->l);
+    VecDestroy(&s->aObjects, s->pAlloc);
+}
+
+void
 ParserPrint(Parser* s, FILE* fp)
 {
-    ParserPrintNode(fp, s->pHead, "", 0);
-    fputc('\n', fp);
+    for (auto& obj : s->aObjects)
+    {
+        ParserPrintNode(fp, &obj, "", 0);
+        fputc('\n', fp);
+    }
 }
 
 void
@@ -385,24 +428,22 @@ ParserPrintNode(FILE* fp, Object* pNode, adt::String svEnd, int depth)
 }
 
 void
-ParserTraverse(Parser*s, Object* pNode, bool (*pfn)(Object* p, void* args), void* args)
+ParserTraverse(Parser*s, Object* pNode, bool (*pfn)(Object* p, void* pFnArgs), void* pArgs)
 {
-    if (pfn(pNode, args)) return;
-
     switch (pNode->tagVal.tag)
     {
         default: break;
 
         case TAG::ARRAY:
-        case TAG::OBJECT:
-            {
-                auto& obj = getObject(pNode);
+        case TAG::OBJECT: {
+            auto& obj = getObject(pNode);
 
-                for (u32 i = 0; i < VecSize(&obj); i++)
-                    ParserTraverse(s, &obj[i], pfn, args);
-            }
-            break;
+            for (u32 i = 0; i < VecSize(&obj); i++)
+                ParserTraverse(s, &obj[i], pfn, pArgs);
+        } break;
     }
+
+    if (pfn(pNode, pArgs)) return;
 }
 
 } /* namespace json */

@@ -11,7 +11,7 @@ namespace gltf
 
 struct Model;
 
-void ModelLoad(Model* s, String path);
+bool ModelLoad(Model* s, String path);
 
 /* match gl macros */
 enum class COMPONENT_TYPE
