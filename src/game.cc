@@ -5,6 +5,7 @@
 #include "Window.hh"
 #include "adt/AllocatorPool.hh"
 #include "adt/Arena.hh"
+#include "adt/Pool.hh"
 #include "adt/ThreadPool.hh"
 #include "adt/defer.hh"
 #include "app.hh"
@@ -17,29 +18,30 @@
 namespace game
 {
 
-static AllocatorPool<Arena> s_assetArenas(10);
+static AllocatorPool<Arena> s_assetArenas(SIZE_MIN);
 
-static Vec<Entity> s_aEntities(AllocatorPoolGet(&s_assetArenas, SIZE_8K));
-static Vec<game::Block> s_aBlocks(AllocatorPoolGet(&s_assetArenas, SIZE_1K));
+static Pool<Entity, ASSET_MAX_COUNT> s_aEntities;
+
+static Vec<game::Block> s_aBlocks(AllocatorPoolRent(&s_assetArenas, SIZE_1K));
 
 static Shader s_shFontBitmap;
 static Shader s_shSprite;
 static Shader s_sh1Col;
 
-static texture::Img s_tAsciiMap(AllocatorPoolGet(&s_assetArenas, SIZE_1M));
-static texture::Img s_tBox(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
-static texture::Img s_tBall(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
-static texture::Img s_tPaddle(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 100));
-static texture::Img s_tWhitePixel(AllocatorPoolGet(&s_assetArenas, 250));
+static texture::Img s_tAsciiMap(AllocatorPoolRent(&s_assetArenas, SIZE_1M));
+static texture::Img s_tBox(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 100));
+static texture::Img s_tBall(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 100));
+static texture::Img s_tPaddle(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 100));
+static texture::Img s_tWhitePixel(AllocatorPoolRent(&s_assetArenas, 250));
 
-static parser::Wave s_sndBeep(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 400));
-static parser::Wave s_sndUnatco(AllocatorPoolGet(&s_assetArenas, SIZE_1M * 35));
+static parser::Wave s_sndBeep(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 400));
+static parser::Wave s_sndUnatco(AllocatorPoolRent(&s_assetArenas, SIZE_1M * 35));
 
 static Plain s_plain;
 
-static parser::ttf::Font s_fontLiberation(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 500));
+static parser::ttf::Font s_fontLiberation(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 500));
 static text::Bitmap s_textFPS;
-static text::TTF s_ttfTest(AllocatorPoolGet(&s_assetArenas, SIZE_1K * 520));
+static text::TTF s_ttfTest(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 520));
 
 Player g_player {
     .enIdx = 0,
@@ -333,7 +335,8 @@ loadLevel()
         {
             if (at(i, j) != s8(COLOR::INVISIBLE))
             {
-                u32 idx = VecPush(&s_aEntities, {});
+                /*u32 idx = VecPush(&s_aEntities, {});*/
+                u32 idx = PoolRent(&s_aEntities);
                 auto& e = s_aEntities[idx];
 
                 VecPush(&s_aBlocks, {u16(idx)});
@@ -352,7 +355,8 @@ loadLevel()
         }
     }
 
-    g_player.enIdx = VecPush(&s_aEntities, {});
+    /*g_player.enIdx = VecPush(&s_aEntities, {});*/
+    g_player.enIdx = PoolRent(&s_aEntities);
     auto& enPlayer = s_aEntities[g_player.enIdx];
     enPlayer.pos.x = frame::WIDTH/2 - frame::g_unit.x;
     enPlayer.texIdx = s_tPaddle.id;
@@ -363,7 +367,7 @@ loadLevel()
     enPlayer.eColor = COLOR::TEAL;
     enPlayer.bRemoveAfterDraw = false;
 
-    g_ball.enIdx = VecPush(&s_aEntities, {});
+    g_ball.enIdx = PoolRent(&s_aEntities);
     auto& enBall = s_aEntities[g_ball.enIdx];
     enBall.eColor = COLOR::ORANGERED;
     enBall.texIdx = s_tBall.id;
@@ -520,8 +524,10 @@ drawEntities([[maybe_unused]] Arena* pAlloc)
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
 
-    for (const Entity& e : s_aEntities)
+    for (Entity& e : s_aEntities)
     {
+        auto _idx = (PoolNode<Entity>*)&e - &s_aEntities.aData[0];
+
         if (e.bDead || e.eColor == COLOR::INVISIBLE) continue;
 
         math::M4 tm = math::M4Iden();
