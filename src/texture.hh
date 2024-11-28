@@ -2,6 +2,7 @@
 
 #include "adt/Allocator.hh"
 #include "adt/Map.hh"
+#include "adt/Pool.hh"
 #include "adt/Vec.hh"
 #include "adt/String.hh"
 #include "gl/gl.hh"
@@ -12,10 +13,12 @@ namespace texture
 
 using namespace adt;
 
+constexpr u32 MAX_COUNT = 256;
+
 struct Img;
 struct Hash;
 
-extern Vec<Img> g_aAllTextures;
+extern Pool<Img, MAX_COUNT> g_aAllTextures;
 extern Map<Hash> g_mAllTexturesIdxs;
 
 struct Hash

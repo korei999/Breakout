@@ -34,8 +34,8 @@
 namespace texture
 {
 
-Vec<Img> g_aAllTextures;
-Map<Hash> g_mAllTexturesIdxs;
+Pool<Img, texture::MAX_COUNT> g_aAllTextures(INIT);
+Map<Hash> g_mAllTexturesIdxs(inl_pOsAlloc, texture::MAX_COUNT);
 
 static mtx_t s_mtxAllTextures;
 static once_flag s_onceFlagAllTextures = ONCE_FLAG_INIT;
@@ -45,25 +45,22 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
 {
     call_once(&s_onceFlagAllTextures, +[]{
         mtx_init(&s_mtxAllTextures, mtx_plain);
-        g_aAllTextures = {&inl_OsAllocator.super};
-        g_mAllTexturesIdxs = {&inl_OsAllocator.super};
     });
 
-    u32 vecIdx = NPOS;
+    u32 idx = NPOS;
 
     {
-        mtx_lock(&s_mtxAllTextures);
-        defer( mtx_unlock(&s_mtxAllTextures) );
+        guard::Mtx lock(&s_mtxAllTextures);
 
         auto fTried = MapSearch(&g_mAllTexturesIdxs, {path});
         if (fTried)
         {
-            LOG_WARN("Rejecting duplicate texture: '{}'\n", path);
+            LOG_WARN("duplicate texture: '{}'\n", path);
             return;
         }
 
-        vecIdx = VecPush(&g_aAllTextures, *s);
-        MapInsert(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = vecIdx});
+        idx = PoolRent(&g_aAllTextures, *s);
+        MapInsert(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = idx});
     }
 
 #ifdef D_TEXTURE
@@ -86,7 +83,7 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
     s->width = img.width;
     s->height = img.height;
     
-    auto found = MapSearch(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = vecIdx});
+    auto found = MapSearch(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = idx});
     if (found)
     {
         u32 idx = found.pData->vecIdx;

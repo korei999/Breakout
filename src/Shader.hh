@@ -1,15 +1,18 @@
 #pragma once
 
+#include "adt/Pool.hh"
+#include "adt/String.hh"
 #include "adt/Vec.hh"
 #include "adt/math.hh"
 #include "gl/gl.hh"
-#include "adt/String.hh"
 
 using namespace adt;
 
 struct Shader;
 
-extern Vec<Shader> g_aAllShaders;
+constexpr u32 SHADER_MAX_COUNT = 256;
+
+extern Pool<Shader, SHADER_MAX_COUNT> g_aAllShaders;
 
 struct ShaderHash
 {

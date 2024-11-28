@@ -1,6 +1,7 @@
 #pragma once
 
 #include "adt/Arena.hh"
+#include "adt/Pool.hh"
 #include "adt/types.hh"
 #include "colors.hh"
 
@@ -40,33 +41,26 @@ enum class COLOR : u8
     ESIZE
 };
 
-// TODO: mega struct is sufficient
-struct Entity
+enum ENTITY_TYPE : u8
 {
-    math::V2 pos;
-    f32 width;
-    f32 height;
-    f32 xOff;
-    f32 yOff;
-    f32 zOff;
-    u16 shaderIdx;
-    u16 texIdx;
-    game::COLOR eColor;
-    bool bDead;
-    bool bRemoveAfterDraw;
+    GEN, PLAYER, BALL
 };
 
-struct EntityV2
+struct Entity
 {
+    ENTITY_TYPE eType {};
     math::V2 pos {};
-    math::V2 vel {};
+    math::V2 dir {};
+    /*math::V2 vel {};*/
+    f32 speed {};
+    f32 width {};
+    f32 height {};
     f32 xOff {};
     f32 yOff {};
     f32 zOff {};
-    game::COLOR eColor {};
     u16 shaderIdx {};
     u16 texIdx {};
-    u16 modelIdx {};
+    game::COLOR eColor {};
     bool bDead {};
     bool bRemoveAfterDraw {};
 };
@@ -74,17 +68,13 @@ struct EntityV2
 struct Player
 {
     u16 enIdx {};
-    f32 speed = 5.0;
-    math::V2 dir {};
 };
 
 struct Ball
 {
     u16 enIdx {};
     bool bReleased {};
-    f32 speed {};
     f32 radius {};
-    math::V2 dir {};
 };
 
 struct Block
@@ -102,7 +92,7 @@ struct Level
 void loadAssets();
 void loadLevel();
 void updateState();
-void draw(Arena* pAlloc);
+void draw(Arena* pAlloc, f64 updateTime);
 void cleanup();
 
 constexpr math::V3
@@ -177,5 +167,6 @@ const inline Level g_lvl1 {
 
 extern Player g_player;
 extern Ball g_ball;
+extern Pool<Entity, ASSET_MAX_COUNT> g_aEntities;
 
 } /* namespace game */

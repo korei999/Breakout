@@ -47,6 +47,9 @@ procMouse()
 void
 procKeysOnce(u32 key, u32 pressed)
 {
+    auto& enPlayer = game::g_aEntities[game::g_player.enIdx];
+    auto& enBall = game::g_aEntities[game::g_ball.enIdx];
+
     switch (key)
     {
         case KEY_P:
@@ -83,8 +86,8 @@ procKeysOnce(u32 key, u32 pressed)
         case KEY_SPACE: {
             if (!pressed) break;
 
-            game::g_ball.bReleased = !game::g_ball.bReleased;
-            game::g_ball.dir = math::V2{0.0f, 1.0f} + math::V2{game::g_player.dir * 0.25f};
+            utils::toggle(&game::g_ball.bReleased);
+            enBall.dir = math::V2{0.0f, 1.0f} + math::V2{enPlayer.dir * 0.25f};
         } break;
 
         case KEY_T: {
@@ -133,27 +136,13 @@ procKeys()
 static void
 PlayerProcMovements(game::Player* s)
 {
-    s->dir = {};
+    auto& enPlayer = game::g_aEntities[game::g_player.enIdx];
+    enPlayer.dir = {};
 
-    if (g_aPressedKeys[KEY_A])
-    {
-        s->dir = {-1.0f, 0.0f};
-    }
-
-    if (g_aPressedKeys[KEY_D])
-    {
-        s->dir = {1.0f, 0.0f};
-    }
-
-    if (g_aPressedKeys[KEY_LEFTALT])
-    {
-        s->dir /= 2.0;
-    }
-
-    if (g_aPressedKeys[KEY_LEFTSHIFT])
-    {
-        s->dir *= 2.0;
-    }
+    if (g_aPressedKeys[KEY_A]) enPlayer.dir = {-1.0f, 0.0f};
+    if (g_aPressedKeys[KEY_D]) enPlayer.dir = {1.0f, 0.0f};
+    if (g_aPressedKeys[KEY_LEFTALT]) enPlayer.dir /= 2.0;
+    if (g_aPressedKeys[KEY_LEFTSHIFT]) enPlayer.dir *= 2.0;
 }
 
 void

@@ -110,53 +110,63 @@ run()
     mainLoop();
 }
 
+static _Atomic(f64) s_lastUpdateAt;
+
 static int
 gameStateLoop([[maybe_unused]] void* pNull)
 {
-    g_deltaTimeS = 1.0;
-    f64 lastUpdateTime = utils::timeNowS();
+    Arena arena(SIZE_1K);
+    defer( freeAll(&arena) );
+    ThreadPool tp(&arena.super, 1);
+    ThreadPoolStart(&tp);
 
-    auto updateTask = +[](void* pArg) -> int {
+    g_deltaTimeS = 1.0; /* using as game speed modifier */
+
+    auto* pfnUpdateTask = +[](void* pArg) -> int {
+        controls::procKeys();
         game::updateState();
+        atomic_store_explicit(&s_lastUpdateAt, utils::timeNowS(), memory_order_release);
 
         return thrd_success;
     };
 
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
-        ThreadPoolSubmit(app::g_pThreadPool, updateTask, {});
-        utils::sleepMS(1.0);
+        ThreadPoolSubmit(&tp, pfnUpdateTask, {});
+        utils::sleepS(1.0 / TICKRATE);
     }
 
+    ThreadPoolDestroy(&tp);
     return thrd_success;
 }
 
 static void
 mainLoop()
 {
-    /*FixedAllocator alloc(s_aMemDraw, sizeof(s_aMemDraw));*/
     Arena arena(SIZE_1K * 20);
     defer( freeAll(&arena) );
 
-    thrd_t thrdUpdateGameState {};
-    thrd_create(&thrdUpdateGameState, gameStateLoop, nullptr);
-    defer( thrd_join(thrdUpdateGameState, nullptr) );
+    g_deltaTimeS = 2.0;
 
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
         WindowProcEvents(app::g_pWindow);
         updateDrawTime();
 
-        controls::procKeys();
-        controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
-
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, app::g_pWindow->wWidth, app::g_pWindow->wHeight);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
+        controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
         UboBufferData(&g_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
 
-        game::draw(&arena);
+        controls::procKeys();
+
+        game::updateState();
+
+        game::draw(&arena,
+            atomic_load_explicit(&s_lastUpdateAt, memory_order_acquire)
+        );
 
         ArenaReset(&arena);
 

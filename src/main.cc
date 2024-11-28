@@ -25,7 +25,7 @@ main(int argc, char** argv)
 {
     app::g_argc = argc, app::g_argv = argv;
 
-    auto tpool = ThreadPool(&s_arena.super, utils::max(getNCores() - 2, 2));
+    auto tpool = ThreadPool(&s_arena.super, utils::max(getNCores() - 1, 2));
     ThreadPoolStart(&tpool);
     app::g_pThreadPool = &tpool;
 

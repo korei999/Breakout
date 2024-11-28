@@ -20,7 +20,6 @@ struct PoolNode
 {
     T data {};
     bool bDeleted {};
-    /* TODO: ref counter? */
 };
 
 template<typename T, u32 CAP> struct Pool;
@@ -30,6 +29,7 @@ template<typename T, u32 CAP> inline s64 PoolPrevIdx(Pool<T, CAP>* s, s64 i);
 template<typename T, u32 CAP> inline s64 PoolFirstIdx(Pool<T, CAP>* s);
 template<typename T, u32 CAP> inline s64 PoolLastIdx(Pool<T, CAP>* s);
 
+/* statically allocated reusable resource collection */
 template<typename T, u32 CAP>
 struct Pool
 {
@@ -38,19 +38,8 @@ struct Pool
     u32 nOccupied {};
     mtx_t mtx;
 
-    T&
-    operator[](s64 i)
-    {
-        assert(!aNodes[i].bDeleted && "[MemPool]: accessing deleted node");
-        return aNodes[i].data;
-    }
-
-    const T&
-    operator[](s64 i) const
-    {
-        assert(!aNodes[i].bDeleted && "[MemPool]: accessing deleted node");
-        return aNodes[i];
-    }
+    T& operator[](s64 i) { assert(!aNodes[i].bDeleted && "[MemPool]: accessing deleted node"); return aNodes[i].data; }
+    const T& operator[](s64 i) const { assert(!aNodes[i].bDeleted && "[MemPool]: accessing deleted node"); return aNodes[i].data; }
 
     Pool() = default;
     Pool(INIT_FLAG e)
@@ -58,6 +47,7 @@ struct Pool
         if (e != INIT_FLAG::INIT) return;
 
         mtx_init(&mtx, mtx_plain);
+        for (auto& e : this->aNodes) e.bDeleted = true;
     }
 
     struct It
@@ -156,6 +146,20 @@ PoolPrevIdx(Pool<T, CAP>* s, s64 i)
 }
 
 template<typename T, u32 CAP>
+inline u32
+PoolIdx(const Pool<T, CAP>* s, const PoolNode<T>* p)
+{
+    return p - &s->aNodes.aData[0];
+}
+
+template<typename T, u32 CAP>
+inline u32
+PoolIdx(const Pool<T, CAP>* s, const T* p)
+{
+    return (PoolNode<T>*)p - &s->aNodes.aData[0];
+}
+
+template<typename T, u32 CAP>
 inline void
 PoolDestroy(Pool<T, CAP>* s)
 {
@@ -188,27 +192,32 @@ PoolRent(Pool<T, CAP>* s)
 }
 
 template<typename T, u32 CAP>
+inline PoolHnd
+PoolRent(Pool<T, CAP>* s, const T& value)
+{
+    auto idx = PoolRent(s);
+    (*s)[idx] = value;
+
+    return idx;
+}
+
+template<typename T, u32 CAP>
 inline void
 PoolReturn(Pool<T, CAP>* s, PoolHnd hnd)
 {
     guard::Mtx lock(&s->mtx);
 
     --s->nOccupied;
-    assert(s->nOccupied < CAP && "[MemPool]: nothing to return");
+    assert(s->nOccupied < CAP && "[Pool]: nothing to return");
 
     if (hnd == ArrSize(&s->aNodes) - 1) ArrFakePop(&s->aNodes);
     else
     {
         ArrPush(&s->aFreeIdxs, hnd);
-        s->aNodes[hnd].bDeleted = true;
+        auto& node = s->aNodes[hnd];
+        assert(!node.bDeleted && "[Pool]: returning already deleted node");
+        node.bDeleted = true;
     }
-}
-
-template<typename T, u32 CAP>
-[[nodiscard]] inline u32
-PoolByteSize(const Pool<T, CAP>* const s)
-{
-    return sizeof(*s);
 }
 
 } /* namespace adt */

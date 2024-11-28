@@ -6,7 +6,7 @@
 namespace frame
 {
 
-constexpr u32 TARGET_FPS = 1000;
+constexpr f64 TICKRATE = 240.0; /* updates/sec */
 
 constexpr f32 WIDTH = 1000.0f;
 constexpr f32 HEIGHT = 1000.0f;

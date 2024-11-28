@@ -19,8 +19,6 @@ namespace game
 
 static AllocatorPool<Arena> s_assetArenas(SIZE_MIN);
 
-static Pool<Entity, ASSET_MAX_COUNT> s_aEntities;
-
 static Vec<game::Block> s_aBlocks(AllocatorPoolRent(&s_assetArenas, SIZE_1K));
 
 static Shader s_shFontBitmap;
@@ -42,24 +40,23 @@ static parser::ttf::Font s_fontLiberation(AllocatorPoolRent(&s_assetArenas, SIZE
 static text::Bitmap s_textFPS;
 static text::TTF s_ttfTest(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 520));
 
+Pool<Entity, ASSET_MAX_COUNT> g_aEntities;
+static Arr<math::V2, ASSET_MAX_COUNT> s_aPrevPos;
+
 Player g_player {
     .enIdx = 0,
-    .speed = 0.8,
-    .dir {},
 };
 
 Ball g_ball {
     .enIdx = 0,
     .bReleased = false,
-    .speed = 0.8f,
     .radius = 20.0f,
-    .dir {},
 };
 
 static void drawFPSCounter(Arena* pAlloc);
 static void drawFPSCounterTTF(Arena* pAlloc);
 static void drawInfo(Arena* pArena);
-static void drawEntities(Arena* pAlloc);
+static void drawEntities(Arena* pAlloc, f64 updateTime);
 static void drawTTF(Arena* pAlloc);
 
 void
@@ -120,7 +117,7 @@ static inline math::V2
 nextPos(const T& e, bool bNormalizeDir)
 {
     auto dir = bNormalizeDir ? math::normalize(e.dir) : e.dir;
-    return s_aEntities[e.enIdx].pos + (dir * (frame::g_deltaTimeS * e.speed));
+    return e.pos + (dir * (frame::g_deltaTimeS * e.speed));
 }
 
 static REFLECT_SIDE
@@ -157,11 +154,12 @@ blockHit()
 
     for (auto& block : s_aBlocks)
     {
-        auto& b = s_aEntities[block.enIdx];
+        auto& b = g_aEntities[block.enIdx];
+        auto& enBall = g_aEntities[g_ball.enIdx];
 
         if (b.bDead || b.eColor == COLOR::INVISIBLE) continue;
 
-        math::V2 center = nextPos(g_ball, true);
+        math::V2 center = nextPos(enBall, true);
         math::V2 aabbHalfExtents {f::g_unit.x / 2, f::g_unit.y / 2};
         math::V2 aabbCenter = b.pos;
         math::V2 diff = center - b.pos;
@@ -170,8 +168,8 @@ blockHit()
         diff = closest - center;
         /*auto diffLen = math::V2Length(diff);*/
 
-        const auto& bx = s_aEntities[g_ball.enIdx].pos.x;
-        const auto& by = s_aEntities[g_ball.enIdx].pos.y;
+        const auto& bx = g_aEntities[g_ball.enIdx].pos.x;
+        const auto& by = g_aEntities[g_ball.enIdx].pos.y;
 
         const auto& ex = b.pos.x;
         const auto& ey = b.pos.y;
@@ -187,7 +185,7 @@ blockHit()
             auto side = getReflectionSide(diff);
 
             /* FIXME: sides are flipped */
-            auto& enBall = s_aEntities[g_ball.enIdx];
+            auto& enBall = g_aEntities[g_ball.enIdx];
             f32 off = 16.0f;
             switch (side)
             {
@@ -196,37 +194,37 @@ blockHit()
                 case REFLECT_SIDE::UP:
                 {
                     enBall.pos.y -= f::g_unit.y / off;
-                    g_ball.dir.y = -g_ball.dir.y;
+                    enBall.dir.y = -enBall.dir.y;
                 } break;
 
                 case REFLECT_SIDE::DOWN:
                 {
                     enBall.pos.y += f::g_unit.y / off;
-                    g_ball.dir.y = -g_ball.dir.y;
+                    enBall.dir.y = -enBall.dir.y;
                 } break;
 
                 case REFLECT_SIDE::LEFT:
                 {
                     enBall.pos.x += f::g_unit.x / off;
-                    if (math::eq(g_ball.dir.x, 0))
+                    if (math::eq(enBall.dir.x, 0))
                     {
-                        g_ball.dir.x = 0.1f;
+                        enBall.dir.x = 0.1f;
                         break;
                     }
 
-                    g_ball.dir.x = -g_ball.dir.x;
+                    enBall.dir.x = -enBall.dir.x;
                 } break;
 
                 case REFLECT_SIDE::RIGHT:
                 {
                     enBall.pos.x -= f::g_unit.x / off;
-                    if (math::eq(g_ball.dir.x, 0))
+                    if (math::eq(enBall.dir.x, 0))
                     {
-                        g_ball.dir.x = -0.1f;
+                        enBall.dir.x = -0.1f;
                         break;
                     }
 
-                    g_ball.dir.x = -g_ball.dir.x;
+                    enBall.dir.x = -enBall.dir.x;
                 } break;
             }
         }
@@ -240,8 +238,8 @@ static void
 paddleHit()
 {
     namespace f = frame;
-    auto& enBall = s_aEntities[g_ball.enIdx];
-    auto& enPlayer = s_aEntities[g_player.enIdx];
+    auto& enBall = g_aEntities[g_ball.enIdx];
+    auto& enPlayer = g_aEntities[g_player.enIdx];
 
     const auto& bx = enBall.pos.x;
     const auto& by = enBall.pos.y;
@@ -254,9 +252,9 @@ paddleHit()
         enBall.pos.y = (py - f::g_unit.y + f::g_unit.y/2.0f) + 4.0f;
         audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
 
-        g_ball.dir.y = 1.0f;
-        if (math::V2Length(g_player.dir) > 0.0f)
-            g_ball.dir += g_player.dir * 0.1f;
+        enBall.dir.y = 1.0f;
+        if (math::V2Length(enPlayer.dir) > 0.0f)
+            enBall.dir += enPlayer.dir * 0.1f;
     }
 }
 
@@ -265,7 +263,7 @@ outOfBounds()
 {
     namespace f = frame;
 
-    auto& enBall = s_aEntities[g_ball.enIdx];
+    auto& enBall = g_aEntities[g_ball.enIdx];
 
     /* out of bounds */
     bool bAddSound = false;
@@ -279,19 +277,19 @@ outOfBounds()
     else if (enBall.pos.y >= f::HEIGHT - f::g_unit.y)
     {
         enBall.pos.y = f::HEIGHT - f::g_unit.y - 4;
-        g_ball.dir.y = -1.0f;
+        enBall.dir.y = -1.0f;
         bAddSound = true;
     }
     else if (enBall.pos.x <= 0.0f - f::g_unit.x)
     {
         enBall.pos.x = -f::g_unit.x + 4;
-        g_ball.dir.x = -g_ball.dir.x;
+        enBall.dir.x = -enBall.dir.x;
         bAddSound = true;
     }
     else if (enBall.pos.x >= f::WIDTH - f::g_unit.x)
     {
         enBall.pos.x = f::WIDTH - f::g_unit.x - 4;
-        g_ball.dir.x = -g_ball.dir.x;
+        enBall.dir.x = -enBall.dir.x;
         bAddSound = true;
     }
 
@@ -335,8 +333,8 @@ loadLevel()
             if (at(i, j) != s8(COLOR::INVISIBLE))
             {
                 /*u32 idx = VecPush(&s_aEntities, {});*/
-                u32 idx = PoolRent(&s_aEntities);
-                auto& e = s_aEntities[idx];
+                u32 idx = PoolRent(&g_aEntities);
+                auto& e = g_aEntities[idx];
 
                 VecPush(&s_aBlocks, {u16(idx)});
                 e.pos = tilePosToImagePos(i, j);
@@ -355,8 +353,9 @@ loadLevel()
     }
 
     /*g_player.enIdx = VecPush(&s_aEntities, {});*/
-    g_player.enIdx = PoolRent(&s_aEntities);
-    auto& enPlayer = s_aEntities[g_player.enIdx];
+    g_player.enIdx = PoolRent(&g_aEntities);
+    auto& enPlayer = g_aEntities[g_player.enIdx];
+    enPlayer.speed = 2.5f;
     enPlayer.pos.x = frame::WIDTH/2 - frame::g_unit.x;
     enPlayer.texIdx = s_tPaddle.id;
     enPlayer.width = 2.0f;
@@ -366,8 +365,9 @@ loadLevel()
     enPlayer.eColor = COLOR::TEAL;
     enPlayer.bRemoveAfterDraw = false;
 
-    g_ball.enIdx = PoolRent(&s_aEntities);
-    auto& enBall = s_aEntities[g_ball.enIdx];
+    g_ball.enIdx = PoolRent(&g_aEntities);
+    auto& enBall = g_aEntities[g_ball.enIdx];
+    enBall.speed = 2.5f;
     enBall.eColor = COLOR::ORANGERED;
     enBall.texIdx = s_tBall.id;
     enBall.width = 1.0f;
@@ -376,28 +376,32 @@ loadLevel()
     enBall.bRemoveAfterDraw = false;
 
     audio::MixerAddBackground(app::g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
+
+    ArrSetSize(&s_aPrevPos, 0);
+    for (auto& en : g_aEntities)
+        ArrPush(&s_aPrevPos, en.pos);
 }
 
 void
 updateState()
 {
     namespace f = frame;
-    auto& enBall = s_aEntities[g_ball.enIdx];
-    auto& enPlayer = s_aEntities[g_player.enIdx];
+    auto& enBall = g_aEntities[g_ball.enIdx];
+    auto& enPlayer = g_aEntities[g_player.enIdx];
 
     /* player */
     {
-        enPlayer.pos = nextPos(g_player, false);
+        enPlayer.pos = nextPos(enPlayer, false);
 
         if (enPlayer.pos.x >= f::WIDTH - f::g_unit.x*2)
         {
             enPlayer.pos.x = f::WIDTH - f::g_unit.x*2;
-            g_player.dir = {};
+            enPlayer.dir = {};
         }
         else if (enPlayer.pos.x <= 0)
         {
             enPlayer.pos.x = 0;
-            g_player.dir = {};
+            enPlayer.dir = {};
         }
     }
 
@@ -408,7 +412,7 @@ updateState()
             blockHit();
             paddleHit();
             outOfBounds();
-            enBall.pos = nextPos(g_ball, true);
+            enBall.pos = nextPos(enBall, true);
 
         } else enBall.pos = enPlayer.pos;
 
@@ -422,9 +426,9 @@ updateState()
 }
 
 void
-draw(Arena* pArena)
+draw(Arena* pArena, f64 updateTime)
 {
-    drawEntities(pArena);
+    drawEntities(pArena, updateTime);
 
     drawFPSCounterTTF(pArena);
     drawInfo(pArena);
@@ -518,28 +522,37 @@ drawInfo(Arena* pArena)
 }
 
 static void
-drawEntities([[maybe_unused]] Arena* pArena)
+drawEntities([[maybe_unused]] Arena* pArena, f64 updateTime)
 {
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
 
-    for (const Entity& e : s_aEntities)
+    /*LOG("{:.10}, alpha: {}\n", updateTime / time, alpha);*/
+
+    for (const Entity& en : g_aEntities)
     {
-        if (e.bDead || e.eColor == COLOR::INVISIBLE) continue;
+        if (en.bDead || en.eColor == COLOR::INVISIBLE) continue;
+
+        f64 time = utils::timeNowS();
+        f64 alpha = (time - updateTime) / (1.0/frame::TICKRATE);
+
+        auto enIdx = PoolIdx(&g_aEntities, &en);
+
+        /*auto pos = math::lerp(en.pos, s_aPrevPos[enIdx], alpha);*/
 
         math::M4 tm = math::M4Iden();
-        tm = math::M4Iden();
-        tm = M4Translate(tm, {e.pos.x + e.xOff, e.pos.y + e.yOff, 0.0f + e.zOff});
-        tm = M4Scale(tm, {frame::g_unit.x * e.width, frame::g_unit.y * e.height, 1.0f});
+        tm = M4Translate(tm, {en.pos.x + en.xOff, en.pos.y + en.yOff, 0.0f + en.zOff});
+        /*tm = M4Translate(tm, {pos.x + en.xOff, pos.y + en.yOff, 0.0f + en.zOff});*/
+        tm = M4Scale(tm, {frame::g_unit.x * en.width, frame::g_unit.y * en.height, 1.0f});
 
-        if (idxLastTex != e.texIdx)
+        if (idxLastTex != en.texIdx)
         {
-            idxLastTex = e.texIdx;
-            texture::ImgBind(e.texIdx, GL_TEXTURE0);
+            idxLastTex = en.texIdx;
+            texture::ImgBind(en.texIdx, GL_TEXTURE0);
         }
 
         ShaderSetM4(&s_shSprite, "uModel", tm);
-        ShaderSetV3(&s_shSprite, "uColor", blockColorToV3(e.eColor));
+        ShaderSetV3(&s_shSprite, "uColor", blockColorToV3(en.eColor));
         PlainDraw(&s_plain);
     }
 }
@@ -549,13 +562,9 @@ cleanup()
 {
     PlainDestroy(&s_plain);
 
-    for (auto& e : g_aAllShaders)
-        ShaderDestroy(&e);
-    VecDestroy(&g_aAllShaders);
+    for (auto& e : g_aAllShaders) ShaderDestroy(&e);
 
-    for (auto& t : texture::g_aAllTextures)
-        texture::ImgDestroy(&t);
-    VecDestroy(&texture::g_aAllTextures);
+    for (auto& t : texture::g_aAllTextures) texture::ImgDestroy(&t);
     MapDestroy(&texture::g_mAllTexturesIdxs);
 
     AllocatorPoolFreeAll(&s_assetArenas);

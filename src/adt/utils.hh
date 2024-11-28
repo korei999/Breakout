@@ -128,7 +128,7 @@ timeNowUS()
 [[nodiscard]] inline f64
 timeNowMS()
 {
-    return timeNowUS() / 1'000.0;
+    return timeNowUS() / 1000.0;
 }
 
 [[nodiscard]] inline f64
@@ -144,6 +144,16 @@ sleepMS(f64 ms)
     usleep(ms * 1000.0);
 #elif _WIN32
     Sleep(ms);
+#endif
+}
+
+inline void
+sleepS(f64 s)
+{
+#ifdef __linux__
+    usleep(s * 1'000'000.0);
+#elif _WIN32
+    Sleep(s * 1000.0);
 #endif
 }
 
