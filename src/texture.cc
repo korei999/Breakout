@@ -35,7 +35,7 @@ namespace texture
 {
 
 Pool<Img, texture::MAX_COUNT> g_aAllTextures(INIT);
-Map<Hash> g_mAllTexturesIdxs(inl_pOsAlloc, texture::MAX_COUNT);
+Map<String, PoolHnd> g_mAllTexturesIdxs(inl_pOsAlloc, texture::MAX_COUNT);
 
 static mtx_t s_mtxAllTextures;
 static once_flag s_onceFlagAllTextures = ONCE_FLAG_INIT;
@@ -60,7 +60,7 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
         }
 
         idx = PoolRent(&g_aAllTextures, *s);
-        MapInsert(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = idx});
+        MapInsert(&g_mAllTexturesIdxs, {path, idx});
     }
 
 #ifdef D_TEXTURE
@@ -83,10 +83,10 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
     s->width = img.width;
     s->height = img.height;
     
-    auto found = MapSearch(&g_mAllTexturesIdxs, {.sPathKey = path, .vecIdx = idx});
+    auto found = MapSearch(&g_mAllTexturesIdxs, path);
     if (found)
     {
-        u32 idx = found.pData->vecIdx;
+        u32 idx = found.pData->y;
         g_aAllTextures[idx] = *s;
     }
     else LOG_FATAL("Why didn't find?\n");

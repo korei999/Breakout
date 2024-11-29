@@ -190,7 +190,7 @@ ShaderLoadOne(GLenum type, String path)
 
     Arena al(SIZE_8K);
 
-    Option<String> src = file::load(&al.super, path);
+    Opt<String> src = file::load(&al.super, path);
     if (!src) LOG_FATAL("error opening shader file: '{}'\n", path);
 
     const char* srcData = src.data.pData;

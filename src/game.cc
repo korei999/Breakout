@@ -324,7 +324,7 @@ loadLevel()
     VecSetSize(&s_aBlocks, 0);
 
     auto fBoxTex = MapSearch(&texture::g_mAllTexturesIdxs, {"test-assets/box3.bmp"});
-    auto boxTexId = texture::g_aAllTextures[fBoxTex.pData->vecIdx].id;
+    auto boxTexId = texture::g_aAllTextures[fBoxTex.pData->y].id;
 
     for (u32 i = 0; i < levelY; i++)
     {

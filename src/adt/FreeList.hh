@@ -47,6 +47,12 @@ struct FreeList
     FreeList(u64 _blockSize);
 };
 
+inline void* FreeListAlloc(FreeList* s, u64 nMembers, u64 mSize);
+inline void* FreeListZalloc(FreeList* s, u64 nMembers, u64 mSize);
+inline void* FreeListRealloc(FreeList* s, void* ptr, u64 nMembers, u64 mSize);
+inline void FreeListFree(FreeList* s, void* ptr);
+inline void FreeListFreeAll(FreeList* s);
+
 inline void
 _FreeListPrintTree(FreeList* s, Allocator* pAlloc)
 {

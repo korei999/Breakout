@@ -19,19 +19,7 @@ struct Img;
 struct Hash;
 
 extern Pool<Img, MAX_COUNT> g_aAllTextures;
-extern Map<Hash> g_mAllTexturesIdxs;
-
-struct Hash
-{
-    String sPathKey {};
-    u32 vecIdx {};
-};
-
-inline bool
-operator==(const Hash& l, const Hash& r)
-{
-    return l.sPathKey == r.sPathKey;
-}
+extern Map<String, PoolHnd> g_mAllTexturesIdxs;
 
 enum TYPE : s8
 {
@@ -150,10 +138,3 @@ ImgSubmit(void* p)
 }
 
 } /* namespace texure */
-
-template<>
-inline adt::u64
-adt::hash::func(const texture::Hash& x)
-{
-    return hash::func(x.sPathKey);
-}

@@ -18,6 +18,45 @@ struct ListNode
 };
 
 template<typename T>
+constexpr ListNode<T>*
+ListNodeAlloc(Allocator* pA, const T& x)
+{
+    auto* pNew = (ListNode<T>*)alloc(pA, 1, sizeof(ListNode<T>));
+    pNew->data = x;
+
+    return pNew;
+}
+
+template<typename T> struct ListBase;
+
+template<typename T>
+constexpr void ListDestroy(ListBase<T>* s, Allocator* pA);
+
+template<typename T>
+constexpr ListNode<T>* ListPushFront(ListBase<T>* s, ListNode<T>* pNew);
+
+template<typename T>
+constexpr ListNode<T>* ListPushBack(ListBase<T>* s, ListNode<T>* pNew);
+
+template<typename T>
+constexpr ListNode<T>* ListPushFront(ListBase<T>* s, Allocator* pA, const T& x);
+
+template<typename T>
+constexpr ListNode<T>* ListPushBack(ListBase<T>* s, Allocator* pA, const T& x);
+
+template<typename T>
+constexpr void ListRemove(ListBase<T>* s, ListNode<T>* p);
+
+template<typename T>
+constexpr void ListInsertAfter(ListBase<T>* s, ListNode<T>* pAfter, ListNode<T>* p);
+
+template<typename T>
+constexpr void ListInsertBefore(ListBase<T>* s, ListNode<T>* pBefore, ListNode<T>* p);
+
+template<typename T, auto FN_CMP = utils::compare<T>>
+constexpr void ListSort(ListBase<T>* s);
+
+template<typename T>
 struct ListBase
 {
     ListNode<T>* pFirst {};
@@ -63,16 +102,6 @@ ListDestroy(ListBase<T>* s, Allocator* pA)
 
     s->pFirst = s->pLast = nullptr;
     s->size = 0;
-}
-
-template<typename T>
-constexpr ListNode<T>*
-ListNodeAlloc(Allocator* pA, const T& x)
-{
-    auto* pNew = (ListNode<T>*)alloc(pA, 1, sizeof(ListNode<T>));
-    pNew->data = x;
-
-    return pNew;
 }
 
 template<typename T>
@@ -195,7 +224,7 @@ ListInsertBefore(ListBase<T>* s, ListNode<T>* pBefore, ListNode<T>* p)
 }
 
 /* https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.c */
-template<typename T, auto FN_CMP = utils::compare<T>>
+template<typename T, auto FN_CMP>
 constexpr void
 ListSort(ListBase<T>* s)
 {

@@ -20,6 +20,26 @@ nullTermStringSize(const char* str)
     return i;
 }
 
+struct String;
+
+constexpr bool StringEndsWith(String l, String r);
+inline bool operator==(const String& l, const String& r);
+inline bool operator==(const String& l, const char* r);
+inline bool operator!=(const String& l, const String& r);
+constexpr s64 operator-(const String& l, const String& r);
+constexpr u32 StringLastOf(String sv, char c);
+inline String StringAlloc(Allocator* p, const char* str, u32 size);
+inline String StringAlloc(Allocator* p, u32 size);
+inline String StringAlloc(Allocator* p, const char* str);
+inline String StringAlloc(Allocator* p, const String s);
+inline void StringDestroy(Allocator* p, String* s);
+constexpr u64 hashFNV(const String str);
+inline String StringCat(Allocator* p, const String l, const String r);
+inline void StringAppend(String* l, const String r);
+inline void StringTrimEnd(String* s);
+constexpr void StringRemoveNLEnd(String* s); /* removes nextline character if it ends with one */
+constexpr bool StringContains(String l, const String r);
+
 /* just pointer + size, no allocations, use `StringAlloc()` for that */
 struct String
 {
@@ -324,7 +344,6 @@ StringTrimEnd(String* s)
         else break;
 }
 
-/* removes nextline character if it ends with one */
 constexpr void
 StringRemoveNLEnd(String* s)
 {

@@ -24,10 +24,35 @@ struct PoolNode
 
 template<typename T, u32 CAP> struct Pool;
 
-template<typename T, u32 CAP> inline s64 PoolNextIdx(Pool<T, CAP>* s, s64 i);
-template<typename T, u32 CAP> inline s64 PoolPrevIdx(Pool<T, CAP>* s, s64 i);
-template<typename T, u32 CAP> inline s64 PoolFirstIdx(Pool<T, CAP>* s);
-template<typename T, u32 CAP> inline s64 PoolLastIdx(Pool<T, CAP>* s);
+template<typename T, u32 CAP>
+inline s64 PoolFirstIdx(Pool<T, CAP>* s);
+
+template<typename T, u32 CAP>
+inline s64 PoolLastIdx(Pool<T, CAP>* s);
+
+template<typename T, u32 CAP>
+inline s64 PoolNextIdx(Pool<T, CAP>* s, s64 i);
+
+template<typename T, u32 CAP>
+inline s64 PoolPrevIdx(Pool<T, CAP>* s, s64 i);
+
+template<typename T, u32 CAP>
+inline u32 PoolIdx(const Pool<T, CAP>* s, const PoolNode<T>* p);
+
+template<typename T, u32 CAP>
+inline u32 PoolIdx(const Pool<T, CAP>* s, const T* p);
+
+template<typename T, u32 CAP>
+inline void PoolDestroy(Pool<T, CAP>* s);
+
+template<typename T, u32 CAP>
+[[nodiscard]] inline PoolHnd PoolRent(Pool<T, CAP>* s);
+
+template<typename T, u32 CAP>
+inline PoolHnd PoolRent(Pool<T, CAP>* s, const T& value);
+
+template<typename T, u32 CAP>
+inline void PoolReturn(Pool<T, CAP>* s, PoolHnd hnd);
 
 /* statically allocated reusable resource collection */
 template<typename T, u32 CAP>
@@ -95,20 +120,22 @@ struct Pool
     };
 
     It begin() { return {this, PoolFirstIdx(this)}; }
-    It end() { return {this, PoolLastIdx(this) + 1}; }
+    It end() { return {this, this->aNodes.size == 0 ? -1 : PoolLastIdx(this) + 1}; }
     It rbegin() { return {this, PoolLastIdx(this)}; }
-    It rend() { return {this, PoolFirstIdx(this) - 1}; }
+    It rend() { return {this, this->aNodes.size == 0 ? -1 : PoolFirstIdx(this) - 1}; }
 
     const It begin() const { return {this, PoolFirstIdx(this)}; }
-    const It end() const { return {this, PoolLastIdx(this) + 1}; }
+    const It end() const { return {this, this->aNodes.size == 0 ? -1 : PoolLastIdx(this) + 1}; }
     const It rbegin() const { return {this, PoolLastIdx(this)}; }
-    const It rend() const { return {this, PoolFirstIdx(this) - 1}; }
+    const It rend() const { return {this, this->aNodes.size == 0 ? -1 : PoolFirstIdx(this) - 1}; }
 };
 
 template<typename T, u32 CAP>
 inline s64
 PoolFirstIdx(Pool<T, CAP>* s)
 {
+    if (s->aNodes.size == 0) return -1;
+
     for (u32 i = 0; i < s->aNodes.size; ++i)
         if (!s->aNodes[i].bDeleted) return i;
 
@@ -119,7 +146,9 @@ template<typename T, u32 CAP>
 inline s64
 PoolLastIdx(Pool<T, CAP>* s)
 {
-    for (s64 i = s->aNodes.size - 1; i >= 0; --i)
+    if (s->aNodes.size == 0) return -1;
+
+    for (s64 i = s64(s->aNodes.size) - 1; i >= 0; --i)
         if (!s->aNodes[i].bDeleted) return i;
 
     return s->aNodes.size;
@@ -149,7 +178,9 @@ template<typename T, u32 CAP>
 inline u32
 PoolIdx(const Pool<T, CAP>* s, const PoolNode<T>* p)
 {
-    return p - &s->aNodes.aData[0];
+    u32 r = p - &s->aNodes.aData[0];
+    assert(r < CAP && "[Pool]: out of range");
+    return r;
 }
 
 template<typename T, u32 CAP>

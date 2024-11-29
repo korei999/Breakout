@@ -39,11 +39,6 @@ struct TableRecord
     u32 length {};
 };
 
-inline bool operator==(const TableRecord& l, const TableRecord& r)
-{
-    return l.tag == r.tag;
-}
-
 struct TableDirectory
 {
     u32 sfntVersion; /* 0x00010000 or 0x4F54544F ('OTTO') */
@@ -54,7 +49,7 @@ struct TableDirectory
                         * which is equal to floor(log2(numTables))). */
     u16 rangeShift; /* numTables times 16, minus searchRange ((numTables * 16) - searchRange). */
     // VecBase<TableRecord> aTableRecords;
-    MapBase<TableRecord> mTableRecords;
+    MapBase<String, TableRecord> mTableRecords;
 };
 
 struct Kern
@@ -86,17 +81,13 @@ struct Cmap
     VecBase<CMAPEncodingSubtable> aSubtables;
 };
 
-struct CodeToGlyphIdx
-{
-    u16 code {};
-    u16 glyphIdx {};
-};
-
-inline bool
-operator==(const CodeToGlyphIdx& l, const CodeToGlyphIdx& r)
-{
-    return l.code == r.code;
-}
+using code = u16;
+using glyphIdx = u16;
+// struct CodeToGlyphIdx
+// {
+//     u16 code {};
+//     u16 glyphIdx {};
+// };
 
 /* 'cmap' format 4
  * 
@@ -124,7 +115,7 @@ struct CmapFormat4
     u16* idDelta; /* [segCount] Delta for all character codes in segment */
     u16* idRangeOffset; /* [segCount] Offset in bytes to glyph indexArray, or 0 */
     // VecBase<u16> aGlyghIndex; /* Glyph index array */
-    MapBase<CodeToGlyphIdx> mGlyphIndices;
+    MapBase<code, glyphIdx> mGlyphIndices;
 };
 
 enum OUTLINE_FLAG : u8
@@ -287,18 +278,6 @@ struct Glyph
         GlyphCompound compound;
     } uGlyph {};
 };
-
-struct OffsetToGlyph
-{
-    u32 offset {};
-    Glyph glyph {};
-};
-
-inline bool
-operator==(const OffsetToGlyph& l, const OffsetToGlyph& r)
-{
-    return l.offset == r.offset;
-}
 
 /* Many of the fields in the 'head' table are closely related to the values in other tables.
  * For example, the unitsPerEm field is fundamental to all tables which deal with curves or metrics.
@@ -486,7 +465,7 @@ struct Font
     Head head {};
     Cmap cmap {};
     CmapFormat4 cmapF4 {};
-    MapBase<OffsetToGlyph> mOffsetToGlyph {};
+    MapBase<u32, Glyph> mOffsetToGlyph {};
 
     Font() = default;
     Font(Allocator* _pA) : p(_pA), mOffsetToGlyph(_pA, 128) {}
@@ -514,24 +493,3 @@ FontLoadParseSubmit(void* pArg)
 
 } /* namespace ttf */
 } /* namespace parser */
-
-template<>
-inline u64
-hash::func(const parser::ttf::TableRecord& x)
-{
-    return hash::func(x.tag);
-}
-
-template<>
-inline u64
-hash::func(const parser::ttf::CodeToGlyphIdx& x)
-{
-    return hash::func(x.code);
-}
-
-template<>
-inline u64
-hash::func(const parser::ttf::OffsetToGlyph& x)
-{
-    return hash::func(x.offset);
-}

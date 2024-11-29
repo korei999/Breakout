@@ -2,7 +2,7 @@
 
 #include "String.hh"
 #include "logs.hh"
-#include "Option.hh"
+#include "Opt.hh"
 #include "defer.hh"
 
 namespace adt
@@ -11,7 +11,7 @@ namespace file
 {
 
 [[nodiscard]]
-inline Option<String>
+inline Opt<String>
 load(Allocator* pAlloc, String sPath)
 {
     FILE* pf = fopen(sPath.pData, "rb");

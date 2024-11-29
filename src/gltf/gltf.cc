@@ -178,7 +178,7 @@ void
 ModelProcJSONObjs(Model* s)
 {
     /* collect all the top level objects */
-    for (auto& node : json::ParserGetHeadObj(&s->parser))
+    for (auto& node : json::ParserRoot(&s->parser))
     {
         switch (hashFNV(node.svKey))
         {
@@ -301,7 +301,7 @@ ModelProcBuffers(Model* s)
         if (!pByteLength) LOG_FATAL("'byteLength' field is required\n");
 
         String svUri;
-        Option<String> rsBin;
+        Opt<String> rsBin;
         String aBin;
 
         if (pUri)

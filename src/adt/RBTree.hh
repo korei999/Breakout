@@ -1,4 +1,4 @@
-/* Some code is borrowed from OpenBSD's red-black tree implementation. */
+/* Borrowed from OpenBSD's red-black tree implementation. */
 
 /*
  * Copyright 2002 Niels Provos <provos@citi.umich.edu>
@@ -60,13 +60,26 @@ struct RBTreeBase
     RBNode<T>* pRoot = nullptr;
 };
 
-template<typename T> inline RBNode<T>* RBRoot(RBTreeBase<T>* s);
-template<typename T> inline RBNode<T>* RBNodeAlloc(Allocator* pA, const T& data);
-template<typename T> inline bool RBEmpty(RBTreeBase<T>* s);
-template<typename T> inline RBNode<T>* RBRemove(RBTreeBase<T>* s, RBNode<T>* elm);
-template<typename T> inline void RBRemoveAndFree(RBTreeBase<T>* s, Allocator* p, RBNode<T>* elm);
-template<typename T> inline RBNode<T>* RBInsert(RBTreeBase<T>* s, RBNode<T>* elm, bool bAllowDuplicates);
-template<typename T> inline RBNode<T>* RBInsert(RBTreeBase<T>* s, Allocator* pA, const T& data, bool bAllowDuplicates);
+template<typename T>
+inline RBNode<T>* RBRoot(RBTreeBase<T>* s);
+
+template<typename T>
+inline RBNode<T>* RBNodeAlloc(Allocator* pA, const T& data);
+
+template<typename T>
+inline bool RBEmpty(RBTreeBase<T>* s);
+
+template<typename T>
+inline RBNode<T>* RBRemove(RBTreeBase<T>* s, RBNode<T>* elm);
+
+template<typename T>
+inline void RBRemoveAndFree(RBTreeBase<T>* s, Allocator* p, RBNode<T>* elm);
+
+template<typename T>
+inline RBNode<T>* RBInsert(RBTreeBase<T>* s, RBNode<T>* elm, bool bAllowDuplicates);
+
+template<typename T>
+inline RBNode<T>* RBInsert(RBTreeBase<T>* s, Allocator* pA, const T& data, bool bAllowDuplicates);
 
 template<typename T>
 inline Pair<RBNode<T>*, RBNode<T>*>
@@ -78,8 +91,11 @@ RBTraverse(
     RB_ORDER order
 );
 
-template<typename T> inline RBNode<T>* RBSearch(RBNode<T>* p, const T& data);
-template<typename T> inline int RBDepth(RBNode<T>* p);
+template<typename T>
+inline RBNode<T>* RBSearch(RBNode<T>* p, const T& data);
+
+template<typename T>
+inline int RBDepth(RBNode<T>* p);
 
 template<typename T>
 inline void
@@ -624,66 +640,30 @@ struct RBTree
 };
 
 template<typename T>
-inline RBNode<T>*
-RBRoot(RBTree<T>* s)
-{
-    return RBRoot(&s->base);
-}
+inline RBNode<T>* RBRoot(RBTree<T>* s) { return RBRoot<T>(&s->base); }
 
 template<typename T>
-inline bool
-RBEmpty(RBTree<T>* s)
-{
-    return RBEmpty(&s->base);
-}
+inline bool RBEmpty(RBTree<T>* s) { return RBEmpty<T>(&s->base); }
 
 template<typename T>
-inline RBNode<T>*
-RBRemove(RBTree<T>* s, RBNode<T>* elm)
-{
-    return RBRemove(&s->base, elm);
-}
+inline RBNode<T>* RBRemove(RBTree<T>* s, RBNode<T>* elm) { return RBRemove<T>(&s->base, elm); }
 
 template<typename T>
-inline RBNode<T>*
-RBRemove(RBTree<T>* s, const T& x)
-{
-    return RBRemove(&s->base, RBSearch(s->base.pRoot, x));
-}
+inline RBNode<T>* RBRemove(RBTree<T>* s, const T& x) { return RBRemove<T>(&s->base, RBSearch<T>(s->base.pRoot, x)); }
 
 template<typename T>
-inline void
-RBRemoveAndFree(RBTree<T>* s, RBNode<T>* elm)
-{
-    RBRemoveAndFree(&s->base, s->pAlloc, elm);
-}
+inline void RBRemoveAndFree(RBTree<T>* s, RBNode<T>* elm) { RBRemoveAndFree<T>(&s->base, s->pAlloc, elm); }
 
 template<typename T>
-inline void
-RBRemoveAndFree(RBTree<T>* s, const T& x)
-{
-    RBRemoveAndFree(&s->base, s->pAlloc, RBSearch(s->base.pRoot, x));
-}
+inline void RBRemoveAndFree(RBTree<T>* s, const T& x) { RBRemoveAndFree(&s->base, s->pAlloc, RBSearch<T>(s->base.pRoot, x)); }
 
 template<typename T>
-inline RBNode<T>*
-RBInsert(RBTree<T>* s, RBNode<T>* elm, bool bAllowDuplicates)
-{
-    return RBInsert(&s->base, elm, bAllowDuplicates);
-}
+inline RBNode<T>* RBInsert(RBTree<T>* s, RBNode<T>* elm, bool bAllowDuplicates) { return RBInsert<T>(&s->base, elm, bAllowDuplicates); }
 
 template<typename T>
-inline RBNode<T>*
-RBInsert(RBTree<T>* s, const T& data, bool bAllowDuplicates)
-{
-    return RBInsert(&s->base, s->pAlloc, data, bAllowDuplicates);
-}
+inline RBNode<T>* RBInsert(RBTree<T>* s, const T& data, bool bAllowDuplicates) { return RBInsert<T>(&s->base, s->pAlloc, data, bAllowDuplicates); }
 
 template<typename T>
-inline void
-RBDestroy(RBTree<T>* s)
-{
-    RBDestroy(&s->base, s->pAlloc);
-}
+inline void RBDestroy(RBTree<T>* s) { RBDestroy<T>(&s->base, s->pAlloc); }
 
 } /* namespace adt */

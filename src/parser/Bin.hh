@@ -37,7 +37,7 @@ BinLoadFile(Bin* s, String path)
     s->sPath = StringAlloc(s->pAlloc, path);
     s->pos = 0;
 
-    Option<String> rs = file::load(s->pAlloc, path);
+    Opt<String> rs = file::load(s->pAlloc, path);
     if (!rs) LOG_FATAL("error opening file: '{}'\n", path);
 
     s->sFile = rs.data;

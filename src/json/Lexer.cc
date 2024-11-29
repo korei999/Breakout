@@ -19,7 +19,7 @@ LexerDestroy(Lexer* s)
 RESULT
 LexerLoadFile(Lexer* s, adt::String path)
 {
-    Option<String> rs = file::load(s->pAlloc, path);
+    Opt<String> rs = file::load(s->pAlloc, path);
     if (!rs) return FAIL;
 
     s->sFile = rs.data;
