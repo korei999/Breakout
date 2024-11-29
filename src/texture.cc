@@ -60,7 +60,7 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
         }
 
         idx = PoolRent(&g_aAllTextures, *s);
-        MapInsert(&g_mAllTexturesIdxs, {path, idx});
+        MapInsert(&g_mAllTexturesIdxs, path, idx);
     }
 
 #ifdef D_TEXTURE

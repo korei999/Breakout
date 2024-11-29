@@ -467,7 +467,7 @@ getGlyphIdx(Font* s, u16 code)
             }
             else idx = (std::byteswap(c.idDelta[i]) + code) & 0xffff;
 
-            MapInsert(&c.mCodeToGlyphIdx, s->p.pAlloc, {code, u16(idx)});
+            MapInsert(&c.mCodeToGlyphIdx, s->p.pAlloc, code, u16(idx));
             break;
         }
     }
@@ -512,7 +512,7 @@ FontReadGlyph(Font* s, u32 code)
         readCompoundGlyph(s, &g);
     else readSimpleGlyph(s, &g);
 
-    MapInsert(&s->mOffsetToGlyph, s->p.pAlloc, {offset, g});
+    MapInsert(&s->mOffsetToGlyph, s->p.pAlloc, offset, g);
 
     return g;
 };
@@ -601,7 +601,7 @@ FontParse(Font* s)
             .length = BinRead32Rev(&s->p),
         };
 
-        MapInsert(&td.mStringToTableRecord, s->p.pAlloc, {r.tag, r});
+        MapInsert(&td.mStringToTableRecord, s->p.pAlloc, r.tag, r);
         if (r.tag != "head")
         {
             auto checkSum = getTableChecksum((u32*)(&s->p.sFile[r.offset]), r.length);

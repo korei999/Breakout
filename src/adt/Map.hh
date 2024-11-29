@@ -21,16 +21,18 @@ struct KeyVal
 template<typename K, typename V>
 struct MapBucket
 {
-    KeyVal<K, V> keyValue {};
+    K key {};
+    V val {};
     bool bOccupied = false;
     bool bDeleted = false;
+    /* keep this order for iterators */
 };
 
 /* custom return type for insert/search operations */
 template<typename K, typename V>
 struct MapResult
 {
-    KeyVal<K, V>* pData {};
+    MapBucket<K, V>* pData {};
     u64 hash {};
     MAP_RESULT_STATUS eStatus {};
 
@@ -58,7 +60,7 @@ template<typename K, typename V>
 inline f32 MapLoadFactor(MapBase<K, V>* s);
 
 template<typename K, typename V>
-inline MapResult<K, V> MapInsert(MapBase<K ,V>* s, Allocator* p, const KeyVal<K, V>& kv);
+inline MapResult<K, V> MapInsert(MapBase<K ,V>* s, Allocator* p, const K& key, const V& val);
 
 template<typename K, typename V>
 [[nodiscard]] inline MapResult<K, V> MapSearch(MapBase<K, V>* s, const K& key);
@@ -70,7 +72,7 @@ template<typename K, typename V>
 inline void MapRemove(MapBase<K, V>*s, const K& key);
 
 template<typename K, typename V>
-inline MapResult<K, V> MapTryInsert(MapBase<K, V>* s, Allocator* p, const KeyVal<K, V> kv);
+inline MapResult<K, V> MapTryInsert(MapBase<K, V>* s, Allocator* p, const K& key, const V& val);
 
 template<typename K, typename V>
 inline void MapDestroy(MapBase<K, V>* s, Allocator* p);
@@ -101,15 +103,15 @@ struct MapBase
 
         It(MapBase* _s, u32 _i) : s(_s), i(_i) {}
 
-        KeyVal<K, V>& operator*() { return s->aBuckets[i].keyValue; }
-        KeyVal<K, V>* operator->() { return &s->aBuckets[i].keyValue; }
+        KeyVal<K, V>& operator*() { return *(KeyVal<K, V>*)&s->aBuckets[i]; }
+        KeyVal<K, V>* operator->() { return (KeyVal<K, V>*)&s->aBuckets[i]; }
 
         It operator++()
         {
             i = MapNextI(s, i);
             return {s, i};
         }
-        It operator++(int) { KeyVal<K, V>* tmp = s++; return tmp; }
+        It operator++(int) { auto* tmp = s++; return tmp; }
 
         friend bool operator==(const It& l, const It& r) { return l.i == r.i; }
         friend bool operator!=(const It& l, const It& r) { return l.i != r.i; }
@@ -135,7 +137,9 @@ template<typename K, typename V>
 inline u32
 MapIdx(MapBase<K, V>* s, MapResult<K, V> res)
 {
-    return MapIdx(s, res.pData);
+    auto idx = res.pData - &s->aBuckets[0];
+    assert(idx < VecCap(&s->aBuckets));
+    return idx;
 }
 
 template<typename K, typename V>
@@ -172,14 +176,14 @@ MapLoadFactor(MapBase<K, V>* s)
 
 template<typename K, typename V>
 inline MapResult<K, V>
-MapInsert(MapBase<K ,V>* s, Allocator* p, const KeyVal<K, V>& kv)
+MapInsert(MapBase<K ,V>* s, Allocator* p, const K& key, const V& val)
 {
     if (VecCap(&s->aBuckets) == 0) *s = {p};
 
     if (MapLoadFactor(s) >= s->maxLoadFactor)
         _MapRehash(s, p, VecCap(&s->aBuckets) * 2);
 
-    u64 hash = hash::func(kv.key);
+    u64 hash = hash::func(key);
     u32 idx = u32(hash % VecCap(&s->aBuckets));
 
     while (s->aBuckets[idx].bOccupied)
@@ -188,13 +192,14 @@ MapInsert(MapBase<K ,V>* s, Allocator* p, const KeyVal<K, V>& kv)
         if (idx >= VecCap(&s->aBuckets)) idx = 0;
     }
 
-    s->aBuckets[idx].keyValue = kv;
+    s->aBuckets[idx].key = key;
+    s->aBuckets[idx].val = val;
     s->aBuckets[idx].bOccupied = true;
     s->aBuckets[idx].bDeleted = false;
     ++s->nOccupied;
 
     return {
-        .pData = &s->aBuckets[idx].keyValue,
+        .pData = &s->aBuckets[idx],
         .hash = hash,
         .eStatus = MAP_RESULT_STATUS::INSERTED
     };
@@ -216,9 +221,9 @@ MapSearch(MapBase<K, V>* s, const K& key)
 
     while (aBuckets[idx].bOccupied || aBuckets[idx].bDeleted)
     {
-        if (!aBuckets[idx].bDeleted && aBuckets[idx].keyValue.key == key)
+        if (!aBuckets[idx].bDeleted && aBuckets[idx].key == key)
         {
-            res.pData = &aBuckets[idx].keyValue;
+            res.pData = &aBuckets[idx];
             res.eStatus = MAP_RESULT_STATUS::FOUND;
             break;
         }
@@ -251,15 +256,15 @@ MapRemove(MapBase<K, V>*s, const K& key)
 
 template<typename K, typename V>
 inline MapResult<K, V>
-MapTryInsert(MapBase<K, V>* s, Allocator* p, const KeyVal<K, V> kv)
+MapTryInsert(MapBase<K, V>* s, Allocator* p, const K& key, const V& val)
 {
-    auto f = MapSearch(s, kv.key);
+    auto f = MapSearch(s, key);
     if (f)
     {
         f.eStatus = MAP_RESULT_STATUS::FOUND;
         return f;
     }
-    else return MapInsert(s, p, kv);
+    else return MapInsert(s, p, key, val);
 }
 
 template<typename K, typename V>
@@ -289,7 +294,7 @@ _MapRehash(MapBase<K, V>* s, Allocator* p, u32 size)
 
     for (u32 i = 0; i < VecCap(&s->aBuckets); ++i)
         if (s->aBuckets[i].bOccupied)
-            MapInsert(&mNew, p, s->aBuckets[i].keyValue);
+            MapInsert(&mNew, p, s->aBuckets[i].key, s->aBuckets[i].val);
 
     MapDestroy(s, p);
     *s = mNew;
@@ -326,43 +331,40 @@ struct Map
 };
 
 template<typename K, typename V>
-inline u32 MapIdx(Map<K, V>* s, KeyVal<K, V>* pItem) { return MapIdx(&s->base, pItem); }
-
-template<typename K, typename V>
 inline u32 MapIdx(Map<K, V>* s, MapResult<K, V> res) { return MapIdx<K, V>(&s->base, res); }
 
 template<typename K, typename V>
-inline u32 MapFirstI(Map<K, V>* s) { return MapFirstI(&s->base); }
+inline u32 MapFirstI(Map<K, V>* s) { return MapFirstI<K, V>(&s->base); }
 
 template<typename K, typename V>
-inline u32 MapNextI(Map<K, V>* s, u32 i) { return MapNextI(&s->base, i); }
+inline u32 MapNextI(Map<K, V>* s, u32 i) { return MapNextI<K, V>(&s->base, i); }
 
 template<typename K, typename V>
-inline f32 MapLoadFactor(Map<K, V>* s) { return MapLoadFactor(&s->base); }
+inline f32 MapLoadFactor(Map<K, V>* s) { return MapLoadFactor<K, V>(&s->base); }
 
 template<typename K, typename V>
-inline MapResult<K, V> MapInsert(Map<K ,V>* s, const KeyVal<K, V>& kv) { return MapInsert(&s->base, s->pA, kv); }
+inline MapResult<K, V> MapInsert(Map<K ,V>* s, const K& key, const V& val) { return MapInsert<K, V>(&s->base, s->pA, key, val); }
 
 template<typename K, typename V>
-[[nodiscard]] inline MapResult<K, V> MapSearch(Map<K, V>* s, const K& key) { return MapSearch(&s->base, key); }
+[[nodiscard]] inline MapResult<K, V> MapSearch(Map<K, V>* s, const K& key) { return MapSearch<K, V>(&s->base, key); }
 
 template<typename K, typename V>
-inline void MapRemove(Map<K, V>*s, u32 i) { MapRemove(&s->base, i); }
+inline void MapRemove(Map<K, V>*s, u32 i) { MapRemove<K, V>(&s->base, i); }
 
 template<typename K, typename V>
-inline void MapRemove(Map<K, V>*s, const K& key) { MapRemove(&s->base, key); }
+inline void MapRemove(Map<K, V>*s, const K& key) { MapRemove<K, V>(&s->base, key); }
 
 template<typename K, typename V>
-inline MapResult<K, V> MapTryInsert(Map<K, V>* s, const KeyVal<K, V> kv) { return MapTryInsert(&s->base, s->pA, kv); }
+inline MapResult<K, V> MapTryInsert(Map<K, V>* s, const K& key, const V& val) { return MapTryInsert<K, V>(&s->base, s->pA, key, val); }
 
 template<typename K, typename V>
-inline void MapDestroy(Map<K, V>* s) { MapDestroy(&s->base, s->pA); }
+inline void MapDestroy(Map<K, V>* s) { MapDestroy<K, V>(&s->base, s->pA); }
 
 template<typename K, typename V>
-inline u32 MapCap(Map<K, V>* s) { return MapCap(&s->base); }
+inline u32 MapCap(Map<K, V>* s) { return MapCap<K, V>(&s->base); }
 
 template<typename K, typename V>
-inline u32 MapSize(Map<K, V>* s) { return MapSize(&s->base); }
+inline u32 MapSize(Map<K, V>* s) { return MapSize<K, V>(&s->base); }
 
 namespace print
 {
@@ -379,6 +381,24 @@ formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, MAP_RESULT_STA
     auto statusIdx = std::underlying_type_t<MAP_RESULT_STATUS>(eStatus);
     assert(statusIdx < utils::size(map) && "out of range enum");
     return printArgs(ctx, map[statusIdx]);
+}
+
+template<typename K, typename V>
+inline u32
+formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const MapBucket<K, V>& x)
+{
+    ctx.fmt = "[{}, {}]";
+    ctx.fmtIdx = 0;
+    return printArgs(ctx, x.key, x.val);
+}
+
+template<typename K, typename V>
+inline u32
+formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const KeyVal<K, V>& x)
+{
+    ctx.fmt = "[{}, {}]";
+    ctx.fmtIdx = 0;
+    return printArgs(ctx, x.key, x.val);
 }
 
 } /* namespace print */
