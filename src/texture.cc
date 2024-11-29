@@ -86,7 +86,7 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
     auto found = MapSearch(&g_mAllTexturesIdxs, path);
     if (found)
     {
-        u32 idx = found.pData->y;
+        u32 idx = found.pData->val;
         g_aAllTextures[idx] = *s;
     }
     else LOG_FATAL("Why didn't find?\n");

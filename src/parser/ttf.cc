@@ -113,7 +113,7 @@ readHeadTable(Font* s)
     auto fHead = getTable(s, "head");
     assert(fHead);
 
-    s->p.pos = fHead.pData->y.offset;
+    s->p.pos = fHead.pData->val.offset;
 
     auto& h = s->head;
 
@@ -274,7 +274,7 @@ readCmapTable(Font* s)
     auto fCmap = getTable(s, "cmap");
     assert(fCmap);
 
-    s->p.pos = fCmap.pData->y.offset;
+    s->p.pos = fCmap.pData->val.offset;
 
     auto& c = s->cmap;
 
@@ -303,7 +303,7 @@ readCmapTable(Font* s)
 #endif
         if (lastSt.platformID == 3 && lastSt.platformSpecificID <= 1)
         {
-            readCmap(s, fCmap.pData->y.offset + lastSt.offset);
+            readCmap(s, fCmap.pData->val.offset + lastSt.offset);
             break;
         }
         else if (lastSt.platformID == 0 && lastSt.platformSpecificID == 3)
@@ -350,19 +350,19 @@ getGlyphOffset(Font* s, u32 idx)
 
     if (s->head.indexToLocFormat == 1)
     {
-        s->p.pos = locaTable.y.offset + idx*4;
+        s->p.pos = locaTable.val.offset + idx*4;
         offset = BinRead32Rev(&s->p);
     }
     else
     {
-        s->p.pos = locaTable.y.offset + idx*2;
+        s->p.pos = locaTable.val.offset + idx*2;
         offset = BinRead16Rev(&s->p);
     }
 
     auto fGlyf = getTable(s, "glyf");
     assert(fGlyf);
 
-    return offset + fGlyf.pData->y.offset;
+    return offset + fGlyf.pData->val.offset;
 }
 
 static void
@@ -446,7 +446,7 @@ getGlyphIdx(Font* s, u16 code)
     auto& c = s->cmapF4;
     auto fIdx = MapSearch(&c.mGlyphIndices, {code});
 
-    if (fIdx) return fIdx.pData->y;
+    if (fIdx) return fIdx.pData->val;
 
     u32 savedPos = s->p.pos;
     defer(s->p.pos = savedPos);
@@ -485,16 +485,16 @@ FontReadGlyph(Font* s, u32 code)
     const u32 offset = getGlyphOffset(s, glyphIdx);
 
     auto fCachedGlyph = MapSearch(&s->mOffsetToGlyph, {offset});
-    if (fCachedGlyph) return fCachedGlyph.pData->y;
+    if (fCachedGlyph) return fCachedGlyph.pData->val;
 
     const auto fGlyf = getTable(s, "glyf");
     const auto& glyfTable = *fGlyf.pData;
 
     assert(fGlyf);
 
-    assert(offset >= glyfTable.y.offset);
+    assert(offset >= glyfTable.val.offset);
 
-    if (offset >= glyfTable.y.offset + glyfTable.y.length)
+    if (offset >= glyfTable.val.offset + glyfTable.val.length)
         return {{}, false};
 
     s->p.pos = offset;
