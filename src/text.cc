@@ -401,16 +401,18 @@ drawLine(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1,
 }
 
 static void
-floodFillDFS(u8* pBitmap, const u32 width, const u32 height, Pair<u16, u16> pos)
+floodFillDFS(u8* pBitmap, const u32 width, const u32 height, u16 x, u16 y)
 {
-    if (pos.x >= height || pos.y >= width) return;
+    if (x >= height || y >= width) return;
 
-    AT(pBitmap, pos.x, pos.y) = 0xff;
+    auto& pBm = pBitmap;
 
-    if ((pos.x + 1) < height && AT(pBitmap, pos.x + 1, pos.y + 0) != 0xff) floodFillDFS(pBitmap, width, height, {u16(pos.x + 1), u16(pos.y + 0)});
-    if ((pos.y + 1) < width  && AT(pBitmap, pos.x + 0, pos.y + 1) != 0xff) floodFillDFS(pBitmap, width, height, {u16(pos.x + 0), u16(pos.y + 1)});
-    if ((pos.x - 1) < height && AT(pBitmap, pos.x - 1, pos.y + 0) != 0xff) floodFillDFS(pBitmap, width, height, {u16(pos.x - 1), u16(pos.y + 0)});
-    if ((pos.y - 1) < width  && AT(pBitmap, pos.x - 0, pos.y - 1) != 0xff) floodFillDFS(pBitmap, width, height, {u16(pos.x - 0), u16(pos.y - 1)});
+    AT(pBm, x, y) = 0xff;
+
+    if ((x + 1) < height && AT(pBm, x + 1, y + 0) != 0xff) floodFillDFS(pBm, width, height, u16(x + 1), u16(y + 0));
+    if ((y + 1) < width  && AT(pBm, x + 0, y + 1) != 0xff) floodFillDFS(pBm, width, height, u16(x + 0), u16(y + 1));
+    if ((x - 1) < height && AT(pBm, x - 1, y + 0) != 0xff) floodFillDFS(pBm, width, height, u16(x - 1), u16(y + 0));
+    if ((y - 1) < width  && AT(pBm, x - 0, y - 1) != 0xff) floodFillDFS(pBm, width, height, u16(x - 0), u16(y - 1));
 }
 
 static Pair<u16, u16>
@@ -492,7 +494,8 @@ polygonCentroid(
 static void
 floodFillThing(u8* pBitmap, const u32 width, const u32 height)
 {
-    floodFillDFS(pBitmap, width, height, pickPosition(pBitmap, width, height));
+    auto pos = pickPosition(pBitmap, width, height);
+    floodFillDFS(pBitmap, width, height, pos.first, pos.second);
 }
 
 static int

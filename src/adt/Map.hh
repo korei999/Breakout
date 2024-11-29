@@ -12,7 +12,7 @@ constexpr f32 MAP_DEFAULT_LOAD_FACTOR_INV = 1.0f / MAP_DEFAULT_LOAD_FACTOR;
 enum class MAP_RESULT_STATUS : u8 { FOUND, NOT_FOUND, INSERTED };
 
 template<typename K, typename V>
-struct KeyValue
+struct KeyVal
 {
     K key {};
     V val {};
@@ -21,7 +21,7 @@ struct KeyValue
 template<typename K, typename V>
 struct MapBucket
 {
-    KeyValue<K, V> keyValue {};
+    KeyVal<K, V> keyValue {};
     bool bOccupied = false;
     bool bDeleted = false;
 };
@@ -30,7 +30,7 @@ struct MapBucket
 template<typename K, typename V>
 struct MapResult
 {
-    KeyValue<K, V>* pData {};
+    KeyVal<K, V>* pData {};
     u64 hash {};
     MAP_RESULT_STATUS eStatus {};
 
@@ -43,7 +43,7 @@ struct MapResult
 template<typename K, typename V> struct MapBase;
 
 template<typename K, typename V>
-inline u32 MapIdx(MapBase<K, V>* s, KeyValue<K, V>* p);
+inline u32 MapIdx(MapBase<K, V>* s, KeyVal<K, V>* p);
 
 template<typename K, typename V>
 inline u32 MapIdx(MapBase<K, V>* s, MapResult<K, V> res);
@@ -58,7 +58,7 @@ template<typename K, typename V>
 inline f32 MapLoadFactor(MapBase<K, V>* s);
 
 template<typename K, typename V>
-inline MapResult<K, V> MapInsert(MapBase<K ,V>* s, Allocator* p, const KeyValue<K, V>& kv);
+inline MapResult<K, V> MapInsert(MapBase<K ,V>* s, Allocator* p, const KeyVal<K, V>& kv);
 
 template<typename K, typename V>
 [[nodiscard]] inline MapResult<K, V> MapSearch(MapBase<K, V>* s, const K& key);
@@ -70,7 +70,7 @@ template<typename K, typename V>
 inline void MapRemove(MapBase<K, V>*s, const K& key);
 
 template<typename K, typename V>
-inline MapResult<K, V> MapTryInsert(MapBase<K, V>* s, Allocator* p, const KeyValue<K, V> kv);
+inline MapResult<K, V> MapTryInsert(MapBase<K, V>* s, Allocator* p, const KeyVal<K, V> kv);
 
 template<typename K, typename V>
 inline void MapDestroy(MapBase<K, V>* s, Allocator* p);
@@ -101,15 +101,15 @@ struct MapBase
 
         It(MapBase* _s, u32 _i) : s(_s), i(_i) {}
 
-        KeyValue<K, V>& operator*() { return s->aBuckets[i].keyValue; }
-        KeyValue<K, V>* operator->() { return &s->aBuckets[i].keyValue; }
+        KeyVal<K, V>& operator*() { return s->aBuckets[i].keyValue; }
+        KeyVal<K, V>* operator->() { return &s->aBuckets[i].keyValue; }
 
         It operator++()
         {
             i = MapNextI(s, i);
             return {s, i};
         }
-        It operator++(int) { KeyValue<K, V>* tmp = s++; return tmp; }
+        It operator++(int) { KeyVal<K, V>* tmp = s++; return tmp; }
 
         friend bool operator==(const It& l, const It& r) { return l.i == r.i; }
         friend bool operator!=(const It& l, const It& r) { return l.i != r.i; }
@@ -124,7 +124,7 @@ struct MapBase
 
 template<typename K, typename V>
 inline u32
-MapIdx(MapBase<K, V>* s, KeyValue<K, V>* p)
+MapIdx(MapBase<K, V>* s, KeyVal<K, V>* p)
 {
     auto r = (MapBucket<K, V>*)p - &s->aBuckets[0];
     assert(r < VecCap(&s->aBuckets));
@@ -172,7 +172,7 @@ MapLoadFactor(MapBase<K, V>* s)
 
 template<typename K, typename V>
 inline MapResult<K, V>
-MapInsert(MapBase<K ,V>* s, Allocator* p, const KeyValue<K, V>& kv)
+MapInsert(MapBase<K ,V>* s, Allocator* p, const KeyVal<K, V>& kv)
 {
     if (VecCap(&s->aBuckets) == 0) *s = {p};
 
@@ -251,7 +251,7 @@ MapRemove(MapBase<K, V>*s, const K& key)
 
 template<typename K, typename V>
 inline MapResult<K, V>
-MapTryInsert(MapBase<K, V>* s, Allocator* p, const KeyValue<K, V> kv)
+MapTryInsert(MapBase<K, V>* s, Allocator* p, const KeyVal<K, V> kv)
 {
     auto f = MapSearch(s, kv.key);
     if (f)
@@ -326,7 +326,7 @@ struct Map
 };
 
 template<typename K, typename V>
-inline u32 MapIdx(Map<K, V>* s, KeyValue<K, V>* pItem) { return MapIdx(&s->base, pItem); }
+inline u32 MapIdx(Map<K, V>* s, KeyVal<K, V>* pItem) { return MapIdx(&s->base, pItem); }
 
 template<typename K, typename V>
 inline u32 MapIdx(Map<K, V>* s, MapResult<K, V> res) { return MapIdx<K, V>(&s->base, res); }
@@ -341,7 +341,7 @@ template<typename K, typename V>
 inline f32 MapLoadFactor(Map<K, V>* s) { return MapLoadFactor(&s->base); }
 
 template<typename K, typename V>
-inline MapResult<K, V> MapInsert(Map<K ,V>* s, const KeyValue<K, V>& kv) { return MapInsert(&s->base, s->pA, kv); }
+inline MapResult<K, V> MapInsert(Map<K ,V>* s, const KeyVal<K, V>& kv) { return MapInsert(&s->base, s->pA, kv); }
 
 template<typename K, typename V>
 [[nodiscard]] inline MapResult<K, V> MapSearch(Map<K, V>* s, const K& key) { return MapSearch(&s->base, key); }
@@ -353,7 +353,7 @@ template<typename K, typename V>
 inline void MapRemove(Map<K, V>*s, const K& key) { MapRemove(&s->base, key); }
 
 template<typename K, typename V>
-inline MapResult<K, V> MapTryInsert(Map<K, V>* s, const KeyValue<K, V> kv) { return MapTryInsert(&s->base, s->pA, kv); }
+inline MapResult<K, V> MapTryInsert(Map<K, V>* s, const KeyVal<K, V> kv) { return MapTryInsert(&s->base, s->pA, kv); }
 
 template<typename K, typename V>
 inline void MapDestroy(Map<K, V>* s) { MapDestroy(&s->base, s->pA); }

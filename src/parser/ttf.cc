@@ -92,13 +92,13 @@ languageIDToString(u16 languageID)
     }
 }
 
-inline MapResult<String, TableRecord>
+static inline MapResult<String, TableRecord>
 getTable(Font* s, String sTableTag)
 {
-    return MapSearch(&s->tableDirectory.mTableRecords, {sTableTag});
+    return MapSearch(&s->tableDirectory.mStringToTableRecord, {sTableTag});
 }
 
-inline FWord
+static inline FWord
 readFWord(Font* s)
 {
     return BinRead16Rev(&s->p);
@@ -192,9 +192,9 @@ readCmapFormat4(Font* s)
     c.rangeShift = BinRead16Rev(&s->p);
 
     auto segCount = c.segCountX2 / 2;
-    c.mGlyphIndices = {s->p.pAlloc, u32(segCount)};
+    c.mCodeToGlyphIdx = {s->p.pAlloc, u32(segCount)};
 
-    auto searchRangeCheck = 2*(pow(2, std::floor(log2(segCount))));
+    auto searchRangeCheck = 2*(std::pow(2, std::floor(std::log2(segCount))));
     assert(c.searchRange == searchRangeCheck);
 
     /* just set pointer and skip bytes, swap bytes after */
@@ -444,7 +444,7 @@ static u32
 getGlyphIdx(Font* s, u16 code)
 {
     auto& c = s->cmapF4;
-    auto fIdx = MapSearch(&c.mGlyphIndices, {code});
+    auto fIdx = MapSearch(&c.mCodeToGlyphIdx, {code});
 
     if (fIdx) return fIdx.pData->val;
 
@@ -467,7 +467,7 @@ getGlyphIdx(Font* s, u16 code)
             }
             else idx = (std::byteswap(c.idDelta[i]) + code) & 0xffff;
 
-            MapInsert(&c.mGlyphIndices, s->p.pAlloc, {code, u16(idx)});
+            MapInsert(&c.mCodeToGlyphIdx, s->p.pAlloc, {code, u16(idx)});
             break;
         }
     }
@@ -589,7 +589,7 @@ FontParse(Font* s)
     );
 #endif
 
-    auto& map = td.mTableRecords;
+    auto& map = td.mStringToTableRecord;
     map = MapBase<String, TableRecord>(s->p.pAlloc, td.numTables * MAP_DEFAULT_LOAD_FACTOR_INV);
 
     for (u32 i = 0; i < td.numTables; i++)
@@ -601,7 +601,7 @@ FontParse(Font* s)
             .length = BinRead32Rev(&s->p),
         };
 
-        MapInsert(&td.mTableRecords, s->p.pAlloc, {r.tag, r});
+        MapInsert(&td.mStringToTableRecord, s->p.pAlloc, {r.tag, r});
         if (r.tag != "head")
         {
             auto checkSum = getTableChecksum((u32*)(&s->p.sFile[r.offset]), r.length);

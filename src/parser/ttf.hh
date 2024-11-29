@@ -10,12 +10,23 @@ namespace parser
 namespace ttf
 {
 
+struct Font;
+struct Glyph;
+
+bool FontLoadParse(Font* s, String sPath);
+Glyph FontReadGlyph(Font* s, u32 codePoint);
+void FontPrintGlyphDBG(Font* s, const Glyph& g, bool bNormalize = false);
+void FontDestroy(Font* s);
+inline int FontLoadParseSubmit(void* pArg);
+
+/*******************************************************************************/
 /* RESOURCES: */
 /* https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6.html */
 /* https://learn.microsoft.com/en-us/typography/opentype/spec/otff */
 /* https://stevehanov.ca/blog/?id=143 */
 /* https://gist.github.com/smhanov/f009a02c00eb27d99479a1e37c1b3354 */
 /* https://handmade.network/forums/articles/t/7330-implementing_a_font_reader_and_rasterizer_from_scratch%252C_part_1__ttf_font_reader. */
+/*******************************************************************************/
 
 struct Fixed { s16 l; s16 r; }; /* 32-bit signed fixed-point number (16.16) */
 using fixed32 = u32; /* TODO: wtf is this type? */
@@ -49,7 +60,7 @@ struct TableDirectory
                         * which is equal to floor(log2(numTables))). */
     u16 rangeShift; /* numTables times 16, minus searchRange ((numTables * 16) - searchRange). */
     // VecBase<TableRecord> aTableRecords;
-    MapBase<String, TableRecord> mTableRecords;
+    MapBase<String, TableRecord> mStringToTableRecord;
 };
 
 struct Kern
@@ -81,14 +92,6 @@ struct Cmap
     VecBase<CMAPEncodingSubtable> aSubtables;
 };
 
-using code = u16;
-using glyphIdx = u16;
-// struct CodeToGlyphIdx
-// {
-//     u16 code {};
-//     u16 glyphIdx {};
-// };
-
 /* 'cmap' format 4
  * 
  * Format 4 is a two-byte encoding format. It should be used when the character codes for a font fall into several contiguous ranges,
@@ -102,6 +105,9 @@ using glyphIdx = u16;
  * A variable-length array of glyph IDs */
 struct CmapFormat4
 {
+    using code = u16;
+    using glyphIdx = u16;
+
     u16 format; /* Format number is set to 4 */
     u16 length; /* Length of subtable in bytes */
     u16 language; /* Language code (see above) */
@@ -115,7 +121,7 @@ struct CmapFormat4
     u16* idDelta; /* [segCount] Delta for all character codes in segment */
     u16* idRangeOffset; /* [segCount] Offset in bytes to glyph indexArray, or 0 */
     // VecBase<u16> aGlyghIndex; /* Glyph index array */
-    MapBase<code, glyphIdx> mGlyphIndices;
+    MapBase<code, glyphIdx> mCodeToGlyphIdx;
 };
 
 enum OUTLINE_FLAG : u8
@@ -470,11 +476,6 @@ struct Font
     Font() = default;
     Font(Allocator* _pA) : p(_pA), mOffsetToGlyph(_pA, 128) {}
 };
-
-bool FontLoadParse(Font* s, String sPath);
-Glyph FontReadGlyph(Font* s, u32 codePoint);
-void FontPrintGlyphDBG(Font* s, const Glyph& g, bool bNormalize = false);
-void FontDestroy(Font* s);
 
 struct FontLoadParseArg
 {

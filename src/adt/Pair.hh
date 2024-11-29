@@ -8,15 +8,15 @@ namespace adt
 template<typename A, typename B>
 struct Pair
 {
-    A x {};
-    B y {};
+    A first {};
+    B second {};
 };
 
 template<typename A, typename B>
 constexpr bool
 operator==(const Pair<A, B>& l, const Pair<A, B>& r)
 {
-    return l.x == r.x && l.y == r.y;
+    return l.first == r.first && l.second == r.second;
 }
 
 template<typename A, typename B>
@@ -30,28 +30,28 @@ template<typename A, typename B>
 constexpr bool
 operator<(const Pair<A, B>& l, const Pair<A, B>& r)
 {
-    return l.x < r.x && l.y < r.y;
+    return l.first < r.first && l.second < r.second;
 }
 
 template<typename A, typename B>
 constexpr bool
 operator>(const Pair<A, B>& l, const Pair<A, B>& r)
 {
-    return l.x > r.x && l.y > r.y;
+    return l.first > r.first && l.second > r.second;
 }
 
 template<typename A, typename B>
 constexpr bool
 operator<=(const Pair<A, B>& l, const Pair<A, B>& r)
 {
-    return l.x <= r.x && l.y <= r.y;
+    return l.first <= r.first && l.second <= r.second;
 }
 
 template<typename A, typename B>
 constexpr bool
 operator>=(const Pair<A, B>& l, const Pair<A, B>& r)
 {
-    return l.x >= r.x && l.y >= r.y;
+    return l.first >= r.first && l.second >= r.second;
 }
 
 namespace print
@@ -63,7 +63,7 @@ formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const Pair<A, 
 {
     ctx.fmt = "[{}, {}]";
     ctx.fmtIdx = 0;
-    return printArgs(ctx, x.x, x.y);
+    return printArgs(ctx, x.first, x.second);
 }
 
 } /* namespace print */
