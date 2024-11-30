@@ -95,7 +95,7 @@ getWglFunctions(void)
 Win32Window::Win32Window(String sName, HINSTANCE hInstance)
 {
     static WindowInterface vTable {
-        .init = (decltype(WindowInterface::init))Win32Init,
+        .start = (decltype(WindowInterface::start))Win32Init,
         .disableRelativeMode = (decltype(WindowInterface::disableRelativeMode))Win32DisableRelativeMode,
         .enableRelativeMode = (decltype(WindowInterface::enableRelativeMode))Win32EnableRelativeMode,
         .togglePointerRelativeMode = (decltype(WindowInterface::togglePointerRelativeMode))Win32TogglePointerRelativeMode,

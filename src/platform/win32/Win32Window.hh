@@ -22,7 +22,7 @@ namespace win32
 
 struct Win32Window
 {
-    Window super;
+    WindowAbstract super;
     HINSTANCE hInstance;
     HWND hWindow;
     HDC hDeviceContext;

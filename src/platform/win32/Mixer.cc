@@ -30,7 +30,7 @@ static XAudio2VoiceInterface s_aVoices[audio::MAX_TRACK_COUNT];
 /*static s16 s_chunk[audio::CHUNK_SIZE] {};*/
 
 static const audio::MixerInterface inl_XAudio2MixerVTable {
-    .init = decltype(audio::MixerInterface::init)(MixerInit),
+    .start = decltype(audio::MixerInterface::start)(MixerInit),
     .destroy = decltype(audio::MixerInterface::destroy)(MixerDestroy),
     .add = decltype(audio::MixerInterface::add)(MixerAdd),
     .addBackground = decltype(audio::MixerInterface::addBackground)(MixerAddBackground),
