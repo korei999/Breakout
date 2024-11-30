@@ -8,7 +8,7 @@ namespace json
 
 struct Parser
 {
-    adt::Allocator* pAlloc;
+    adt::IAllocator* pAlloc;
     Lexer l;
     adt::String sName;
     adt::VecBase<Object> aObjects {};
@@ -16,7 +16,7 @@ struct Parser
     Token tNext;
 
     Parser() = default;
-    Parser(adt::Allocator* p) : pAlloc(p), l(p) {}
+    Parser(adt::IAllocator* p) : pAlloc(p), l(p) {}
 };
 
 void ParserDestroy(Parser* s);
@@ -84,7 +84,7 @@ getBool(Object* obj)
 }
 
 inline Object
-makeObject(adt::String key, adt::Allocator* pAlloc)
+makeObject(adt::String key, adt::IAllocator* pAlloc)
 {
     return {
         .svKey = key,
@@ -93,7 +93,7 @@ makeObject(adt::String key, adt::Allocator* pAlloc)
 }
 
 inline Object
-makeArray(adt::String key, adt::Allocator* pAlloc)
+makeArray(adt::String key, adt::IAllocator* pAlloc)
 {
     return {
         .svKey = key,
@@ -147,13 +147,13 @@ makeNull(adt::String key)
 }
 
 inline adt::u32
-pushToObject(Object* pObj, adt::Allocator* p, Object o)
+pushToObject(Object* pObj, adt::IAllocator* p, Object o)
 {
     return adt::VecPush(&pObj->tagVal.val.o, p, o);
 }
 
 inline adt::u32
-pushToArray(Object* pObj, adt::Allocator* p, Object o)
+pushToArray(Object* pObj, adt::IAllocator* p, Object o)
 {
     return adt::VecPush(&pObj->tagVal.val.a, p, o);
 }

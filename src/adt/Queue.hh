@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Allocator.hh"
+#include "IAllocator.hh"
 #include "print.hh"
 
 #include <cassert>
@@ -14,16 +14,16 @@ namespace adt
 template<typename T> struct QueueBase;
 
 template<typename T>
-inline void QueueDestroy(QueueBase<T>*s, Allocator* p);
+inline void QueueDestroy(QueueBase<T>*s, IAllocator* p);
 
 template<typename T>
-inline T* QueuePushFront(QueueBase<T>* s, Allocator* p, const T& val);
+inline T* QueuePushFront(QueueBase<T>* s, IAllocator* p, const T& val);
 
 template<typename T>
-inline T* QueuePushBack(QueueBase<T>* s, Allocator* p, const T& val);
+inline T* QueuePushBack(QueueBase<T>* s, IAllocator* p, const T& val);
 
 template<typename T>
-inline void QueueResize(QueueBase<T>* s, Allocator* p, u32 size);
+inline void QueueResize(QueueBase<T>* s, IAllocator* p, u32 size);
 
 template<typename T>
 inline T* QueuePopFront(QueueBase<T>* s);
@@ -44,7 +44,7 @@ struct QueueBase
     int last {};
 
     QueueBase() = default;
-    QueueBase(Allocator* p, u32 prealloc = SIZE_MIN)
+    QueueBase(IAllocator* p, u32 prealloc = SIZE_MIN)
         : pData {(T*)alloc(p, prealloc, sizeof(T))},
           cap (prealloc) {}
 
@@ -99,14 +99,14 @@ struct QueueBase
 
 template<typename T>
 inline void
-QueueDestroy(QueueBase<T>*s, Allocator* p)
+QueueDestroy(QueueBase<T>*s, IAllocator* p)
 {
     free(p, s->pData);
 }
 
 template<typename T>
 inline T*
-QueuePushFront(QueueBase<T>* s, Allocator* p, const T& val)
+QueuePushFront(QueueBase<T>* s, IAllocator* p, const T& val)
 {
     if (s->size >= s->cap) QueueResize(s, p, s->cap * 2);
 
@@ -121,7 +121,7 @@ QueuePushFront(QueueBase<T>* s, Allocator* p, const T& val)
 
 template<typename T>
 inline T*
-QueuePushBack(QueueBase<T>* s, Allocator* p, const T& val)
+QueuePushBack(QueueBase<T>* s, IAllocator* p, const T& val)
 {
     if (s->size >= s->cap) QueueResize(s, p, s->cap * 2);
 
@@ -136,7 +136,7 @@ QueuePushBack(QueueBase<T>* s, Allocator* p, const T& val)
 
 template<typename T>
 inline void
-QueueResize(QueueBase<T>* s, Allocator* p, u32 size)
+QueueResize(QueueBase<T>* s, IAllocator* p, u32 size)
 {
     auto nQ = QueueBase<T>(p, size);
 
@@ -183,10 +183,10 @@ template<typename T>
 struct Queue
 {
     QueueBase<T> base {};
-    Allocator* pAlloc {};
+    IAllocator* pAlloc {};
 
     Queue() = default;
-    Queue(Allocator* p, u32 prealloc = SIZE_MIN)
+    Queue(IAllocator* p, u32 prealloc = SIZE_MIN)
         : base(p, prealloc), pAlloc(p) {}
 
     T& operator[](u32 i) { return base[i]; }

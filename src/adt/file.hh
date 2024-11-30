@@ -12,7 +12,7 @@ namespace file
 
 [[nodiscard]]
 inline Opt<String>
-load(Allocator* pAlloc, String sPath)
+load(IAllocator* pAlloc, String sPath)
 {
     FILE* pf = fopen(sPath.pData, "rb");
     if (!pf)
@@ -45,7 +45,7 @@ getPathEnding(String sPath)
 
 [[nodiscard]]
 inline String
-replacePathEnding(Allocator* pAlloc, String sPath, String sEnding)
+replacePathEnding(IAllocator* pAlloc, String sPath, String sEnding)
 {
     u32 lastSlash = StringLastOf(sPath, '/');
     String sNoEnding = {&sPath[0], lastSlash + 1};

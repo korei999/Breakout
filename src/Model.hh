@@ -74,14 +74,14 @@ struct Mesh
 
 struct Model
 {
-    Allocator* pAlloc;
+    IAllocator* pAlloc;
     String sSavedPath;
     VecBase<VecBase<Mesh>> aaMeshes;
     gltf::Model modelData;
     VecBase<int> aTmIdxs; /* parents map */
     VecBase<int> aTmCounters; /* map's sizes */
 
-    Model(Allocator* p) : pAlloc(p), aaMeshes(p), modelData(p), aTmIdxs(p), aTmCounters(p) {}
+    Model(IAllocator* p) : pAlloc(p), aaMeshes(p), modelData(p), aTmIdxs(p), aTmCounters(p) {}
 };
 
 struct Quad
@@ -117,7 +117,7 @@ void ModelDraw(
 void
 ModelDrawGraph(
     Model* s,
-    Allocator* pFrameAlloc,
+    IAllocator* pFrameAlloc,
     DRAW flags,
     Shader* sh,
     String svUniform,

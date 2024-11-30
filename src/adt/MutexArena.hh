@@ -71,19 +71,19 @@ MutexArenaFreeAll(MutexArena* s)
     mtx_destroy(&s->mtx);
 }
 
-inline const AllocatorInterface __AtomicArenaAllocatorVTable {
-    .alloc = decltype(AllocatorInterface::alloc)(MutexArenaAlloc),
-    .zalloc = decltype(AllocatorInterface::zalloc)(MutexArenaZalloc),
-    .realloc = decltype(AllocatorInterface::realloc)(MutexArenaRealloc),
-    .free = decltype(AllocatorInterface::free)(MutexArenaFree),
-    .freeAll = decltype(AllocatorInterface::freeAll)(MutexArenaFreeAll),
+inline const AllocatorVTable inl_AtomicArenaAllocatorVTable {
+    .alloc = decltype(AllocatorVTable::alloc)(MutexArenaAlloc),
+    .zalloc = decltype(AllocatorVTable::zalloc)(MutexArenaZalloc),
+    .realloc = decltype(AllocatorVTable::realloc)(MutexArenaRealloc),
+    .free = decltype(AllocatorVTable::free)(MutexArenaFree),
+    .freeAll = decltype(AllocatorVTable::freeAll)(MutexArenaFreeAll),
 };
 
 inline
 MutexArena::MutexArena(u32 blockCap)
     : arena(blockCap)
 {
-    arena.super = {&__AtomicArenaAllocatorVTable};
+    arena.super = {&inl_AtomicArenaAllocatorVTable};
     mtx_init(&mtx, mtx_plain);
 }
 

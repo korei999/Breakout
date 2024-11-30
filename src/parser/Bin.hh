@@ -1,6 +1,6 @@
 #pragma once
 
-#include "adt/Allocator.hh"
+#include "adt/IAllocator.hh"
 #include "adt/String.hh"
 #include "adt/file.hh"
 
@@ -20,13 +20,13 @@ readTypeBytes(String s, u32 at)
 
 struct Bin
 {
-    Allocator* pAlloc;
+    IAllocator* pAlloc;
     String sFile;
     String sPath;
     u32 pos;
 
     Bin() = default;
-    Bin(Allocator* p) : pAlloc(p) {}
+    Bin(IAllocator* p) : pAlloc(p) {}
 
     char& operator[](u32 i) { return sFile[i]; };
 };

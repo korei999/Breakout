@@ -36,7 +36,7 @@ static const audio::MixerInterface inl_XAudio2MixerVTable {
     .addBackground = decltype(audio::MixerInterface::addBackground)(MixerAddBackground),
 };
 
-Mixer::Mixer(Allocator* pA) : super {&inl_XAudio2MixerVTable}, aTracks(pA, audio::MAX_TRACK_COUNT), aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
+Mixer::Mixer(IAllocator* pA) : super {&inl_XAudio2MixerVTable}, aTracks(pA, audio::MAX_TRACK_COUNT), aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
 {
     MixerInit(this, {}, {});
 }

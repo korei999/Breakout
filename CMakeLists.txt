@@ -147,6 +147,8 @@ else()
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
+    add_definitions("-DADT_LOGS")
+    add_definitions("-DADT_DBG_MEMORY")
 
     target_sources(
         ${CMAKE_PROJECT_NAME}
@@ -160,8 +162,6 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wmissing-field-initializers -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmissing-field-initializers -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable")
     endif()
-
-    add_definitions("-DADT_LOGS")
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

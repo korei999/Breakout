@@ -35,7 +35,7 @@ struct PointOnCurve
     f32 __pad {};
 };
 
-static VecBase<CharQuad> TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
+static VecBase<CharQuad> TextUpdateBuffer(Bitmap* s, IAllocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
 static void TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode);
 
 Bitmap::Bitmap(String s, u64 size, int x, int y, GLint drawMode)
@@ -70,7 +70,7 @@ TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode)
 }
 
 static VecBase<CharQuad>
-TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin)
+TextUpdateBuffer(Bitmap* s, IAllocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin)
 {
     VecBase<CharQuad> aQuads(pAlloc, size);
 
@@ -126,7 +126,7 @@ TextUpdateBuffer(Bitmap* s, Allocator* pAlloc, String str, u32 size, int xOrigin
 }
 
 void
-BitmapUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y)
+BitmapUpdate(Bitmap* s, IAllocator* pAlloc, String str, int x, int y)
 {
     assert(str.size <= s->maxSize);
 
@@ -147,7 +147,7 @@ BitmapDraw(Bitmap* s)
 
 static VecBase<Point>
 getBeizerPoints(
-    Allocator* pAlloc,
+    IAllocator* pAlloc,
     const math::V2& p0,
     const math::V2& p1,
     const math::V2& p2,
@@ -172,7 +172,7 @@ getBeizerPoints(
 
 static void
 insertPoints(
-    Allocator* pAlloc,
+    IAllocator* pAlloc,
     VecBase<PointOnCurve>* aPoints,
     const math::V2& p0,
     const math::V2& p1,
@@ -194,7 +194,7 @@ insertPoints(
 }
 
 static VecBase<PointOnCurve>
-makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, CurveEndIdx* pEndIdxs, bool bTessellate = true)
+makeItCurvy(IAllocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, CurveEndIdx* pEndIdxs, bool bTessellate = true)
 {
     VecBase<PointOnCurve> aNew(pAlloc, VecSize(&aNonCurvyPoints));
     utils::fill(pEndIdxs->aIdxs, NPOS16, utils::size(pEndIdxs->aIdxs));
@@ -264,7 +264,7 @@ makeItCurvy(Allocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cur
 }
 
 VecBase<PointOnCurve>
-getPointsWithMissingOnCurve(Allocator* pAlloc, parser::ttf::Glyph* g)
+getPointsWithMissingOnCurve(IAllocator* pAlloc, parser::ttf::Glyph* g)
 {
     const auto& aGlyphPoints = g->uGlyph.simple.aPoints;
     u32 size = VecSize(&aGlyphPoints);
@@ -549,7 +549,7 @@ blit(u8* pDst, u8* pSrc, u32 width, u32 height, BLIT_MODE eMode)
 
 /* https://sharo.dev/post/reading-ttf-files-and-rasterizing-them-using-a-handmade- */
 static void
-TTFRasterizeGlyphTEST(TTF* s, Allocator* pAlloc, parser::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height)
+TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, parser::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height)
 {
     const auto& aGlyphPoints = pGlyph->uGlyph.simple.aPoints;
     u32 size = VecSize(&aGlyphPoints);
@@ -651,7 +651,7 @@ TTFRasterizeGlyphTEST(TTF* s, Allocator* pAlloc, parser::ttf::Glyph* pGlyph, u8*
 static VecBase<CharQuad3Pos2UV>
 TTFGenStringMesh(
     TTF* s,
-    Allocator* pAlloc,
+    IAllocator* pAlloc,
     const String str,
     const int xOrigin,
     const int yOrigin,
@@ -780,7 +780,7 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
 }
 
 void
-TTFUpdateText(TTF* s, Allocator* pAlloc, const String str, const int x, const int y, const f32 z)
+TTFUpdateText(TTF* s, IAllocator* pAlloc, const String str, const int x, const int y, const f32 z)
 {
     assert(str.size <= s->maxSize);
 

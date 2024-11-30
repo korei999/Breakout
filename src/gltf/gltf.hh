@@ -99,7 +99,7 @@ struct Node
     math::V3 scale {1, 1, 1};
 
     Node() = default;
-    Node(Allocator* p) : children(p) {}
+    Node(IAllocator* p) : children(p) {}
 };
 
 struct CameraPersp
@@ -206,7 +206,7 @@ struct Material
 
 struct Model
 {
-    Allocator* pAl;
+    IAllocator* pAl;
     struct {
         json::Object* scene;
         json::Object* scenes;
@@ -237,7 +237,7 @@ struct Model
     VecBase<Image> aImages;
     VecBase<Node> aNodes;
 
-    Model(Allocator* p)
+    Model(IAllocator* p)
         : pAl(p),
           parser(p),
           aScenes(p),

@@ -244,7 +244,7 @@ void
 ParserDestroy(Parser* s)
 {
     auto fn = +[](Object* p, void* a) -> bool {
-        auto* pAlloc = (Allocator*)a;
+        auto* pAlloc = (IAllocator*)a;
 
         if (p->tagVal.tag == TAG::ARRAY || p->tagVal.tag == TAG::OBJECT)
             free(pAlloc, p->tagVal.val.a.pData);

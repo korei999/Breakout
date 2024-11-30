@@ -16,13 +16,6 @@ func(T& x)
 
 template<>
 inline u64
-func<u64>(u64& x)
-{
-    return x;
-}
-
-template<>
-inline u64
 func<void* const>(void* const& x)
 {
     return u64(x) * 0xcbf29ce484222325;

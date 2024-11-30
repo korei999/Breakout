@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "Allocator.hh"
+#include "IAllocator.hh"
 #include "String.hh"
 #include "utils.hh"
 #include "Pair.hh"
@@ -42,7 +42,7 @@ namespace adt
 {
 
 enum class RB_COL : long { BLACK, RED };
-enum class RB_ORDER { PRE, IN, POST };
+enum class RB_ORDER : u8 { PRE, IN, POST };
 
 template<typename T>
 struct RBNode
@@ -64,7 +64,7 @@ template<typename T>
 inline RBNode<T>* RBRoot(RBTreeBase<T>* s);
 
 template<typename T>
-inline RBNode<T>* RBNodeAlloc(Allocator* pA, const T& data);
+inline RBNode<T>* RBNodeAlloc(IAllocator* pA, const T& data);
 
 template<typename T>
 inline bool RBEmpty(RBTreeBase<T>* s);
@@ -73,13 +73,13 @@ template<typename T>
 inline RBNode<T>* RBRemove(RBTreeBase<T>* s, RBNode<T>* elm);
 
 template<typename T>
-inline void RBRemoveAndFree(RBTreeBase<T>* s, Allocator* p, RBNode<T>* elm);
+inline void RBRemoveAndFree(RBTreeBase<T>* s, IAllocator* p, RBNode<T>* elm);
 
 template<typename T>
 inline RBNode<T>* RBInsert(RBTreeBase<T>* s, RBNode<T>* elm, bool bAllowDuplicates);
 
 template<typename T>
-inline RBNode<T>* RBInsert(RBTreeBase<T>* s, Allocator* pA, const T& data, bool bAllowDuplicates);
+inline RBNode<T>* RBInsert(RBTreeBase<T>* s, IAllocator* pA, const T& data, bool bAllowDuplicates);
 
 template<typename T>
 inline Pair<RBNode<T>*, RBNode<T>*>
@@ -100,7 +100,7 @@ inline int RBDepth(RBNode<T>* p);
 template<typename T>
 inline void
 RBPrintNodes(
-    Allocator* pA,
+    IAllocator* pA,
     const RBTreeBase<T>* s,
     const RBNode<T>* pNode,
     void (*pfnPrint)(const RBNode<T>*, void*),
@@ -154,7 +154,7 @@ RBRoot(RBTreeBase<T>* s)
 
 template<typename T>
 inline RBNode<T>*
-RBNodeAlloc(Allocator* pA, const T& data)
+RBNodeAlloc(IAllocator* pA, const T& data)
 {
     auto* r = (RBNode<T>*)alloc(pA, 1, sizeof(RBNode<T>));
     r->data = data;
@@ -421,7 +421,7 @@ color:
 
 template<typename T>
 inline void
-RBRemoveAndFree(RBTreeBase<T>* s, Allocator* p, RBNode<T>* elm)
+RBRemoveAndFree(RBTreeBase<T>* s, IAllocator* p, RBNode<T>* elm)
 {
     free(p, RBRemove(s, elm));
 }
@@ -464,7 +464,7 @@ RBInsert(RBTreeBase<T>* s, RBNode<T>* elm, bool bAllowDuplicates)
 
 template<typename T>
 inline RBNode<T>*
-RBInsert(RBTreeBase<T>* s, Allocator* pA, const T& data, bool bAllowDuplicates)
+RBInsert(RBTreeBase<T>* s, IAllocator* pA, const T& data, bool bAllowDuplicates)
 {
     RBNode<T>* pNew = RBNodeAlloc(pA, data);
     return RBInsert(s, pNew, bAllowDuplicates);
@@ -592,7 +592,7 @@ RBDepth(RBNode<T>* p)
 template<typename T>
 inline void
 RBPrintNodes(
-    Allocator* pA,
+    IAllocator* pA,
     const RBTreeBase<T>* s,
     const RBNode<T>* pNode,
     void (*pfnPrint)(const RBNode<T>*, void*),
@@ -618,10 +618,10 @@ RBPrintNodes(
 
 template<typename T>
 inline void
-RBDestroy(RBTreeBase<T>* s, Allocator* pAlloc)
+RBDestroy(RBTreeBase<T>* s, IAllocator* pAlloc)
 {
     auto pfnFree = +[]([[maybe_unused]] RBNode<T>* pPar, RBNode<T>* p, void* data) -> bool {
-        free((Allocator*)data, p);
+        free((IAllocator*)data, p);
 
         return false;
     };
@@ -633,10 +633,10 @@ template<typename T>
 struct RBTree
 {
     RBTreeBase<T> base {};
-    Allocator* pAlloc {};
+    IAllocator* pAlloc {};
     
     RBTree() = default;
-    RBTree(Allocator* p) : pAlloc(p) {}
+    RBTree(IAllocator* p) : pAlloc(p) {}
 };
 
 template<typename T>

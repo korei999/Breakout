@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Allocator.hh"
+#include "IAllocator.hh"
 #include "print.hh"
 
 namespace adt
@@ -19,7 +19,7 @@ struct ListNode
 
 template<typename T>
 constexpr ListNode<T>*
-ListNodeAlloc(Allocator* pA, const T& x)
+ListNodeAlloc(IAllocator* pA, const T& x)
 {
     auto* pNew = (ListNode<T>*)alloc(pA, 1, sizeof(ListNode<T>));
     pNew->data = x;
@@ -30,7 +30,7 @@ ListNodeAlloc(Allocator* pA, const T& x)
 template<typename T> struct ListBase;
 
 template<typename T>
-constexpr void ListDestroy(ListBase<T>* s, Allocator* pA);
+constexpr void ListDestroy(ListBase<T>* s, IAllocator* pA);
 
 template<typename T>
 constexpr ListNode<T>* ListPushFront(ListBase<T>* s, ListNode<T>* pNew);
@@ -39,10 +39,10 @@ template<typename T>
 constexpr ListNode<T>* ListPushBack(ListBase<T>* s, ListNode<T>* pNew);
 
 template<typename T>
-constexpr ListNode<T>* ListPushFront(ListBase<T>* s, Allocator* pA, const T& x);
+constexpr ListNode<T>* ListPushFront(ListBase<T>* s, IAllocator* pA, const T& x);
 
 template<typename T>
-constexpr ListNode<T>* ListPushBack(ListBase<T>* s, Allocator* pA, const T& x);
+constexpr ListNode<T>* ListPushBack(ListBase<T>* s, IAllocator* pA, const T& x);
 
 template<typename T>
 constexpr void ListRemove(ListBase<T>* s, ListNode<T>* p);
@@ -95,7 +95,7 @@ struct ListBase
 
 template<typename T>
 constexpr void
-ListDestroy(ListBase<T>* s, Allocator* pA)
+ListDestroy(ListBase<T>* s, IAllocator* pA)
 {
     ADT_LIST_FOREACH_SAFE(s, it, tmp)
         free(pA, it);
@@ -148,7 +148,7 @@ ListPushBack(ListBase<T>* s, ListNode<T>* pNew)
 
 template<typename T>
 constexpr ListNode<T>*
-ListPushFront(ListBase<T>* s, Allocator* pA, const T& x)
+ListPushFront(ListBase<T>* s, IAllocator* pA, const T& x)
 {
     auto* pNew = ListNodeAlloc(pA, x);
     return ListPushFront(s, pNew);
@@ -156,7 +156,7 @@ ListPushFront(ListBase<T>* s, Allocator* pA, const T& x)
 
 template<typename T>
 constexpr ListNode<T>*
-ListPushBack(ListBase<T>* s, Allocator* pA, const T& x)
+ListPushBack(ListBase<T>* s, IAllocator* pA, const T& x)
 {
     auto* pNew = ListNodeAlloc(pA, x);
     return ListPushBack(s, pNew);
@@ -315,10 +315,10 @@ template<typename T>
 struct List
 {
     ListBase<T> base {};
-    Allocator* pAlloc {};
+    IAllocator* pAlloc {};
 
     List() = default;
-    List(Allocator* pA) : pAlloc(pA) {}
+    List(IAllocator* pA) : pAlloc(pA) {}
 
     ListBase<T>::It begin() { return base.begin(); }
     ListBase<T>::It end() { return base.end(); }

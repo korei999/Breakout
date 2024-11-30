@@ -298,7 +298,7 @@ skyBoxCreate(String sFaces[6])
 }
 
 Data
-loadBMP(Allocator* pAlloc, String path, bool flip)
+loadBMP(IAllocator* pAlloc, String path, bool flip)
 {
     u32 imageDataAddress;
     u32 width;

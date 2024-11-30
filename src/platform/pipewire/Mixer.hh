@@ -62,7 +62,7 @@ struct Mixer
     thrd_t threadLoop {};
 
     Mixer() = default;
-    Mixer(Allocator* pA)
+    Mixer(IAllocator* pA)
         : super(&inl_MixerVTable),
           aTracks(pA, audio::MAX_TRACK_COUNT),
           aBackgroundTracks(pA, audio::MAX_TRACK_COUNT) {}

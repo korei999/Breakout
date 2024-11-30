@@ -22,7 +22,7 @@ struct Bitmap
     Bitmap(String s, u64 size, int x, int y, GLint drawMode);
 };
 
-void BitmapUpdate(Bitmap* s, Allocator* pAlloc, String str, int x, int y);
+void BitmapUpdate(Bitmap* s, IAllocator* pAlloc, String str, int x, int y);
 void BitmapDraw(Bitmap* s);
 
 struct CurveEndIdx
@@ -38,7 +38,7 @@ struct CharToUV
 
 struct TTF
 {
-    Allocator* pAlloc {};
+    IAllocator* pAlloc {};
     parser::ttf::Font* pFont {};
     u8* pBitmap {};
     String str {};
@@ -50,11 +50,11 @@ struct TTF
     GLuint texId {};
 
     TTF() = default;
-    TTF(Allocator* p) : pAlloc(p) {}
+    TTF(IAllocator* p) : pAlloc(p) {}
 };
 
 void TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont);
-void TTFUpdateText(TTF* s, Allocator* pAlloc, const String str, const int x, const int y, const f32 z);
+void TTFUpdateText(TTF* s, IAllocator* pAlloc, const String str, const int x, const int y, const f32 z);
 void TTFDraw(TTF* s);
 
 struct TTFRasterizeArg

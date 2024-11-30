@@ -27,7 +27,7 @@ struct Wave
     u32 sampleRate = 0;
 
     Wave() = default;
-    Wave(Allocator* pA) : bin(pA) {}
+    Wave(IAllocator* pA) : bin(pA) {}
 };
 
 struct WaveLoadArg

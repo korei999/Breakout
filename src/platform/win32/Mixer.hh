@@ -40,7 +40,7 @@ struct Mixer
     thrd_t threadLoop {};
 
     Mixer() = default;
-    Mixer(Allocator* pA);
+    Mixer(IAllocator* pA);
 };
 
 } /* namespace win32 */

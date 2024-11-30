@@ -1,3 +1,7 @@
+/* simple hashmap with linear probing.
+ * For customr key types, add template<> hash::func(const key& x),
+ * and bool operator==(const key& other) */
+
 #pragma once
 
 #include "Vec.hh"
@@ -60,7 +64,7 @@ template<typename K, typename V>
 inline f32 MapLoadFactor(MapBase<K, V>* s);
 
 template<typename K, typename V>
-inline MapResult<K, V> MapInsert(MapBase<K ,V>* s, Allocator* p, const K& key, const V& val);
+inline MapResult<K, V> MapInsert(MapBase<K ,V>* s, IAllocator* p, const K& key, const V& val);
 
 template<typename K, typename V>
 [[nodiscard]] inline MapResult<K, V> MapSearch(MapBase<K, V>* s, const K& key);
@@ -72,10 +76,10 @@ template<typename K, typename V>
 inline void MapRemove(MapBase<K, V>*s, const K& key);
 
 template<typename K, typename V>
-inline MapResult<K, V> MapTryInsert(MapBase<K, V>* s, Allocator* p, const K& key, const V& val);
+inline MapResult<K, V> MapTryInsert(MapBase<K, V>* s, IAllocator* p, const K& key, const V& val);
 
 template<typename K, typename V>
-inline void MapDestroy(MapBase<K, V>* s, Allocator* p);
+inline void MapDestroy(MapBase<K, V>* s, IAllocator* p);
 
 template<typename K, typename V>
 inline u32 MapCap(MapBase<K, V>* s);
@@ -84,7 +88,7 @@ template<typename K, typename V>
 inline u32 MapSize(MapBase<K, V>* s);
 
 template<typename K, typename V>
-inline void _MapRehash(MapBase<K, V>* s, Allocator* p, u32 size);
+inline void _MapRehash(MapBase<K, V>* s, IAllocator* p, u32 size);
 
 template<typename K, typename V>
 struct MapBase
@@ -94,7 +98,7 @@ struct MapBase
     u32 nOccupied {};
 
     MapBase() = default;
-    MapBase(Allocator* pAllocator, u32 prealloc = SIZE_MIN);
+    MapBase(IAllocator* pAllocator, u32 prealloc = SIZE_MIN);
 
     struct It
     {
@@ -176,7 +180,7 @@ MapLoadFactor(MapBase<K, V>* s)
 
 template<typename K, typename V>
 inline MapResult<K, V>
-MapInsert(MapBase<K ,V>* s, Allocator* p, const K& key, const V& val)
+MapInsert(MapBase<K ,V>* s, IAllocator* p, const K& key, const V& val)
 {
     if (VecCap(&s->aBuckets) == 0) *s = {p};
 
@@ -256,7 +260,7 @@ MapRemove(MapBase<K, V>*s, const K& key)
 
 template<typename K, typename V>
 inline MapResult<K, V>
-MapTryInsert(MapBase<K, V>* s, Allocator* p, const K& key, const V& val)
+MapTryInsert(MapBase<K, V>* s, IAllocator* p, const K& key, const V& val)
 {
     auto f = MapSearch(s, key);
     if (f)
@@ -269,7 +273,7 @@ MapTryInsert(MapBase<K, V>* s, Allocator* p, const K& key, const V& val)
 
 template<typename K, typename V>
 inline void
-MapDestroy(MapBase<K, V>* s, Allocator* p)
+MapDestroy(MapBase<K, V>* s, IAllocator* p)
 {
     VecDestroy(&s->aBuckets, p);
 }
@@ -288,7 +292,7 @@ inline u32 MapSize(MapBase<K, V>* s)
 
 template<typename K, typename V>
 inline void
-_MapRehash(MapBase<K, V>* s, Allocator* p, u32 size)
+_MapRehash(MapBase<K, V>* s, IAllocator* p, u32 size)
 {
     auto mNew = MapBase<K, V>(p, size);
 
@@ -301,7 +305,7 @@ _MapRehash(MapBase<K, V>* s, Allocator* p, u32 size)
 }
 
 template<typename K, typename V>
-MapBase<K, V>::MapBase(Allocator* pAllocator, u32 prealloc)
+MapBase<K, V>::MapBase(IAllocator* pAllocator, u32 prealloc)
     : aBuckets(pAllocator, prealloc * MAP_DEFAULT_LOAD_FACTOR_INV),
       maxLoadFactor(MAP_DEFAULT_LOAD_FACTOR)
 {
@@ -313,21 +317,17 @@ template<typename K, typename V>
 struct Map
 {
     MapBase<K, V> base {};
-    Allocator* pA {};
+    IAllocator* pA {};
 
     Map() = default;
-    Map(Allocator* _pA, u32 prealloc = SIZE_MIN)
+    Map(IAllocator* _pA, u32 prealloc = SIZE_MIN)
         : base(_pA, prealloc), pA(_pA) {}
 
     MapBase<K, V>::It begin() { return base.begin(); }
     MapBase<K, V>::It end() { return base.end(); }
-    MapBase<K, V>::It rbegin() { return base.rbegin(); }
-    MapBase<K, V>::It rend() { return rend(); }
 
     const MapBase<K, V>::It begin() const { return base.begin(); }
     const MapBase<K, V>::It end() const { return base.end(); }
-    const MapBase<K, V>::It rbegin() const { return base.rbegin(); }
-    const MapBase<K, V>::It rend() const { return rend(); }
 };
 
 template<typename K, typename V>

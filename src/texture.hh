@@ -1,6 +1,6 @@
 #pragma once
 
-#include "adt/Allocator.hh"
+#include "adt/IAllocator.hh"
 #include "adt/Map.hh"
 #include "adt/Pool.hh"
 #include "adt/Vec.hh"
@@ -38,7 +38,7 @@ struct Data
 
 struct Img
 {
-    Allocator* pAlloc;
+    IAllocator* pAlloc;
     String texPath;
     u32 width = 0;
     u32 height = 0;
@@ -46,7 +46,7 @@ struct Img
     enum TYPE type = TYPE::DIFFUSE;
 
     Img() = default;
-    Img(Allocator* p) : pAlloc(p) {}
+    Img(IAllocator* p) : pAlloc(p) {}
 };
 
 struct ImgLoadArg
@@ -124,7 +124,7 @@ CubeMap CubeMapShadowMapCreate(const int width, const int height);
 
 CubeMap skyBoxCreate(String sFaces[6]);
 
-Data loadBMP(Allocator* pAlloc, String path, bool flip);
+Data loadBMP(IAllocator* pAlloc, String path, bool flip);
 void flipCpyBGRAtoRGBA(u8* dest, u8* src, int width, int height, bool vertFlip);
 void flipCpyBGRtoRGB(u8* dest, u8* src, int width, int height, bool vertFlip);
 void flipCpyBGRtoRGBA(u8* dest, u8* src, int width, int height, bool vertFlip);

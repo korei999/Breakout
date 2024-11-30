@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Allocator.hh"
+#include "IAllocator.hh"
 #include "hash.hh"
 
 #include <cstring>
@@ -28,13 +28,13 @@ inline bool operator==(const String& l, const char* r);
 inline bool operator!=(const String& l, const String& r);
 constexpr s64 operator-(const String& l, const String& r);
 constexpr u32 StringLastOf(String sv, char c);
-inline String StringAlloc(Allocator* p, const char* str, u32 size);
-inline String StringAlloc(Allocator* p, u32 size);
-inline String StringAlloc(Allocator* p, const char* str);
-inline String StringAlloc(Allocator* p, const String s);
-inline void StringDestroy(Allocator* p, String* s);
+inline String StringAlloc(IAllocator* p, const char* str, u32 size);
+inline String StringAlloc(IAllocator* p, u32 size);
+inline String StringAlloc(IAllocator* p, const char* str);
+inline String StringAlloc(IAllocator* p, const String s);
+inline void StringDestroy(IAllocator* p, String* s);
 constexpr u64 hashFNV(const String str);
-inline String StringCat(Allocator* p, const String l, const String r);
+inline String StringCat(IAllocator* p, const String l, const String r);
 inline void StringAppend(String* l, const String r);
 inline void StringTrimEnd(String* s);
 constexpr void StringRemoveNLEnd(String* s); /* removes nextline character if it ends with one */
@@ -258,7 +258,7 @@ StringLastOf(String sv, char c)
 }
 
 inline String
-StringAlloc(Allocator* p, const char* str, u32 size)
+StringAlloc(IAllocator* p, const char* str, u32 size)
 {
     char* pData = (char*)zalloc(p, size + 1, sizeof(char));
     strncpy(pData, str, size);
@@ -268,26 +268,26 @@ StringAlloc(Allocator* p, const char* str, u32 size)
 }
 
 inline String
-StringAlloc(Allocator* p, u32 size)
+StringAlloc(IAllocator* p, u32 size)
 {
     char* pData = (char*)zalloc(p, size + 1, sizeof(char));
     return {pData, size};
 }
 
 inline String
-StringAlloc(Allocator* p, const char* str)
+StringAlloc(IAllocator* p, const char* str)
 {
     return StringAlloc(p, str, nullTermStringSize(str));
 }
 
 inline String
-StringAlloc(Allocator* p, const String s)
+StringAlloc(IAllocator* p, const String s)
 {
     return StringAlloc(p, s.pData, s.size);
 }
 
 inline void
-StringDestroy(Allocator* p, String* s)
+StringDestroy(IAllocator* p, String* s)
 {
     free(p, s->pData);
 }
@@ -299,7 +299,7 @@ hashFNV(const String str)
 }
 
 inline String
-StringCat(Allocator* p, const String l, const String r)
+StringCat(IAllocator* p, const String l, const String r)
 {
     u32 len = l.size + r.size;
     char* ret = (char*)zalloc(p, len + 1, sizeof(char));

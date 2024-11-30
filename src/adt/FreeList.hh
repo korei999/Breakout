@@ -2,10 +2,28 @@
 
 #include "RBTree.hh"
 
-#include "logs.hh"
+#if defined ADT_DBG_MEMORY
+    #include "logs.hh"
+#endif
 
 namespace adt
 {
+
+/* Best-fit logarithmic time allocator, all IAllocator methods are supported.
+ * Can be slow and memory wasteful for small allocations. Preallocating big blocks would help. */
+struct FreeList;
+
+inline void* FreeListAlloc(FreeList* s, u64 nMembers, u64 mSize);
+inline void* FreeListZalloc(FreeList* s, u64 nMembers, u64 mSize);
+inline void* FreeListRealloc(FreeList* s, void* ptr, u64 nMembers, u64 mSize);
+inline void FreeListFree(FreeList* s, void* ptr);
+inline void FreeListFreeAll(FreeList* s);
+
+inline void* alloc(FreeList* s, u64 mCount, u64 mSize) { return FreeListAlloc(s, mCount, mSize); }
+inline void* zalloc(FreeList* s, u64 mCount, u64 mSize) { return FreeListZalloc(s, mCount, mSize); }
+inline void* realloc(FreeList* s, void* p, u64 mCount, u64 mSize) { return FreeListRealloc(s, p, mCount, mSize); }
+inline void free(FreeList* s, void* p) { FreeListFree(s, p); }
+inline void freeAll(FreeList* s) { FreeListFreeAll(s); }
 
 struct FreeListBlock
 {
@@ -15,30 +33,31 @@ struct FreeListBlock
     u8 pMem[];
 };
 
-constexpr u64 IS_FREE_BITMASK = 1ULL << 63;
+/*constexpr */
 
 struct FreeListData
 {
+    static constexpr u64 IS_FREE_MASK = 1ULL << 63;
+
     FreeListData* pPrev {};
     FreeListData* pNext {}; /* TODO: calculate from the size (save 8 bytes) */
     u64 sizeAndIsFree {}; /* isFree bool as leftmost bit */
     u8 pMem[];
 
-    constexpr u64 getSize() const { return sizeAndIsFree & ~IS_FREE_BITMASK; }
-    constexpr bool isFree() const { return sizeAndIsFree & IS_FREE_BITMASK; }
-    constexpr void setFree(bool _bFree) { _bFree ? sizeAndIsFree |= IS_FREE_BITMASK : sizeAndIsFree &= ~IS_FREE_BITMASK; };
+    constexpr u64 getSize() const { return sizeAndIsFree & ~IS_FREE_MASK; }
+    constexpr bool isFree() const { return sizeAndIsFree & IS_FREE_MASK; }
+    constexpr void setFree(bool _bFree) { _bFree ? sizeAndIsFree |= IS_FREE_MASK : sizeAndIsFree &= ~IS_FREE_MASK; };
     constexpr void setSizeSetFree(u64 _size, bool _bFree) { sizeAndIsFree = _size; setFree(_bFree); }
     constexpr void setSize(u64 _size) { setSizeSetFree(_size, isFree()); }
     constexpr void addSize(u64 _size) { setSize(_size + getSize()); }
     // constexpr FreeListData* nextNode() const { return (FreeListData*)((u8*)this + getSize()); }
 };
 
-/* best-fit logarithmic time thing */
 struct FreeList
 {
     using Node = RBNode<FreeListData>;
 
-    Allocator super {};
+    IAllocator super {};
     u64 blockSize {};
     RBTreeBase<FreeListData> tree {};
     FreeListBlock* pBlocks {};
@@ -47,14 +66,11 @@ struct FreeList
     FreeList(u64 _blockSize);
 };
 
-inline void* FreeListAlloc(FreeList* s, u64 nMembers, u64 mSize);
-inline void* FreeListZalloc(FreeList* s, u64 nMembers, u64 mSize);
-inline void* FreeListRealloc(FreeList* s, void* ptr, u64 nMembers, u64 mSize);
-inline void FreeListFree(FreeList* s, void* ptr);
-inline void FreeListFreeAll(FreeList* s);
+
+#if defined ADT_DBG_MEMORY
 
 inline void
-_FreeListPrintTree(FreeList* s, Allocator* pAlloc)
+_FreeListPrintTree(FreeList* s, IAllocator* pAlloc)
 {
     auto pfn = +[](const FreeList::Node* pNode, [[maybe_unused]] void* pArgs) -> void {
         CERR(
@@ -65,6 +81,10 @@ _FreeListPrintTree(FreeList* s, Allocator* pAlloc)
 
     RBPrintNodes(pAlloc, &s->tree, s->tree.pRoot, pfn, {}, stderr, {}, false);
 }
+
+#else
+    #define _FreeListPrintTree(...) (void)0
+#endif
 
 template<>
 constexpr long
@@ -233,6 +253,10 @@ FreeListAlloc(FreeList* s, u64 nMembers, u64 mSize)
 
     if (!pBlock)
     {
+#if defined ADT_DBG_MEMORY
+        CERR("[FreeList]: no fitting block for '{}' bytes\n", realSize);
+#endif
+
 again:
         pBlock = FreeListBlockPush(s, utils::max(s->blockSize, requested*2 + sizeof(FreeListBlock) + sizeof(FreeList::Node)));
     }
@@ -288,6 +312,7 @@ FreeListFree(FreeList* s, void* ptr)
 
     pThis->data.setFree(true);
 
+    /* next adjecent node coalescence */
     if (pThis->data.pNext && pThis->data.pNext->isFree())
     {
         RBRemove(&s->tree, FreeListTreeNodeFromPtr(pThis->data.pNext->pMem));
@@ -298,6 +323,7 @@ FreeListFree(FreeList* s, void* ptr)
         pThis->data.pNext = pThis->data.pNext->pNext;
     }
 
+    /* prev adjecent node coalescence */
     if (pThis->data.pPrev && pThis->data.pPrev->isFree())
     {
         auto* pPrev = FreeListTreeNodeFromPtr(pThis->data.pPrev->pMem);
@@ -334,23 +360,17 @@ FreeListRealloc(FreeList* s, void* ptr, u64 nMembers, u64 mSize)
     return pRet;
 }
 
-inline const AllocatorInterface inl_FreeListAllocatorVTable {
-    .alloc = decltype(AllocatorInterface::alloc)(FreeListAlloc),
-    .zalloc = decltype(AllocatorInterface::zalloc)(FreeListZalloc),
-    .realloc = decltype(AllocatorInterface::realloc)(FreeListRealloc),
-    .free = decltype(AllocatorInterface::free)(FreeListFree),
-    .freeAll = decltype(AllocatorInterface::freeAll)(FreeListFreeAll),
+inline const AllocatorVTable inl_FreeListAllocatorVTable {
+    .alloc = decltype(AllocatorVTable::alloc)(FreeListAlloc),
+    .zalloc = decltype(AllocatorVTable::zalloc)(FreeListZalloc),
+    .realloc = decltype(AllocatorVTable::realloc)(FreeListRealloc),
+    .free = decltype(AllocatorVTable::free)(FreeListFree),
+    .freeAll = decltype(AllocatorVTable::freeAll)(FreeListFreeAll),
 };
 
 inline FreeList::FreeList(u64 _blockSize)
     : super(&inl_FreeListAllocatorVTable),
       blockSize(align8(_blockSize + sizeof(FreeListBlock) + sizeof(FreeList::Node))),
       pBlocks(FreeListAllocBlock(this, this->blockSize)) {}
-
-inline void* alloc(FreeList* s, u64 mCount, u64 mSize) { return FreeListAlloc(s, mCount, mSize); }
-inline void* zalloc(FreeList* s, u64 mCount, u64 mSize) { return FreeListZalloc(s, mCount, mSize); }
-inline void* realloc(FreeList* s, void* p, u64 mCount, u64 mSize) { return FreeListRealloc(s, p, mCount, mSize); }
-inline void free(FreeList* s, void* p) { FreeListFree(s, p); }
-inline void freeAll(FreeList* s) { FreeListFreeAll(s); }
 
 } /* namespace adt */

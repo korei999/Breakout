@@ -474,7 +474,7 @@ struct Font
     MapBase<u32, Glyph> mOffsetToGlyph {};
 
     Font() = default;
-    Font(Allocator* _pA) : p(_pA), mOffsetToGlyph(_pA, 128) {}
+    Font(IAllocator* _pA) : p(_pA), mOffsetToGlyph(_pA, 128) {}
 };
 
 struct FontLoadParseArg

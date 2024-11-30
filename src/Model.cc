@@ -65,7 +65,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         struct Args
         {
             texture::Img* p;
-            Allocator* pAlloc;
+            IAllocator* pAlloc;
             String path;
             texture::TYPE type;
             bool flip;
@@ -296,7 +296,7 @@ ModelDraw(Model* s, DRAW flags, Shader* sh, String svUniform, String svUniformM3
 void
 ModelDrawGraph(
     Model* s,
-    [[maybe_unused]] Allocator* pFrameAlloc,
+    [[maybe_unused]] IAllocator* pFrameAlloc,
     DRAW flags,
     Shader* sh,
     String svUniform,
