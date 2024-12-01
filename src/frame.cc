@@ -132,15 +132,12 @@ mainLoop()
 
         controls::procKeys();
 
-        int _i = 0;
         while (accumulator >= g_dt)
         {
             game::updateState();
             t += g_dt;
             accumulator -= g_dt;
-            ++_i;
         }
-        LOG("_i: {}\n", _i);
 
         const f64 alpha = accumulator / g_dt;
 

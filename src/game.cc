@@ -541,11 +541,14 @@ drawEntities([[maybe_unused]] Arena* pArena, const f64 alpha)
 
         auto enIdx = PoolIdx(&g_aEntities, &en);
 
-        auto lPos = math::lerp(s_aPrevPos[enIdx], en.pos, alpha);
+        math::V2 pos;
+        /* no point to lerp static blocks */
+        if (enIdx == g_ball.enIdx || enIdx == g_player.enIdx)
+            pos = math::lerp(s_aPrevPos[enIdx], en.pos, alpha);
+        else pos = en.pos;
 
         math::M4 tm = math::M4Iden();
-        /*tm = M4Translate(tm, {en.pos.x + en.xOff, en.pos.y + en.yOff, 0.0f + en.zOff});*/
-        tm = M4Translate(tm, {lPos.x + en.xOff, lPos.y + en.yOff, 0.0f + en.zOff});
+        tm = M4Translate(tm, {pos.x + en.xOff, pos.y + en.yOff, 0.0f + en.zOff});
         tm = M4Scale(tm, {frame::g_unit.first * en.width, frame::g_unit.second * en.height, 1.0f});
 
         if (idxLastTex != en.texIdx)
