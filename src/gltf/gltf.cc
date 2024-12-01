@@ -19,26 +19,26 @@ static void ModelProcNodes(Model* s);
 
 enum class HASH_CODES : u64
 {
-    scene = hashFNV("scene"),
-    scenes = hashFNV("scenes"),
-    nodes = hashFNV("nodes"),
-    meshes = hashFNV("meshes"),
-    cameras = hashFNV("cameras"),
-    buffers = hashFNV("buffers"),
-    bufferViews = hashFNV("bufferViews"),
-    accessors = hashFNV("accessors"),
-    materials = hashFNV("materials"),
-    textures = hashFNV("textures"),
-    images = hashFNV("images"),
-    samplers = hashFNV("samplers"),
-    skins = hashFNV("skins"),
-    animations = hashFNV("animations"),
-    SCALAR = hashFNV("SCALAR"),
-    VEC2 = hashFNV("VEC2"),
-    VEC3 = hashFNV("VEC3"),
-    VEC4 = hashFNV("VEC4"),
-    MAT3 = hashFNV("MAT3"),
-    MAT4 = hashFNV("MAT4")
+    scene = hash::func("scene"),
+    scenes = hash::func("scenes"),
+    nodes = hash::func("nodes"),
+    meshes = hash::func("meshes"),
+    cameras = hash::func("cameras"),
+    buffers = hash::func("buffers"),
+    bufferViews = hash::func("bufferViews"),
+    accessors = hash::func("accessors"),
+    materials = hash::func("materials"),
+    textures = hash::func("textures"),
+    images = hash::func("images"),
+    samplers = hash::func("samplers"),
+    skins = hash::func("skins"),
+    animations = hash::func("animations"),
+    SCALAR = hash::func("SCALAR"),
+    VEC2 = hash::func("VEC2"),
+    VEC3 = hash::func("VEC3"),
+    VEC4 = hash::func("VEC4"),
+    MAT3 = hash::func("MAT3"),
+    MAT4 = hash::func("MAT4")
 };
 
 #ifdef D_GLTF
@@ -74,7 +74,7 @@ accessorTypeToString(enum ACCESSOR_TYPE t)
 inline enum ACCESSOR_TYPE
 stringToAccessorType(String sv)
 {
-    switch (hashFNV(sv))
+    switch (hash::func(sv))
     {
         default:
         case (u64)(HASH_CODES::SCALAR):
@@ -180,7 +180,7 @@ ModelProcJSONObjs(Model* s)
     /* collect all the top level objects */
     for (auto& node : json::ParserRoot(&s->parser))
     {
-        switch (hashFNV(node.svKey))
+        switch (hash::func(node.svKey))
         {
             default: break;
 

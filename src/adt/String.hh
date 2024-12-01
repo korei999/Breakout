@@ -33,7 +33,6 @@ inline String StringAlloc(IAllocator* p, u32 size);
 inline String StringAlloc(IAllocator* p, const char* str);
 inline String StringAlloc(IAllocator* p, const String s);
 inline void StringDestroy(IAllocator* p, String* s);
-constexpr u64 hashFNV(const String str);
 inline String StringCat(IAllocator* p, const String l, const String r);
 inline void StringAppend(String* l, const String r);
 inline void StringTrimEnd(String* s);
@@ -292,12 +291,6 @@ StringDestroy(IAllocator* p, String* s)
     free(p, s->pData);
 }
 
-constexpr u64
-hashFNV(const String str)
-{
-    return hash::fnv(str.pData, str.size);
-}
-
 inline String
 StringCat(IAllocator* p, const String l, const String r)
 {
@@ -356,6 +349,7 @@ StringRemoveNLEnd(String* s)
 constexpr bool
 StringContains(String l, const String r)
 {
+
     if (l.size < r.size) return false;
 
     for (u32 i = 0; i < l.size; ++i)
@@ -370,16 +364,16 @@ StringContains(String l, const String r)
 
 template<>
 constexpr u64
-hash::func<String>(String& str)
+hash::func(String& str)
 {
-    return fnv(str.pData, str.size);
+    return hash::fnvStr(str.pData, str.size, FNV1_64_INIT);
 }
 
 template<>
 constexpr u64
-hash::func<const String>(const String& str)
+hash::func(const String& str)
 {
-    return fnv(str.pData, str.size);
+    return hash::fnvStr(str.pData, str.size, FNV1_64_INIT);
 }
 
 namespace utils

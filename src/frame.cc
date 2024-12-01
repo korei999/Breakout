@@ -110,46 +110,27 @@ run()
     mainLoop();
 }
 
-static _Atomic(f64) s_lastUpdateAt;
-
-static int
-gameStateLoop([[maybe_unused]] void* pNull)
-{
-    Arena arena(SIZE_1K);
-    defer( freeAll(&arena) );
-    ThreadPool tp(&arena.super, 1);
-    ThreadPoolStart(&tp);
-
-    g_deltaTimeS = 1.0; /* using as game speed modifier */
-
-    auto* pfnUpdateTask = +[](void* pArg) -> int {
-        controls::procKeys();
-        game::updateState();
-        atomic_store_explicit(&s_lastUpdateAt, utils::timeNowS(), memory_order_release);
-
-        return thrd_success;
-    };
-
-    while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
-    {
-        ThreadPoolSubmit(&tp, pfnUpdateTask, {});
-        utils::sleepS(1.0 / TICKRATE);
-    }
-
-    ThreadPoolDestroy(&tp);
-    return thrd_success;
-}
-
 static void
 mainLoop()
 {
     Arena arena(SIZE_1K * 20);
     defer( freeAll(&arena) );
 
-    g_deltaTimeS = 2.0;
+    f64 t = 0.0;
+    g_deltaTimeS = 0.01;
+
+    f64 currentTime = utils::timeNowS();
+    f64 accumulator = 0.0;
 
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
+        f64 newTime = utils::timeNowS();
+        f64 frameTime = newTime - currentTime;
+        currentTime = newTime;
+        if (frameTime > 0.25) frameTime = 0.25;
+
+        accumulator += frameTime;
+
         WindowProcEvents(app::g_pWindow);
         updateDrawTime();
 
@@ -162,11 +143,14 @@ mainLoop()
 
         controls::procKeys();
 
-        game::updateState();
+        while (accumulator >= g_deltaTimeS)
+        {
+            game::updateState();
+            t += g_deltaTimeS;
+            accumulator -= g_deltaTimeS;
+        }
 
-        game::draw(&arena,
-            atomic_load_explicit(&s_lastUpdateAt, memory_order_acquire)
-        );
+        game::draw(&arena);
 
         ArenaReset(&arena);
 

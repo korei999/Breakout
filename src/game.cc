@@ -56,7 +56,7 @@ Ball g_ball {
 static void drawFPSCounter(Arena* pAlloc);
 static void drawFPSCounterTTF(Arena* pAlloc);
 static void drawInfo(Arena* pArena);
-static void drawEntities(Arena* pAlloc, f64 updateTime);
+static void drawEntities(Arena* pAlloc);
 static void drawTTF(Arena* pAlloc);
 
 void
@@ -355,7 +355,7 @@ loadLevel()
     /*g_player.enIdx = VecPush(&s_aEntities, {});*/
     g_player.enIdx = PoolRent(&g_aEntities);
     auto& enPlayer = g_aEntities[g_player.enIdx];
-    enPlayer.speed = 2.5f;
+    enPlayer.speed = 500.0f;
     enPlayer.pos.x = frame::WIDTH/2 - frame::g_unit.first;
     enPlayer.texIdx = s_tPaddle.id;
     enPlayer.width = 2.0f;
@@ -367,7 +367,7 @@ loadLevel()
 
     g_ball.enIdx = PoolRent(&g_aEntities);
     auto& enBall = g_aEntities[g_ball.enIdx];
-    enBall.speed = 2.5f;
+    enBall.speed = 500.0f;
     enBall.eColor = COLOR::ORANGERED;
     enBall.texIdx = s_tBall.id;
     enBall.width = 1.0f;
@@ -426,9 +426,9 @@ updateState()
 }
 
 void
-draw(Arena* pArena, f64 updateTime)
+draw(Arena* pArena)
 {
-    drawEntities(pArena, updateTime);
+    drawEntities(pArena);
 
     drawFPSCounterTTF(pArena);
     drawInfo(pArena);
@@ -522,7 +522,7 @@ drawInfo(Arena* pArena)
 }
 
 static void
-drawEntities([[maybe_unused]] Arena* pArena, f64 updateTime)
+drawEntities([[maybe_unused]] Arena* pArena)
 {
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
@@ -532,9 +532,6 @@ drawEntities([[maybe_unused]] Arena* pArena, f64 updateTime)
     for (const Entity& en : g_aEntities)
     {
         if (en.bDead || en.eColor == COLOR::INVISIBLE) continue;
-
-        f64 time = utils::timeNowS();
-        f64 alpha = (time - updateTime) / (1.0/frame::TICKRATE);
 
         auto enIdx = PoolIdx(&g_aEntities, &en);
 

@@ -92,7 +92,7 @@ struct Level
 void loadAssets();
 void loadLevel();
 void updateState();
-void draw(Arena* pAlloc, f64 updateTime);
+void draw(Arena* pAlloc);
 void cleanup();
 
 constexpr math::V3
