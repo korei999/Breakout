@@ -66,17 +66,10 @@ namespace hash
 constexpr u64 FNV1_64_INIT = 0xcbf29ce484222325ULL;
 
 template<typename T>
-inline u64
+constexpr u64
 func(T& x)
 {
-    return (x);
-}
-
-template<>
-inline u64
-func<void* const>(void* const& x)
-{
-    return u64(x) * FNV1_64_INIT;
+    return x * FNV1_64_INIT;
 }
 
 /* generic version that hashes everything */
