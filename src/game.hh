@@ -13,6 +13,7 @@ namespace game
 using namespace adt;
 
 constexpr u32 ASSET_MAX_COUNT = 256;
+constexpr f64 FIXED_DELTA_TIME = 1.0 / 240.0;
 
 enum REFLECT_SIDE : s8
 {
@@ -92,7 +93,7 @@ struct Level
 void loadAssets();
 void loadLevel();
 void updateState();
-void draw(Arena* pAlloc);
+void draw(Arena* pAlloc, const f64 alpha);
 void cleanup();
 
 constexpr math::V3

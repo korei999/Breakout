@@ -2,6 +2,7 @@
 
 #include "adt/Arena.hh"
 #include "adt/defer.hh"
+#include "adt/logs.hh"
 #include "app.hh"
 #include "colors.hh"
 #include "controls.hh"
@@ -23,9 +24,7 @@ Pair<f32, f32> g_unit; /* draw size unit */
 f32 g_uiWidth = 192.0f * 0.50f;
 f32 g_uiHeight; /* set in prepareDraw */
 
-long g_currTime = 0;
-f64 g_deltaTimeS = 0.0;
-long g_lastTime = 0;
+f64 g_dt = 0.0;
 
 f64 g_currDrawTime = 0.0;
 f64 g_frameTime = 0.0;
@@ -35,14 +34,6 @@ f64 g_prevTime = 0.0;
 int g_nfps = 0;
 
 Ubo g_uboProjView;
-
-static void
-updateDeltaTime()
-{
-    g_currTime = utils::timeNowUS();
-    g_deltaTimeS = (g_currTime - g_lastTime) / 1000.0;
-    g_lastTime = g_currTime;
-}
 
 static void
 updateDrawTime()
@@ -83,9 +74,7 @@ run()
 
     UboCreateBuffer(&g_uboProjView, sizeof(math::M4)*2, GL_DYNAMIC_DRAW);
 
-    updateDeltaTime(); /* reset delta time before drawing */
-    updateDeltaTime();
-    updateDrawTime();
+    updateDrawTime(); /* reset delta time before drawing */
     updateDrawTime();
 
     WindowSetSwapInterval(app::g_pWindow, 1);
@@ -117,7 +106,7 @@ mainLoop()
     defer( freeAll(&arena) );
 
     f64 t = 0.0;
-    g_deltaTimeS = 0.01;
+    g_dt = game::FIXED_DELTA_TIME;
 
     f64 currentTime = utils::timeNowS();
     f64 accumulator = 0.0;
@@ -143,14 +132,19 @@ mainLoop()
 
         controls::procKeys();
 
-        while (accumulator >= g_deltaTimeS)
+        int _i = 0;
+        while (accumulator >= g_dt)
         {
             game::updateState();
-            t += g_deltaTimeS;
-            accumulator -= g_deltaTimeS;
+            t += g_dt;
+            accumulator -= g_dt;
+            ++_i;
         }
+        LOG("_i: {}\n", _i);
 
-        game::draw(&arena);
+        const f64 alpha = accumulator / g_dt;
+
+        game::draw(&arena, alpha);
 
         ArenaReset(&arena);
 

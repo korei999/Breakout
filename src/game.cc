@@ -56,7 +56,7 @@ Ball g_ball {
 static void drawFPSCounter(Arena* pAlloc);
 static void drawFPSCounterTTF(Arena* pAlloc);
 static void drawInfo(Arena* pArena);
-static void drawEntities(Arena* pAlloc);
+static void drawEntities(Arena* pAlloc, const f64 alpha);
 static void drawTTF(Arena* pAlloc);
 
 void
@@ -117,7 +117,7 @@ static inline math::V2
 nextPos(const T& e, bool bNormalizeDir)
 {
     auto dir = bNormalizeDir ? math::normalize(e.dir) : e.dir;
-    return e.pos + (dir * (frame::g_deltaTimeS * e.speed));
+    return e.pos + (dir * (frame::g_dt * e.speed));
 }
 
 static REFLECT_SIDE
@@ -183,6 +183,7 @@ blockHit()
             bAddSound = true;
 
             auto side = getReflectionSide(diff);
+            /*auto side = getReflectionSide(enBall.pos - b.pos);*/
 
             /* FIXME: sides are flipped */
             auto& enBall = g_aEntities[g_ball.enIdx];
@@ -332,7 +333,6 @@ loadLevel()
         {
             if (at(i, j) != s8(COLOR::INVISIBLE))
             {
-                /*u32 idx = VecPush(&s_aEntities, {});*/
                 u32 idx = PoolRent(&g_aEntities);
                 auto& e = g_aEntities[idx];
 
@@ -352,7 +352,6 @@ loadLevel()
         }
     }
 
-    /*g_player.enIdx = VecPush(&s_aEntities, {});*/
     g_player.enIdx = PoolRent(&g_aEntities);
     auto& enPlayer = g_aEntities[g_player.enIdx];
     enPlayer.speed = 500.0f;
@@ -388,6 +387,15 @@ updateState()
     namespace f = frame;
     auto& enBall = g_aEntities[g_ball.enIdx];
     auto& enPlayer = g_aEntities[g_player.enIdx];
+
+    /* keep prev positions */
+    {
+        for (auto& en : g_aEntities)
+        {
+            auto idx = PoolIdx(&g_aEntities, &en);
+            s_aPrevPos[idx] = en.pos;
+        }
+    }
 
     /* player */
     {
@@ -426,9 +434,9 @@ updateState()
 }
 
 void
-draw(Arena* pArena)
+draw(Arena* pArena, const f64 alpha)
 {
-    drawEntities(pArena);
+    drawEntities(pArena, alpha);
 
     drawFPSCounterTTF(pArena);
     drawInfo(pArena);
@@ -522,12 +530,10 @@ drawInfo(Arena* pArena)
 }
 
 static void
-drawEntities([[maybe_unused]] Arena* pArena)
+drawEntities([[maybe_unused]] Arena* pArena, const f64 alpha)
 {
     ShaderUse(&s_shSprite);
     GLuint idxLastTex = 0;
-
-    /*LOG("{:.10}, alpha: {}\n", updateTime / time, alpha);*/
 
     for (const Entity& en : g_aEntities)
     {
@@ -535,11 +541,11 @@ drawEntities([[maybe_unused]] Arena* pArena)
 
         auto enIdx = PoolIdx(&g_aEntities, &en);
 
-        /*auto pos = math::lerp(en.pos, s_aPrevPos[enIdx], alpha);*/
+        auto lPos = math::lerp(s_aPrevPos[enIdx], en.pos, alpha);
 
         math::M4 tm = math::M4Iden();
-        tm = M4Translate(tm, {en.pos.x + en.xOff, en.pos.y + en.yOff, 0.0f + en.zOff});
-        /*tm = M4Translate(tm, {pos.x + en.xOff, pos.y + en.yOff, 0.0f + en.zOff});*/
+        /*tm = M4Translate(tm, {en.pos.x + en.xOff, en.pos.y + en.yOff, 0.0f + en.zOff});*/
+        tm = M4Translate(tm, {lPos.x + en.xOff, lPos.y + en.yOff, 0.0f + en.zOff});
         tm = M4Scale(tm, {frame::g_unit.first * en.width, frame::g_unit.second * en.height, 1.0f});
 
         if (idxLastTex != en.texIdx)
