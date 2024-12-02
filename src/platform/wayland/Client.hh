@@ -10,7 +10,7 @@
 #include "wayland-protocols/relative-pointer-unstable-v1.h"
 #include "wayland-protocols/xdg-shell.h"
 
-#include "Window.hh"
+#include "IWindow.hh"
 
 #include "adt/types.hh"
 
@@ -23,7 +23,7 @@ namespace wayland
 
 struct Client
 {
-    WindowAbstract super {};
+    IWindow super {};
     wl_display* display {};
     wl_registry* registry {};
 

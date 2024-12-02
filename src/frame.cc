@@ -25,6 +25,7 @@ f32 g_uiWidth = 192.0f * 0.50f;
 f32 g_uiHeight; /* set in prepareDraw */
 
 f64 g_dt = 0.0;
+f64 g_gameTime = 0.0;
 
 f64 g_currDrawTime = 0.0;
 f64 g_frameTime = 0.0;
@@ -105,7 +106,7 @@ mainLoop()
     Arena arena(SIZE_1K * 20);
     defer( freeAll(&arena) );
 
-    f64 t = 0.0;
+    g_gameTime = 0.0;
     g_dt = game::FIXED_DELTA_TIME;
 
     f64 currentTime = utils::timeNowS();
@@ -135,7 +136,7 @@ mainLoop()
         while (accumulator >= g_dt)
         {
             game::updateState();
-            t += g_dt;
+            g_gameTime += g_dt;
             accumulator -= g_dt;
         }
 

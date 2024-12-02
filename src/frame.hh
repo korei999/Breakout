@@ -17,6 +17,7 @@ extern f32 g_uiWidth;
 extern f32 g_uiHeight;
 
 extern f64 g_dt; /* delta time in seconds */
+extern f64 g_gameTime;
 
 extern f64 g_currDrawTime;
 extern f64 g_frameTime;

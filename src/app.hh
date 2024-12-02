@@ -1,7 +1,7 @@
 #pragma once
 
 #include "audio.hh"
-#include "Window.hh"
+#include "IWindow.hh"
 #include "adt/ThreadPool.hh"
 
 namespace app
@@ -13,6 +13,6 @@ extern int g_argc;
 extern char** g_argv;
 
 extern audio::Mixer* g_pMixer;
-extern WindowAbstract* g_pWindow;
+extern IWindow* g_pWindow;
 
 } /* namespace app */

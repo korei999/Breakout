@@ -1,6 +1,6 @@
 #include "texture.hh"
 
-#include "Window.hh"
+#include "IWindow.hh"
 #include "adt/Arena.hh"
 #include "adt/OsAllocator.hh"
 #include "adt/logs.hh"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Window.hh"
+#include "IWindow.hh"
 
 #include <X11/Xlib.h>
 #include <EGL/egl.h>
@@ -12,7 +12,7 @@ namespace x11
 
 struct Window
 {
-    WindowAbstract super {};
+    IWindow super {};
     Display* pDisplay {};
     ::Window window {};
     EGLDisplay pEGLDisplay {};

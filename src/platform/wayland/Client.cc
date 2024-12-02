@@ -256,24 +256,24 @@ static const wl_registry_listener registryListener {
 
 Client::Client(String name)
 {
-    static WindowInterface s_vTable {
-        .start = (decltype(WindowInterface::start))ClientStart,
-        .disableRelativeMode = (decltype(WindowInterface::disableRelativeMode))ClientDisableRelativeMode,
-        .enableRelativeMode = (decltype(WindowInterface::enableRelativeMode))ClientEnableRelativeMode,
-        .togglePointerRelativeMode = (decltype(WindowInterface::togglePointerRelativeMode))ClientTogglePointerRelativeMode,
-        .toggleFullscreen = (decltype(WindowInterface::toggleFullscreen))ClientToggleFullscreen,
-        .hideCursor = (decltype(WindowInterface::hideCursor))ClientHideCursor,
-        .setCursorImage = (decltype(WindowInterface::setCursorImage))ClientSetCursorImage,
-        .setFullscreen = (decltype(WindowInterface::setFullscreen))ClientSetFullscreen,
-        .unsetFullscreen = (decltype(WindowInterface::unsetFullscreen))ClientUnsetFullscreen,
-        .bindGlContext = (decltype(WindowInterface::bindGlContext))ClientBindGlContext,
-        .unbindGlContext = (decltype(WindowInterface::unbindGlContext))ClientUnbindGlContext,
-        .setSwapInterval = (decltype(WindowInterface::setSwapInterval))ClientSetSwapInterval,
-        .toggleVSync = (decltype(WindowInterface::toggleVSync))ClientToggleVSync,
-        .swapBuffers = (decltype(WindowInterface::swapBuffers))ClientSwapBuffers,
-        .procEvents = (decltype(WindowInterface::procEvents))ClientProcEvents,
-        .showWindow = (decltype(WindowInterface::showWindow))ClientShowWindow,
-        .destroy = (decltype(WindowInterface::destroy))ClientDestroy,
+    static WindowVTable s_vTable {
+        .start = (decltype(WindowVTable::start))ClientStart,
+        .disableRelativeMode = (decltype(WindowVTable::disableRelativeMode))ClientDisableRelativeMode,
+        .enableRelativeMode = (decltype(WindowVTable::enableRelativeMode))ClientEnableRelativeMode,
+        .togglePointerRelativeMode = (decltype(WindowVTable::togglePointerRelativeMode))ClientTogglePointerRelativeMode,
+        .toggleFullscreen = (decltype(WindowVTable::toggleFullscreen))ClientToggleFullscreen,
+        .hideCursor = (decltype(WindowVTable::hideCursor))ClientHideCursor,
+        .setCursorImage = (decltype(WindowVTable::setCursorImage))ClientSetCursorImage,
+        .setFullscreen = (decltype(WindowVTable::setFullscreen))ClientSetFullscreen,
+        .unsetFullscreen = (decltype(WindowVTable::unsetFullscreen))ClientUnsetFullscreen,
+        .bindGlContext = (decltype(WindowVTable::bindGlContext))ClientBindGlContext,
+        .unbindGlContext = (decltype(WindowVTable::unbindGlContext))ClientUnbindGlContext,
+        .setSwapInterval = (decltype(WindowVTable::setSwapInterval))ClientSetSwapInterval,
+        .toggleVSync = (decltype(WindowVTable::toggleVSync))ClientToggleVSync,
+        .swapBuffers = (decltype(WindowVTable::swapBuffers))ClientSwapBuffers,
+        .procEvents = (decltype(WindowVTable::procEvents))ClientProcEvents,
+        .showWindow = (decltype(WindowVTable::showWindow))ClientShowWindow,
+        .destroy = (decltype(WindowVTable::destroy))ClientDestroy,
     };
 
     super.pVTable = &s_vTable;

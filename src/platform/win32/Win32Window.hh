@@ -12,7 +12,7 @@
 #undef near
 #undef far
 
-#include "Window.hh"
+#include "IWindow.hh"
 
 
 namespace platform
@@ -22,7 +22,7 @@ namespace win32
 
 struct Win32Window
 {
-    WindowAbstract super;
+    IWindow super;
     HINSTANCE hInstance;
     HWND hWindow;
     HDC hDeviceContext;

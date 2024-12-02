@@ -258,24 +258,24 @@ WindowShowWindow(Window* s)
 
 Window::Window(String sName)
 {
-    static WindowInterface s_vTable {
-        .start = (decltype(WindowInterface::start))WindowStart,
-        .disableRelativeMode = (decltype(WindowInterface::disableRelativeMode))WindowDisableRelativeMode,
-        .enableRelativeMode = (decltype(WindowInterface::enableRelativeMode))WindowEnableRelativeMode,
-        .togglePointerRelativeMode = (decltype(WindowInterface::togglePointerRelativeMode))WindowTogglePointerRelativeMode,
-        .toggleFullscreen = (decltype(WindowInterface::toggleFullscreen))WindowToggleFullscreen,
-        .hideCursor = (decltype(WindowInterface::hideCursor))WindowHideCursor,
-        .setCursorImage = (decltype(WindowInterface::setCursorImage))WindowSetCursorImage,
-        .setFullscreen = (decltype(WindowInterface::setFullscreen))WindowSetFullscreen,
-        .unsetFullscreen = (decltype(WindowInterface::unsetFullscreen))WindowUnsetFullscreen,
-        .bindGlContext = (decltype(WindowInterface::bindGlContext))WindowBindGlContext,
-        .unbindGlContext = (decltype(WindowInterface::unbindGlContext))WindowUnbindGlContext,
-        .setSwapInterval = (decltype(WindowInterface::setSwapInterval))WindowSetSwapInterval,
-        .toggleVSync = (decltype(WindowInterface::toggleVSync))WindowToggleVSync,
-        .swapBuffers = (decltype(WindowInterface::swapBuffers))WindowSwapBuffers,
-        .procEvents = (decltype(WindowInterface::procEvents))WindowProcEvents,
-        .showWindow = (decltype(WindowInterface::showWindow))WindowShowWindow,
-        .destroy = (decltype(WindowInterface::destroy))WindowDestroy,
+    static WindowVTable s_vTable {
+        .start = (decltype(WindowVTable::start))WindowStart,
+        .disableRelativeMode = (decltype(WindowVTable::disableRelativeMode))WindowDisableRelativeMode,
+        .enableRelativeMode = (decltype(WindowVTable::enableRelativeMode))WindowEnableRelativeMode,
+        .togglePointerRelativeMode = (decltype(WindowVTable::togglePointerRelativeMode))WindowTogglePointerRelativeMode,
+        .toggleFullscreen = (decltype(WindowVTable::toggleFullscreen))WindowToggleFullscreen,
+        .hideCursor = (decltype(WindowVTable::hideCursor))WindowHideCursor,
+        .setCursorImage = (decltype(WindowVTable::setCursorImage))WindowSetCursorImage,
+        .setFullscreen = (decltype(WindowVTable::setFullscreen))WindowSetFullscreen,
+        .unsetFullscreen = (decltype(WindowVTable::unsetFullscreen))WindowUnsetFullscreen,
+        .bindGlContext = (decltype(WindowVTable::bindGlContext))WindowBindGlContext,
+        .unbindGlContext = (decltype(WindowVTable::unbindGlContext))WindowUnbindGlContext,
+        .setSwapInterval = (decltype(WindowVTable::setSwapInterval))WindowSetSwapInterval,
+        .toggleVSync = (decltype(WindowVTable::toggleVSync))WindowToggleVSync,
+        .swapBuffers = (decltype(WindowVTable::swapBuffers))WindowSwapBuffers,
+        .procEvents = (decltype(WindowVTable::procEvents))WindowProcEvents,
+        .showWindow = (decltype(WindowVTable::showWindow))WindowShowWindow,
+        .destroy = (decltype(WindowVTable::destroy))WindowDestroy,
     };
 
     this->super.sName = sName;

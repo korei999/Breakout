@@ -1,7 +1,7 @@
 #include "game.hh"
 
+#include "IWindow.hh"
 #include "Shader.hh"
-#include "Window.hh"
 #include "adt/AllocatorPool.hh"
 #include "adt/Arena.hh"
 #include "adt/Pool.hh"
@@ -354,7 +354,7 @@ loadLevel()
 
     g_player.enIdx = PoolRent(&g_aEntities);
     auto& enPlayer = g_aEntities[g_player.enIdx];
-    enPlayer.speed = 500.0f;
+    enPlayer.speed = 600.0f;
     enPlayer.pos.x = frame::WIDTH/2 - frame::g_unit.first;
     enPlayer.texIdx = s_tPaddle.id;
     enPlayer.width = 2.0f;
@@ -366,7 +366,7 @@ loadLevel()
 
     g_ball.enIdx = PoolRent(&g_aEntities);
     auto& enBall = g_aEntities[g_ball.enIdx];
-    enBall.speed = 500.0f;
+    enBall.speed = 600.0f;
     enBall.eColor = COLOR::ORANGERED;
     enBall.texIdx = s_tBall.id;
     enBall.width = 1.0f;
