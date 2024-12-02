@@ -105,7 +105,7 @@ compareRev(const T& l, const T& r)
     return r - l;
 }
 
-[[nodiscard]] inline long
+[[nodiscard]] inline s64
 timeNowUS()
 {
 #ifdef __linux__
@@ -128,7 +128,7 @@ timeNowUS()
 [[nodiscard]] inline f64
 timeNowMS()
 {
-    return timeNowUS() / 1000.0;
+    return f64(timeNowUS()) / 1000.0;
 }
 
 [[nodiscard]] inline f64

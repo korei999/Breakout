@@ -497,9 +497,7 @@ drawFPSCounterTTF(Arena* pAlloc)
 
     f64 currTime = utils::timeNowMS();
     if (currTime >= frame::g_prevTime + 1000.0)
-    {
         nLastFps = frame::g_nfps; 
-    }
 
     String s = StringAlloc((IAllocator*)pAlloc, s_ttfTest.maxSize);
     s.size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", nLastFps, frame::g_frameTime);
