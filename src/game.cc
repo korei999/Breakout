@@ -49,8 +49,9 @@ Player g_player {
 
 Ball g_ball {
     .enIdx = 0,
-    .bReleased = false,
     .radius = 25.0f,
+    .bReleased = false,
+    .bCollided = false,
 };
 
 static void drawFPSCounter(Arena* pAlloc);
@@ -132,7 +133,7 @@ getReflectionSide(math::V2 tar)
     f32 max = 0.0f;
 
     REFLECT_SIDE eBestMatch = NONE;
-    for (int i = 0; i < 4; i++)
+    for (u64 i = 0; i < utils::size(compass); i++)
     {
         f32 dot = V2Dot(V2Norm(tar), compass[i]);
         if (dot >= max)
@@ -166,7 +167,7 @@ blockHit()
         math::V2 clamped = math::V2Clamp(diff, -aabbHalfExtents, aabbHalfExtents);
         math::V2 closest = aabbCenter + clamped;
         diff = closest - center;
-        /*auto diffLen = math::V2Length(diff);*/
+        auto diffLen = math::V2Length(diff);
 
         const auto& bx = g_aEntities[g_ball.enIdx].pos.x;
         const auto& by = g_aEntities[g_ball.enIdx].pos.y;
@@ -174,21 +175,29 @@ blockHit()
         const auto& ex = b.pos.x;
         const auto& ey = b.pos.y;
 
-        /*if (diffLen <= g_ball.radius)*/
-        if (bx >= ex - f::g_unit.first - 4 && bx <= ex + f::g_unit.first + 4 &&
-            by >= ey - f::g_unit.second - 4 && by <= ey + f::g_unit.second + 4)
+        /*if (bx >= ex - f::g_unit.first - 4 && bx <= ex + f::g_unit.first + 4 &&*/
+        /*    by >= ey - f::g_unit.second - 4 && by <= ey + f::g_unit.second + 4)*/
+        if (diffLen <= g_ball.radius)
         {
-            if (b.eColor != COLOR::INVISIBLE && b.eColor != COLOR::DIMGRAY) b.bDead = true;
+            if (g_ball.bCollided)
+            {
+                g_ball.bCollided = false;
+                break;
+            }
+
+            if (b.eColor != COLOR::INVISIBLE && b.eColor != COLOR::DIMGRAY)
+                b.bDead = true;
 
             bAddSound = true;
+            g_ball.bCollided = true;
 
-            auto side = getReflectionSide(diff);
+            auto eSide = getReflectionSide(diff);
             /*auto side = getReflectionSide(enBall.pos - b.pos);*/
 
             /* FIXME: sides are flipped */
             auto& enBall = g_aEntities[g_ball.enIdx];
-            f32 off = 16.0f;
-            switch (side)
+            const f32 off = 16.0f;
+            switch (eSide)
             {
                 default: break;
 
@@ -320,6 +329,8 @@ loadLevel()
 
     frame::g_unit.first = frame::WIDTH / levelX / 2;
     frame::g_unit.second = frame::HEIGHT / levelY / 2;
+
+    frame::g_unit.second = frame::g_unit.first;
 
     VecSetCap(&s_aBlocks, levelY*levelX);
     VecSetSize(&s_aBlocks, 0);

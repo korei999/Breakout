@@ -74,8 +74,9 @@ struct Player
 struct Ball
 {
     u16 enIdx {};
-    bool bReleased {};
     f32 radius {};
+    bool bReleased {};
+    bool bCollided {};
 };
 
 struct Block
