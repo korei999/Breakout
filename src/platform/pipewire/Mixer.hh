@@ -34,16 +34,16 @@ void MixerDestroy(Mixer* s);
 void MixerAdd(Mixer* s, audio::Track t);
 void MixerAddBackground(Mixer* s, audio::Track t);
 
-inline const audio::MixerInterface inl_MixerVTable {
-    .start = decltype(audio::MixerInterface::start)(MixerStart),
-    .destroy = decltype(audio::MixerInterface::destroy)(MixerDestroy),
-    .add = decltype(audio::MixerInterface::add)(MixerAdd),
-    .addBackground = decltype(audio::MixerInterface::addBackground)(MixerAddBackground),
+inline const audio::MixerVTable inl_MixerVTable {
+    .start = decltype(audio::MixerVTable::start)(MixerStart),
+    .destroy = decltype(audio::MixerVTable::destroy)(MixerDestroy),
+    .add = decltype(audio::MixerVTable::add)(MixerAdd),
+    .addBackground = decltype(audio::MixerVTable::addBackground)(MixerAddBackground),
 };
 
 struct Mixer
 {
-    audio::Mixer super {};
+    audio::IMixer super {};
     u32 sampleRate = 48000;
     u8 channels = 2;
     enum spa_audio_format eformat {};

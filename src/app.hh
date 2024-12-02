@@ -12,7 +12,7 @@ extern adt::ThreadPool* g_pThreadPool;
 extern int g_argc;
 extern char** g_argv;
 
-extern audio::Mixer* g_pMixer;
+extern audio::IMixer* g_pMixer;
 extern IWindow* g_pWindow;
 
 } /* namespace app */

@@ -13,15 +13,15 @@ constexpr u32 MAX_TRACK_COUNT = 8;
 extern f32 g_globalVolume;
 
 /* Platrform abstracted audio interface */
-struct Mixer;
+struct IMixer;
 struct Track;
 
-struct MixerInterface
+struct MixerVTable
 {
-    void (*start)(Mixer* s);
-    void (*destroy)(Mixer*);
-    void (*add)(Mixer*, Track);
-    void (*addBackground)(Mixer*, Track);
+    void (*start)(IMixer* s);
+    void (*destroy)(IMixer*);
+    void (*add)(IMixer*, Track);
+    void (*addBackground)(IMixer*, Track);
 };
 
 struct Track
@@ -34,23 +34,23 @@ struct Track
     f32 volume = 0.0f;
 };
 
-struct Mixer
+struct IMixer
 {
-    const MixerInterface* pVTable;
+    const MixerVTable* pVTable;
     bool bPaused = false;
     bool bMuted = false;
     bool bRunning = true;
     f32 volume = 0.5f;
 };
 
-ADT_NO_UB constexpr void MixerInit(Mixer* s) { s->pVTable->start(s); }
-ADT_NO_UB constexpr void MixerDestroy(Mixer* s) { s->pVTable->destroy(s); }
-ADT_NO_UB constexpr void MixerAdd(Mixer* s, Track t) { s->pVTable->add(s, t); }
-ADT_NO_UB constexpr void MixerAddBackground(Mixer* s, Track t) { s->pVTable->addBackground(s, t); }
+ADT_NO_UB constexpr void MixerInit(IMixer* s) { s->pVTable->start(s); }
+ADT_NO_UB constexpr void MixerDestroy(IMixer* s) { s->pVTable->destroy(s); }
+ADT_NO_UB constexpr void MixerAdd(IMixer* s, Track t) { s->pVTable->add(s, t); }
+ADT_NO_UB constexpr void MixerAddBackground(IMixer* s, Track t) { s->pVTable->addBackground(s, t); }
 
 struct DummyMixer
 {
-    Mixer super;
+    IMixer super;
 
     constexpr DummyMixer();
 };
@@ -79,11 +79,11 @@ DummyMixerAddBackground([[maybe_unused]] DummyMixer* s, [[maybe_unused]] Track t
     //
 }
 
-inline const MixerInterface inl_DummyMixerVTable {
-    .start = decltype(MixerInterface::start)(DummyMixerInit),
-    .destroy = decltype(MixerInterface::destroy)(DummyMixerDestroy),
-    .add = decltype(MixerInterface::add)(DummyMixerAdd),
-    .addBackground = decltype(MixerInterface::addBackground)(DummyMixerAddBackground)
+inline const MixerVTable inl_DummyMixerVTable {
+    .start = decltype(MixerVTable::start)(DummyMixerInit),
+    .destroy = decltype(MixerVTable::destroy)(DummyMixerDestroy),
+    .add = decltype(MixerVTable::add)(DummyMixerAdd),
+    .addBackground = decltype(MixerVTable::addBackground)(DummyMixerAddBackground)
 };
 
 constexpr

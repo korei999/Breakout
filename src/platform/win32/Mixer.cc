@@ -31,17 +31,17 @@ static XAudio2VoiceInterface s_aVoices[audio::MAX_TRACK_COUNT];
 /*static XAudio2Voice s_xVoice {};*/
 /*static s16 s_chunk[audio::CHUNK_SIZE] {};*/
 
-static const audio::MixerInterface inl_XAudio2MixerVTable {
-    .start = decltype(audio::MixerInterface::start)(MixerInit),
-    .destroy = decltype(audio::MixerInterface::destroy)(MixerDestroy),
-    .add = decltype(audio::MixerInterface::add)(MixerAdd),
-    .addBackground = decltype(audio::MixerInterface::addBackground)(MixerAddBackground),
+inline const audio::MixerVTable inl_XAudio2MixerVTable {
+    .start = decltype(audio::MixerVTable::start)(MixerInit),
+    .destroy = decltype(audio::MixerVTable::destroy)(MixerDestroy),
+    .add = decltype(audio::MixerVTable::add)(MixerAdd),
+    .addBackground = decltype(audio::MixerVTable::addBackground)(MixerAddBackground),
 };
 
-Mixer::Mixer(IAllocator* pA) : super {&inl_XAudio2MixerVTable}, aTracks(pA, audio::MAX_TRACK_COUNT), aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
-{
-    MixerInit(this, {}, {});
-}
+Mixer::Mixer(IAllocator* pA)
+    : super {&inl_XAudio2MixerVTable},
+      aTracks(pA, audio::MAX_TRACK_COUNT),
+      aBackgroundTracks(pA, audio::MAX_TRACK_COUNT) {}
 
 void
 MixerInit(Mixer* s, int argc, char** argv)
