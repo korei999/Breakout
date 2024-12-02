@@ -94,24 +94,24 @@ getWglFunctions(void)
 
 Win32Window::Win32Window(String sName, HINSTANCE hInstance)
 {
-    static WindowInterface vTable {
-        .start = (decltype(WindowInterface::start))Win32Init,
-        .disableRelativeMode = (decltype(WindowInterface::disableRelativeMode))Win32DisableRelativeMode,
-        .enableRelativeMode = (decltype(WindowInterface::enableRelativeMode))Win32EnableRelativeMode,
-        .togglePointerRelativeMode = (decltype(WindowInterface::togglePointerRelativeMode))Win32TogglePointerRelativeMode,
-        .toggleFullscreen = (decltype(WindowInterface::toggleFullscreen))Win32ToggleFullscreen,
-        .hideCursor = (decltype(WindowInterface::hideCursor))Win32HideCursor,
-        .setCursorImage = (decltype(WindowInterface::setCursorImage))Win32SetCursorImage,
-        .setFullscreen = (decltype(WindowInterface::setFullscreen))Win32SetFullscreen,
-        .unsetFullscreen = (decltype(WindowInterface::unsetFullscreen))Win32UnsetFullscreen,
-        .bindGlContext = (decltype(WindowInterface::bindGlContext))Win32BindGlContext,
-        .unbindGlContext = (decltype(WindowInterface::unbindGlContext))Win32UnbindGlContext,
-        .setSwapInterval = (decltype(WindowInterface::setSwapInterval))Win32SetSwapInterval,
-        .toggleVSync = (decltype(WindowInterface::toggleVSync))Win32ToggleVSync,
-        .swapBuffers = (decltype(WindowInterface::swapBuffers))Win32SwapBuffers,
-        .procEvents = (decltype(WindowInterface::procEvents))Win32ProcEvents,
-        .showWindow = (decltype(WindowInterface::showWindow))Win32ShowWindow,
-        .destroy = (decltype(WindowInterface::destroy))Win32Destroy,
+    static WindowVTable vTable {
+        .start = (decltype(WindowVTable::start))Win32Init,
+        .disableRelativeMode = (decltype(WindowVTable::disableRelativeMode))Win32DisableRelativeMode,
+        .enableRelativeMode = (decltype(WindowVTable::enableRelativeMode))Win32EnableRelativeMode,
+        .togglePointerRelativeMode = (decltype(WindowVTable::togglePointerRelativeMode))Win32TogglePointerRelativeMode,
+        .toggleFullscreen = (decltype(WindowVTable::toggleFullscreen))Win32ToggleFullscreen,
+        .hideCursor = (decltype(WindowVTable::hideCursor))Win32HideCursor,
+        .setCursorImage = (decltype(WindowVTable::setCursorImage))Win32SetCursorImage,
+        .setFullscreen = (decltype(WindowVTable::setFullscreen))Win32SetFullscreen,
+        .unsetFullscreen = (decltype(WindowVTable::unsetFullscreen))Win32UnsetFullscreen,
+        .bindGlContext = (decltype(WindowVTable::bindGlContext))Win32BindGlContext,
+        .unbindGlContext = (decltype(WindowVTable::unbindGlContext))Win32UnbindGlContext,
+        .setSwapInterval = (decltype(WindowVTable::setSwapInterval))Win32SetSwapInterval,
+        .toggleVSync = (decltype(WindowVTable::toggleVSync))Win32ToggleVSync,
+        .swapBuffers = (decltype(WindowVTable::swapBuffers))Win32SwapBuffers,
+        .procEvents = (decltype(WindowVTable::procEvents))Win32ProcEvents,
+        .showWindow = (decltype(WindowVTable::showWindow))Win32ShowWindow,
+        .destroy = (decltype(WindowVTable::destroy))Win32Destroy,
     };
 
     this->super.pVTable = {&vTable};
