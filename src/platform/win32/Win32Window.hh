@@ -34,8 +34,8 @@ struct Win32Window
     Win32Window(String name, HINSTANCE instance);
 };
 
+void Win32Start(Win32Window* s);
 void Win32Destroy(Win32Window* s);
-void Win32Init(Win32Window* s);
 void Win32EnableRelativeMode(Win32Window* s);
 void Win32DisableRelativeMode(Win32Window* s);
 void Win32SetCursorImage(Win32Window* s, String cursorType);
@@ -55,7 +55,7 @@ void Win32ShowWindow(Win32Window* s);
 } /* namespace win32 */
 } /* namespace platform */
 
-inline void WindowInit(platform::win32::Win32Window* s) { Win32Init(s); }
+inline void WindowStart(platform::win32::Win32Window* s) { Win32Start(s); }
 inline void WindowDisableRelativeMode(platform::win32::Win32Window* s) { Win32DisableRelativeMode(s); }
 inline void WindowEnableRelativeMode(platform::win32::Win32Window* s) { Win32EnableRelativeMode(s); }
 inline void WindowTogglePointerRelativeMode(platform::win32::Win32Window* s) { Win32TogglePointerRelativeMode(s); }

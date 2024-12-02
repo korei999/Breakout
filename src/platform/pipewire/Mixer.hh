@@ -34,13 +34,6 @@ void MixerDestroy(Mixer* s);
 void MixerAdd(Mixer* s, audio::Track t);
 void MixerAddBackground(Mixer* s, audio::Track t);
 
-inline const audio::MixerVTable inl_MixerVTable {
-    .start = decltype(audio::MixerVTable::start)(MixerStart),
-    .destroy = decltype(audio::MixerVTable::destroy)(MixerDestroy),
-    .add = decltype(audio::MixerVTable::add)(MixerAdd),
-    .addBackground = decltype(audio::MixerVTable::addBackground)(MixerAddBackground),
-};
-
 struct Mixer
 {
     audio::IMixer super {};
@@ -62,10 +55,7 @@ struct Mixer
     thrd_t threadLoop {};
 
     Mixer() = default;
-    Mixer(IAllocator* pA)
-        : super(&inl_MixerVTable),
-          aTracks(pA, audio::MAX_TRACK_COUNT),
-          aBackgroundTracks(pA, audio::MAX_TRACK_COUNT) {}
+    Mixer(IAllocator* pA);
 };
 
 } /* namespace pipewire */

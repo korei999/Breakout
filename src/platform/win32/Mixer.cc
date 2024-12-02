@@ -8,8 +8,7 @@ namespace platform
 namespace win32
 {
 
-static void MixerInit(Mixer* s, int argc, char** argv);
-static void MixerRunThread(Mixer* s, int argc, char** argv);
+static void MixerRunThread(Mixer* s);
 
 class XAudio2VoiceInterface : public IXAudio2VoiceCallback
 {
@@ -31,28 +30,29 @@ static XAudio2VoiceInterface s_aVoices[audio::MAX_TRACK_COUNT];
 /*static XAudio2Voice s_xVoice {};*/
 /*static s16 s_chunk[audio::CHUNK_SIZE] {};*/
 
-inline const audio::MixerVTable inl_XAudio2MixerVTable {
-    .start = decltype(audio::MixerVTable::start)(MixerInit),
+static const audio::MixerVTable sc_XAudio2MixerVTable {
+    .start = decltype(audio::MixerVTable::start)(MixerStart),
     .destroy = decltype(audio::MixerVTable::destroy)(MixerDestroy),
     .add = decltype(audio::MixerVTable::add)(MixerAdd),
     .addBackground = decltype(audio::MixerVTable::addBackground)(MixerAddBackground),
 };
 
 Mixer::Mixer(IAllocator* pA)
-    : super {&inl_XAudio2MixerVTable},
+    : super {&sc_XAudio2MixerVTable},
       aTracks(pA, audio::MAX_TRACK_COUNT),
-      aBackgroundTracks(pA, audio::MAX_TRACK_COUNT) {}
+      aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
+{
+    this->super.bRunning = true;
+    this->super.bMuted = false;
+    this->super.volume = 0.1f;
+
+    mtx_init(&this->mtxAdd, mtx_plain);
+}
 
 void
-MixerInit(Mixer* s, int argc, char** argv)
+MixerStart(Mixer* s)
 {
-    s->super.bRunning = true;
-    s->super.bMuted = false;
-    s->super.volume = 0.1f;
-
-    mtx_init(&s->mtxAdd, mtx_plain);
-
-    MixerRunThread(s, argc, argv);
+    MixerRunThread(s);
 }
 
 void
@@ -123,7 +123,7 @@ MixerAddBackground(Mixer* s, audio::Track t)
 }
 
 static void
-MixerRunThread(Mixer* s, int argc, char** argv)
+MixerRunThread(Mixer* s)
 {
     HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     assert(!FAILED(hr));

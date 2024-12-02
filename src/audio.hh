@@ -18,7 +18,7 @@ struct Track;
 
 struct MixerVTable
 {
-    void (*start)(IMixer* s);
+    void (*start)(IMixer*);
     void (*destroy)(IMixer*);
     void (*add)(IMixer*, Track);
     void (*addBackground)(IMixer*, Track);
@@ -43,7 +43,7 @@ struct IMixer
     f32 volume = 0.5f;
 };
 
-ADT_NO_UB constexpr void MixerInit(IMixer* s) { s->pVTable->start(s); }
+ADT_NO_UB constexpr void MixerStart(IMixer* s) { s->pVTable->start(s); }
 ADT_NO_UB constexpr void MixerDestroy(IMixer* s) { s->pVTable->destroy(s); }
 ADT_NO_UB constexpr void MixerAdd(IMixer* s, Track t) { s->pVTable->add(s, t); }
 ADT_NO_UB constexpr void MixerAddBackground(IMixer* s, Track t) { s->pVTable->addBackground(s, t); }
@@ -56,7 +56,7 @@ struct DummyMixer
 };
 
 constexpr void
-DummyMixerInit([[maybe_unused]] DummyMixer* s, [[maybe_unused]] int argc, [[maybe_unused]] char** argv)
+DummyMixerStart([[maybe_unused]] DummyMixer* s)
 {
     //
 }
@@ -80,7 +80,7 @@ DummyMixerAddBackground([[maybe_unused]] DummyMixer* s, [[maybe_unused]] Track t
 }
 
 inline const MixerVTable inl_DummyMixerVTable {
-    .start = decltype(MixerVTable::start)(DummyMixerInit),
+    .start = decltype(MixerVTable::start)(DummyMixerStart),
     .destroy = decltype(MixerVTable::destroy)(DummyMixerDestroy),
     .add = decltype(MixerVTable::add)(DummyMixerAdd),
     .addBackground = decltype(MixerVTable::addBackground)(DummyMixerAddBackground)

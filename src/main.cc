@@ -96,14 +96,17 @@ WinMain(
     app::g_pThreadPool = &tpool;
 
     platform::win32::Mixer mixer(&s_arena.super);
-    platform::win32::Win32Window app("Breakout", instance);
+    platform::win32::Win32Window window("Breakout", instance);
+
+    MixerStart(&mixer);
+    WindowStart(&window);
 
     app::g_pMixer = &mixer.super;
-    app::g_pWindow = &app.super;
+    app::g_pWindow = &window.super;
 
     frame::run();
 
-    WindowDestroy(&app);
+    WindowDestroy(&window);
 
 #ifndef NDEBUG
     ArenaFreeAll(&s_arena);

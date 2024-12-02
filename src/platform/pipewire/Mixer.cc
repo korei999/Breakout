@@ -42,20 +42,32 @@ static const pw_stream_events s_streamEvents {
     .trigger_done {},
 };
 
+static const audio::MixerVTable sc_MixerVTable {
+    .start = decltype(audio::MixerVTable::start)(MixerStart),
+    .destroy = decltype(audio::MixerVTable::destroy)(MixerDestroy),
+    .add = decltype(audio::MixerVTable::add)(MixerAdd),
+    .addBackground = decltype(audio::MixerVTable::addBackground)(MixerAddBackground),
+};
+
+Mixer::Mixer(IAllocator* pA)
+    : super(&sc_MixerVTable),
+      aTracks(pA, audio::MAX_TRACK_COUNT),
+      aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
+{
+    this->super.bRunning = true;
+    this->super.bMuted = false;
+    this->super.volume = 0.1f;
+
+    this->sampleRate = 48000;
+    this->channels = 2;
+    this->eformat = SPA_AUDIO_FORMAT_S16_LE;
+
+    mtx_init(&this->mtxAdd, mtx_plain);
+}
+
 void
 MixerStart(Mixer* s)
 {
-    s->super.bRunning = true;
-    s->super.bMuted = false;
-    s->super.volume = 0.1f;
-
-    s->sampleRate = 48000;
-    s->channels = 2;
-    s->eformat = SPA_AUDIO_FORMAT_S16_LE;
-
-    mtx_init(&s->mtxAdd, mtx_plain);
-    /*mtx_init(&s->mtxDestroy, mtx_plain);*/
-
     MixerRunThread(s, app::g_argc, app::g_argv);
 }
 

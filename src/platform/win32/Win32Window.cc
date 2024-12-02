@@ -95,7 +95,7 @@ getWglFunctions(void)
 Win32Window::Win32Window(String sName, HINSTANCE hInstance)
 {
     static WindowVTable vTable {
-        .start = (decltype(WindowVTable::start))Win32Init,
+        .start = (decltype(WindowVTable::start))Win32Start,
         .disableRelativeMode = (decltype(WindowVTable::disableRelativeMode))Win32DisableRelativeMode,
         .enableRelativeMode = (decltype(WindowVTable::enableRelativeMode))Win32EnableRelativeMode,
         .togglePointerRelativeMode = (decltype(WindowVTable::togglePointerRelativeMode))Win32TogglePointerRelativeMode,
@@ -118,17 +118,10 @@ Win32Window::Win32Window(String sName, HINSTANCE hInstance)
 
     this->super.sName = sName;
     this->hInstance = hInstance;
-    Win32Init(this);
-}
-
-
-void
-Win32Destroy([[maybe_unused]] Win32Window* s)
-{
 }
 
 void
-Win32Init(Win32Window* s)
+Win32Start(Win32Window* s)
 {
     getWglFunctions();
 
@@ -228,6 +221,11 @@ Win32Init(Win32Window* s)
 
     s->super.bPointerRelativeMode = false;
     s->super.bPaused = false;
+}
+
+void
+Win32Destroy([[maybe_unused]] Win32Window* s)
+{
 }
 
 void
