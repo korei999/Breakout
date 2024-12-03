@@ -178,7 +178,7 @@ void
 ModelProcJSONObjs(Model* s)
 {
     /* collect all the top level objects */
-    for (auto& node : json::ParserRoot(&s->parser))
+    for (auto& node : json::ParserGetRoot(&s->parser))
     {
         switch (hash::func(node.svKey))
         {

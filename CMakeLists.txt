@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.28)
 
 project(Breakout VERSION 0.1 LANGUAGES CXX C)
 message(STATUS "CMAKE_PROJECT_VERSION: '${CMAKE_PROJECT_VERSION}'")
@@ -47,6 +47,13 @@ add_executable(
     src/app.cc
     src/audio.cc
 )
+
+# target_sources(
+#     ${CMAKE_PROJECT_NAME}
+#     PUBLIC
+#     FILE_SET all_my_modules TYPE CXX_MODULES FILES
+#     src/parser/Bin.hh
+# )
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftime-report")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftime-trace")

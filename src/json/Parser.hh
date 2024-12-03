@@ -26,15 +26,14 @@ RESULT ParserParse(Parser* s);
 RESULT ParserLoadParse(Parser* s, adt::String path);
 void ParserPrint(Parser* s, FILE* fp);
 void ParserTraverse(Parser* s, Object* pNode, bool (*pfn)(Object* p, void* a), void* args);
+/* if root json object consists of only one object return that, otherwise get array of root objects */
+adt::VecBase<Object>& ParserGetRoot(Parser* s);
 
 inline void
 ParserTraverseAll(Parser* s, bool (*pfn)(Object* p, void* pFnArgs), void* pArgs)
 {
     for (auto& obj : s->aObjects) ParserTraverse(s, &obj, pfn, pArgs);
 }
-
-/* if root json object consists of only one object return that, otherwise get array of root objects */
-inline adt::VecBase<Object>& ParserRoot(Parser* s);
 
 /* Linear search inside JSON object. Returns nullptr if not found */
 inline Object*
@@ -156,15 +155,6 @@ inline adt::u32
 pushToArray(Object* pObj, adt::IAllocator* p, Object o)
 {
     return adt::VecPush(&pObj->tagVal.val.a, p, o);
-}
-
-inline adt::VecBase<Object>&
-ParserRoot(Parser* s)
-{
-    assert(s->aObjects.size > 0 && "[Parser]: this json is empty");
-
-    if (s->aObjects.size == 1) return getObject(&adt::VecFirst(&s->aObjects));
-    else return s->aObjects;
 }
 
 } /* namespace json */

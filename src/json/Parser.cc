@@ -446,4 +446,13 @@ ParserTraverse(Parser*s, Object* pNode, bool (*pfn)(Object* p, void* pFnArgs), v
     if (pfn(pNode, pArgs)) return;
 }
 
+adt::VecBase<Object>&
+ParserGetRoot(Parser* s)
+{
+    assert(s->aObjects.size > 0 && "[Parser]: this json is empty");
+
+    if (s->aObjects.size == 1) return getObject(&adt::VecFirst(&s->aObjects));
+    else return s->aObjects;
+}
+
 } /* namespace json */
