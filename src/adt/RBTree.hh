@@ -32,16 +32,17 @@
 #include "utils.hh"
 #include "Pair.hh"
 
-#include <stdio.h>
+#include <cstdio>
+#include <cassert>
 
 #ifdef _WIN32
-#undef IN
+    #undef IN
 #endif
 
 namespace adt
 {
 
-enum class RB_COL : long { BLACK, RED };
+enum class RB_COLOR : u8 { BLACK, RED };
 enum class RB_ORDER : u8 { PRE, IN, POST };
 
 template<typename T>
@@ -50,7 +51,7 @@ struct RBNode
     RBNode* left {};
     RBNode* right {};
     RBNode* parent {};
-    enum RB_COL color {};
+    enum RB_COLOR color {};
     T data {};
 };
 
@@ -58,6 +59,7 @@ template<typename T>
 struct RBTreeBase
 {
     RBNode<T>* pRoot = nullptr;
+    u64 size = 0;
 };
 
 template<typename T>
@@ -134,15 +136,15 @@ _RBSet(RBNode<T>* elm, RBNode<T>* parent)
 {
     elm->parent = parent;
     elm->left = elm->right = nullptr;
-    elm->color = RB_COL::RED;
+    elm->color = RB_COLOR::RED;
 }
 
 template<typename T>
 inline void
 _RBSetBlackRed(RBNode<T>* black, RBNode<T>* red)
 {
-    black->color = RB_COL::BLACK;
-    red->color = RB_COL::RED;
+    black->color = RB_COLOR::BLACK;
+    red->color = RB_COLOR::RED;
 }
 
 template<typename T>
@@ -219,15 +221,15 @@ inline void
 _RBInsertColor(RBTreeBase<T>* s, RBNode<T>* elm)
 {
     RBNode<T>* parent, * gparent, * tmp;
-    while ((parent = elm->parent) && parent->color == RB_COL::RED)
+    while ((parent = elm->parent) && parent->color == RB_COLOR::RED)
     {
         gparent = parent->parent;
         if (parent == gparent->left)
         {
             tmp = gparent->right;
-            if (tmp && tmp->color == RB_COL::RED)
+            if (tmp && tmp->color == RB_COLOR::RED)
             {
-                tmp->color = RB_COL::BLACK;
+                tmp->color = RB_COLOR::BLACK;
                 _RBSetBlackRed(parent, gparent);
                 elm = gparent;
                 continue;
@@ -245,9 +247,9 @@ _RBInsertColor(RBTreeBase<T>* s, RBNode<T>* elm)
         else
         {
             tmp = gparent->left;
-            if (tmp && tmp->color == RB_COL::RED)
+            if (tmp && tmp->color == RB_COLOR::RED)
             {
-                tmp->color = RB_COL::BLACK;
+                tmp->color = RB_COLOR::BLACK;
                 _RBSetBlackRed(parent, gparent);
                 elm = gparent;
                 continue;
@@ -263,7 +265,7 @@ _RBInsertColor(RBTreeBase<T>* s, RBNode<T>* elm)
             _RBRotateLeft(s, gparent);
         }
     }
-    s->pRoot->color = RB_COL::BLACK;
+    s->pRoot->color = RB_COLOR::BLACK;
 }
 
 template<typename T>
@@ -271,39 +273,39 @@ inline void
 _RBRemoveColor(RBTreeBase<T>* s, RBNode<T>* parent, RBNode<T>* elm)
 {
     RBNode<T>* tmp;
-    while ((elm == nullptr || elm->color == RB_COL::BLACK) && elm != s->pRoot)
+    while ((elm == nullptr || elm->color == RB_COLOR::BLACK) && elm != s->pRoot)
     {
         if (parent->left == elm)
         {
             tmp = parent->right;
-            if (tmp->color == RB_COL::RED)
+            if (tmp->color == RB_COLOR::RED)
             {
                 _RBSetBlackRed(tmp, parent);
                 _RBRotateLeft(s, parent);
                 tmp = parent->right;
             }
-            if ((tmp->left == nullptr || tmp->left->color == RB_COL::BLACK) &&
-                (tmp->right == nullptr || tmp->right->color == RB_COL::BLACK))
+            if ((tmp->left == nullptr || tmp->left->color == RB_COLOR::BLACK) &&
+                (tmp->right == nullptr || tmp->right->color == RB_COLOR::BLACK))
             {
-                tmp->color = RB_COL::RED;
+                tmp->color = RB_COLOR::RED;
                 elm = parent;
                 parent = elm->parent;
             }
             else
             {
-                if (tmp->right == nullptr || tmp->right->color == RB_COL::BLACK)
+                if (tmp->right == nullptr || tmp->right->color == RB_COLOR::BLACK)
                 {
                     RBNode<T>* oleft;
                     if ((oleft = tmp->left))
-                        oleft->color = RB_COL::BLACK;
-                    tmp->color = RB_COL::RED;
+                        oleft->color = RB_COLOR::BLACK;
+                    tmp->color = RB_COLOR::RED;
                     _RBRotateRight(s, tmp);
                     tmp = parent->right;
                 }
                 tmp->color = parent->color;
-                parent->color = RB_COL::BLACK;
+                parent->color = RB_COLOR::BLACK;
                 if (tmp->right)
-                    tmp->right->color = RB_COL::BLACK;
+                    tmp->right->color = RB_COLOR::BLACK;
                 _RBRotateLeft(s, parent);
                 elm = s->pRoot;
                 break;
@@ -312,34 +314,34 @@ _RBRemoveColor(RBTreeBase<T>* s, RBNode<T>* parent, RBNode<T>* elm)
         else
         {
             tmp = parent->left;
-            if (tmp->color == RB_COL::RED)
+            if (tmp->color == RB_COLOR::RED)
             {
                 _RBSetBlackRed(tmp, parent);
                 _RBRotateRight(s, parent);
                 tmp = parent->left;
             }
-            if ((tmp->left == nullptr || tmp->left->color == RB_COL::BLACK) &&
-                (tmp->right == nullptr || tmp->right->color == RB_COL::BLACK))
+            if ((tmp->left == nullptr || tmp->left->color == RB_COLOR::BLACK) &&
+                (tmp->right == nullptr || tmp->right->color == RB_COLOR::BLACK))
             {
-                tmp->color = RB_COL::RED;
+                tmp->color = RB_COLOR::RED;
                 elm = parent;
                 parent = elm->parent;
             }
             else
             {
-                if (tmp->left == nullptr || tmp->left->color == RB_COL::BLACK)
+                if (tmp->left == nullptr || tmp->left->color == RB_COLOR::BLACK)
                 {
                     RBNode<T>* oright;
                     if ((oright = tmp->right))
-                        oright->color = RB_COL::BLACK;
-                    tmp->color = RB_COL::RED;
+                        oright->color = RB_COLOR::BLACK;
+                    tmp->color = RB_COLOR::RED;
                     _RBRotateLeft(s, tmp);
                     tmp = parent->left;
                 }
                 tmp->color = parent->color;
-                parent->color = RB_COL::BLACK;
+                parent->color = RB_COLOR::BLACK;
                 if (tmp->left)
-                    tmp->left->color = RB_COL::BLACK;
+                    tmp->left->color = RB_COLOR::BLACK;
                 _RBRotateRight(s, parent);
                 elm = s->pRoot;
                 break;
@@ -347,15 +349,17 @@ _RBRemoveColor(RBTreeBase<T>* s, RBNode<T>* parent, RBNode<T>* elm)
         }
     }
     if (elm)
-        elm->color = RB_COL::BLACK;
+        elm->color = RB_COLOR::BLACK;
 }
 
 template<typename T>
 inline RBNode<T>*
 RBRemove(RBTreeBase<T>* s, RBNode<T>* elm)
 {
+    assert(s->size > 0 && "[RBTree]: empty");
+
     RBNode<T>* child, * parent, * old = elm;
-    enum RB_COL color;
+    enum RB_COLOR color;
     if (elm->left == nullptr)
         child = elm->right;
     else if (elm->right == nullptr)
@@ -413,9 +417,10 @@ RBRemove(RBTreeBase<T>* s, RBNode<T>* elm)
     else
         s->pRoot = child;
 color:
-    if (color == RB_COL::BLACK)
+    if (color == RB_COLOR::BLACK)
         _RBRemoveColor(s, parent, child);
 
+    --s->size;
     return (old);
 }
 
@@ -459,6 +464,7 @@ RBInsert(RBTreeBase<T>* s, RBNode<T>* elm, bool bAllowDuplicates)
     else s->pRoot = elm;
 
     _RBInsertColor(s, elm);
+    ++s->size;
     return elm;
 }
 
