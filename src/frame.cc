@@ -79,7 +79,7 @@ run()
     updateDrawTime();
 
     WindowSetSwapInterval(app::g_pWindow, 1);
-    // WindowSetFullscreen(app::g_pWindow);
+    /* WindowSetFullscreen(app::g_pWindow); */
 
 #ifndef NDEBUG
     test::math();
@@ -95,7 +95,8 @@ run()
     controls::procKeys();
     WindowProcEvents(app::g_pWindow);
 
-    WindowEnableRelativeMode(app::g_pWindow);
+    /*WindowEnableRelativeMode(app::g_pWindow);*/
+    WindowDisableRelativeMode(app::g_pWindow);
 
     mainLoop();
 }
