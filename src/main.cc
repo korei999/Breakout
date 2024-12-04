@@ -9,7 +9,7 @@ static int startup();
 #if defined _WIN32
 int WINAPI
 WinMain(
-    HINSTANCE instance,
+    [[maybe_unused]] HINSTANCE instance,
     [[maybe_unused]] HINSTANCE previnstance,
     [[maybe_unused]] LPSTR cmdline,
     [[maybe_unused]] int cmdshow)
@@ -52,7 +52,7 @@ main(int argc, char** argv)
     app::g_argc = argc, app::g_argv = argv;
 
     #if defined _WIN32
-    return WinMain(GetModuleHandle(NULL), NULL, GetCommandLineA(), SW_SHOWNORMAL);
+    return WinMain({}, {}, {}, SW_SHOWNORMAL);
     #else
     return startup();
     #endif
