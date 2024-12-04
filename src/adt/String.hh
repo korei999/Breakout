@@ -9,7 +9,7 @@
 namespace adt
 {
 
-constexpr u32
+[[nodiscard]] constexpr u32
 nullTermStringSize(const char* str)
 {
     u32 i = 0;
@@ -22,22 +22,22 @@ nullTermStringSize(const char* str)
 
 struct String;
 
-constexpr bool StringEndsWith(String l, String r);
-inline bool operator==(const String& l, const String& r);
-inline bool operator==(const String& l, const char* r);
-inline bool operator!=(const String& l, const String& r);
-constexpr s64 operator-(const String& l, const String& r);
-constexpr u32 StringLastOf(String sv, char c);
-inline String StringAlloc(IAllocator* p, const char* str, u32 size);
-inline String StringAlloc(IAllocator* p, u32 size);
-inline String StringAlloc(IAllocator* p, const char* str);
-inline String StringAlloc(IAllocator* p, const String s);
+[[nodiscard]] constexpr bool StringEndsWith(String l, String r);
+[[nodiscard]] inline bool operator==(const String& l, const String& r);
+[[nodiscard]] inline bool operator==(const String& l, const char* r);
+[[nodiscard]] inline bool operator!=(const String& l, const String& r);
+[[nodiscard]] constexpr s64 operator-(const String& l, const String& r);
+[[nodiscard]] constexpr u32 StringLastOf(String sv, char c);
+[[nodiscard]] inline String StringAlloc(IAllocator* p, const char* str, u32 size);
+[[nodiscard]] inline String StringAlloc(IAllocator* p, u32 size);
+[[nodiscard]] inline String StringAlloc(IAllocator* p, const char* str);
+[[nodiscard]] inline String StringAlloc(IAllocator* p, const String s);
 inline void StringDestroy(IAllocator* p, String* s);
-inline String StringCat(IAllocator* p, const String l, const String r);
+[[nodiscard]] inline String StringCat(IAllocator* p, const String l, const String r);
 inline void StringAppend(String* l, const String r);
 inline void StringTrimEnd(String* s);
 constexpr void StringRemoveNLEnd(String* s); /* removes nextline character if it ends with one */
-constexpr bool StringContains(String l, const String r);
+[[nodiscard]] constexpr bool StringContains(String l, const String r);
 
 /* just pointer + size, no allocations, use `StringAlloc()` for that */
 struct String

@@ -29,41 +29,11 @@ main(int argc, char** argv)
     ThreadPoolStart(&tpool);
     app::g_pThreadPool = &tpool;
 
-    bool bWayland = false;
-    bool bX11 = false;
+    app::g_pMixer = app::platformMixerAlloc(&s_arena.super);
+    audio::MixerStart(app::g_pMixer);
 
-#ifdef X11_LIB
-    if (argc > 1 && String(argv[1]) == "--x11") bX11 = true;
-    platform::x11::Window x11("Breakout");
-#endif
-
-    platform::wayland::Client wlClient("Breakout");
-
-    const char* pWaylandDisplayEnv = getenv("WAYLAND_DISPLAY");
-    if (pWaylandDisplayEnv && !bX11)
-    {
-        print::err("wayland display: '{}'\n", pWaylandDisplayEnv);
-        bWayland = true;
-    }
-
-    if (bWayland)
-    {
-        ::WindowStart(&wlClient);
-        app::g_pWindow = &wlClient.super;
-    }
-    else
-    {
-#ifdef X11_LIB
-        ::WindowStart(&x11);
-        app::g_pWindow = &x11.super;
-#else
-        print::err("Failed to create window (no display server?)\n");
-#endif
-    }
-
-    platform::pipewire::Mixer mixer(&s_arena.super);
-    audio::MixerStart(&mixer);
-    app::g_pMixer = &mixer.super;
+    app::g_pWindow = app::platformWindowAlloc(&s_arena.super);
+    WindowStart(app::g_pWindow);
 
     frame::run();
 
@@ -71,11 +41,7 @@ main(int argc, char** argv)
     ThreadPoolDestroy(&tpool);
 
     /* mixer is destroyed after frame::mainLoop() */
-    if (bWayland) ::WindowDestroy(&wlClient);
-
-#ifdef X11_LIB
-    if (bX11) ::WindowDestroy(&x11);
-#endif
+    WindowDestroy(app::g_pWindow);
 
 #ifndef NDEBUG
     ArenaFreeAll(&s_arena);
