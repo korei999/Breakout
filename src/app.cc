@@ -1,3 +1,9 @@
+#ifdef _WIN32
+    /* win32: must be ontop */
+    #include "platform/win32/Mixer.hh"
+    #include "platform/win32/Win32Window.hh"
+#endif
+
 #include "app.hh"
 
 #ifdef __linux__
@@ -42,11 +48,20 @@ platformMixerAlloc(IAllocator* pAlloc)
 #endif
 }
 
+#ifdef _WIN32
 static IWindow*
 win32WindowAlloc(IAllocator* pAlloc)
 {
-    return {};
+    namespace w32 = platform::win32;
+
+    HMODULE hInstance = GetModuleHandle(nullptr);
+
+    auto* pWindow = (IWindow*)alloc(pAlloc, 1, sizeof(w32::Win32Window));
+    *((w32::Win32Window*)pWindow) = w32::Win32Window("Breakout", hInstance);
+
+    return pWindow;
 }
+#endif
 
 IWindow*
 platformWindowAlloc(IAllocator* pAlloc)

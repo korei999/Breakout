@@ -226,6 +226,7 @@ Win32Start(Win32Window* s)
 void
 Win32Destroy([[maybe_unused]] Win32Window* s)
 {
+    DestroyWindow(s->hWindow);
 }
 
 void
