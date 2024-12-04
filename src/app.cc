@@ -67,8 +67,9 @@ IWindow*
 platformWindowAlloc(IAllocator* pAlloc)
 {
 #ifdef __linux__
-
+    #ifdef X11_LIB
     namespace x = platform::x11;
+    #endif
     namespace wl = platform::wayland;
 
     bool bWayland = false;
