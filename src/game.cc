@@ -210,14 +210,12 @@ blockHit()
                 {
                     enBall.pos.y -= off;
                     enBall.dir.y = -enBall.dir.y;
-                    LOG("UP\n");
                 } break;
 
                 case REFLECT_SIDE::DOWN:
                 {
                     enBall.pos.y += off;
                     enBall.dir.y = -enBall.dir.y;
-                    LOG("DOWN\n");
                 } break;
 
                 case REFLECT_SIDE::LEFT:
@@ -230,7 +228,6 @@ blockHit()
                     }
 
                     enBall.dir.x = -enBall.dir.x;
-                    LOG("LEFT\n");
                 } break;
 
                 case REFLECT_SIDE::RIGHT:
@@ -243,7 +240,6 @@ blockHit()
                     }
 
                     enBall.dir.x = -enBall.dir.x;
-                    LOG("RIGHT\n");
                 } break;
             }
         }
