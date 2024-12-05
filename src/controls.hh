@@ -54,6 +54,7 @@ extern Camera g_camera;
 extern bool g_bTTFDebugScreen;
 extern bool g_bTTFDebugDots;
 extern bool g_bTTFStepDebug;
+extern bool g_bStepDebug;
 extern int g_nDots;
 
 } /* namespace controls */

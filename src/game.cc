@@ -8,6 +8,7 @@
 #include "adt/ThreadPool.hh"
 #include "adt/defer.hh"
 #include "app.hh"
+#include "controls.hh"
 #include "frame.hh"
 #include "parser/Wave.hh"
 #include "parser/ttf.hh"
@@ -138,25 +139,71 @@ getReflectionSide(math::V2 tar)
         { 0.0, -1.0 }, /* down */
         {-1.0,  0.0 }, /* left */
     };
-    f32 max = 0.0f;
 
+    f32 max = 0.0f;
     REFLECT_SIDE eBestMatch = NONE;
     for (u64 i = 0; i < utils::size(compass); i++)
     {
         f32 dot = V2Dot(V2Norm(tar), compass[i]);
-        if (dot >= max)
+        if (dot > max || math::eq(dot, max))
         {
             max = dot;
             eBestMatch = REFLECT_SIDE(i);
         }
     }
 
+    if (eBestMatch != REFLECT_SIDE::NONE)
+    {
+        /* DBG */
+        LOG("max: {:.10}, eBestMatch: {}\n", max, eBestMatch);
+        if (max < 0.99)
+        {
+            /*eBestMatch = REFLECT_SIDE::CORNER;*/
+        }
+    }
+
     return eBestMatch;
+}
+
+static REFLECT_SIDE
+getReflectionSideV2(const Entity& e)
+{
+    auto& enBall = g_aEntities[g_ball.enIdx];
+    REFLECT_SIDE eSide = NONE;
+
+    if (enBall.pos.y <= e.pos.y - (e.height / 2.0f))
+        eSide = DOWN;
+    else if (enBall.pos.y >= e.pos.y + (e.height / 2.0f))
+        eSide = UP;
+    else if (enBall.pos.x < e.pos.x)
+        eSide = LEFT;
+    else if (enBall.pos.x > e.pos.x)
+        eSide = RIGHT;
+
+    LOG_NOTIFY("size: {}\n", eSide);
+
+    return eSide;
+}
+
+static bool
+AABB(
+    const math::V2 lPos, const f32 lWidth, const f32 lHeight,
+    const math::V2 rPos, const f32 rWidth, const f32 rHeight
+)
+{
+    if (
+        lPos.x >= rPos.x - lWidth/2.0f - rWidth/2.0f  && lPos.x <= rPos.x + lWidth/2.0f + rWidth/2.0f &&
+        lPos.y >= rPos.y - lHeight/2.0f - rHeight/2.0f && lPos.y <= rPos.y + lHeight/2.0f + rHeight/2.0f
+    )
+        return true;
+    else return false;
 }
 
 static void
 blockHit()
 {
+    namespace f = frame;
+
     bool bAddSound = false;
 
     auto& enBall = g_aEntities[g_ball.enIdx];
@@ -166,24 +213,31 @@ blockHit()
 
         if (b.bDead || b.eColor == COLOR::INVISIBLE) continue;
 
-        /*math::V2 center = nextPos(enBall, true);*/
-        math::V2 center = enBall.pos;
+        math::V2 center = nextPos(enBall, true);
+        /*math::V2 center = enBall.pos;*/
 
-        math::V2 aabbHalfExtents {b.width/2.0f, b.height/2.0f};
-        math::V2 aabbCenter = b.pos;
-        math::V2 diff = center - b.pos;
-        math::V2 clamped = math::V2Clamp(diff, -aabbHalfExtents, aabbHalfExtents);
-        math::V2 closest = aabbCenter + clamped;
-        diff = closest - center;
-        auto diffLen = math::V2Length(diff);
+        /*math::V2 aabbHalfExtents {b.width/2.0f, b.height/2.0f};*/
+        /*math::V2 aabbCenter = b.pos;*/
+        /*math::V2 diff = center - b.pos;*/
+        /*math::V2 clamped = math::V2Clamp(diff, -aabbHalfExtents, aabbHalfExtents);*/
+        /*math::V2 closest = aabbCenter + clamped;*/
+        /*diff = closest - center;*/
+        /*auto diffLen = math::V2Length(diff);*/
 
-        const auto& bx = enBall.pos.x;
-        const auto& by = enBall.pos.y;
+        /*const auto& bx = enBall.pos.x;*/
+        /*const auto& by = enBall.pos.y;*/
+        const auto& bx = center.x;
+        const auto& by = center.y;
 
         const auto& ex = b.pos.x;
         const auto& ey = b.pos.y;
 
-        if (diffLen <= g_ball.radius)
+        /*if (diffLen <= g_ball.radius)*/
+        /*if (*/
+        /*    bx >= ex - b.width/2.0f - g_ball.radius/2.0f  && bx <= ex + b.width/2.0f + g_ball.radius/2.0f &&*/
+        /*    by >= ey - b.height/2.0f - g_ball.radius/2.0f && by <= ey + b.height/2.0f + g_ball.radius/2.0f*/
+        /*)*/
+        if (AABB(center, g_ball.radius, g_ball.radius, b.pos, b.width, b.height))
         {
             if (g_ball.bCollided)
             {
@@ -197,48 +251,40 @@ blockHit()
             bAddSound = true;
             g_ball.bCollided = true;
 
-            auto eSide = getReflectionSide(diff);
+            /*auto eSide = getReflectionSide(diff);*/
+            auto eSide = getReflectionSideV2(b);
 
             /* FIXME: sides are flipped */
             auto& enBall = g_aEntities[g_ball.enIdx];
-            const f32 off = 0.05f;
+            const f32 off = g_ball.radius * 1.0f;
             switch (eSide)
             {
-                default: break;
+                case REFLECT_SIDE::NONE:
+                case REFLECT_SIDE::ELAST:
+                case REFLECT_SIDE::CORNER:
+                break;
 
                 case REFLECT_SIDE::UP:
                 {
-                    enBall.pos.y -= off;
+                    /*enBall.pos -= (enBall.dir * off);*/
                     enBall.dir.y = -enBall.dir.y;
                 } break;
 
                 case REFLECT_SIDE::DOWN:
                 {
-                    enBall.pos.y += off;
+                    /*enBall.pos -= (enBall.dir * off);*/
                     enBall.dir.y = -enBall.dir.y;
                 } break;
 
                 case REFLECT_SIDE::LEFT:
                 {
-                    enBall.pos.x += off;
-                    if (math::eq(enBall.dir.x, 0))
-                    {
-                        enBall.dir.x = 0.1f;
-                        break;
-                    }
-
+                    /*enBall.pos -= (enBall.dir * off);*/
                     enBall.dir.x = -enBall.dir.x;
                 } break;
 
                 case REFLECT_SIDE::RIGHT:
                 {
-                    enBall.pos.x -= off;
-                    if (math::eq(enBall.dir.x, 0))
-                    {
-                        enBall.dir.x = -0.1f;
-                        break;
-                    }
-
+                    /*enBall.pos -= (enBall.dir * off);*/
                     enBall.dir.x = -enBall.dir.x;
                 } break;
             }
@@ -283,14 +329,16 @@ outOfBounds()
 {
     auto& enBall = g_aEntities[g_ball.enIdx];
 
-    /* out of bounds */
     bool bAddSound = false;
     if (enBall.pos.y <= -0.5f) 
     {
-        g_ball.bReleased = false;
-        // g_ball.base.pos.y = 0.0f - f::g_unit.second;
-        // g_ball.dir.y = 1.0f;
-        // bAddSound = true;
+        if (controls::g_bStepDebug)
+        {
+            enBall.pos.y = 0.0f;
+            enBall.dir.y = 1.0f;
+            bAddSound = true;
+        }
+        else g_ball.bReleased = false;
     }
     else if (enBall.pos.y >= s_currLvlSize.height - 0.5f)
     {
@@ -312,7 +360,7 @@ outOfBounds()
     }
 
     if (bAddSound)
-        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
+        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
 }
 
 static inline math::V2

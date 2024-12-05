@@ -18,7 +18,7 @@ constexpr f64 FIXED_DELTA_TIME = 1.0 / f64(TICK_RATE);
 
 enum REFLECT_SIDE : s8
 {
-    NONE = -1, UP, RIGHT, DOWN, LEFT, ELAST
+    NONE = -1, UP, RIGHT, DOWN, LEFT, CORNER, ELAST
 };
 
 enum class STATE : u8
@@ -176,3 +176,23 @@ extern Ball g_ball;
 extern Pool<Entity, ASSET_MAX_COUNT> g_aEntities;
 
 } /* namespace game */
+
+namespace adt
+{
+namespace print
+{
+
+inline u32
+formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const game::REFLECT_SIDE x)
+{
+    ctx.fmt = "{}";
+    ctx.fmtIdx = 0;
+    constexpr String map[] {
+        "NONE", "UP", "RIGHT", "DOWN", "LEFT", "ELAST"
+    };
+
+    return printArgs(ctx, map[int(x + 1)]);
+}
+
+} /* namespace print */
+} /* namespace adt */

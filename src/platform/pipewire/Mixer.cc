@@ -171,7 +171,7 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
 {
     __m128i_u* pSimdDest = (__m128i_u*)pBuff;
 
-    for (u32 i = 0; i < nFrames / 4; i++)
+    for (u32 i = 0; i < nFrames / 4; ++i)
     {
         __m128i packed8Samples {};
 
@@ -206,7 +206,7 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
             }
         }
 
-        for (u32 i = 0; i < VecSize(&s->aTracks); i++)
+        for (u32 i = 0; i < VecSize(&s->aTracks); ++i)
         {
             auto& t = s->aTracks[i];
             f32 vol = powf(t.volume, 3.0f);

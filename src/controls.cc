@@ -14,6 +14,8 @@ Camera g_camera {};
 bool g_bTTFDebugScreen = false;
 bool g_bTTFDebugDots = false;
 bool g_bTTFStepDebug = false;
+bool g_bStepDebug = false;
+bool g_bPause = false;
 int g_nDots = 0;
 
 static void PlayerProcMovements(game::Player* s);
@@ -56,8 +58,8 @@ procKeysOnce(u32 key, u32 pressed)
         case KEY_GRAVE:
             if (pressed)
             {
-                app::g_pWindow->bPaused = !app::g_pWindow->bPaused;
-                if (app::g_pWindow->bPaused) LOG_WARN("paused: %d\n", app::g_pWindow->bPaused);
+                utils::toggle(&app::g_pWindow->bPaused);
+                LOG_WARN("paused: {}\n", app::g_pWindow->bPaused);
             } break;
 
         case KEY_Q:
@@ -68,9 +70,7 @@ procKeysOnce(u32 key, u32 pressed)
             if (pressed)
             {
                 app::g_pWindow->bRunning = false;
-//#ifdef _WIN32
                 app::g_pMixer->bRunning = false;
-//#endif
 
                 LOG_OK("quit...\n");
             } break;
@@ -120,6 +120,13 @@ procKeysOnce(u32 key, u32 pressed)
 
             g_bTTFStepDebug = !g_bTTFStepDebug;
             LOG_NOTIFY("g_bTTFStepDebbug: {}\n", g_bTTFStepDebug);
+        } break;
+
+        case KEY_B: {
+            if (!pressed) break;
+
+            utils::toggle(&g_bStepDebug);
+            LOG_NOTIFY("g_bReflectFromBot: {}\n", g_bStepDebug);
         } break;
 
         default:

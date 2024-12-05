@@ -114,12 +114,15 @@ mainLoop()
 
     while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
     {
-        f64 newTime = utils::timeNowS();
-        f64 frameTime = newTime - currentTime;
-        currentTime = newTime;
-        if (frameTime > 0.25) frameTime = 0.25;
+        if (!app::g_pWindow->bPaused)
+        {
+            f64 newTime = utils::timeNowS();
+            f64 frameTime = newTime - currentTime;
+            currentTime = newTime;
+            if (frameTime > 0.25) frameTime = 0.25;
 
-        accumulator += frameTime;
+            accumulator += frameTime;
+        }
 
         WindowProcEvents(app::g_pWindow);
         updateDrawTime();
@@ -133,11 +136,20 @@ mainLoop()
 
         controls::procKeys();
 
-        while (accumulator >= g_dt)
+        if (controls::g_bStepDebug && !app::g_pWindow->bPaused)
         {
             game::updateState();
             g_gameTime += g_dt;
             accumulator -= g_dt;
+        }
+        else
+        {
+            while (accumulator >= g_dt && !app::g_pWindow->bPaused)
+            {
+                game::updateState();
+                g_gameTime += g_dt;
+                accumulator -= g_dt;
+            }
         }
 
         const f64 alpha = accumulator / g_dt;
