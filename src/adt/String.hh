@@ -340,9 +340,15 @@ StringTrimEnd(String* s)
 constexpr void
 StringRemoveNLEnd(String* s)
 {
-    if (s->size > 0 && s->pData[s->size - 1] == '\n')
-        s->pData[--s->size] = '\0';
-    if (s->size > 0 && s->pData[s->size - 1] == '\r')
+    auto oneOf = [&](char c) -> bool {
+        constexpr String chars = "\r\n";
+        for (auto ch : chars)
+            if (c == ch) return true;
+        return false;
+    };
+
+    u64 pos = s->size - 1;
+    while (s->size > 0 && oneOf((*s)[pos]))
         s->pData[--s->size] = '\0';
 }
 

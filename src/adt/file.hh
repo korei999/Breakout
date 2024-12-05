@@ -10,8 +10,15 @@ namespace adt
 namespace file
 {
 
+struct Buff
+{
+    u8* pData {};
+    u64 size {};
+};
+
+template<typename BUFF_T = String>
 [[nodiscard]]
-inline Opt<String>
+inline Opt<BUFF_T>
 load(IAllocator* pAlloc, String sPath)
 {
     FILE* pf = fopen(sPath.pData, "rb");
@@ -22,10 +29,10 @@ load(IAllocator* pAlloc, String sPath)
     }
     defer(fclose(pf));
 
-    String ret {};
+    BUFF_T ret {};
 
     fseek(pf, 0, SEEK_END);
-    long size = ftell(pf) + 1;
+    s64 size = ftell(pf) + 1;
     rewind(pf);
 
     ret.pData = (char*)alloc(pAlloc, size, sizeof(char));
