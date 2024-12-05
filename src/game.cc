@@ -202,8 +202,6 @@ AABB(
 static void
 blockHit()
 {
-    namespace f = frame;
-
     bool bAddSound = false;
 
     auto& enBall = g_aEntities[g_ball.enIdx];
@@ -214,29 +212,12 @@ blockHit()
         if (b.bDead || b.eColor == COLOR::INVISIBLE) continue;
 
         math::V2 center = nextPos(enBall, true);
-        /*math::V2 center = enBall.pos;*/
-
-        /*math::V2 aabbHalfExtents {b.width/2.0f, b.height/2.0f};*/
-        /*math::V2 aabbCenter = b.pos;*/
-        /*math::V2 diff = center - b.pos;*/
-        /*math::V2 clamped = math::V2Clamp(diff, -aabbHalfExtents, aabbHalfExtents);*/
-        /*math::V2 closest = aabbCenter + clamped;*/
-        /*diff = closest - center;*/
-        /*auto diffLen = math::V2Length(diff);*/
-
-        /*const auto& bx = enBall.pos.x;*/
-        /*const auto& by = enBall.pos.y;*/
         const auto& bx = center.x;
         const auto& by = center.y;
 
         const auto& ex = b.pos.x;
         const auto& ey = b.pos.y;
 
-        /*if (diffLen <= g_ball.radius)*/
-        /*if (*/
-        /*    bx >= ex - b.width/2.0f - g_ball.radius/2.0f  && bx <= ex + b.width/2.0f + g_ball.radius/2.0f &&*/
-        /*    by >= ey - b.height/2.0f - g_ball.radius/2.0f && by <= ey + b.height/2.0f + g_ball.radius/2.0f*/
-        /*)*/
         if (AABB(center, g_ball.radius, g_ball.radius, b.pos, b.width, b.height))
         {
             if (g_ball.bCollided)
@@ -251,10 +232,8 @@ blockHit()
             bAddSound = true;
             g_ball.bCollided = true;
 
-            /*auto eSide = getReflectionSide(diff);*/
             auto eSide = getReflectionSideV2(b);
 
-            /* FIXME: sides are flipped */
             auto& enBall = g_aEntities[g_ball.enIdx];
             const f32 off = g_ball.radius * 1.0f;
             switch (eSide)
