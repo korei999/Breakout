@@ -141,8 +141,8 @@ PlayerProcMovements(game::Player* s)
 
     if (g_aPressedKeys[KEY_A]) enPlayer.dir = {-1.0f, 0.0f};
     if (g_aPressedKeys[KEY_D]) enPlayer.dir = {1.0f, 0.0f};
-    if (g_aPressedKeys[KEY_LEFTALT]) enPlayer.dir /= 2.0;
-    if (g_aPressedKeys[KEY_LEFTSHIFT]) enPlayer.dir *= 2.0;
+    if (g_aPressedKeys[KEY_LEFTALT]) enPlayer.dir /= 2.0f;
+    if (g_aPressedKeys[KEY_LEFTSHIFT]) enPlayer.dir *= 2.0f;
 }
 
 void

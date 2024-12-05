@@ -17,6 +17,13 @@
 namespace game
 {
 
+template<typename A, typename B>
+struct WidthHeight
+{
+    A width {};
+    B height {};
+};
+
 static AllocatorPool<Arena> s_assetArenas(SIZE_MIN);
 
 static Vec<game::Block> s_aBlocks(AllocatorPoolRent(&s_assetArenas, SIZE_1K));
@@ -42,6 +49,7 @@ static text::TTF s_ttfTest(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 520));
 
 Pool<Entity, ASSET_MAX_COUNT> g_aEntities;
 static Arr<math::V2, ASSET_MAX_COUNT> s_aPrevPos;
+static Pair<f32, f32, WidthHeight> s_currLvlSize {};
 
 Player g_player {
     .enIdx = 0,
@@ -49,7 +57,7 @@ Player g_player {
 
 Ball g_ball {
     .enIdx = 0,
-    .radius = 25.0f,
+    .radius = 0.1f,
     .bReleased = false,
     .bCollided = false,
 };
@@ -149,19 +157,17 @@ getReflectionSide(math::V2 tar)
 static void
 blockHit()
 {
-    namespace f = frame;
-
     bool bAddSound = false;
 
+    auto& enBall = g_aEntities[g_ball.enIdx];
     for (auto& block : s_aBlocks)
     {
         auto& b = g_aEntities[block.enIdx];
-        auto& enBall = g_aEntities[g_ball.enIdx];
 
         if (b.bDead || b.eColor == COLOR::INVISIBLE) continue;
 
         math::V2 center = nextPos(enBall, true);
-        math::V2 aabbHalfExtents {f::g_unit.first / 2, f::g_unit.second / 2};
+        math::V2 aabbHalfExtents {b.width/2.0f, b.height/2.0f};
         math::V2 aabbCenter = b.pos;
         math::V2 diff = center - b.pos;
         math::V2 clamped = math::V2Clamp(diff, -aabbHalfExtents, aabbHalfExtents);
@@ -169,14 +175,12 @@ blockHit()
         diff = closest - center;
         auto diffLen = math::V2Length(diff);
 
-        const auto& bx = g_aEntities[g_ball.enIdx].pos.x;
-        const auto& by = g_aEntities[g_ball.enIdx].pos.y;
+        const auto& bx = enBall.pos.x;
+        const auto& by = enBall.pos.y;
 
         const auto& ex = b.pos.x;
         const auto& ey = b.pos.y;
 
-        /*if (bx >= ex - f::g_unit.first - 4 && bx <= ex + f::g_unit.first + 4 &&*/
-        /*    by >= ey - f::g_unit.second - 4 && by <= ey + f::g_unit.second + 4)*/
         if (diffLen <= g_ball.radius)
         {
             if (g_ball.bCollided)
@@ -192,30 +196,31 @@ blockHit()
             g_ball.bCollided = true;
 
             auto eSide = getReflectionSide(diff);
-            /*auto side = getReflectionSide(enBall.pos - b.pos);*/
 
             /* FIXME: sides are flipped */
             auto& enBall = g_aEntities[g_ball.enIdx];
-            const f32 off = 16.0f;
+            const f32 off = 0.05f;
             switch (eSide)
             {
                 default: break;
 
                 case REFLECT_SIDE::UP:
                 {
-                    enBall.pos.y -= f::g_unit.second / off;
+                    enBall.pos.y -= off;
                     enBall.dir.y = -enBall.dir.y;
+                    LOG("UP\n");
                 } break;
 
                 case REFLECT_SIDE::DOWN:
                 {
-                    enBall.pos.y += f::g_unit.second / off;
+                    enBall.pos.y += off;
                     enBall.dir.y = -enBall.dir.y;
+                    LOG("DOWN\n");
                 } break;
 
                 case REFLECT_SIDE::LEFT:
                 {
-                    enBall.pos.x += f::g_unit.first / off;
+                    enBall.pos.x += off;
                     if (math::eq(enBall.dir.x, 0))
                     {
                         enBall.dir.x = 0.1f;
@@ -223,11 +228,12 @@ blockHit()
                     }
 
                     enBall.dir.x = -enBall.dir.x;
+                    LOG("LEFT\n");
                 } break;
 
                 case REFLECT_SIDE::RIGHT:
                 {
-                    enBall.pos.x -= f::g_unit.first / off;
+                    enBall.pos.x -= off;
                     if (math::eq(enBall.dir.x, 0))
                     {
                         enBall.dir.x = -0.1f;
@@ -235,19 +241,19 @@ blockHit()
                     }
 
                     enBall.dir.x = -enBall.dir.x;
+                    LOG("RIGHT\n");
                 } break;
             }
         }
     }
 
     if (bAddSound)
-        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
+        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
 }
 
 static void
 paddleHit()
 {
-    namespace f = frame;
     auto& enBall = g_aEntities[g_ball.enIdx];
     auto& enPlayer = g_aEntities[g_player.enIdx];
 
@@ -256,11 +262,17 @@ paddleHit()
     const auto& px = enPlayer.pos.x;
     const auto& py = enPlayer.pos.y;
 
-    if (bx >= px - f::g_unit.first*2.0f && bx <= px + f::g_unit.first*2.0f &&
-        by >= py - f::g_unit.second && by <= py - f::g_unit.second + f::g_unit.second/2.0f)
+    const f32 pxOff = enPlayer.width / 2.0f;
+    const f32 pyOff = enPlayer.height / 2.0f;
+
+    bool bLR = (bx >= px - pxOff && bx <= px + pxOff);
+    bool bTB = (by <= py - pyOff/2.0f);
+
+    if (bLR && bTB)
     {
-        enBall.pos.y = (py - f::g_unit.second + f::g_unit.second/2.0f) + 4.0f;
-        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.2f));
+        enBall.pos.y = py - pyOff/2.0f;
+
+        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
 
         enBall.dir.y = 1.0f;
         if (math::V2Length(enPlayer.dir) > 0.0f)
@@ -271,34 +283,32 @@ paddleHit()
 static void
 outOfBounds()
 {
-    namespace f = frame;
-
     auto& enBall = g_aEntities[g_ball.enIdx];
 
     /* out of bounds */
     bool bAddSound = false;
-    if (enBall.pos.y <= 0.0f - f::g_unit.second) 
+    if (enBall.pos.y <= -0.5f) 
     {
         g_ball.bReleased = false;
         // g_ball.base.pos.y = 0.0f - f::g_unit.second;
         // g_ball.dir.y = 1.0f;
         // bAddSound = true;
     }
-    else if (enBall.pos.y >= f::HEIGHT - f::g_unit.second)
+    else if (enBall.pos.y >= s_currLvlSize.height - 0.5f)
     {
-        enBall.pos.y = f::HEIGHT - f::g_unit.second - 4;
+        enBall.pos.y = s_currLvlSize.height - 0.55f;
         enBall.dir.y = -1.0f;
         bAddSound = true;
     }
-    else if (enBall.pos.x <= 0.0f - f::g_unit.first)
+    else if (enBall.pos.x <= -0.5f)
     {
-        enBall.pos.x = -f::g_unit.first + 4;
+        enBall.pos.x = -0.45f;
         enBall.dir.x = -enBall.dir.x;
         bAddSound = true;
     }
-    else if (enBall.pos.x >= f::WIDTH - f::g_unit.first)
+    else if (enBall.pos.x >= s_currLvlSize.width - 0.5f)
     {
-        enBall.pos.x = f::WIDTH - f::g_unit.first - 4;
+        enBall.pos.x = s_currLvlSize.width - 0.55f;
         enBall.dir.x = -enBall.dir.x;
         bAddSound = true;
     }
@@ -308,10 +318,13 @@ outOfBounds()
 }
 
 static inline math::V2
-tilePosToImagePos(u32 x, u32 y)
+tilePosToImagePos(f32 x, f32 y)
 {
     namespace f = frame;
-    return {f::g_unit.first*2 * y, (f::HEIGHT - f::g_unit.second*2) - f::g_unit.second*2 * x};
+    return {
+        .x = f::g_unit.first*2 * x,
+        .y = f::g_unit.second*2 * y,
+    };
 }
 
 void
@@ -324,31 +337,27 @@ loadLevel()
         return l[y*lvl.width + x];
     };
 
-    const u32 levelY = lvl.height;
-    const u32 levelX = lvl.width;
+    frame::g_unit.first = frame::WIDTH / lvl.width / 2;
+    frame::g_unit.second = frame::HEIGHT / lvl.height / 2;
 
-    frame::g_unit.first = frame::WIDTH / levelX / 2;
-    frame::g_unit.second = frame::HEIGHT / levelY / 2;
-
-    frame::g_unit.second = frame::g_unit.first;
-
-    VecSetCap(&s_aBlocks, levelY*levelX);
+    VecSetCap(&s_aBlocks, lvl.height*lvl.width);
     VecSetSize(&s_aBlocks, 0);
 
     auto fBoxTex = MapSearch(&texture::g_mAllTexturesIdxs, {"test-assets/box3.bmp"});
     auto boxTexId = texture::g_aAllTextures[fBoxTex.pData->val].id;
 
-    for (u32 i = 0; i < levelY; i++)
+    LOG_NOTIFY("width: {}, height: {}\n", lvl.width, lvl.height);
+    for (u32 y = 0; y < lvl.height; ++y)
     {
-        for (u32 j = 0; j < levelX; j++)
+        for (u32 x = 0; x < lvl.width; ++x)
         {
-            if (at(i, j) != s8(COLOR::INVISIBLE))
+            if (at(y, x) != s8(COLOR::INVISIBLE))
             {
                 u32 idx = PoolRent(&g_aEntities);
                 auto& e = g_aEntities[idx];
 
                 VecPush(&s_aBlocks, {u16(idx)});
-                e.pos = tilePosToImagePos(i, j);
+                e.pos = {x, lvl.height - y - 1};
                 e.width = 1.0f;
                 e.height = 1.0f;
                 e.xOff = 0.0f;
@@ -356,7 +365,7 @@ loadLevel()
                 e.zOff = 0.0f;
                 e.shaderIdx = 0;
                 e.texIdx = u16(boxTexId);
-                e.eColor = COLOR(at(i, j));
+                e.eColor = COLOR(at(y, x));
                 e.bDead = false;
                 e.bRemoveAfterDraw = false;
             }
@@ -365,19 +374,19 @@ loadLevel()
 
     g_player.enIdx = PoolRent(&g_aEntities);
     auto& enPlayer = g_aEntities[g_player.enIdx];
-    enPlayer.speed = 600.0f;
-    enPlayer.pos.x = frame::WIDTH/2 - frame::g_unit.first;
+    enPlayer.speed = 10.0f;
+    enPlayer.pos.x = lvl.width / 2.0f;
     enPlayer.texIdx = s_tPaddle.id;
     enPlayer.width = 2.0f;
     enPlayer.height = 1.0f;
-    enPlayer.xOff = -frame::g_unit.first;
+    enPlayer.xOff = -0.5f;
     enPlayer.zOff = 10.0f;
     enPlayer.eColor = COLOR::TEAL;
     enPlayer.bRemoveAfterDraw = false;
 
     g_ball.enIdx = PoolRent(&g_aEntities);
     auto& enBall = g_aEntities[g_ball.enIdx];
-    enBall.speed = 600.0f;
+    enBall.speed = 10.0f;
     enBall.eColor = COLOR::ORANGERED;
     enBall.texIdx = s_tBall.id;
     enBall.width = 1.0f;
@@ -390,12 +399,14 @@ loadLevel()
     ArrSetSize(&s_aPrevPos, 0);
     for (auto& en : g_aEntities)
         ArrPush(&s_aPrevPos, en.pos);
+
+    s_currLvlSize.width = lvl.width;
+    s_currLvlSize.height = lvl.height;
 }
 
 void
 updateState()
 {
-    namespace f = frame;
     auto& enBall = g_aEntities[g_ball.enIdx];
     auto& enPlayer = g_aEntities[g_player.enIdx];
 
@@ -412,9 +423,9 @@ updateState()
     {
         enPlayer.pos = nextPos(enPlayer, false);
 
-        if (enPlayer.pos.x >= f::WIDTH - f::g_unit.first*2)
+        if (enPlayer.pos.x >= s_currLvlSize.width - 1.0f)
         {
-            enPlayer.pos.x = f::WIDTH - f::g_unit.first*2;
+            enPlayer.pos.x = s_currLvlSize.width - 1.0f;
             enPlayer.dir = {};
         }
         else if (enPlayer.pos.x <= 0)
@@ -434,13 +445,6 @@ updateState()
             enBall.pos = nextPos(enBall, true);
 
         } else enBall.pos = enPlayer.pos;
-
-        const auto& pos = enBall.pos;
-
-        math::M4 tm;
-        tm = math::M4Iden();
-        tm = M4Translate(tm, {pos.x, pos.y, 10.0f});
-        tm = M4Scale(tm, {f::g_unit.first, f::g_unit.second, 1.0f});
     }
 }
 
@@ -550,14 +554,18 @@ drawEntities([[maybe_unused]] Arena* pArena, const f64 alpha)
 
         auto enIdx = PoolIdx(&g_aEntities, &en);
 
-        math::V2 pos;
-        /* no point to lerp static blocks */
-        if (enIdx == g_ball.enIdx || enIdx == g_player.enIdx)
-            pos = math::lerp(s_aPrevPos[enIdx], en.pos, alpha);
-        else pos = en.pos;
+        const auto& prev = s_aPrevPos[enIdx];
+        math::V2 pos = math::lerp(
+            tilePosToImagePos(prev.x, prev.y),
+            tilePosToImagePos(en.pos.x, en.pos.y),
+            alpha
+        );
+
+        pos = tilePosToImagePos(en.pos.x, en.pos.y);
+        math::V2 off = tilePosToImagePos(en.xOff, en.yOff);
 
         math::M4 tm = math::M4Iden();
-        tm = M4Translate(tm, {pos.x + en.xOff, pos.y + en.yOff, 0.0f + en.zOff});
+        tm = M4Translate(tm, {pos.x + off.x, pos.y + off.y, 0.0f + en.zOff});
         tm = M4Scale(tm, {frame::g_unit.first * en.width, frame::g_unit.second * en.height, 1.0f});
 
         if (idxLastTex != en.texIdx)

@@ -13,7 +13,8 @@ namespace game
 using namespace adt;
 
 constexpr u32 ASSET_MAX_COUNT = 256;
-constexpr f64 FIXED_DELTA_TIME = 1.0 / 240.0;
+constexpr u32 TICK_RATE = 240;
+constexpr f64 FIXED_DELTA_TIME = 1.0 / f64(TICK_RATE);
 
 enum REFLECT_SIDE : s8
 {
@@ -136,7 +137,7 @@ constexpr s8 LEVEL0[5][10] {
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
-constexpr s8 LEVEL1[13][15] {
+constexpr s8 LEVEL1[11][15] {
     {4, 4, 6, 7, 4, 4, 2, 2, 3, 6, 4, 4, 6, 4, 4},
     {3, 3, 3, 3, 3, 5, 0, 0, 0, 4, 3, 3, 4, 3, 3},
     {5, 4, 2, 2, 3, 3, 0, 0, 0, 4, 2, 2, 5, 2, 6},
@@ -144,31 +145,32 @@ constexpr s8 LEVEL1[13][15] {
     {2, 2, 4, 3, 2, 3, 2, 0, 0, 3, 2, 4, 2, 4, 6},
     {5, 4, 2, 2, 3, 3, 0, 0, 0, 4, 2, 2, 5, 2, 6},
     {3, 4, 3, 2, 2, 6, 0, 0, 0, 2, 2, 5, 3, 2, 5},
-    {3, 1, 3, 3, 3, 4, 0, 0, 0, 3, 3, 6, 4, 3, 2},
     {2, 2, 2, 2, 3, 5, 2, 0, 0, 2, 2, 6, 2, 2, 4},
     {3, 1, 3, 3, 3, 4, 0, 0, 0, 3, 3, 6, 4, 3, 2},
     {4, 3, 2, 3, 4, 4, 0, 0, 0, 2, 2, 7, 5, 7, 3},
-    {3, 2, 4, 3, 2, 2, 0, 0, 0, 3, 2, 4, 2, 2, 2},
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
-const inline Level g_lvlOneBlock {
-    .width = 10,
-    .height = 5,
-    .aTiles = (s8*)LEVEL_ONE_BLOCK
-};
+// constexpr s8 LEVEL1[11][15] {
+//     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+//     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+// };
 
-const inline Level g_lvl0 {
-    .width = 10,
-    .height = 5,
-    .aTiles = (s8*)LEVEL0
-};
+#define LEVEL_INIT(LVL)                                                                                                \
+    {.width = sizeof(LVL[0]) / sizeof(LVL[0][0]), .height = sizeof(LVL) / sizeof(LVL[0]), .aTiles = (s8*)LVL}
 
-const inline Level g_lvl1 {
-    .width = 15,
-    .height = 13,
-    .aTiles = (s8*)LEVEL1
-};
+const inline Level g_lvlOneBlock = LEVEL_INIT(LEVEL_ONE_BLOCK);
+const inline Level g_lvl0 = LEVEL_INIT(LEVEL0);
+const inline Level g_lvl1 = LEVEL_INIT(LEVEL1);
 
 extern Player g_player;
 extern Ball g_ball;

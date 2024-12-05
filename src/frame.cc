@@ -2,7 +2,6 @@
 
 #include "adt/Arena.hh"
 #include "adt/defer.hh"
-#include "adt/logs.hh"
 #include "app.hh"
 #include "colors.hh"
 #include "controls.hh"
