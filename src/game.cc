@@ -166,7 +166,9 @@ blockHit()
 
         if (b.bDead || b.eColor == COLOR::INVISIBLE) continue;
 
-        math::V2 center = nextPos(enBall, true);
+        /*math::V2 center = nextPos(enBall, true);*/
+        math::V2 center = enBall.pos;
+
         math::V2 aabbHalfExtents {b.width/2.0f, b.height/2.0f};
         math::V2 aabbCenter = b.pos;
         math::V2 diff = center - b.pos;
