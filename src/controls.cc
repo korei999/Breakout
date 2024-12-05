@@ -126,7 +126,7 @@ procKeysOnce(u32 key, u32 pressed)
             if (!pressed) break;
 
             utils::toggle(&g_bStepDebug);
-            LOG_NOTIFY("g_bReflectFromBot: {}\n", g_bStepDebug);
+            LOG_NOTIFY("g_bStepDebug: {}\n", g_bStepDebug);
         } break;
 
         default:

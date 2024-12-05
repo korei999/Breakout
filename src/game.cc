@@ -171,9 +171,9 @@ getReflectionSideV2(const Entity& e)
     auto& enBall = g_aEntities[g_ball.enIdx];
     REFLECT_SIDE eSide = NONE;
 
-    if (enBall.pos.y <= e.pos.y - (e.height / 2.0f))
+    if (enBall.pos.y < e.pos.y - (e.height / 2.0f))
         eSide = DOWN;
-    else if (enBall.pos.y >= e.pos.y + (e.height / 2.0f))
+    else if (enBall.pos.y > e.pos.y + (e.height / 2.0f))
         eSide = UP;
     else if (enBall.pos.x < e.pos.x)
         eSide = LEFT;
@@ -330,31 +330,31 @@ outOfBounds()
     auto& enBall = g_aEntities[g_ball.enIdx];
 
     bool bAddSound = false;
-    if (enBall.pos.y <= -0.5f) 
+    if (enBall.pos.y < -0.5f)
     {
         if (controls::g_bStepDebug)
         {
-            enBall.pos.y = 0.0f;
+            enBall.pos.y = -0.5f;
             enBall.dir.y = 1.0f;
             bAddSound = true;
         }
         else g_ball.bReleased = false;
     }
-    else if (enBall.pos.y >= s_currLvlSize.height - 0.5f)
+    else if (enBall.pos.y > s_currLvlSize.height - 0.5f)
     {
-        enBall.pos.y = s_currLvlSize.height - 0.55f;
+        enBall.pos.y = s_currLvlSize.height - 0.5f;
         enBall.dir.y = -1.0f;
         bAddSound = true;
     }
-    else if (enBall.pos.x <= -0.5f)
+    else if (enBall.pos.x < -0.5f)
     {
-        enBall.pos.x = -0.45f;
+        enBall.pos.x = -0.5f;
         enBall.dir.x = -enBall.dir.x;
         bAddSound = true;
     }
-    else if (enBall.pos.x >= s_currLvlSize.width - 0.5f)
+    else if (enBall.pos.x > s_currLvlSize.width - 0.5f)
     {
-        enBall.pos.x = s_currLvlSize.width - 0.55f;
+        enBall.pos.x = s_currLvlSize.width - 0.5f;
         enBall.dir.x = -enBall.dir.x;
         bAddSound = true;
     }
@@ -420,7 +420,7 @@ loadLevel()
 
     g_player.enIdx = PoolRent(&g_aEntities);
     auto& enPlayer = g_aEntities[g_player.enIdx];
-    enPlayer.speed = 10.0f;
+    enPlayer.speed = 9.0f;
     enPlayer.pos.x = lvl.width / 2.0f;
     enPlayer.texIdx = s_tPaddle.id;
     enPlayer.width = 2.0f;
@@ -432,7 +432,7 @@ loadLevel()
 
     g_ball.enIdx = PoolRent(&g_aEntities);
     auto& enBall = g_aEntities[g_ball.enIdx];
-    enBall.speed = 10.0f;
+    enBall.speed = 9.0f;
     enBall.eColor = COLOR::ORANGERED;
     enBall.texIdx = s_tBall.id;
     enBall.width = 1.0f;
@@ -469,12 +469,12 @@ updateState()
     {
         enPlayer.pos = nextPos(enPlayer, false);
 
-        if (enPlayer.pos.x >= s_currLvlSize.width - 1.0f)
+        if (enPlayer.pos.x > s_currLvlSize.width - 1.0f)
         {
             enPlayer.pos.x = s_currLvlSize.width - 1.0f;
             enPlayer.dir = {};
         }
-        else if (enPlayer.pos.x <= 0)
+        else if (enPlayer.pos.x < 0)
         {
             enPlayer.pos.x = 0;
             enPlayer.dir = {};
