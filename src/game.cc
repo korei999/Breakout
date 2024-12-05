@@ -203,6 +203,11 @@ static void
 blockHit()
 {
     bool bAddSound = false;
+    defer(
+        if (bAddSound) audio::MixerAdd(
+            app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.0f)
+        );
+    );
 
     auto& enBall = g_aEntities[g_ball.enIdx];
     for (auto& block : s_aBlocks)
@@ -267,11 +272,10 @@ blockHit()
                     enBall.dir.x = -enBall.dir.x;
                 } break;
             }
+
+            break;
         }
     }
-
-    if (bAddSound)
-        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
 }
 
 static void
