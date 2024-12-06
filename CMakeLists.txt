@@ -48,16 +48,8 @@ add_executable(
     src/audio.cc
 )
 
-# target_sources(
-#     ${CMAKE_PROJECT_NAME}
-#     PUBLIC
-#     FILE_SET all_my_modules TYPE CXX_MODULES FILES
-#     src/parser/Bin.hh
-# )
-
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftime-report")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftime-trace")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftime-trace")
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftime-trace")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftime-trace")
 
 add_definitions("-DADT_DEFER_LESS_TYPING")
 add_definitions("-DADT_LOGS_LESS_TYPING")

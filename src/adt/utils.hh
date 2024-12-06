@@ -32,6 +32,13 @@ namespace adt
 namespace utils
 {
 
+/* bit number starts from 0 */
+constexpr u64
+setBit(u64 num, u64 bit, bool val)
+{
+    return (num & ~((u64)1 << bit)) | ((u64)val << bit);
+}
+
 template<typename T>
 constexpr void
 swap(T* l, T* r)
@@ -105,7 +112,7 @@ compareRev(const T& l, const T& r)
     return r - l;
 }
 
-[[nodiscard]] inline s64
+[[nodiscard]] inline long
 timeNowUS()
 {
 #ifdef __linux__
@@ -128,7 +135,7 @@ timeNowUS()
 [[nodiscard]] inline f64
 timeNowMS()
 {
-    return f64(timeNowUS()) / 1000.0;
+    return timeNowUS() / 1000.0;
 }
 
 [[nodiscard]] inline f64
