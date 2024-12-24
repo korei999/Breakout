@@ -22,58 +22,43 @@ struct PoolNode
     bool bDeleted {};
 };
 
-template<typename T, u32 CAP> struct Pool;
-
-template<typename T, u32 CAP>
-inline s64 PoolFirstIdx(Pool<T, CAP>* s);
-
-template<typename T, u32 CAP>
-inline s64 PoolLastIdx(Pool<T, CAP>* s);
-
-template<typename T, u32 CAP>
-inline s64 PoolNextIdx(Pool<T, CAP>* s, s64 i);
-
-template<typename T, u32 CAP>
-inline s64 PoolPrevIdx(Pool<T, CAP>* s, s64 i);
-
-template<typename T, u32 CAP>
-inline u32 PoolIdx(const Pool<T, CAP>* s, const PoolNode<T>* p);
-
-template<typename T, u32 CAP>
-inline u32 PoolIdx(const Pool<T, CAP>* s, const T* p);
-
-template<typename T, u32 CAP>
-inline void PoolDestroy(Pool<T, CAP>* s);
-
-template<typename T, u32 CAP>
-[[nodiscard]] inline PoolHnd PoolRent(Pool<T, CAP>* s);
-
-template<typename T, u32 CAP>
-inline PoolHnd PoolRent(Pool<T, CAP>* s, const T& value);
-
-template<typename T, u32 CAP>
-inline void PoolReturn(Pool<T, CAP>* s, PoolHnd hnd);
-
 /* statically allocated reusable resource collection */
 template<typename T, u32 CAP>
 struct Pool
 {
-    Arr<PoolNode<T>, CAP> aNodes {};
-    Arr<PoolHnd, CAP> aFreeIdxs {};
-    u32 nOccupied {};
-    mtx_t mtx;
+    Arr<PoolNode<T>, CAP> m_aNodes {};
+    Arr<PoolHnd, CAP> m_aFreeIdxs {};
+    u32 m_nOccupied {};
+    mtx_t m_mtx;
 
-    T& operator[](s64 i) { assert(!aNodes[i].bDeleted && "[MemPool]: accessing deleted node"); return aNodes[i].data; }
-    const T& operator[](s64 i) const { assert(!aNodes[i].bDeleted && "[MemPool]: accessing deleted node"); return aNodes[i].data; }
+    /* */
 
     Pool() = default;
     Pool(INIT_FLAG e)
     { 
         if (e != INIT_FLAG::INIT) return;
 
-        mtx_init(&mtx, mtx_plain);
-        for (auto& e : this->aNodes) e.bDeleted = true;
+        mtx_init(&m_mtx, mtx_plain);
+        for (auto& e : m_aNodes) e.bDeleted = true;
     }
+
+    /* */
+
+    T& operator[](s64 i)             { assert(!m_aNodes[i].bDeleted && "[MemPool]: accessing deleted node"); return m_aNodes[i].data; }
+    const T& operator[](s64 i) const { assert(!m_aNodes[i].bDeleted && "[MemPool]: accessing deleted node"); return m_aNodes[i].data; }
+
+    s64 firstI() const;
+    s64 lastI() const;
+    s64 nextI(s64 i) const;
+    s64 prevI(s64 i) const;
+    u32 idx(const PoolNode<T>* p) const;
+    u32 idx(const T* p) const;
+    void destroy();
+    [[nodiscard]] PoolHnd getHandle();
+    [[nodiscard]] PoolHnd getHandle(const T& value);
+    void giveBack(PoolHnd hnd);
+
+    /* */
 
     struct It
     {
@@ -82,13 +67,13 @@ struct Pool
 
         It(Pool* _self, s64 _i) : s(_self), i(_i) {}
 
-        T& operator*() { return s->aNodes[i].data; }
-        T* operator->() { return &s->aNodes[i].data; }
+        T& operator*() { return s->m_aNodes[i].data; }
+        T* operator->() { return &s->m_aNodes[i].data; }
 
         It
         operator++()
         {
-            i = PoolNextIdx(s, i);
+            i = s->nextI(i);
             return {s, i};
         }
 
@@ -96,14 +81,14 @@ struct Pool
         operator++(int)
         {
             s64 tmp = i;
-            i = PoolNextIdx(s, i);
+            i = s->nextI(i);
             return {s, tmp};
         }
 
         It
         operator--()
         {
-            i = PoolPrevIdx(s, i);
+            i = s->prevI(i);
             return {s, i};
         }
 
@@ -111,7 +96,7 @@ struct Pool
         operator--(int)
         {
             s64 tmp = i;
-            i = PoolPrevIdx(s, i);
+            i = s->prevI(i);
             return {s, tmp};
         }
 
@@ -119,93 +104,93 @@ struct Pool
         friend bool operator!=(It l, It r) { return l.i != r.i; }
     };
 
-    It begin() { return {this, PoolFirstIdx(this)}; }
-    It end() { return {this, this->aNodes.size == 0 ? -1 : PoolLastIdx(this) + 1}; }
-    It rbegin() { return {this, PoolLastIdx(this)}; }
-    It rend() { return {this, this->aNodes.size == 0 ? -1 : PoolFirstIdx(this) - 1}; }
+    It begin() { return {this, firstI()}; }
+    It end() { return {this, m_aNodes.m_size == 0 ? -1 : lastI() + 1}; }
+    It rbegin() { return {this, lastI()}; }
+    It rend() { return {this, m_aNodes.m_size == 0 ? -1 : firstI() - 1}; }
 
-    const It begin() const { return {this, PoolFirstIdx(this)}; }
-    const It end() const { return {this, this->aNodes.size == 0 ? -1 : PoolLastIdx(this) + 1}; }
-    const It rbegin() const { return {this, PoolLastIdx(this)}; }
-    const It rend() const { return {this, this->aNodes.size == 0 ? -1 : PoolFirstIdx(this) - 1}; }
+    const It begin() const { return {this, firstI()}; }
+    const It end() const { return {this, m_aNodes.m_size == 0 ? -1 : lastI() + 1}; }
+    const It rbegin() const { return {this, lastI()}; }
+    const It rend() const { return {this, m_aNodes.m_size == 0 ? -1 : firstI() - 1}; }
 };
 
 template<typename T, u32 CAP>
 inline s64
-PoolFirstIdx(Pool<T, CAP>* s)
+Pool<T, CAP>::firstI() const
 {
-    if (s->aNodes.size == 0) return -1;
+    if (m_aNodes.m_size == 0) return -1;
 
-    for (u32 i = 0; i < s->aNodes.size; ++i)
-        if (!s->aNodes[i].bDeleted) return i;
+    for (u32 i = 0; i < m_aNodes.m_size; ++i)
+        if (!m_aNodes[i].bDeleted) return i;
 
-    return s->aNodes.size;
+    return m_aNodes.m_size;
 }
 
 template<typename T, u32 CAP>
 inline s64
-PoolLastIdx(Pool<T, CAP>* s)
+Pool<T, CAP>::lastI() const
 {
-    if (s->aNodes.size == 0) return -1;
+    if (m_aNodes.m_size == 0) return -1;
 
-    for (s64 i = s64(s->aNodes.size) - 1; i >= 0; --i)
-        if (!s->aNodes[i].bDeleted) return i;
+    for (s64 i = s64(m_aNodes.m_size) - 1; i >= 0; --i)
+        if (!m_aNodes[i].bDeleted) return i;
 
-    return s->aNodes.size;
+    return m_aNodes.m_size;
 }
 
 template<typename T, u32 CAP>
 inline s64
-PoolNextIdx(Pool<T, CAP>* s, s64 i)
+Pool<T, CAP>::nextI(s64 i) const
 {
     do ++i;
-    while (i < s->aNodes.size && s->aNodes[i].bDeleted);
+    while (i < m_aNodes.m_size && m_aNodes[i].bDeleted);
 
     return i;
 }
 
 template<typename T, u32 CAP>
 inline s64
-PoolPrevIdx(Pool<T, CAP>* s, s64 i)
+Pool<T, CAP>::prevI(s64 i) const
 {
     do --i;
-    while (i >= 0 && s->aNodes[i].bDeleted);
+    while (i >= 0 && m_aNodes[i].bDeleted);
 
     return i;
 }
 
 template<typename T, u32 CAP>
 inline u32
-PoolIdx(const Pool<T, CAP>* s, const PoolNode<T>* p)
+Pool<T, CAP>::idx(const PoolNode<T>* p) const
 {
-    u32 r = p - &s->aNodes.aData[0];
+    u32 r = p - &m_aNodes.m_aData[0];
     assert(r < CAP && "[Pool]: out of range");
     return r;
 }
 
 template<typename T, u32 CAP>
 inline u32
-PoolIdx(const Pool<T, CAP>* s, const T* p)
+Pool<T, CAP>::idx(const T* p) const
 {
-    return (PoolNode<T>*)p - &s->aNodes.aData[0];
+    return (PoolNode<T>*)p - &m_aNodes.m_aData[0];
 }
 
 template<typename T, u32 CAP>
 inline void
-PoolDestroy(Pool<T, CAP>* s)
+Pool<T, CAP>::destroy()
 {
-    mtx_destroy(&s->mtx);
+    mtx_destroy(&m_mtx);
 }
 
 template<typename T, u32 CAP>
-[[nodiscard]] inline PoolHnd
-PoolRent(Pool<T, CAP>* s)
+inline PoolHnd
+Pool<T, CAP>::getHandle()
 {
-    guard::Mtx lock(&s->mtx);
+    guard::Mtx lock(&m_mtx);
 
     PoolHnd ret = std::numeric_limits<PoolHnd>::max();
 
-    if (s->nOccupied >= CAP)
+    if (m_nOccupied >= CAP)
     {
 #ifndef NDEBUG
         fputs("[MemPool]: no free element, returning NPOS", stderr);
@@ -213,39 +198,39 @@ PoolRent(Pool<T, CAP>* s)
         return ret;
     }
 
-    ++s->nOccupied;
+    ++m_nOccupied;
 
-    if (s->aFreeIdxs.size > 0) ret = *ArrPop(&s->aFreeIdxs);
-    else ret = ArrFakePush(&s->aNodes);
+    if (m_aFreeIdxs.m_size > 0) ret = *m_aFreeIdxs.pop();
+    else ret = m_aNodes.fakePush();
 
-    s->aNodes[ret].bDeleted = false;
+    m_aNodes[ret].bDeleted = false;
     return ret;
 }
 
 template<typename T, u32 CAP>
 inline PoolHnd
-PoolRent(Pool<T, CAP>* s, const T& value)
+Pool<T, CAP>::getHandle(const T& value)
 {
-    auto idx = PoolRent(s);
-    (*s)[idx] = value;
+    auto idx = getHandle();
+    new(&operator[](idx)) T(value);
 
     return idx;
 }
 
 template<typename T, u32 CAP>
 inline void
-PoolReturn(Pool<T, CAP>* s, PoolHnd hnd)
+Pool<T, CAP>::giveBack(PoolHnd hnd)
 {
-    guard::Mtx lock(&s->mtx);
+    guard::Mtx lock(&m_mtx);
 
-    --s->nOccupied;
-    assert(s->nOccupied < CAP && "[Pool]: nothing to return");
+    --m_nOccupied;
+    assert(m_nOccupied < CAP && "[Pool]: nothing to return");
 
-    if (hnd == ArrSize(&s->aNodes) - 1) ArrFakePop(&s->aNodes);
+    if (hnd == m_aNodes.getSize() - 1) m_aNodes.fakePop();
     else
     {
-        ArrPush(&s->aFreeIdxs, hnd);
-        auto& node = s->aNodes[hnd];
+        m_aFreeIdxs.push(hnd);
+        auto& node = m_aNodes[hnd];
         assert(!node.bDeleted && "[Pool]: returning already deleted node");
         node.bDeleted = true;
     }

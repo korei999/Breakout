@@ -49,12 +49,19 @@ using f64 = double;
 
 using null = decltype(nullptr);
 
-enum INIT_FLAG : u8 { NO_INIT, INIT };
+enum class INIT_FLAG : u8 { NO_INIT, INIT };
 
 #if defined __clang__ || __GNUC__
     #define ADT_NO_UB __attribute__((no_sanitize("undefined")))
 #else
     #define ADT_NO_UB
 #endif
+
+template<typename METHOD_T>
+[[nodiscard]] constexpr void*
+methodPointer(METHOD_T ptr)
+{
+    return *reinterpret_cast<void**>(&ptr);
+}
 
 } /* namespace adt */

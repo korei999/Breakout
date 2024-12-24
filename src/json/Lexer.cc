@@ -10,73 +10,81 @@ using namespace adt;
 namespace json
 {
 
+static void skipWhiteSpace(Lexer* s);
+static Token number(Lexer* s);
+static Token stringNoQuotes(Lexer* s);
+static Token string(Lexer* s);
+static Token character(Lexer* s, Token::TYPE type);
+
 void
-LexerDestroy(Lexer* s)
+Lexer::destroy(adt::IAllocator* pAlloc)
 {
-    free(s->pAlloc, s->sFile.pData);
+    pAlloc->free(m_sFile.m_pData);
 }
 
-RESULT
-LexerLoadFile(Lexer* s, adt::String path)
+RESULT Lexer::loadFile(IAllocator* pAlloc, adt::String path)
 {
-    Opt<String> rs = file::load(s->pAlloc, path);
+    Opt<String> rs = file::load(pAlloc, path);
     if (!rs) return FAIL;
 
-    s->sFile = rs.data;
-    s->pos = 0;
+    m_sFile = rs.getData();
+    m_pos = 0;
 
     return OK;
 }
 
-void
-LexerSkipWhiteSpace(Lexer* s)
+static void
+skipWhiteSpace(Lexer* s)
 {
     auto oneOf = [](char c) -> bool {
         const char skipChars[] = " \t\n\r";
-        for (auto& s : skipChars)
-            if (c == s) return true;
+
+        for (auto ch : skipChars)
+            if (c == ch) return true;
 
         return false;
     };
 
-    while (s->pos < s->sFile.size && oneOf(s->sFile[s->pos]))
-        s->pos++;
+    while (s->m_pos < s->m_sFile.m_size && oneOf(s->m_sFile[s->m_pos]))
+        s->m_pos++;
 }
 
-Token
-LexerNumber(Lexer* s)
+static Token
+number(Lexer* s)
 {
     Token r {};
-    u32 start = s->pos;
+    u32 start = s->m_pos;
     u32 i = start;
 
-    while (isxdigit(s->sFile[i])       ||
-                    s->sFile[i] == '.' ||
-                    s->sFile[i] == '-' ||
-                    s->sFile[i] == '+')
+    while (
+        isxdigit(s->m_sFile[i]) ||
+        s->m_sFile[i] == '.'    ||
+        s->m_sFile[i] == '-'    ||
+        s->m_sFile[i] == '+'
+    )
     {
         i++;
     }
 
     r.type = Token::NUMBER;
-    r.sLiteral = {&s->sFile[start], i - start};
+    r.sLiteral = {&s->m_sFile[start], i - start};
     
-    s->pos = i - 1;
+    s->m_pos = i - 1;
     return r;
 }
 
-Token
-LexerStringNoQuotes(Lexer* s)
+static Token
+stringNoQuotes(Lexer* s)
 {
     Token r {};
 
-    u32 start = s->pos;
+    u32 start = s->m_pos;
     u32 i = start;
 
-    while (isalpha(s->sFile[i]))
+    while (isalpha(s->m_sFile[i]))
         i++;
 
-    r.sLiteral = {&s->sFile[start], i - start};
+    r.sLiteral = {&s->m_sFile[start], i - start};
 
     if ("null" == r.sLiteral)
         r.type = Token::NULL_;
@@ -87,22 +95,22 @@ LexerStringNoQuotes(Lexer* s)
     else
         r.type = Token::IDENT;
 
-    s->pos = i - 1;
+    s->m_pos = i - 1;
     return r;
 }
 
-Token
-LexerString(Lexer* s)
+static Token
+string(Lexer* s)
 {
     Token r {};
 
-    u32 start = s->pos;
+    u32 start = s->m_pos;
     u32 i = start + 1;
     bool bEsc = false;
 
-    while (s->sFile[i])
+    while (s->m_sFile[i])
     {
-        switch (s->sFile[i])
+        switch (s->m_sFile[i])
         {
             default:
                 if (bEsc)
@@ -135,68 +143,68 @@ LexerString(Lexer* s)
 done:
 
     r.type = Token::IDENT;
-    r.sLiteral = {&s->sFile[start + 1], (i - start) - 1};
+    r.sLiteral = {&s->m_sFile[start + 1], (i - start) - 1};
 
-    s->pos = i;
+    s->m_pos = i;
     return r;
 }
 
-Token
-LexerChar(Lexer*s, enum Token::TYPE type)
+static Token
+character(Lexer* s, Token::TYPE type)
 {
     return {
         .type = type,
-        .sLiteral = {&s->sFile[s->pos], 1}
+        .sLiteral = {&s->m_sFile[s->m_pos], 1}
     };
 }
 
 Token
-LexerNext(Lexer* s)
+Lexer::next()
 {
     Token r {};
 
-    if (s->pos >= s->sFile.size)
+    if (m_pos >= m_sFile.m_size)
             return r;
 
-    LexerSkipWhiteSpace(s);
+    skipWhiteSpace(this);
 
-    switch (s->sFile[s->pos])
+    switch (m_sFile[m_pos])
     {
         default:
         /* solves bools and nulls */
-        r = LexerStringNoQuotes(s);
+        r = stringNoQuotes(this);
         break;
 
         case '-': case '+': case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-        r = LexerNumber(s);
+        r = number(this);
         break;
 
         case Token::QUOTE:
-        r = LexerString(s);
+        r = string(this);
         break;
 
         case Token::COMMA:
-        r = LexerChar(s, Token::COMMA);
+        r = character(this, Token::COMMA);
         break;
 
         case Token::ASSIGN:
-        r = LexerChar(s, Token::ASSIGN);
+        r = character(this, Token::ASSIGN);
         break;
 
         case Token::LBRACE:
-        r = LexerChar(s, Token::LBRACE);
+        r = character(this, Token::LBRACE);
         break;
 
         case Token::RBRACE:
-        r = LexerChar(s, Token::RBRACE);
+        r = character(this, Token::RBRACE);
         break;
 
         case Token::RBRACKET:
-        r = LexerChar(s, Token::RBRACKET);
+        r = character(this, Token::RBRACKET);
         break;
 
         case Token::LBRACKET:
-        r = LexerChar(s, Token::LBRACKET);
+        r = character(this, Token::LBRACKET);
         break;
 
         case Token::EOF_:
@@ -204,7 +212,7 @@ LexerNext(Lexer* s)
         break;
     }
 
-    s->pos++;
+    m_pos++;
     return r;
 }
 

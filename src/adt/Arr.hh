@@ -5,60 +5,47 @@
 
 #include <cassert>
 #include <initializer_list>
+#include <new> /* IWYU pragma: keep */
 
 namespace adt
 {
-
-template<typename T, u32 CAP> requires(CAP > 0) struct Arr;
-
-template<typename T, u32 CAP>
-constexpr u32 ArrPush(Arr<T, CAP>* s, const T& x);
-
-template<typename T, u32 CAP>
-constexpr u32 ArrFakePush(Arr<T, CAP>* s);
-
-template<typename T, u32 CAP>
-constexpr T* ArrPop(Arr<T, CAP>* s);
-
-template<typename T, u32 CAP>
-constexpr void ArrFakePop(Arr<T, CAP>* s);
-
-template<typename T, u32 CAP>
-constexpr u32 ArrCap([[maybe_unused]] Arr<T, CAP>* s);
-
-template<typename T, u32 CAP>
-constexpr u32 ArrSize(Arr<T, CAP>* s);
-
-template<typename T, u32 CAP>
-constexpr void ArrSetSize(Arr<T, CAP>* s, u32 newSize);
-
-template<typename T, u32 CAP>
-constexpr u32 ArrIdx(Arr<T, CAP>* s, const T* p);
-
-template<typename T, u32 CAP>
-constexpr T& ArrFirst(Arr<T, CAP>* s);
-
-template<typename T, u32 CAP>
-constexpr const T& ArrFirst(const Arr<T, CAP>* s);
-
-template<typename T, u32 CAP>
-constexpr T& ArrLast(Arr<T, CAP>* s);
-
-template<typename T, u32 CAP>
-constexpr const T& ArrLast(const Arr<T, CAP>* s);
 
 /* statically sized array */
 template<typename T, u32 CAP> requires(CAP > 0)
 struct Arr
 {
-    T aData[CAP] {};
-    u32 size {};
+    T m_aData[CAP] {};
+    u32 m_size {};
 
-    constexpr T& operator[](u32 i) { assert(i < size && "[Arr]: out of size access"); return aData[i]; }
-    constexpr const T& operator[](u32 i) const { assert(i < CAP && "[Arr]: out of capacity access"); return aData[i]; }
+    /* */
 
     constexpr Arr() = default;
     constexpr Arr(std::initializer_list<T> list);
+
+    /* */
+
+    constexpr T& operator[](u32 i) { assert(i < m_size && "[Arr]: out of size access"); return m_aData[i]; }
+    constexpr const T& operator[](u32 i) const { assert(i < CAP && "[Arr]: out of capacity access"); return m_aData[i]; }
+
+    /* */
+
+    constexpr T* data() { return m_aData; }
+    constexpr const T* data() const { return m_aData; }
+    constexpr bool empty() const { return m_size == 0; }
+    constexpr u32 push(const T& x);
+    constexpr u32 fakePush();
+    constexpr T* pop();
+    constexpr void fakePop();
+    constexpr u32 getCap() const;
+    constexpr u32 getSize() const;
+    constexpr void setSize(u32 newSize);
+    constexpr u32 idx(const T* p);
+    constexpr T& first();
+    constexpr const T& first() const;
+    constexpr T& last();
+    constexpr const T& last() const;
+
+    /* */
 
     struct It
     {
@@ -79,128 +66,117 @@ struct Arr
         friend constexpr bool operator!=(const It& l, const It& r) { return l.s != r.s; }
     };
 
-    constexpr It begin() { return {&this->aData[0]}; }
-    constexpr It end() { return {&this->aData[this->size]}; }
-    constexpr It rbegin() { return {&this->aData[this->size - 1]}; }
-    constexpr It rend() { return {this->aData - 1}; }
+    constexpr It begin() { return {&m_aData[0]}; }
+    constexpr It end() { return {&m_aData[m_size]}; }
+    constexpr It rbegin() { return {&m_aData[m_size - 1]}; }
+    constexpr It rend() { return {m_aData - 1}; }
 
-    constexpr const It begin() const { return {&this->aData[0]}; }
-    constexpr const It end() const { return {&this->aData[this->size]}; }
-    constexpr const It rbegin() const { return {&this->aData[this->size - 1]}; }
-    constexpr const It rend() const { return {this->aData - 1}; }
+    constexpr const It begin() const { return {&m_aData[0]}; }
+    constexpr const It end() const { return {&m_aData[m_size]}; }
+    constexpr const It rbegin() const { return {&m_aData[m_size - 1]}; }
+    constexpr const It rend() const { return {m_aData - 1}; }
 };
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr u32
-ArrPush(Arr<T, CAP>* s, const T& x)
+Arr<T, CAP>::push(const T& x)
 {
-    assert(s->size < CAP && "[Arr]: pushing over capacity");
+    assert(getSize() < CAP && "[Arr]: pushing over capacity");
 
-    s->aData[s->size++] = x;
-    return s->size - 1;
+    new(m_aData + m_size++) T(x);
+
+    return m_size - 1;
 }
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr u32
-ArrFakePush(Arr<T, CAP>* s)
+Arr<T, CAP>::fakePush()
 {
-    assert(s->size < CAP && "[Arr]: fake push over capacity");
-    ++s->size;
-    return s->size - 1;
+    assert(m_size < CAP && "[Arr]: fake push over capacity");
+    ++m_size;
+    return m_size - 1;
 }
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr T*
-ArrPop(Arr<T, CAP>* s)
+Arr<T, CAP>::pop()
 {
-    assert(s->size > 0 && "[Arr]: pop from empty");
-    return &s->aData[--s->size];
+    assert(m_size > 0 && "[Arr]: pop from empty");
+    return &m_aData[--m_size];
 }
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr void
-ArrFakePop(Arr<T, CAP>* s)
+Arr<T, CAP>::fakePop()
 {
-    assert(s->size > 0 && "[Arr]: pop from empty");
-    --s->size;
+    assert(m_size > 0 && "[Arr]: pop from empty");
+    --m_size;
 }
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr u32
-ArrCap([[maybe_unused]] Arr<T, CAP>* s)
+Arr<T, CAP>::getCap() const
 {
     return CAP;
 }
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr u32
-ArrSize(Arr<T, CAP>* s)
+Arr<T, CAP>::getSize() const
 {
-    return s->size;
+    return m_size;
 }
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr void
-ArrSetSize(Arr<T, CAP>* s, u32 newSize)
+Arr<T, CAP>::setSize(u32 newSize)
 {
     assert(newSize <= CAP && "[Arr]: cannot enlarge static array");
-    s->size = newSize;
+    m_size = newSize;
 }
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr u32
-ArrIdx(Arr<T, CAP>* s, const T* p)
+Arr<T, CAP>::idx(const T* p)
 {
-    u32 r = u32(p - s->aData);
-    assert(r < s->cap);
+    u32 r = u32(p - m_aData);
+    assert(r < getCap());
     return r;
 }
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr T&
-ArrFirst(Arr<T, CAP>* s)
+Arr<T, CAP>::first()
 {
-    return s->operator[](0);
+    return operator[](0);
 }
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr const T&
-ArrFirst(const Arr<T, CAP>* s)
+Arr<T, CAP>::first() const
 {
-    return s->operator[](0);
+    return operator[](0);
 }
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr T&
-ArrLast(Arr<T, CAP>* s)
+Arr<T, CAP>::last()
 {
-    return s->operator[](s->size - 1);
+    return operator[](m_size - 1);
 }
 
-template<typename T, u32 CAP>
+template<typename T, u32 CAP> requires(CAP > 0)
 constexpr const T&
-ArrLast(const Arr<T, CAP>* s)
+Arr<T, CAP>::last() const
 {
-    return s->operator[](s->size - 1);
+    return operator[](m_size - 1);
 }
 
 template<typename T, u32 CAP> requires(CAP > 0)
 constexpr Arr<T, CAP>::Arr(std::initializer_list<T> list)
 {
-    for (auto& e : list) ArrPush(this, e);
+    for (auto& e : list) push(e);
 }
-
-namespace utils
-{
-
-template<typename T, u32 CAP>
-[[nodiscard]] constexpr bool
-empty(const Arr<T, CAP>* s)
-{
-    return s->size == 0;
-}
-
-} /* namespace utils */
 
 namespace sort
 {
@@ -209,18 +185,18 @@ template<typename T, u32 CAP, decltype(utils::compare<T>) FN_CMP = utils::compar
 constexpr void
 quick(Arr<T, CAP>* pArr)
 {
-    if (pArr->size <= 1) return;
+    if (pArr->m_size <= 1) return;
 
-    quick<T, FN_CMP>(pArr->aData, 0, pArr->size - 1);
+    quick<T, FN_CMP>(pArr->m_aData, 0, pArr->m_size - 1);
 }
 
 template<typename T, u32 CAP, decltype(utils::compare<T>) FN_CMP = utils::compare>
 constexpr void
 insertion(Arr<T, CAP>* pArr)
 {
-    if (pArr->size <= 1) return;
+    if (pArr->m_size <= 1) return;
 
-    insertion<T, FN_CMP>(pArr->aData, 0, pArr->size - 1);
+    insertion<T, FN_CMP>(pArr->m_aData, 0, pArr->m_size - 1);
 }
 
 } /* namespace sort */
@@ -232,7 +208,7 @@ template<typename T, u32 CAP>
 inline u32
 formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const Arr<T, CAP>& x)
 {
-    if (utils::empty(&x))
+    if (x.empty())
     {
         ctx.fmt = "{}";
         ctx.fmtIdx = 0;
@@ -241,12 +217,9 @@ formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const Arr<T, C
 
     char aBuff[1024] {};
     u32 nRead = 0;
-    for (u32 i = 0; i < x.size; ++i)
+    for (u32 i = 0; i < x.m_size; ++i)
     {
-        const char* fmt;
-        if constexpr (std::is_floating_point_v<T>) fmt = i == x.size - 1 ? "{:.3}" : "{:.3}, ";
-        else fmt = i == x.size - 1 ? "{}" : "{}, ";
-
+        const char* fmt = i == x.m_size - 1 ? "{}" : "{}, ";
         nRead += toBuffer(aBuff + nRead, utils::size(aBuff) - nRead, fmt, x[i]);
     }
 

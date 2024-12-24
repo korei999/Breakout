@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cassert>
+#include <new> /* IWYU pragma: keep */
+
 namespace adt
 {
 
@@ -10,14 +13,15 @@ struct Opt
     bool bHasValue = false;
 
     constexpr Opt() = default;
-
     constexpr Opt(const T& x, bool _bHasValue = true)
     {
         bHasValue = _bHasValue;
         data = x;
     }
 
-    constexpr explicit operator bool() const
+    constexpr T& getData() { assert(bHasValue && "[Opt]: has no data"); return data; }
+
+    constexpr operator bool() const
     {
         return this->bHasValue;
     }

@@ -43,8 +43,8 @@ template<typename T>
 constexpr void
 swap(T* l, T* r)
 {
-    auto t0 = *l;
-    auto t1 = *r;
+    T t0 = *l;
+    T t1 = *r;
     *l = t1;
     *r = t0;
 }
@@ -79,6 +79,18 @@ min(auto& l, auto& r)
     return l < r ? l : r;
 }
 
+[[nodiscard]] constexpr auto
+maxVal(const auto& l, const auto& r)
+{
+    return l > r ? l : r;
+}
+
+[[nodiscard]] constexpr auto
+minVal(const auto& l, const auto& r)
+{
+    return l < r ? l : r;
+}
+
 [[nodiscard]] constexpr u64
 size(const auto& a)
 {
@@ -99,14 +111,14 @@ even(const auto& a)
 }
 
 template<typename T>
-[[nodiscard]] constexpr long
+[[nodiscard]] constexpr s64
 compare(const T& l, const T& r)
 {
     return l - r;
 }
 
 template<typename T>
-[[nodiscard]] constexpr long
+[[nodiscard]] constexpr s64
 compareRev(const T& l, const T& r)
 {
     return r - l;
@@ -199,13 +211,6 @@ template<typename T>
 clamp(const T& x, const T& _min, const T& _max)
 {
     return max(_min, min(_max, x));
-}
-
-template<template<typename> typename CON_T, typename T>
-[[nodiscard]] constexpr bool
-empty(const CON_T<T>* s)
-{
-    return s->size == 0;
 }
 
 template<template<typename> typename CON_T, typename T>

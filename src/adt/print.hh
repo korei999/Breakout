@@ -17,7 +17,7 @@ namespace adt
 namespace print
 {
 
-enum BASE : u8 { TWO = 2, EIGHT = 8, TEN = 10, SIXTEEN = 16 };
+enum class BASE : u8 { TWO = 2, EIGHT = 8, TEN = 10, SIXTEEN = 16 };
 
 struct FormatArgs
 {
@@ -48,7 +48,7 @@ constexpr u32
 printArgs(Context ctx)
 {
     u32 nRead = 0;
-    for (u32 i = ctx.fmtIdx; i < ctx.fmt.size; ++i, ++nRead)
+    for (u32 i = ctx.fmtIdx; i < ctx.fmt.m_size; ++i, ++nRead)
     {
         if (ctx.buffIdx >= ctx.buffSize) break;
         ctx.pBuff[ctx.buffIdx++] = ctx.fmt[i];
@@ -84,7 +84,7 @@ parseFormatArg(FormatArgs* pArgs, const String fmt, u32 fmtIdx)
     auto skipUntil = [&](const String chars) -> void {
         memset(aBuff, 0, sizeof(aBuff));
         u32 bIdx = 0;
-        while (bIdx < sizeof(aBuff) - 1 && i < fmt.size && !oneOfChars(fmt[i], chars))
+        while (bIdx < sizeof(aBuff) - 1 && i < fmt.m_size && !oneOfChars(fmt[i], chars))
         {
             aBuff[bIdx++] = fmt[i++];
             ++nRead;
@@ -92,11 +92,11 @@ parseFormatArg(FormatArgs* pArgs, const String fmt, u32 fmtIdx)
     };
 
     auto peek = [&] {
-        if (i + 1 < fmt.size) return fmt[i + 1];
+        if (i + 1 < fmt.m_size) return fmt[i + 1];
         else return '\0';
     };
 
-    for (; i < fmt.size; ++i, ++nRead)
+    for (; i < fmt.m_size; ++i, ++nRead)
     {
         if (bDone) break;
 
@@ -203,11 +203,11 @@ intToBuffer(INT_T x, char* pDst, u32 dstSize, FormatArgs fmtArgs)
         return pDst;
     }
  
-    if (x < 0 && fmtArgs.eBase != 10)
+    if (x < 0 && int(fmtArgs.eBase) != 10)
     {
         x = -x;
     }
-    else if (x < 0 && fmtArgs.eBase == 10)
+    else if (x < 0 && int(fmtArgs.eBase) == 10)
     {
         bNegative = true;
         x = -x;
@@ -215,10 +215,10 @@ intToBuffer(INT_T x, char* pDst, u32 dstSize, FormatArgs fmtArgs)
  
     while (x != 0)
     {
-        int rem = x % fmtArgs.eBase;
+        int rem = x % int(fmtArgs.eBase);
         char c = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
         push(c);
-        x = x / fmtArgs.eBase;
+        x = x / int(fmtArgs.eBase);
     }
  
     if (fmtArgs.bAlwaysShowSign)
@@ -266,7 +266,7 @@ formatToContext(Context ctx, FormatArgs fmtArgs, const String& str)
     auto& buffIdx = ctx.buffIdx;
 
     u32 nRead = 0;
-    for (u32 i = 0; i < str.size && buffIdx < buffSize && i < fmtArgs.maxLen; ++i, ++nRead)
+    for (u32 i = 0; i < str.m_size && buffIdx < buffSize && i < fmtArgs.maxLen; ++i, ++nRead)
         pBuff[buffIdx++] = str[i];
 
     return nRead;
@@ -392,9 +392,9 @@ printArgs(Context ctx, const T& tFirst, const ARGS_T&... tArgs)
     bool bArg = false;
     u32 i = ctx.fmtIdx;
 
-    if (ctx.fmtIdx >= ctx.fmt.size) return 0;
+    if (ctx.fmtIdx >= ctx.fmt.m_size) return 0;
 
-    for (; i < ctx.fmt.size; ++i, ++nRead)
+    for (; i < ctx.fmt.m_size; ++i, ++nRead)
     {
         if (ctx.buffIdx >= ctx.buffSize) return nRead;
 
@@ -414,7 +414,7 @@ printArgs(Context ctx, const T& tFirst, const ARGS_T&... tArgs)
         }
         else if (ctx.fmt[i] == '{')
         {
-            if (i + 1 < ctx.fmt.size && ctx.fmt[i + 1] == '{')
+            if (i + 1 < ctx.fmt.m_size && ctx.fmt[i + 1] == '{')
             {
                 i += 1, nRead += 1;
                 bArg = false;
@@ -455,12 +455,12 @@ printArgs(Context ctx, const T& tFirst, const ARGS_T&... tArgs)
     return nRead;
 }
 
-template<typename... ARGS_T>
+template<u32 SIZE = 512, typename... ARGS_T>
 constexpr u32
 toFILE(FILE* fp, const String fmt, const ARGS_T&... tArgs)
 {
-    /* TODO: set size / allow allocation maybe */
-    char aBuff[1024] {};
+    /* TODO: allow allocation? */
+    char aBuff[SIZE] {};
     Context ctx {fmt, aBuff, utils::size(aBuff) - 1};
     auto r = printArgs(ctx, tArgs...);
     fputs(aBuff, fp);
@@ -479,7 +479,7 @@ template<typename... ARGS_T>
 constexpr u32
 toString(String* pDest, const String fmt, const ARGS_T&... tArgs)
 {
-    return toBuffer(pDest->pData, pDest->size, fmt, tArgs...);
+    return toBuffer(pDest->m_pData, pDest->m_size, fmt, tArgs...);
 }
 
 template<typename... ARGS_T>

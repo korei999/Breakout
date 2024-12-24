@@ -3,55 +3,80 @@
 #include "IAllocator.hh"
 #include "hash.hh"
 
+#include <cassert>
 #include <cstring>
+#include <cstdlib>
 #include <immintrin.h>
 
 namespace adt
 {
 
 [[nodiscard]] constexpr u32
-nullTermStringSize(const char* str)
+nullTermStringSize(const char* nts)
 {
     u32 i = 0;
-    if (!str) return 0;
+    if (!nts) return 0;
 
-    while (str[i] != '\0') ++i;
+    while (nts[i] != '\0') ++i;
 
     return i;
 }
 
 struct String;
 
-[[nodiscard]] constexpr bool StringEndsWith(String l, String r);
 [[nodiscard]] inline bool operator==(const String& l, const String& r);
 [[nodiscard]] inline bool operator==(const String& l, const char* r);
 [[nodiscard]] inline bool operator!=(const String& l, const String& r);
 [[nodiscard]] constexpr s64 operator-(const String& l, const String& r);
-[[nodiscard]] constexpr u32 StringLastOf(String sv, char c);
+
+/* StringAlloc() inserts '\0' char */
 [[nodiscard]] inline String StringAlloc(IAllocator* p, const char* str, u32 size);
 [[nodiscard]] inline String StringAlloc(IAllocator* p, u32 size);
-[[nodiscard]] inline String StringAlloc(IAllocator* p, const char* str);
+[[nodiscard]] inline String StringAlloc(IAllocator* p, const char* nts);
 [[nodiscard]] inline String StringAlloc(IAllocator* p, const String s);
-inline void StringDestroy(IAllocator* p, String* s);
-[[nodiscard]] inline String StringCat(IAllocator* p, const String l, const String r);
-inline void StringAppend(String* l, const String r);
-inline void StringTrimEnd(String* s);
-constexpr void StringRemoveNLEnd(String* s); /* removes nextline character if it ends with one */
-[[nodiscard]] constexpr bool StringContains(String l, const String r);
 
-/* just pointer + size, no allocations, use `StringAlloc()` for that */
+[[nodiscard]] inline String StringCat(IAllocator* p, const String l, const String r);
+
+[[nodiscard]] inline u32 nGlyphs(const String str);
+
+/* just pointer + size, no allocations */
 struct String
 {
-    char* pData = nullptr;
-    u32 size = 0;
+    char* m_pData {};
+    u32 m_size {};
+    bool m_bAllocated {};
+
+    /* */
 
     constexpr String() = default;
-    constexpr String(char* sNullTerminated) : pData(sNullTerminated), size(nullTermStringSize(sNullTerminated)) {}
-    constexpr String(const char* sNullTerminated) : pData(const_cast<char*>(sNullTerminated)), size(nullTermStringSize(sNullTerminated)) {}
-    constexpr String(char* pStr, u32 len) : pData(pStr), size(len) {}
 
-    constexpr char& operator[](u32 i) { return pData[i]; }
-    constexpr const char& operator[](u32 i) const { return pData[i]; }
+    constexpr String(char* sNullTerminated)
+        : m_pData(sNullTerminated), m_size(nullTermStringSize(sNullTerminated)), m_bAllocated(false) {}
+
+    constexpr String(const char* sNullTerminated)
+        : m_pData(const_cast<char*>(sNullTerminated)), m_size(nullTermStringSize(sNullTerminated)), m_bAllocated(false) {}
+
+    constexpr String(char* pStr, u32 len)
+        : m_pData(pStr), m_size(len), m_bAllocated(false) {}
+
+    /* */
+
+    constexpr char& operator[](u32 i)             { assert(i < m_size && "[String]: out of size"); return m_pData[i]; }
+    constexpr const char& operator[](u32 i) const { assert(i < m_size && "[String]: out of size"); return m_pData[i]; }
+
+    [[nodiscard]] bool isAllocated() const { return m_bAllocated; }
+    const char* data() const { return m_pData; }
+    char* data() { return m_pData; }
+    u32 getSize() const { return m_size; }
+    [[nodiscard]] constexpr bool endsWith(const String r) const;
+    [[nodiscard]] constexpr u32 lastOf(char c) const;
+    void destroy(IAllocator* p);
+    void trimEnd();
+    constexpr void removeNLEnd(); /* remove \r\n */
+    [[nodiscard]] bool contains(const String r) const;
+    [[nodiscard]] String clone(IAllocator* pAlloc) const;
+
+    /* */
 
     struct It
     {
@@ -71,24 +96,24 @@ struct String
         friend constexpr bool operator!=(It l, It r) { return l.p != r.p; }
     };
 
-    constexpr It begin() { return {&this->pData[0]}; }
-    constexpr It end() { return {&this->pData[this->size]}; }
-    constexpr It rbegin() { return {&this->pData[this->size - 1]}; }
-    constexpr It rend() { return {this->pData - 1}; }
+    constexpr It begin() { return {&m_pData[0]}; }
+    constexpr It end() { return {&m_pData[m_size]}; }
+    constexpr It rbegin() { return {&m_pData[m_size - 1]}; }
+    constexpr It rend() { return {m_pData - 1}; }
 
-    constexpr const It begin() const { return {&this->pData[0]}; }
-    constexpr const It end() const { return {&this->pData[this->size]}; }
-    constexpr const It rbegin() const { return {&this->pData[this->size - 1]}; }
-    constexpr const It rend() const { return {this->pData - 1}; }
+    constexpr const It begin() const { return {&m_pData[0]}; }
+    constexpr const It end() const { return {&m_pData[m_size]}; }
+    constexpr const It rbegin() const { return {&m_pData[m_size - 1]}; }
+    constexpr const It rend() const { return {m_pData - 1}; }
 };
 
 constexpr bool
 StringEndsWith(String l, String r)
 {
-    if (l.size < r.size)
+    if (l.m_size < r.m_size)
         return false;
 
-    for (int i = r.size - 1, j = l.size - 1; i >= 0; --i, --j)
+    for (int i = r.m_size - 1, j = l.m_size - 1; i >= 0; --i, --j)
         if (r[i] != l[j])
             return false;
 
@@ -98,9 +123,9 @@ StringEndsWith(String l, String r)
 constexpr bool
 StringCmpSlow(const String l, const String r)
 {
-    if (l.size != r.size) return false;
+    if (l.m_size != r.m_size) return false;
 
-    for (u32 i = 0; i < l.size; ++i)
+    for (u32 i = 0; i < l.m_size; ++i)
         if (l[i] != r[i]) return false;
 
     return true;
@@ -109,26 +134,26 @@ StringCmpSlow(const String l, const String r)
 ADT_NO_UB inline bool
 StringCmpFast(const String& l, const String& r)
 {
-    if (l.size != r.size) return false;
+    if (l.m_size != r.m_size) return false;
 
-    const u64* p0 = (u64*)l.pData;
-    const u64* p1 = (u64*)r.pData;
-    u32 len = l.size / 8;
+    const u64* p0 = (u64*)l.m_pData;
+    const u64* p1 = (u64*)r.m_pData;
+    u32 len = l.m_size / 8;
 
     u32 i = 0;
     for (; i < len; ++i)
         if (p0[i] - p1[i] != 0) return false;
 
-    if (l.size > 8)
+    if (l.m_size > 8)
     {
-        const u64* t0 = (u64*)&l.pData[l.size - 9];
-        const u64* t1 = (u64*)&r.pData[l.size - 9];
+        const u64* t0 = (u64*)&l.m_pData[l.m_size - 9];
+        const u64* t1 = (u64*)&r.m_pData[l.m_size - 9];
         return *t0 == *t1;
     }
 
-    u32 leftOver = l.size - i*8;
-    String nl(&l.pData[i*8], leftOver);
-    String nr(&r.pData[i*8], leftOver);
+    u32 leftOver = l.m_size - i*8;
+    String nl(&l.m_pData[i*8], leftOver);
+    String nr(&r.m_pData[i*8], leftOver);
 
     return StringCmpSlow(nl, nr);
 }
@@ -215,8 +240,8 @@ operator==(const String& l, const String& r)
 #endif
 
 #if !defined(ADT_SSE4_2) && !defined(ADT_AVX2)
-    if (l.size != r.size) return false;
-    return strncmp(l.pData, r.pData, l.size) == 0;
+    if (l.m_size != r.m_size) return false;
+    return strncmp(l.m_pData, r.m_pData, l.m_size) == 0;
 #endif
 }
 
@@ -236,11 +261,11 @@ operator!=(const String& l, const String& r)
 constexpr s64
 operator-(const String& l, const String& r)
 {
-    if (l.size < r.size) return -1;
-    else if (l.size > r.size) return 1;
+    if (l.m_size < r.m_size) return -1;
+    else if (l.m_size > r.m_size) return 1;
 
     s64 sum = 0;
-    for (u32 i = 0; i < l.size; i++)
+    for (u32 i = 0; i < l.m_size; i++)
         sum += (l[i] - r[i]);
 
     return sum;
@@ -249,7 +274,7 @@ operator-(const String& l, const String& r)
 constexpr u32
 StringLastOf(String sv, char c)
 {
-    for (int i = sv.size - 1; i >= 0; i--)
+    for (int i = sv.m_size - 1; i >= 0; i--)
         if (sv[i] == c)
             return i;
 
@@ -259,48 +284,66 @@ StringLastOf(String sv, char c)
 inline String
 StringAlloc(IAllocator* p, const char* str, u32 size)
 {
-    char* pData = (char*)zalloc(p, size + 1, sizeof(char));
+    if (str == nullptr || size == 0) return {};
+
+    char* pData = (char*)p->zalloc(size + 1, sizeof(char));
     strncpy(pData, str, size);
     pData[size] = '\0';
 
-    return {pData, size};
+    String sNew {pData, size};
+    sNew.m_bAllocated = true;
+    return sNew;
 }
 
 inline String
 StringAlloc(IAllocator* p, u32 size)
 {
-    char* pData = (char*)zalloc(p, size + 1, sizeof(char));
-    return {pData, size};
+    if (size == 0) return {};
+
+    char* pData = (char*)p->zalloc(size + 1, sizeof(char));
+
+    String sNew {pData, size};
+    sNew.m_bAllocated = true;
+    return sNew;
 }
 
 inline String
-StringAlloc(IAllocator* p, const char* str)
+StringAlloc(IAllocator* p, const char* nts)
 {
-    return StringAlloc(p, str, nullTermStringSize(str));
+    return StringAlloc(p, nts, nullTermStringSize(nts));
 }
 
 inline String
 StringAlloc(IAllocator* p, const String s)
 {
-    return StringAlloc(p, s.pData, s.size);
+    if (s.getSize() == 0) return {};
+
+    char* pData = (char*)p->zalloc(s.getSize() + 1, sizeof(char));
+    strncpy(pData, s.data(), s.getSize());
+    pData[s.getSize()] = '\0';
+
+    String sNew {pData, s.getSize()};
+    sNew.m_bAllocated = true;
+    return sNew;
 }
 
 inline void
-StringDestroy(IAllocator* p, String* s)
+String::destroy(IAllocator* p)
 {
-    free(p, s->pData);
+    if (isAllocated()) p->free(m_pData);
+    *this = {};
 }
 
 inline String
 StringCat(IAllocator* p, const String l, const String r)
 {
-    u32 len = l.size + r.size;
-    char* ret = (char*)zalloc(p, len + 1, sizeof(char));
+    u32 len = l.m_size + r.m_size;
+    char* ret = (char*)p->zalloc(len + 1, sizeof(char));
 
     u32 pos = 0;
-    for (u32 i = 0; i < l.size; ++i, ++pos)
+    for (u32 i = 0; i < l.m_size; ++i, ++pos)
         ret[pos] = l[i];
-    for (u32 i = 0; i < r.size; ++i, ++pos)
+    for (u32 i = 0; i < r.m_size; ++i, ++pos)
         ret[pos] = r[i];
 
     ret[len] = '\0';
@@ -309,36 +352,27 @@ StringCat(IAllocator* p, const String l, const String r)
 }
 
 inline void
-StringAppend(String* l, const String r)
-{
-    for (long i = l->size, j = 0; i < long(l->size + r.size); ++i, ++j)
-        (*l)[i] = r[j];
-
-    l->size += r.size;
-}
-
-inline void
-StringTrimEnd(String* s)
+String::trimEnd()
 {
     auto isWhiteSpace = [&](int i) -> bool {
-        char c = s->pData[i];
+        char c = m_pData[i];
         if (c == '\n' || c == ' ' || c == '\r' || c == '\t' || c == '\0')
             return true;
 
         return false;
     };
 
-    for (int i = s->size - 1; i >= 0; --i)
+    for (int i = m_size - 1; i >= 0; --i)
         if (isWhiteSpace(i))
         {
-            s->pData[i] = 0;
-            --s->size;
+            m_pData[i] = 0;
+            --m_size;
         }
         else break;
 }
 
 constexpr void
-StringRemoveNLEnd(String* s)
+String::removeNLEnd()
 {
     auto oneOf = [&](char c) -> bool {
         constexpr String chars = "\r\n";
@@ -347,53 +381,70 @@ StringRemoveNLEnd(String* s)
         return false;
     };
 
-    u64 pos = s->size - 1;
-    while (s->size > 0 && oneOf((*s)[pos]))
-        s->pData[--s->size] = '\0';
+    u64 pos = m_size - 1;
+    while (m_size > 0 && oneOf((*this)[pos]))
+        m_pData[--m_size] = '\0';
 }
 
-constexpr bool
-StringContains(String l, const String r)
+inline bool
+String::contains(const String r) const
 {
+    if (m_size < r.m_size || m_size == 0 || r.m_size == 0) return false;
 
-    if (l.size < r.size) return false;
-
-    for (u32 i = 0; i < l.size; ++i)
+    for (u32 i = 0; i < m_size - r.m_size + 1; ++i)
     {
-        if (i + r.size > l.size) break;
-        const String sub(&l[i], l.size - i);
-        if (sub == r) return true;
+        const String sSub {const_cast<char*>(&(*this)[i]), r.m_size};
+        if (sSub == r) return true;
     }
 
     return false;
+}
+
+[[nodiscard]] inline String
+String::clone(IAllocator* pAlloc) const
+{
+    return StringAlloc(pAlloc, *this);
+}
+
+inline u32
+nGlyphs(const String str)
+{
+    u32 n = 0;
+    for (u32 i = 0; i < str.m_size; )
+    {
+        i+= mblen(&str[i], str.m_size - i);
+        ++n;
+    }
+
+    return n;
 }
 
 template<>
 constexpr u64
 hash::func(String& str)
 {
-    return hash::fnvStr(str.pData, str.size);
+    return hash::fnvStr(str.m_pData, str.m_size);
 }
 
 template<>
 constexpr u64
 hash::func(const String& str)
 {
-    return hash::fnvStr(str.pData, str.size);
+    return hash::fnvStr(str.m_pData, str.m_size);
 }
 
 template<>
 inline u64
 hash::funcHVal(String& str, u64 hashValue)
 {
-    return hash::fnvBuffHVal(str.pData, str.size, hashValue);
+    return hash::fnvBuffHVal(str.m_pData, str.m_size, hashValue);
 }
 
 template<>
 inline u64
 hash::funcHVal(const String& str, u64 hashValue)
 {
-    return hash::fnvBuffHVal(str.pData, str.size, hashValue);
+    return hash::fnvBuffHVal(str.m_pData, str.m_size, hashValue);
 }
 
 namespace utils
@@ -402,7 +453,7 @@ namespace utils
 [[nodiscard]] constexpr bool
 empty(const String* s)
 {
-    return s->size == 0;
+    return s->m_size == 0;
 }
 
 } /* namespace utils */
