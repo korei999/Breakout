@@ -95,8 +95,8 @@ loadAssets()
     parser::ttf::FontLoadParse(&s_fontLiberation, "test-assets/LiberationMono-Regular.ttf");
 
     /* unbind before creating threads */
-    WindowUnbindGlContext(app::g_pWindow);
-    defer( WindowBindGlContext(app::g_pWindow) );
+    app::g_pWindow->unbindGlContext();
+    defer( app::g_pWindow->bindGlContext() );
 
     text::TTFRasterizeArg argTTF {&s_ttfTest, &s_fontLiberation};
 
@@ -180,8 +180,6 @@ getReflectionSideV2(const Entity& e)
         eSide = LEFT;
     else if (enBall.pos.x > e.pos.x)
         eSide = RIGHT;
-
-    LOG_NOTIFY("size: {}\n", eSide);
 
     return eSide;
 }

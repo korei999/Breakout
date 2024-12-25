@@ -36,7 +36,7 @@ startup()
     audio::MixerStart(app::g_pMixer);
 
     app::g_pWindow = app::platformWindowAlloc(&arena);
-    WindowStart(app::g_pWindow);
+    app::g_pWindow->start();
 
     frame::run();
 
@@ -44,7 +44,7 @@ startup()
     tpool.destroy();
 
     /* mixer is destroyed after frame::mainLoop() */
-    WindowDestroy(app::g_pWindow);
+    app::g_pWindow->destroy();
 
     return 0;
 }

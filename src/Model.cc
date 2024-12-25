@@ -33,9 +33,9 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     for (u32 i = 0; i < a.aBuffers.getSize(); i++)
     {
         mtx_lock(&gl::g_mtxGlContext);
-        WindowBindGlContext(app::g_pWindow);
+        app::g_pWindow->bindGlContext();
         defer(
-            WindowUnbindGlContext(app::g_pWindow);
+            app::g_pWindow->unbindGlContext();
             mtx_unlock(&gl::g_mtxGlContext);
         );
 
@@ -120,9 +120,9 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
             {
                 mtx_lock(&gl::g_mtxGlContext);
-                WindowBindGlContext(app::g_pWindow);
+                app::g_pWindow->bindGlContext();
                 defer(
-                    WindowUnbindGlContext(app::g_pWindow);
+                    app::g_pWindow->unbindGlContext();
                     mtx_unlock(&gl::g_mtxGlContext);
                 );
 

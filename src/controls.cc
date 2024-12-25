@@ -63,7 +63,7 @@ procKeysOnce(u32 key, u32 pressed)
             } break;
 
         case KEY_Q:
-            if (pressed) WindowTogglePointerRelativeMode(app::g_pWindow);
+            if (pressed) app::g_pWindow->togglePointerRelativeMode();
             break;
 
         case KEY_ESC:
@@ -76,11 +76,11 @@ procKeysOnce(u32 key, u32 pressed)
             } break;
 
         case KEY_F:
-            if (pressed) WindowToggleFullscreen(app::g_pWindow);
+            if (pressed) app::g_pWindow->toggleFullscreen();
             break;
 
         case KEY_V:
-            if (pressed) WindowToggleVSync(app::g_pWindow);
+            if (pressed) app::g_pWindow->toggleVSync();
             break;
 
         case KEY_SPACE: {

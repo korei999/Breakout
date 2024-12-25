@@ -46,12 +46,12 @@ updateDrawTime()
 void
 run()
 {
-    WindowSetCursorImage(app::g_pWindow, "default");
+    app::g_pWindow->setCursorImage("default");
 
     g_prevTime = utils::timeNowS();
 
-    WindowBindGlContext(app::g_pWindow);
-    WindowShowWindow(app::g_pWindow);
+    app::g_pWindow->bindGlContext();
+    app::g_pWindow->showWindow();
 
 #ifndef NDEBUG
     glEnable(GL_DEBUG_OUTPUT);
@@ -77,7 +77,7 @@ run()
     updateDrawTime(); /* reset delta time before drawing */
     updateDrawTime();
 
-    WindowSetSwapInterval(app::g_pWindow, 1);
+    app::g_pWindow->setSwapInterval(1);
     /* WindowSetFullscreen(app::g_pWindow); */
 
 #ifndef NDEBUG
@@ -89,13 +89,13 @@ run()
     game::loadLevel();
 
     /* proc once to get events */
-    WindowSwapBuffers(app::g_pWindow);
+    app::g_pWindow->swapBuffers();
     controls::procMouse();
     controls::procKeys();
-    WindowProcEvents(app::g_pWindow);
+    app::g_pWindow->procEvents();
 
     /*WindowEnableRelativeMode(app::g_pWindow);*/
-    WindowDisableRelativeMode(app::g_pWindow);
+    app::g_pWindow->disableRelativeMode();
 
     mainLoop();
 }
@@ -124,7 +124,7 @@ mainLoop()
             accumulator += frameTime;
         }
 
-        WindowProcEvents(app::g_pWindow);
+        app::g_pWindow->procEvents();
         updateDrawTime();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -158,7 +158,7 @@ mainLoop()
 
         arena.reset();
 
-        WindowSwapBuffers(app::g_pWindow);
+        app::g_pWindow->swapBuffers();
         g_nfps++;
     }
 

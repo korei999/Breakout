@@ -138,7 +138,7 @@ procEvents(Window* s)
             case MotionNotify: {
                 auto& m = event.xmotion;
 
-                if (s->super.bPointerRelativeMode)
+                if (s->bPointerRelativeMode)
                 {
                     controls::g_mouse.relX += (f64)m.x;
                     controls::g_mouse.relY += (f64)m.y;
@@ -180,7 +180,7 @@ procEvents(Window* s)
                 
                 if (l == (long)s_atomWM_DELETE_WINDOW)
                 {
-                    s->super.bRunning = false;
+                    s->bRunning = false;
                     app::g_pMixer->bRunning = false;
                 }
             } break;
@@ -189,8 +189,8 @@ procEvents(Window* s)
                 XWindowAttributes attr;
                 Status status = XGetWindowAttributes(s->pDisplay, s->window, &attr);
 
-                s->super.wWidth = attr.width;
-                s->super.wHeight = attr.height;
+                s->wWidth = attr.width;
+                s->wHeight = attr.height;
             } break;
         }
     }

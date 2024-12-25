@@ -21,9 +21,8 @@ namespace platform
 namespace wayland
 {
 
-struct Client
+struct Client : IWindow
 {
-    IWindow super {};
     wl_display* display {};
     wl_registry* registry {};
 
@@ -59,45 +58,26 @@ struct Client
 
     bool bRestoreRelativeMode = false;
 
-    Client() = delete;
-    Client(String name);
-};
+    Client(String name) : IWindow(name) {}
 
-void ClientStart(Client* s);
-void ClientDestroy(Client* s);
-void ClientEnableRelativeMode(Client* s);
-void ClientDisableRelativeMode(Client* s);
-void ClientHideCursor(Client* s);
-void ClientSetCursorImage(Client* s, String cursorType);
-void ClientSetFullscreen(Client* s);
-void ClientUnsetFullscreen(Client* s);
-void ClientTogglePointerRelativeMode(Client* s);
-void ClientToggleFullscreen(Client* s);
-void ClientBindGlContext(Client* s);
-void ClientUnbindGlContext(Client* s);
-void ClientSetSwapInterval(Client* s, int interval);
-void ClientToggleVSync(Client* s);
-void ClientSwapBuffers(Client* s);
-void ClientProcEvents(Client* s);
-void ClientShowWindow(Client* s);
+    virtual void start();
+    virtual void disableRelativeMode();
+    virtual void enableRelativeMode();
+    virtual void togglePointerRelativeMode();
+    virtual void toggleFullscreen();
+    virtual void hideCursor();
+    virtual void setCursorImage(String cursorType);
+    virtual void setFullscreen();
+    virtual void unsetFullscreen();
+    virtual void bindGlContext();
+    virtual void unbindGlContext();
+    virtual void setSwapInterval(int interval);
+    virtual void toggleVSync();
+    virtual void swapBuffers();
+    virtual void procEvents();
+    virtual void showWindow();
+    virtual void destroy();
+};
 
 } /* namespace wayland */
 } /* namespace platform */
-
-inline void WindowStart(platform::wayland::Client* s) { ClientStart(s); }
-inline void WindowDisableRelativeMode(platform::wayland::Client* s) { ClientDisableRelativeMode(s); }
-inline void WindowEnableRelativeMode(platform::wayland::Client* s) { ClientEnableRelativeMode(s); }
-inline void WindowTogglePointerRelativeMode(platform::wayland::Client* s) { ClientTogglePointerRelativeMode(s); }
-inline void WindowToggleFullscreen(platform::wayland::Client* s) { ClientToggleFullscreen(s); }
-inline void WindowHideCursor(platform::wayland::Client* s) { ClientHideCursor(s); }
-inline void WindowSetCursorImage(platform::wayland::Client* s, String cursorType) { ClientSetCursorImage(s, cursorType); }
-inline void WindowSetFullscreen(platform::wayland::Client* s) { ClientSetFullscreen(s); }
-inline void WindowUnsetFullscreen(platform::wayland::Client* s) { ClientUnsetFullscreen(s); }
-inline void WindowBindGlContext(platform::wayland::Client* s) { ClientBindGlContext(s); }
-inline void WindowUnbindGlContext(platform::wayland::Client* s) { ClientUnbindGlContext(s); }
-inline void WindowSetSwapInterval(platform::wayland::Client* c, int interval) { ClientSetSwapInterval(c, interval); }
-inline void WindowToggleVSync(platform::wayland::Client* s) { ClientToggleVSync(s); }
-inline void WindowSwapBuffers(platform::wayland::Client* s) { ClientSwapBuffers(s); }
-inline void WindowProcEvents(platform::wayland::Client* s) { ClientProcEvents(s); }
-inline void WindowShowWindow(platform::wayland::Client* s) { ClientShowWindow(s); }
-inline void WindowDestroy(platform::wayland::Client* s) { ClientDestroy(s); }

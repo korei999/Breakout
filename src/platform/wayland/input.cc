@@ -37,10 +37,10 @@ keyboardEnterHandler(
 
     auto app = (Client*)(data);
 
-    if (app->super.bPointerRelativeMode || app->bRestoreRelativeMode)
+    if (app->bPointerRelativeMode || app->bRestoreRelativeMode)
     {
         app->bRestoreRelativeMode = false;
-        ClientEnableRelativeMode(app);
+        app->enableRelativeMode();
     }
 }
 
@@ -59,10 +59,10 @@ keyboardLeaveHandler(
     /* prevent keys getting stuck after leaving surface */
     for (auto& key : controls::g_aPressedKeys) key = 0;
 
-    if (app->super.bPointerRelativeMode)
+    if (app->bPointerRelativeMode)
     {
         app->bRestoreRelativeMode = true;
-        ClientDisableRelativeMode(app);
+        app->disableRelativeMode();
     }
 }
 
@@ -128,7 +128,7 @@ pointerEnterHandler(
     auto s = (Client*)(data);
     s->_pointerSerial = serial;
 
-    if (s->super.bPointerRelativeMode)
+    if (s->bPointerRelativeMode)
         wl_pointer_set_cursor(pointer, serial, nullptr, 0, 0);
     else
         wl_pointer_set_cursor(

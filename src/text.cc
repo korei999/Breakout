@@ -757,9 +757,9 @@ TTF::rasterizeAscii(parser::ttf::Font* pFont)
     m_vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
 
     mtx_lock(&gl::g_mtxGlContext);
-    WindowBindGlContext(app::g_pWindow);
+    app::g_pWindow->bindGlContext();
     defer(
-        WindowUnbindGlContext(app::g_pWindow);
+        app::g_pWindow->unbindGlContext();
         mtx_unlock(&gl::g_mtxGlContext);
     );
 

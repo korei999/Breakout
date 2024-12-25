@@ -92,13 +92,13 @@ platformWindowAlloc(IAllocator* pAlloc)
     if (bWayland)
     {
         pWindow = (IWindow*)pAlloc->zalloc(1, sizeof(wl::Client));
-        *((wl::Client*)pWindow) = wl::Client("Breakout");
+        new(pWindow) wl::Client("Breakout");
     }
     else
     {
     #ifdef X11_LIB
         pWindow = (IWindow*)pAlloc->zalloc(1, sizeof(x::Window));
-        *((x::Window*)pWindow) = x::Window("Breakout");
+        new(pWindow) x::Window("Breakout");
     #else
         print::err("Can't create graphical window\n");
     #endif

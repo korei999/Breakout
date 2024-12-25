@@ -121,9 +121,9 @@ void
 ImgSet(Img* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter)
 {
     mtx_lock(&gl::g_mtxGlContext);
-    WindowBindGlContext(app::g_pWindow);
+    app::g_pWindow->bindGlContext();
     defer(
-        WindowUnbindGlContext(app::g_pWindow);
+        app::g_pWindow->unbindGlContext();
         mtx_unlock(&gl::g_mtxGlContext);
     );
 
@@ -149,9 +149,9 @@ void
 ImgSetMonochrome(Img* s, u8* pData, u32 width, u32 height)
 {
     mtx_lock(&gl::g_mtxGlContext);
-    WindowBindGlContext(app::g_pWindow);
+    app::g_pWindow->bindGlContext();
     defer(
-        WindowUnbindGlContext(app::g_pWindow);
+        app::g_pWindow->unbindGlContext();
         mtx_unlock(&gl::g_mtxGlContext);
     );
 
