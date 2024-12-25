@@ -176,7 +176,7 @@ inline void
 VecBase<T>::popAsLast(u32 i)
 {
     assert(m_size > 0 && "[Vec]: empty");
-    operator[](i) = operator[](m_size - 1);
+    operator[](i) = last();
     --m_size;
 }
 

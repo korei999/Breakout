@@ -558,10 +558,10 @@ TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, parser::ttf::Glyph* pGlyph, u8
     VecBase<PointOnCurve> aPoints = getPointsWithMissingOnCurve(pAlloc, pGlyph);
     auto aCurvyPoints = makeItCurvy(pAlloc, aPoints, &endIdxs, true);
 
-    f32 xMax = s->pFont->head.xMax;
-    f32 xMin = s->pFont->head.xMin;
-    f32 yMax = s->pFont->head.yMax;
-    f32 yMin = s->pFont->head.yMin;
+    f32 xMax = s->m_pFont->head.xMax;
+    f32 xMin = s->m_pFont->head.xMin;
+    f32 yMax = s->m_pFont->head.yMax;
+    f32 yMin = s->m_pFont->head.yMin;
 
     Arr<f32, 32> aIntersections {};
 
@@ -659,10 +659,10 @@ TTFGenStringMesh(
 )
 {
     auto getUV = [&](int c) -> f32 {
-        return (c*s->scale) / (128*s->scale);
+        return (c*s->m_scale) / (128*s->m_scale);
     };
 
-    VecBase<CharQuad3Pos2UV> aQuads(pAlloc, s->maxSize);
+    VecBase<CharQuad3Pos2UV> aQuads(pAlloc, s->m_maxSize);
 
     f32 xOff = 0.0f;
     f32 yOff = 0.0f;
@@ -671,7 +671,7 @@ TTFGenStringMesh(
     {
         if (c == '\0') break;
 
-        auto g = FontReadGlyph(s->pFont, c);
+        auto g = FontReadGlyph(s->m_pFont, c);
 
         /* FIXME: uv ordering is messed up (but works correctly) */
 
@@ -716,17 +716,17 @@ TTFGenStringMesh(
 }
 
 void
-TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
+TTF::rasterizeAscii(parser::ttf::Font* pFont)
 {
     const f32 scale = 64.0f;
     const int iScale = std::round(scale);
-    s->scale = scale;
-    s->maxSize = 100;
+    m_scale = scale;
+    m_maxSize = 100;
 
-    s->pFont = pFont;
+    m_pFont = pFont;
 
     /* width*height*128 */
-    s->pBitmap = (u8*)s->pAlloc->zalloc(1, math::sq(iScale)*128);
+    m_pBitmap = (u8*)m_pAlloc->zalloc(1, math::sq(iScale)*128);
 
     Arena arena(SIZE_1M);
     defer( arena.freeAll() );
@@ -736,15 +736,15 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
         u8* pTmp = (u8*)arena.zalloc(1, math::sq(iScale));
 
         auto g = FontReadGlyph(pFont, character);
-        TTFRasterizeGlyphTEST(s, &arena, &g, pTmp, iScale, iScale);
-        memcpy(s->pBitmap + character*math::sq(iScale), pTmp, math::sq(iScale));
+        TTFRasterizeGlyphTEST(this, &arena, &g, pTmp, iScale, iScale);
+        memcpy(m_pBitmap + character*math::sq(iScale), pTmp, math::sq(iScale));
 
         arena.reset();
     }
 
     texture::Img img {};
-    texture::ImgSetMonochrome(&img, s->pBitmap, iScale, iScale*128);
-    s->texId = img.id;
+    texture::ImgSetMonochrome(&img, m_pBitmap, iScale, iScale*128);
+    m_texId = img.id;
 
     char test[100] {};
     for (int c = '!', i = 0; c <= '~'; ++c, ++i)
@@ -753,8 +753,8 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
         test[i] = c;
     }
 
-    auto aQuads = TTFGenStringMesh(s, &arena, test, 0, 0, 1.0f);
-    s->vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
+    auto aQuads = TTFGenStringMesh(this, &arena, test, 0, 0, 1.0f);
+    m_vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
 
     mtx_lock(&gl::g_mtxGlContext);
     WindowBindGlContext(app::g_pWindow);
@@ -763,13 +763,13 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
         mtx_unlock(&gl::g_mtxGlContext);
     );
 
-    glGenVertexArrays(1, &s->vao);
-    glBindVertexArray(s->vao);
+    glGenVertexArrays(1, &m_vao);
+    glBindVertexArray(m_vao);
     defer( glBindVertexArray(0) );
 
-    glGenBuffers(1, &s->vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(CharQuad3Pos2UV), aQuads.data(), GL_DYNAMIC_DRAW);
+    glGenBuffers(1, &m_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferData(GL_ARRAY_BUFFER, m_maxSize * sizeof(CharQuad3Pos2UV), aQuads.data(), GL_DYNAMIC_DRAW);
 
     /* positions */
     glEnableVertexAttribArray(0);
@@ -780,24 +780,24 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
 }
 
 void
-TTFUpdateText(TTF* s, IAllocator* pAlloc, const String str, const int x, const int y, const f32 z)
+TTF::updateText(IAllocator* pAlloc, const String str, const int x, const int y, const f32 z)
 {
-    assert(str.getSize() <= s->maxSize);
+    assert(str.getSize() <= m_maxSize);
 
-    s->str = str;
-    auto aQuads = TTFGenStringMesh(s, pAlloc, str, x, y, z);
-    s->vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
+    m_str = str;
+    auto aQuads = TTFGenStringMesh(this, pAlloc, str, x, y, z);
+    m_vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
 
-    glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, aQuads.getSize() * sizeof(aQuads[0]), aQuads.data());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void
-TTFDraw(TTF* s)
+TTF::draw()
 {
-    glBindVertexArray(s->vao);
-    glDrawArrays(GL_TRIANGLES, 0, s->vboSize);
+    glBindVertexArray(m_vao);
+    glDrawArrays(GL_TRIANGLES, 0, m_vboSize);
 }
 
 } /* namespace text */

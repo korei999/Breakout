@@ -2,7 +2,7 @@
 
 #include "adt/String.hh"
 #include "adt/math.hh"
-#include "gl/gl.hh"
+#include "gl/gl.hh" /* IWYU pragma: keep */
 #include "parser/ttf.hh"
 
 using namespace adt;
@@ -38,24 +38,24 @@ struct CharToUV
 
 struct TTF
 {
-    IAllocator* pAlloc {};
-    parser::ttf::Font* pFont {};
-    u8* pBitmap {};
-    String str {};
-    u32 maxSize {};
-    f32 scale {};
-    GLuint vao {};
-    GLuint vbo {};
-    GLuint vboSize {};
-    GLuint texId {};
+    IAllocator* m_pAlloc {};
+    parser::ttf::Font* m_pFont {};
+    u8* m_pBitmap {};
+    String m_str {};
+    u32 m_maxSize {};
+    f32 m_scale {};
+    GLuint m_vao {};
+    GLuint m_vbo {};
+    GLuint m_vboSize {};
+    GLuint m_texId {};
 
     TTF() = default;
-    TTF(IAllocator* p) : pAlloc(p) {}
-};
+    TTF(IAllocator* p) : m_pAlloc(p) {}
 
-void TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont);
-void TTFUpdateText(TTF* s, IAllocator* pAlloc, const String str, const int x, const int y, const f32 z);
-void TTFDraw(TTF* s);
+    void rasterizeAscii(parser::ttf::Font* pFont);
+    void updateText(IAllocator* pAlloc, const String str, const int x, const int y, const f32 z);
+    void draw();
+};
 
 struct TTFRasterizeArg
 {
@@ -67,7 +67,7 @@ inline int
 TTFRasterizeSubmit(void* pArg)
 {
     auto arg = *(TTFRasterizeArg*)pArg;
-    TTFRasterizeAsciiTEST(arg.self, arg.pFont);
+    arg.self->rasterizeAscii(arg.pFont);
 
     return thrd_success;
 }

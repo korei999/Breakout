@@ -69,7 +69,7 @@ loadVertFrag(Shader* s, String vertexPath, String fragmentPath)
     glDeleteShader(vertex);
     glDeleteShader(fragment);
 
-    g_aAllShaders.getHandle(*s);
+    /*g_aAllShaders.getHandle(*s);*/
 }
 
 static void

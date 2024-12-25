@@ -525,7 +525,7 @@ drawFPSCounterTTF(Arena* pAlloc)
     ShaderSetM4(sh, "uProj", proj);
     ShaderSetV4(sh, "uColor", colors::hexToV4(0x00ff00ff));
 
-    texture::ImgBind(s_ttfTest.texId, GL_TEXTURE0);
+    texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
 
     static int nLastFps = frame::g_nfps;
 
@@ -533,10 +533,10 @@ drawFPSCounterTTF(Arena* pAlloc)
     if (currTime >= frame::g_prevTime + 1000.0)
         nLastFps = frame::g_nfps; 
 
-    String s = StringAlloc((IAllocator*)pAlloc, s_ttfTest.maxSize);
+    String s = StringAlloc((IAllocator*)pAlloc, s_ttfTest.m_maxSize);
     s.m_size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", nLastFps, frame::g_frameTime);
 
-    text::TTFUpdateText(&s_ttfTest, pAlloc, s, 0, 0, 1.0f);
+    s_ttfTest.updateText(pAlloc, s, 0, 0, 1.0f);
 
     if (currTime >= frame::g_prevTime + 1000.0)
     {
@@ -544,7 +544,7 @@ drawFPSCounterTTF(Arena* pAlloc)
         frame::g_prevTime = currTime;
     }
 
-    text::TTFDraw(&s_ttfTest);
+    s_ttfTest.draw();
 }
 
 static void
@@ -557,7 +557,7 @@ drawInfo(Arena* pArena)
     ShaderSetM4(sh, "uProj", proj);
     ShaderSetV4(sh, "uColor", {colors::hexToV4(0x666666ff)});
 
-    texture::ImgBind(s_ttfTest.texId, GL_TEXTURE0);
+    texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
 
     String s = StringAlloc(pArena, 256);
     s.m_size = print::toString(&s,
@@ -568,8 +568,8 @@ drawInfo(Arena* pArena)
     int nSpaces = 0;
     for (auto c : s) if (c == '\n') ++nSpaces;
 
-    text::TTFUpdateText(&s_ttfTest, pArena, s, 0, frame::g_uiHeight - (nSpaces*2), 1.0f);
-    text::TTFDraw(&s_ttfTest);
+    s_ttfTest.updateText(pArena, s, 0, frame::g_uiHeight - (nSpaces*2), 1.0f);
+    s_ttfTest.draw();
 }
 
 static void
