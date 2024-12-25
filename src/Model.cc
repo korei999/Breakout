@@ -10,7 +10,7 @@
 void
 ModelLoad(Model* s, String path, GLint drawMode, GLint texMode)
 {
-    if (StringEndsWith(path, ".gltf"))
+    if (path.endsWith(".gltf"))
         ModelLoadGLTF(s, path, drawMode, texMode);
     else
         LOG_FATAL("trying to load unsupported asset: '{}'\n", path);
@@ -26,11 +26,11 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     auto& a = s->modelData;;
 
     MutexArena atmAl(SIZE_1M * 10);
-    defer(MutexArenaFreeAll(&atmAl));
+    defer( atmAl.freeAll() );
 
     /* load buffers first */
-    Vec<GLuint> aBufferMap(&atmAl.arena.super);
-    for (u32 i = 0; i < VecSize(&a.aBuffers); i++)
+    Vec<GLuint> aBufferMap(&atmAl);
+    for (u32 i = 0; i < a.aBuffers.getSize(); i++)
     {
         mtx_lock(&gl::g_mtxGlContext);
         WindowBindGlContext(app::g_pWindow);
@@ -42,24 +42,24 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         GLuint b;
         glGenBuffers(1, &b);
         glBindBuffer(GL_ARRAY_BUFFER, b);
-        glBufferData(GL_ARRAY_BUFFER, a.aBuffers[i].byteLength, a.aBuffers[i].aBin.pData, drawMode);
+        glBufferData(GL_ARRAY_BUFFER, a.aBuffers[i].byteLength, a.aBuffers[i].aBin.data(), drawMode);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        VecPush(&aBufferMap, b);
+        aBufferMap.push(b);
     }
 
-    ThreadPool tp(&atmAl.arena.super);
-    ThreadPoolStart(&tp);
-    defer(ThreadPoolDestroy(&tp));
+    ThreadPool tp(&atmAl);
+    tp.start();
+    defer( tp.destroy() );
 
     /* preload texures */
-    Vec<texture::Img> aTex(&atmAl.arena.super, VecSize(&a.aImages));
-    VecSetSize(&aTex, VecSize(&a.aImages));
+    Vec<texture::Img> aTex(&atmAl, a.aImages.getSize());
+    aTex.setSize(a.aImages.getCap());
 
-    for (u32 i = 0; i < VecSize(&a.aImages); i++)
+    for (u32 i = 0; i < a.aImages.getSize(); i++)
     {
         auto uri = a.aImages[i].uri;
 
-        if (!StringEndsWith(uri, ".bmp"))
+        if (!uri.endsWith(".bmp"))
             LOG_FATAL("trying to load unsupported texture: '{}'\n", uri);
 
         struct Args
@@ -72,10 +72,10 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             GLint texMode;
         };
 
-        auto* arg = (Args*)MutexArenaAlloc(&atmAl, 1, sizeof(Args));
+        auto* arg = (Args*)atmAl.malloc(1, sizeof(Args));
         *arg = {
             .p = &aTex[i],
-            .pAlloc = &atmAl.arena.super,
+            .pAlloc = &atmAl,
             .path = file::replacePathEnding(s->pAlloc, path, uri),
             .type = texture::TYPE::DIFFUSE,
             .flip = true,
@@ -89,10 +89,10 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             return 0;
         };
 
-        ThreadPoolSubmit(&tp, task, arg);
+        tp.submit(task, arg);
     }
 
-    ThreadPoolWait(&tp);
+    tp.wait();
 
     for (auto& mesh : a.aMeshes)
     {
@@ -142,7 +142,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nMesh.meshData.ebo);
                     glBufferData(
                         GL_ELEMENT_ARRAY_BUFFER, bvInd.byteLength,
-                        &a.aBuffers[bvInd.buffer].aBin.pData[bvInd.byteOffset + accInd.byteOffset], drawMode
+                        &a.aBuffers[bvInd.buffer].aBin[bvInd.byteOffset + accInd.byteOffset], drawMode
                     );
                 }
                 else
@@ -229,22 +229,22 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                 }
             }
 
-            VecPush(&aNMeshes, s->pAlloc, nMesh);
+            aNMeshes.push(s->pAlloc, nMesh);
         }
-        VecPush(&s->aaMeshes, s->pAlloc, aNMeshes);
+        s->aaMeshes.push(s->pAlloc, aNMeshes);
     }
 
-    s->aTmIdxs = VecBase<int>(s->pAlloc, math::sq(VecSize(&s->modelData.aNodes)));
-    s->aTmCounters = VecBase<int>(s->pAlloc, VecSize(&s->modelData.aNodes));
-    VecSetSize(&s->aTmIdxs, s->pAlloc, math::sq(VecSize(&s->modelData.aNodes))); /* 2d map */
-    VecSetSize(&s->aTmCounters, s->pAlloc, VecSize(&s->modelData.aNodes));
+    s->aTmIdxs = VecBase<int>(s->pAlloc, math::sq(s->modelData.aNodes.getSize()));
+    s->aTmCounters = VecBase<int>(s->pAlloc, s->modelData.aNodes.getSize());
+    s->aTmIdxs.setSize(s->pAlloc, math::sq(s->modelData.aNodes.getSize())); /* 2d map */
+    s->aTmCounters.setSize(s->pAlloc, s->modelData.aNodes.getSize());
 
     auto& aNodes = s->modelData.aNodes;
     auto at = [&](int r, int c) -> int {
-        return r*VecSize(&aNodes) + c;
+        return (r * aNodes.getSize()) + c;
     };
 
-    for (int i = 0; i < (int)VecSize(&aNodes); i++)
+    for (int i = 0; i < (int)aNodes.getSize(); i++)
     {
         auto& node = aNodes[i];
         for (auto& ch : node.children)
@@ -307,10 +307,10 @@ ModelDrawGraph(
     auto& aNodes = s->modelData.aNodes;
 
     auto at = [&](int r, int c) -> int {
-        return r*VecSize(&aNodes) + c;
+        return r*aNodes.getSize() + c;
     };
 
-    for (int i = 0; i < (int)VecSize(&aNodes); i++)
+    for (int i = 0; i < (int)aNodes.getSize(); i++)
     {
         auto& node = aNodes[i];
         if (node.mesh != NPOS)
@@ -377,7 +377,7 @@ void
 UboBindShader(Ubo *s, Shader* sh, String block, GLuint point)
 {
     s->point = point;
-    GLuint index = glGetUniformBlockIndex(sh->id, block.pData);
+    GLuint index = glGetUniformBlockIndex(sh->id, block.data());
     glUniformBlockBinding(sh->id, index, s->point);
     LOG_OK("uniform block: '{}' at '{}', in shader '{}'\n", block, index, sh->id);
 

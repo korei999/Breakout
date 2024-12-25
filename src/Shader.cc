@@ -4,7 +4,7 @@
 #include "adt/file.hh"
 #include "adt/logs.hh"
 
-Pool<Shader, SHADER_MAX_COUNT> g_aAllShaders(INIT);
+Pool<Shader, SHADER_MAX_COUNT> g_aAllShaders(INIT_FLAG::INIT);
 
 static GLuint ShaderLoadOne(GLenum type, String path);
 static mtx_t s_mtxAllShaders;
@@ -69,7 +69,7 @@ loadVertFrag(Shader* s, String vertexPath, String fragmentPath)
     glDeleteShader(vertex);
     glDeleteShader(fragment);
 
-    PoolRent(&g_aAllShaders, *s);
+    g_aAllShaders.getHandle(*s);
 }
 
 static void
@@ -189,11 +189,12 @@ ShaderLoadOne(GLenum type, String path)
         return 0;
 
     Arena al(SIZE_8K);
+    defer( al.freeAll() );
 
-    Opt<String> src = file::load(&al.super, path);
+    Opt<String> src = file::load(&al, path);
     if (!src) LOG_FATAL("error opening shader file: '{}'\n", path);
 
-    const char* srcData = src.data.pData;
+    const char* srcData = src.data.data();
 
     glShaderSource(shader, 1, &srcData, nullptr);
     glCompileShader(shader);
@@ -214,6 +215,5 @@ ShaderLoadOne(GLenum type, String path)
         return 0;
     }
 
-    ArenaFreeAll(&al);
     return shader;
 }

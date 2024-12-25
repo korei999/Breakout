@@ -1,6 +1,8 @@
-#include "adt/Arena.hh"
+#include "adt/FreeList.hh"
 #include "app.hh"
 #include "frame.hh"
+
+#include <clocale>
 
 using namespace adt;
 
@@ -21,23 +23,25 @@ WinMain(
 static int
 startup()
 {
-    Arena arena(SIZE_1M);
-    defer( freeAll(&arena) );
+    setlocale(LC_ALL, "");
 
-    auto tpool = ThreadPool(&arena.super, utils::max(getNCores() - 2, 2));
-    ThreadPoolStart(&tpool);
+    FreeList arena(SIZE_1M);
+    defer( arena.freeAll() );
+
+    auto tpool = ThreadPool(&arena, utils::max(getNCores() - 2, 2));
+    tpool.start();
     app::g_pThreadPool = &tpool;
 
-    app::g_pMixer = app::platformMixerAlloc(&arena.super);
+    app::g_pMixer = app::platformMixerAlloc(&arena);
     audio::MixerStart(app::g_pMixer);
 
-    app::g_pWindow = app::platformWindowAlloc(&arena.super);
+    app::g_pWindow = app::platformWindowAlloc(&arena);
     WindowStart(app::g_pWindow);
 
     frame::run();
 
-    ThreadPoolWait(&tpool);
-    ThreadPoolDestroy(&tpool);
+    tpool.wait();
+    tpool.destroy();
 
     /* mixer is destroyed after frame::mainLoop() */
     WindowDestroy(app::g_pWindow);

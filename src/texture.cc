@@ -34,8 +34,8 @@
 namespace texture
 {
 
-Pool<Img, texture::MAX_COUNT> g_aAllTextures(INIT);
-Map<String, PoolHnd> g_mAllTexturesIdxs(inl_pOsAlloc, texture::MAX_COUNT);
+Pool<Img, texture::MAX_COUNT> g_aAllTextures(INIT_FLAG::INIT);
+Map<String, PoolHnd> g_mAllTexturesIdxs(OsAllocatorGet(), texture::MAX_COUNT);
 
 static mtx_t s_mtxAllTextures;
 static once_flag s_onceFlagAllTextures = ONCE_FLAG_INIT;
@@ -52,15 +52,15 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
     {
         guard::Mtx lock(&s_mtxAllTextures);
 
-        auto fTried = MapSearch(&g_mAllTexturesIdxs, {path});
+        auto fTried = g_mAllTexturesIdxs.search(path);
         if (fTried)
         {
             LOG_WARN("duplicate texture: '{}'\n", path);
             return;
         }
 
-        idx = PoolRent(&g_aAllTextures, *s);
-        MapInsert(&g_mAllTexturesIdxs, path, idx);
+        idx = g_aAllTextures.getHandle(*s);
+        g_mAllTexturesIdxs.insert(path, idx);
     }
 
 #ifdef D_TEXTURE
@@ -70,20 +70,20 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
     if (s->id != 0) LOG_FATAL("id != 0: '{}'\n", s->id);
 
     Arena al(SIZE_1M * 5);
-    defer( ArenaFreeAll(&al) );
-    Data img = loadBMP(&al.super, path, bFlip);
+    defer( al.freeAll() );
+    Data img = loadBMP(&al, path, bFlip);
 
     s->texPath = path;
     s->type = type;
 
     Vec<u8> pixels = img.aData;
 
-    ImgSet(s, VecData(&pixels), texMode, img.format, img.width, img.height, magFilter, minFilter);
+    ImgSet(s, pixels.data(), texMode, img.format, img.width, img.height, magFilter, minFilter);
 
     s->width = img.width;
     s->height = img.height;
     
-    auto found = MapSearch(&g_mAllTexturesIdxs, path);
+    auto found = g_mAllTexturesIdxs.search(path);
     if (found)
     {
         u32 idx = found.pData->val;
@@ -271,7 +271,7 @@ CubeMap
 skyBoxCreate(String sFaces[6])
 {
     Arena al(SIZE_1M * 6);
-    defer( ArenaFreeAll(&al) );
+    defer( al.freeAll() );
 
     CubeMap cmNew {};
 
@@ -280,11 +280,11 @@ skyBoxCreate(String sFaces[6])
 
     for (u32 i = 0; i < 6; i++)
     {
-        Data tex = loadBMP(&al.super, sFaces[i], true);
+        Data tex = loadBMP(&al, sFaces[i], true);
         glTexImage2D(
             GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
             0, tex.format, tex.width, tex.height,
-            0, tex.format, GL_UNSIGNED_BYTE, VecData(&tex.aData)
+            0, tex.format, GL_UNSIGNED_BYTE, tex.aData.data()
         );
     }
 
@@ -368,12 +368,12 @@ loadBMP(IAllocator* pAlloc, String path, bool flip)
     {
         default:
         case GL_RGB:
-            flipCpyBGRtoRGBA(VecData(&pixels), (u8*)(&p[p.pos]), width, height, flip);
+            flipCpyBGRtoRGBA(pixels.data(), (u8*)(&p[p.pos]), width, height, flip);
             format = GL_RGBA;
             break;
 
         case GL_RGBA:
-            flipCpyBGRAtoRGBA(VecData(&pixels), (u8*)(&p[p.pos]), width, height, flip);
+            flipCpyBGRAtoRGBA(pixels.data(), (u8*)(&p[p.pos]), width, height, flip);
             break;
     }
 
@@ -425,7 +425,7 @@ printPack(String s, __m128i m)
 {
     u32 f[4];
     memcpy(f, &m, sizeof(f));
-    COUT("'%.*s': %08x, %08x, %08x, %08x\n", s.size, s.pData, f[0], f[1], f[2], f[3]);
+    fprintf(stderr, "'%.*s': %08x, %08x, %08x, %08x\n", s.getSize(), s.data(), f[0], f[1], f[2], f[3]);
 };
 #endif
 

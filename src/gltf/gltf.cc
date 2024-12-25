@@ -155,8 +155,8 @@ accessorTypeToUnionType(enum ACCESSOR_TYPE t, json::Object* obj)
 bool
 ModelLoad(Model* s, String path)
 {
-    if (json::ParserLoad(&s->parser, path) == json::RESULT::FAIL) return false;
-    if (json::ParserParse(&s->parser) == json::RESULT::FAIL) return false;
+    if (s->parser.load(path) == json::RESULT::FAIL) return false;
+    if (s->parser.parse() == json::RESULT::FAIL) return false;
 
     ModelProcJSONObjs(s);
     s->defaultSceneIdx = json::getLong(s->jsonObjs.scene);
@@ -178,7 +178,7 @@ void
 ModelProcJSONObjs(Model* s)
 {
     /* collect all the top level objects */
-    for (auto& node : json::ParserGetRoot(&s->parser))
+    for (auto& node : s->parser.getRoot())
     {
         switch (hash::func(node.svKey))
         {
@@ -278,11 +278,11 @@ ModelProcScenes(Model* s)
         {
             auto& a = json::getArray(pNodes);
             for (auto& el : a)
-                VecPush(&s->aScenes, s->pAl, {(u32)json::getLong(&el)});
+                s->aScenes.push(s->pAl, {(u32)json::getLong(&el)});
         }
         else
         {
-            VecPush(&s->aScenes, s->pAl, {0});
+            s->aScenes.push(s->pAl, {0});
             break;
         }
     }
@@ -307,7 +307,7 @@ ModelProcBuffers(Model* s)
         if (pUri)
         {
             svUri = json::getString(pUri);
-            auto sNewPath = file::replacePathEnding(s->pAl, s->parser.sName, svUri);
+            auto sNewPath = file::replacePathEnding(s->pAl, s->parser.m_sName, svUri);
 
             rsBin = file::load(s->pAl, sNewPath);
             if (!rsBin) LOG_WARN("error opening file: '{}'\n", sNewPath);
@@ -317,7 +317,7 @@ ModelProcBuffers(Model* s)
             }
         }
 
-        VecPush(&s->aBuffers, s->pAl, {
+        s->aBuffers.push(s->pAl, {
             .byteLength = (u32)(json::getLong(pByteLength)),
             .uri = svUri,
             .aBin = aBin
@@ -342,7 +342,7 @@ ModelProcBufferViews(Model* s)
         auto pByteStride = json::searchObject(obj, "byteStride");
         auto pTarget = json::searchObject(obj, "target");
 
-        VecPush(&s->aBufferViews, s->pAl, {
+        s->aBufferViews.push(s->pAl, {
             .buffer = (u32)(json::getLong(pBuffer)),
             .byteOffset = pByteOffset ? (u32)(json::getLong(pByteOffset)) : 0,
             .byteLength = (u32)(json::getLong(pByteLength)),
@@ -374,7 +374,7 @@ ModelProcAccessors(Model* s)
  
         enum ACCESSOR_TYPE type = stringToAccessorType(json::getString(pType));
  
-        VecPush(&s->aAccessors, s->pAl, {
+        s->aAccessors.push(s->pAl, {
             .bufferView = pBufferView ? (u32)(json::getLong(pBufferView)) : 0,
             .byteOffset = pByteOffset ? (u32)(json::getLong(pByteOffset)) : 0,
             .componentType = (COMPONENT_TYPE)(json::getLong(pComponentType)),
@@ -418,7 +418,7 @@ ModelProcMeshes(Model* s)
             auto pMode = json::searchObject(op, "mode");
             auto pMaterial = json::searchObject(op, "material");
  
-            VecPush(&aPrimitives, s->pAl, {
+            aPrimitives.push(s->pAl, {
                 .attributes {
                     .NORMAL = pNORMAL ? static_cast<decltype(Primitive::attributes.NORMAL)>(json::getLong(pNORMAL)) : NPOS,
                     .POSITION = pPOSITION ? static_cast<decltype(Primitive::attributes.POSITION)>(json::getLong(pPOSITION)) : NPOS,
@@ -431,7 +431,7 @@ ModelProcMeshes(Model* s)
             });
         }
  
-        VecPush(&s->aMeshes, s->pAl, {.aPrimitives = aPrimitives, .svName = name});
+        s->aMeshes.push(s->pAl, {.aPrimitives = aPrimitives, .svName = name});
     }
 }
 
@@ -449,7 +449,7 @@ ModelProcTexures(Model* s)
         auto pSource = json::searchObject(obj, "source");
         auto pSampler = json::searchObject(obj, "sampler");
 
-        VecPush(&s->aTextures, s->pAl, {
+        s->aTextures.push(s->pAl, {
             .source = pSource ? (u32)(json::getLong(pSource)) : NPOS,
             .sampler = pSampler ? (u32)(json::getLong(pSampler)) : NPOS
         });
@@ -498,7 +498,7 @@ ModelProcMaterials(Model* s)
             normTexInfo.index = json::getLong(pIndex);
         }
 
-        VecPush(&s->aMaterials, s->pAl, {
+        s->aMaterials.push(s->pAl, {
             .pbrMetallicRoughness {
                 .baseColorTexture = texInfo,
             },
@@ -520,7 +520,7 @@ ModelProcImages(Model *s)
 
         auto pUri = json::searchObject(obj, "uri");
         if (pUri)
-            VecPush(&s->aImages, s->pAl, {json::getString(pUri)});
+            s->aImages.push(s->pAl, {json::getString(pUri)});
     }
 }
 
@@ -547,7 +547,7 @@ ModelProcNodes(Model* s)
             auto& arrChil = json::getArray(pChildren);
             for (auto& c : arrChil)
 
-            VecPush(&nNode.children, s->pAl, (u32)(json::getLong(&c)));
+            nNode.children.push(s->pAl, (u32)(json::getLong(&c)));
         }
 
         auto pMatrix = json::searchObject(obj, "matrix");
@@ -581,7 +581,7 @@ ModelProcNodes(Model* s)
             nNode.scale = ut.VEC3;
         }
 
-        VecPush(&s->aNodes, s->pAl, nNode);
+        s->aNodes.push(s->pAl, nNode);
     }
 }
 

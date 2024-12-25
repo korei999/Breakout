@@ -48,16 +48,16 @@ static void
 TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode)
 {
     Arena arena(SIZE_1M);
-    defer( ArenaFreeAll(&arena) );
+    defer( arena.freeAll() );
 
-    auto aQuads = TextUpdateBuffer(s, &arena.super, s->str, s->maxSize, xOrigin, yOrigin);
+    auto aQuads = TextUpdateBuffer(s, &arena, s->str, s->maxSize, xOrigin, yOrigin);
 
     glGenVertexArrays(1, &s->vao);
     glBindVertexArray(s->vao);
 
     glGenBuffers(1, &s->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(CharQuad), VecData(&aQuads), drawMode);
+    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(CharQuad), aQuads.data(), drawMode);
 
     /* positions */
     glEnableVertexAttribArray(0);
@@ -106,7 +106,7 @@ TextUpdateBuffer(Bitmap* s, IAllocator* pAlloc, String str, u32 size, int xOrigi
             continue;
         }
 
-        VecPush(&aQuads, pAlloc, {
+        aQuads.push(pAlloc, {
              0.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,     x0, y0, /* tl */
              0.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,     x1, y1, /* bl */
              2.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,     x2, y2, /* br */
@@ -120,7 +120,7 @@ TextUpdateBuffer(Bitmap* s, IAllocator* pAlloc, String str, u32 size, int xOrigi
         xOff += 2.0f;
     }
 
-    s->vboSize = VecSize(&aQuads) * 6; /* 6 vertices for 1 quad */
+    s->vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
 
     return aQuads;
 }
@@ -128,13 +128,13 @@ TextUpdateBuffer(Bitmap* s, IAllocator* pAlloc, String str, u32 size, int xOrigi
 void
 BitmapUpdate(Bitmap* s, IAllocator* pAlloc, String str, int x, int y)
 {
-    assert(str.size <= s->maxSize);
+    assert(str.getSize() <= s->maxSize);
 
     s->str = str;
     VecBase<CharQuad> aQuads = TextUpdateBuffer(s, pAlloc, str, s->maxSize, x, y);
 
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(f32)*4*6, VecData(&aQuads));
+    glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(f32)*4*6, aQuads.data());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -157,15 +157,15 @@ getBeizerPoints(
     /*B(t) = (1-t)^2*P0 + 2(1-t)*t*P1 + t^2*P2*/
 
     VecBase<Point> aPoints(pAlloc, 2 + nSteps);
-    VecPush(&aPoints, pAlloc, {p0.x, p0.y, 0.0f, 1.0f});
+    aPoints.push(pAlloc, {p0.x, p0.y, 0.0f, 1.0f});
     for (int i = 1; i < nSteps; i++) {
         f32 t = f32(i) / f32(nSteps);
 
         math::V2 vec = math::bezier(p0, p1, p2, t);
 
-        VecPush(&aPoints, pAlloc, {vec.x, vec.y, 0.0f, 1.0f});
+        aPoints.push(pAlloc, {vec.x, vec.y, 0.0f, 1.0f});
     }
-    VecPush(&aPoints, pAlloc, {p2.x, p2.y, 0.0f, 1.0f});
+    aPoints.push(pAlloc, {p2.x, p2.y, 0.0f, 1.0f});
 
     return aPoints;
 }
@@ -185,7 +185,7 @@ insertPoints(
         f32 t = f32(i) / f32(nTimes + 1);
 
         auto point = math::bezier(p0, p1, p2, t);
-        VecPush(aPoints, pAlloc, {
+        aPoints->push(pAlloc, {
             .pos = point,
             .bOnCurve = true,
             .bEndOfCurve = false
@@ -196,7 +196,7 @@ insertPoints(
 static VecBase<PointOnCurve>
 makeItCurvy(IAllocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, CurveEndIdx* pEndIdxs, bool bTessellate = true)
 {
-    VecBase<PointOnCurve> aNew(pAlloc, VecSize(&aNonCurvyPoints));
+    VecBase<PointOnCurve> aNew(pAlloc, aNonCurvyPoints.getSize());
     utils::fill(pEndIdxs->aIdxs, NPOS16, utils::size(pEndIdxs->aIdxs));
     u16 endIdx = 0;
 
@@ -204,7 +204,7 @@ makeItCurvy(IAllocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cu
     bool bPrevOnCurve = true;
     for (auto& p : aNonCurvyPoints)
     {
-        u32 idx = VecIdx(&aNonCurvyPoints, &p);
+        u32 idx = aNonCurvyPoints.idx(&p);
 
         if (p.bEndOfCurve)
         {
@@ -233,7 +233,7 @@ makeItCurvy(IAllocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cu
 
         if (p.bOnCurve)
         {
-            VecPush(&aNew, pAlloc, {
+            aNew.push(pAlloc, {
                 .pos = p.pos,
                 .bOnCurve = p.bOnCurve,
                 .bEndOfCurve = false
@@ -242,13 +242,13 @@ makeItCurvy(IAllocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cu
 
         if (p.bEndOfCurve)
         {
-            VecPush(&aNew, pAlloc, {
+            aNew.push(pAlloc, {
                 .pos = aNonCurvyPoints[firstInCurveIdx].pos,
                 .bOnCurve = true,
                 .bEndOfCurve = true,
             });
 
-            if (endIdx < 8) pEndIdxs->aIdxs[endIdx++] = VecLastI(&aNew);
+            if (endIdx < 8) pEndIdxs->aIdxs[endIdx++] = aNew.lastI();
             else assert(false && "8 curves max");
 
             firstInCurveIdx = idx + 1;
@@ -267,7 +267,7 @@ VecBase<PointOnCurve>
 getPointsWithMissingOnCurve(IAllocator* pAlloc, parser::ttf::Glyph* g)
 {
     const auto& aGlyphPoints = g->uGlyph.simple.aPoints;
-    u32 size = VecSize(&aGlyphPoints);
+    u32 size = aGlyphPoints.getSize();
 
     /*LOG("numberOfContours: {}\n", g->numberOfContours);*/
 
@@ -279,7 +279,7 @@ getPointsWithMissingOnCurve(IAllocator* pAlloc, parser::ttf::Glyph* g)
     int nOffCurve = 0;
     for (const auto& p : aGlyphPoints)
     {
-        const u32 pointIdx = VecIdx(&aGlyphPoints, &p);
+        const u32 pointIdx = aGlyphPoints.idx(&p);
 
         /*f32 x = f32(p.x) / f32(g->xMax);*/
         /*f32 y = f32(p.y) / f32(g->yMax);*/
@@ -300,17 +300,17 @@ getPointsWithMissingOnCurve(IAllocator* pAlloc, parser::ttf::Glyph* g)
         if (!bCurrOnCurve && !bPrevOnCurve)
         {
             /* insert middle point */
-            const auto& prev = VecLast(&aPoints);
+            const auto& prev = aPoints.last();
             math::V2 mid = math::lerp(prev.pos, vCurr, 0.5f);
 
-            VecPush(&aPoints, pAlloc, {
+            aPoints.push(pAlloc, {
                 .pos = mid,
                 .bOnCurve = true,
                 .bEndOfCurve = false
             });
         }
 
-        VecPush(&aPoints, pAlloc, {
+        aPoints.push(pAlloc, {
             .pos {x, y},
             .bOnCurve = p.bOnCurve,
             .bEndOfCurve = bEndOfCurve
@@ -460,7 +460,7 @@ polygonCentroid(
     f32 scx = 0;
     f32 scy = 0;
 
-    for (u32 i = startIdx + 1; i < VecSize(&aPoints); ++i)
+    for (u32 i = startIdx + 1; i < aPoints.getSize(); ++i)
     {
         auto& pos0 = aPoints[i - 1].pos;
         auto& pos1 = aPoints[i - 0].pos;
@@ -502,7 +502,7 @@ static int
 polygonArea(const VecBase<PointOnCurve>& aPoints, u32 startIdx)
 {
     int area = 0;
-    for (u32 i = startIdx + 1; i < VecSize(&aPoints) && !aPoints[i].bEndOfCurve; ++i)
+    for (u32 i = startIdx + 1; i < aPoints.getSize() && !aPoints[i].bEndOfCurve; ++i)
     {
         int x0 = aPoints[i - 1].pos.x;
         int x1 = aPoints[i - 0].pos.x;
@@ -517,7 +517,7 @@ polygonArea(const VecBase<PointOnCurve>& aPoints, u32 startIdx)
 static int
 polygonWindingOrder(const VecBase<PointOnCurve>& aPoints, u32 startIdx)
 {
-    if (VecSize(&aPoints) - startIdx <= 2)
+    if (aPoints.getSize() - startIdx <= 2)
     {
         LOG_FATAL("How can you get area of a LINE/DOT?\n");
         return 0;
@@ -552,7 +552,7 @@ static void
 TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, parser::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height)
 {
     const auto& aGlyphPoints = pGlyph->uGlyph.simple.aPoints;
-    u32 size = VecSize(&aGlyphPoints);
+    u32 size = aGlyphPoints.getSize();
 
     CurveEndIdx endIdxs;
     VecBase<PointOnCurve> aPoints = getPointsWithMissingOnCurve(pAlloc, pGlyph);
@@ -572,9 +572,9 @@ TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, parser::ttf::Glyph* pGlyph, u8
 
     for (u32 i = 0; i < height; ++i)
     {
-        ArrSetSize(&aIntersections, 0);
+        aIntersections.setSize(0);
         const f32 scanline = f32(i);
-        for (u32 j = 1; j < VecSize(&aCurvyPoints); ++j)
+        for (u32 j = 1; j < aCurvyPoints.getSize(); ++j)
         {
             f32 x0 = (aCurvyPoints[j - 1].pos.x - pGlyph->xMin) * hScale;
             f32 y0 = (aCurvyPoints[j - 1].pos.y - pGlyph->yMin) * vScale;
@@ -626,14 +626,14 @@ TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, parser::ttf::Glyph* pGlyph, u8
             if (math::eq(dx, 0.0f)) intersection = x1;
             else intersection = (scanline - y1)*(dx/dy) + x1;
 
-            ArrPush(&aIntersections, intersection);
+            aIntersections.push(intersection);
         }
 
         sort::insertion(&aIntersections);
 
-        if (aIntersections.size > 1)
+        if (aIntersections.getSize() > 1)
         {
-            for (u32 m = 0; m < aIntersections.size; m += 2)
+            for (u32 m = 0; m < aIntersections.getSize(); m += 2)
             {
                 int start = std::round(aIntersections[m]);
                 int end = std::round(aIntersections[m + 1]);
@@ -698,7 +698,7 @@ TTFGenStringMesh(
             continue;
         }
 
-        VecPush(&aQuads, pAlloc, {
+        aQuads.push(pAlloc, {
              0.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x0, y0,
              0.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x1, y1,
              2.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x2, y2,
@@ -726,20 +726,20 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
     s->pFont = pFont;
 
     /* width*height*128 */
-    s->pBitmap = (u8*)zalloc(s->pAlloc, 1, math::sq(iScale)*128);
+    s->pBitmap = (u8*)s->pAlloc->zalloc(1, math::sq(iScale)*128);
 
     Arena arena(SIZE_1M);
-    defer( ArenaFreeAll(&arena) );
+    defer( arena.freeAll() );
 
     for (int character = '!'; character <= '~'; ++character)
     {
-        u8* pTmp = (u8*)zalloc(&arena.super, 1, math::sq(iScale));
+        u8* pTmp = (u8*)arena.zalloc(1, math::sq(iScale));
 
         auto g = FontReadGlyph(pFont, character);
-        TTFRasterizeGlyphTEST(s, &arena.super, &g, pTmp, iScale, iScale);
+        TTFRasterizeGlyphTEST(s, &arena, &g, pTmp, iScale, iScale);
         memcpy(s->pBitmap + character*math::sq(iScale), pTmp, math::sq(iScale));
 
-        ArenaReset(&arena);
+        arena.reset();
     }
 
     texture::Img img {};
@@ -753,8 +753,8 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
         test[i] = c;
     }
 
-    auto aQuads = TTFGenStringMesh(s, &arena.super, test, 0, 0, 1.0f);
-    s->vboSize = VecSize(&aQuads) * 6; /* 6 vertices for 1 quad */
+    auto aQuads = TTFGenStringMesh(s, &arena, test, 0, 0, 1.0f);
+    s->vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
 
     mtx_lock(&gl::g_mtxGlContext);
     WindowBindGlContext(app::g_pWindow);
@@ -769,7 +769,7 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
 
     glGenBuffers(1, &s->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(CharQuad3Pos2UV), VecData(&aQuads), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(CharQuad3Pos2UV), aQuads.data(), GL_DYNAMIC_DRAW);
 
     /* positions */
     glEnableVertexAttribArray(0);
@@ -782,14 +782,14 @@ TTFRasterizeAsciiTEST(TTF* s, parser::ttf::Font* pFont)
 void
 TTFUpdateText(TTF* s, IAllocator* pAlloc, const String str, const int x, const int y, const f32 z)
 {
-    assert(str.size <= s->maxSize);
+    assert(str.getSize() <= s->maxSize);
 
     s->str = str;
     auto aQuads = TTFGenStringMesh(s, pAlloc, str, x, y, z);
-    s->vboSize = VecSize(&aQuads) * 6; /* 6 vertices for 1 quad */
+    s->vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
 
     glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, VecSize(&aQuads) * sizeof(aQuads[0]), VecData(&aQuads));
+    glBufferSubData(GL_ARRAY_BUFFER, 0, aQuads.getSize() * sizeof(aQuads[0]), aQuads.data());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 

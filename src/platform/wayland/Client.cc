@@ -308,7 +308,7 @@ void
 ClientStart(Client* s)
 {
     Arena arena(SIZE_8K);
-    defer(ArenaFreeAll(&arena));
+    defer( arena.freeAll() );
 
     if ((s->display = wl_display_connect(nullptr)))
         LOG_OK("wayland display connected\n");
@@ -359,9 +359,9 @@ ClientStart(Client* s)
     };
 
     EGLint n = 0;
-    Vec<EGLConfig> configs(&arena.super, count);
-    VecSetSize(&configs, count);
-    EGLD( eglChooseConfig(s->eglDisplay, configAttribs, VecData(&configs), count, &n) );
+    Vec<EGLConfig> configs(&arena, count);
+    configs.setSize(count);
+    EGLD( eglChooseConfig(s->eglDisplay, configAttribs, configs.data(), count, &n) );
     if (n == 0)
         LOG_FATAL("Failed to choose an EGL config\n");
 
@@ -384,8 +384,8 @@ ClientStart(Client* s)
     s->xdgSurface = xdg_wm_base_get_xdg_surface(s->xdgWmBase, s->surface);
     s->xdgToplevel = xdg_surface_get_toplevel(s->xdgSurface);
 
-    xdg_toplevel_set_title(s->xdgToplevel, s->super.sName.pData);
-    xdg_toplevel_set_app_id(s->xdgToplevel, s->super.sName.pData);
+    xdg_toplevel_set_title(s->xdgToplevel, s->super.sName.data());
+    xdg_toplevel_set_app_id(s->xdgToplevel, s->super.sName.data());
 
     xdg_surface_add_listener(s->xdgSurface, &xdgSurfaceListener, s);
     xdg_toplevel_add_listener(s->xdgToplevel, &xdgToplevelListener, s);
@@ -441,7 +441,7 @@ ClientHideCursor(Client* s)
 void
 ClientSetCursorImage(Client* s, String cursorType)
 {
-    wl_cursor* cursor = wl_cursor_theme_get_cursor(s->cursorTheme, cursorType.pData);
+    wl_cursor* cursor = wl_cursor_theme_get_cursor(s->cursorTheme, cursorType.data());
     if (!cursor)
     {
         LOG_WARN("failed to set cursor to '{}', falling back to 'default'\n", cursorType);

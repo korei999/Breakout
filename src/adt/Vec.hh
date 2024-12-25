@@ -176,7 +176,8 @@ inline void
 VecBase<T>::popAsLast(u32 i)
 {
     assert(m_size > 0 && "[Vec]: empty");
-    operator[](i) = operator[](--m_size);
+    operator[](i) = operator[](m_size - 1);
+    --m_size;
 }
 
 template<typename T>
@@ -192,7 +193,7 @@ template<typename T>
 [[nodiscard]] inline u32
 VecBase<T>::lastI() const
 {
-    return idx(last());
+    return idx(&last());
 }
 
 template<typename T>
@@ -312,12 +313,12 @@ struct Vec
     VecBase<T>::It begin() { return base.begin(); }
     VecBase<T>::It end() { return base.end(); }
     VecBase<T>::It rbegin() { return base.rbegin(); }
-    VecBase<T>::It rend() { return rend(); }
+    VecBase<T>::It rend() { return base.rend(); }
 
     const VecBase<T>::It begin() const { return base.begin(); }
     const VecBase<T>::It end() const { return base.end(); }
     const VecBase<T>::It rbegin() const { return base.rbegin(); }
-    const VecBase<T>::It rend() const { return rend(); }
+    const VecBase<T>::It rend() const { return base.rend(); }
 };
 
 namespace print

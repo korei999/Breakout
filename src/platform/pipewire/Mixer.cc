@@ -88,8 +88,8 @@ MixerDestroy(Mixer* s)
     pw_thread_loop_destroy(s->pThrdLoop);
     pw_deinit();
 
-    VecDestroy(&s->aTracks);
-    VecDestroy(&s->aBackgroundTracks);
+    s->aTracks.destroy();
+    s->aBackgroundTracks.destroy();
     mtx_destroy(&s->mtxAdd);
 }
 
@@ -98,7 +98,7 @@ MixerAdd(Mixer* s, audio::Track t)
 {
     mtx_lock(&s->mtxAdd);
 
-    if (VecSize(&s->aTracks) < audio::MAX_TRACK_COUNT) VecPush(&s->aTracks, t);
+    if (s->aTracks.getSize() < audio::MAX_TRACK_COUNT) s->aTracks.push(t);
     else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
 
     mtx_unlock(&s->mtxAdd);
@@ -109,7 +109,7 @@ MixerAddBackground(Mixer* s, audio::Track t)
 {
     mtx_lock(&s->mtxAdd);
 
-    if (VecSize(&s->aTracks) < audio::MAX_TRACK_COUNT) VecPush(&s->aBackgroundTracks, t);
+    if (s->aTracks.getSize() < audio::MAX_TRACK_COUNT) s->aBackgroundTracks.push(t);
     else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
 
     mtx_unlock(&s->mtxAdd);
@@ -175,7 +175,7 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
     {
         __m128i packed8Samples {};
 
-        if (VecSize(&s->aBackgroundTracks) > 0)
+        if (s->aBackgroundTracks.getSize() > 0)
         {
             auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
             f32 vol = std::pow(t.volume * audio::g_globalVolume, 3.0f);
@@ -201,12 +201,12 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
             {
                 t.pcmPos = 0;
                 auto current = s->currentBackgroundTrackIdx + 1;
-                if (current > VecSize(&s->aBackgroundTracks) - 1) current = 0;
+                if (current > s->aBackgroundTracks.getSize() - 1) current = 0;
                 s->currentBackgroundTrackIdx = current;
             }
         }
 
-        for (u32 i = 0; i < VecSize(&s->aTracks); ++i)
+        for (u32 i = 0; i < s->aTracks.getSize(); ++i)
         {
             auto& t = s->aTracks[i];
             f32 vol = powf(t.volume, 3.0f);
@@ -237,7 +237,7 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
                 else
                 {
                     mtx_lock(&s->mtxAdd);
-                    VecPopAsLast(&s->aTracks, i);
+                    s->aTracks.popAsLast(i);
                     --i;
                     mtx_unlock(&s->mtxAdd);
                 }
@@ -401,7 +401,7 @@ onProcess(void* data)
 MixerEmpty(Mixer* s)
 {
     mtx_lock(&s->mtxAdd);
-    bool r = VecSize(&s->aTracks) > 0;
+    bool r = s->aTracks.getSize() > 0;
     mtx_unlock(&s->mtxAdd);
 
     return r;

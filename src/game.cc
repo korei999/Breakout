@@ -2,7 +2,6 @@
 
 #include "IWindow.hh"
 #include "Shader.hh"
-#include "adt/AllocatorPool.hh"
 #include "adt/Arena.hh"
 #include "adt/Pool.hh"
 #include "adt/ThreadPool.hh"
@@ -15,6 +14,8 @@
 #include "text.hh"
 #include "texture.hh"
 
+#include "AllocatorPool.hh"
+
 namespace game
 {
 
@@ -25,28 +26,28 @@ struct WidthHeight
     B height {};
 };
 
-static AllocatorPool<Arena> s_assetArenas(SIZE_MIN);
+static AllocatorPool<Arena, ASSET_MAX_COUNT> s_assetArenas {};
 
-static Vec<game::Block> s_aBlocks(AllocatorPoolRent(&s_assetArenas, SIZE_1K));
+static Vec<game::Block> s_aBlocks(s_assetArenas.get(SIZE_1K));
 
 static Shader s_shFontBitmap;
 static Shader s_shSprite;
 static Shader s_sh1Col;
 
-static texture::Img s_tAsciiMap(AllocatorPoolRent(&s_assetArenas, SIZE_1M));
-static texture::Img s_tBox(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 100));
-static texture::Img s_tBall(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 100));
-static texture::Img s_tPaddle(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 100));
-static texture::Img s_tWhitePixel(AllocatorPoolRent(&s_assetArenas, 250));
+static texture::Img s_tAsciiMap(s_assetArenas.get(SIZE_1M));
+static texture::Img s_tBox(s_assetArenas.get(SIZE_1K * 100));
+static texture::Img s_tBall(s_assetArenas.get(SIZE_1K * 100));
+static texture::Img s_tPaddle(s_assetArenas.get(SIZE_1K * 100));
+static texture::Img s_tWhitePixel(s_assetArenas.get(250));
 
-static parser::Wave s_sndBeep(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 400));
-static parser::Wave s_sndUnatco(AllocatorPoolRent(&s_assetArenas, SIZE_1M * 35));
+static parser::Wave s_sndBeep(s_assetArenas.get(SIZE_1K * 400));
+static parser::Wave s_sndUnatco(s_assetArenas.get(SIZE_1M * 35));
 
 static Plain s_plain;
 
-static parser::ttf::Font s_fontLiberation(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 500));
+static parser::ttf::Font s_fontLiberation(s_assetArenas.get(SIZE_1K * 500));
 static text::Bitmap s_textFPS;
-static text::TTF s_ttfTest(AllocatorPoolRent(&s_assetArenas, SIZE_1K * 520));
+static text::TTF s_ttfTest(s_assetArenas.get(SIZE_1K * 520));
 
 Pool<Entity, ASSET_MAX_COUNT> g_aEntities;
 static Arr<math::V2, ASSET_MAX_COUNT> s_aPrevPos;
@@ -108,18 +109,18 @@ loadAssets()
     texture::ImgLoadArg argPaddle {&s_tPaddle, "test-assets/paddle.bmp"};
     texture::ImgLoadArg argWhitePixel {&s_tWhitePixel, "test-assets/WhitePixel.bmp"};
 
-    ThreadPoolSubmit(app::g_pThreadPool, text::TTFRasterizeSubmit, &argTTF);
+    app::g_pThreadPool->submit(text::TTFRasterizeSubmit, &argTTF);
 
-    ThreadPoolSubmit(app::g_pThreadPool, parser::WaveSubmit, &argBeep);
-    ThreadPoolSubmit(app::g_pThreadPool, parser::WaveSubmit, &argUnatco);
+    app::g_pThreadPool->submit(parser::WaveSubmit, &argBeep);
+    app::g_pThreadPool->submit(parser::WaveSubmit, &argUnatco);
 
-    ThreadPoolSubmit(app::g_pThreadPool, texture::ImgSubmit, &argFontBitmap);
-    ThreadPoolSubmit(app::g_pThreadPool, texture::ImgSubmit, &argBox);
-    ThreadPoolSubmit(app::g_pThreadPool, texture::ImgSubmit, &argBall);
-    ThreadPoolSubmit(app::g_pThreadPool, texture::ImgSubmit, &argPaddle);
-    ThreadPoolSubmit(app::g_pThreadPool, texture::ImgSubmit, &argWhitePixel);
+    app::g_pThreadPool->submit(texture::ImgSubmit, &argFontBitmap);
+    app::g_pThreadPool->submit(texture::ImgSubmit, &argBox);
+    app::g_pThreadPool->submit(texture::ImgSubmit, &argBall);
+    app::g_pThreadPool->submit(texture::ImgSubmit, &argPaddle);
+    app::g_pThreadPool->submit(texture::ImgSubmit, &argWhitePixel);
 
-    ThreadPoolWait(app::g_pThreadPool);
+    app::g_pThreadPool->wait();
 }
 
 template<typename T>
@@ -369,10 +370,10 @@ loadLevel()
     frame::g_unit.first = frame::WIDTH / lvl.width / 2;
     frame::g_unit.second = frame::HEIGHT / lvl.height / 2;
 
-    VecSetCap(&s_aBlocks, lvl.height*lvl.width);
-    VecSetSize(&s_aBlocks, 0);
+    s_aBlocks.setCap(lvl.height*lvl.width);
+    s_aBlocks.setSize(0);
 
-    auto fBoxTex = MapSearch(&texture::g_mAllTexturesIdxs, {"test-assets/box3.bmp"});
+    auto fBoxTex = texture::g_mAllTexturesIdxs.search("test-assets/box3.bmp");
     auto boxTexId = texture::g_aAllTextures[fBoxTex.pData->val].id;
 
     LOG_NOTIFY("width: {}, height: {}\n", lvl.width, lvl.height);
@@ -382,10 +383,10 @@ loadLevel()
         {
             if (at(y, x) != s8(COLOR::INVISIBLE))
             {
-                u32 idx = PoolRent(&g_aEntities);
+                u32 idx = g_aEntities.getHandle();
                 auto& e = g_aEntities[idx];
 
-                VecPush(&s_aBlocks, {u16(idx)});
+                s_aBlocks.push({u16(idx)});
                 e.pos = {x, lvl.height - y - 1};
                 e.width = 1.0f;
                 e.height = 1.0f;
@@ -401,7 +402,7 @@ loadLevel()
         }
     }
 
-    g_player.enIdx = PoolRent(&g_aEntities);
+    g_player.enIdx = g_aEntities.getHandle();
     auto& enPlayer = g_aEntities[g_player.enIdx];
     enPlayer.speed = 9.0f;
     enPlayer.pos.x = lvl.width / 2.0f;
@@ -413,7 +414,7 @@ loadLevel()
     enPlayer.eColor = COLOR::TEAL;
     enPlayer.bRemoveAfterDraw = false;
 
-    g_ball.enIdx = PoolRent(&g_aEntities);
+    g_ball.enIdx = g_aEntities.getHandle();
     auto& enBall = g_aEntities[g_ball.enIdx];
     enBall.speed = 9.0f;
     enBall.eColor = COLOR::ORANGERED;
@@ -425,9 +426,9 @@ loadLevel()
 
     audio::MixerAddBackground(app::g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
 
-    ArrSetSize(&s_aPrevPos, 0);
+    s_aPrevPos.setSize(0);
     for (auto& en : g_aEntities)
-        ArrPush(&s_aPrevPos, en.pos);
+        s_aPrevPos.push(en.pos);
 
     s_currLvlSize.width = lvl.width;
     s_currLvlSize.height = lvl.height;
@@ -443,7 +444,7 @@ updateState()
     {
         for (auto& en : g_aEntities)
         {
-            auto idx = PoolIdx(&g_aEntities, &en);
+            auto idx = g_aEntities.idx(&en);
             s_aPrevPos[idx] = en.pos;
         }
     }
@@ -502,12 +503,12 @@ drawFPSCounter(Arena* pAlloc)
     if (currTime >= frame::g_prevTime + 1000.0)
     {
         String s = StringAlloc((IAllocator*)pAlloc, s_textFPS.maxSize);
-        s.size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
+        s.m_size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
 
         frame::g_nfps = 0;
         frame::g_prevTime = currTime;
 
-        text::BitmapUpdate(&s_textFPS, &pAlloc->super, s, 0, 0);
+        text::BitmapUpdate(&s_textFPS, pAlloc, s, 0, 0);
     }
 
     text::BitmapDraw(&s_textFPS);
@@ -533,9 +534,9 @@ drawFPSCounterTTF(Arena* pAlloc)
         nLastFps = frame::g_nfps; 
 
     String s = StringAlloc((IAllocator*)pAlloc, s_ttfTest.maxSize);
-    s.size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", nLastFps, frame::g_frameTime);
+    s.m_size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", nLastFps, frame::g_frameTime);
 
-    text::TTFUpdateText(&s_ttfTest, &pAlloc->super, s, 0, 0, 1.0f);
+    text::TTFUpdateText(&s_ttfTest, pAlloc, s, 0, 0, 1.0f);
 
     if (currTime >= frame::g_prevTime + 1000.0)
     {
@@ -558,8 +559,8 @@ drawInfo(Arena* pArena)
 
     texture::ImgBind(s_ttfTest.texId, GL_TEXTURE0);
 
-    String s = StringAlloc(&pArena->super, 256);
-    s.size = print::toString(&s,
+    String s = StringAlloc(pArena, 256);
+    s.m_size = print::toString(&s,
         "TOGGLE FULLSCREEN: F\n"
         "UNLOCK MOUSE: Q\n"
         "QUIT: ESC\n"
@@ -567,7 +568,7 @@ drawInfo(Arena* pArena)
     int nSpaces = 0;
     for (auto c : s) if (c == '\n') ++nSpaces;
 
-    text::TTFUpdateText(&s_ttfTest, &pArena->super, s, 0, frame::g_uiHeight - (nSpaces*2), 1.0f);
+    text::TTFUpdateText(&s_ttfTest, pArena, s, 0, frame::g_uiHeight - (nSpaces*2), 1.0f);
     text::TTFDraw(&s_ttfTest);
 }
 
@@ -581,7 +582,7 @@ drawEntities([[maybe_unused]] Arena* pArena, const f64 alpha)
     {
         if (en.bDead || en.eColor == COLOR::INVISIBLE) continue;
 
-        auto enIdx = PoolIdx(&g_aEntities, &en);
+        auto enIdx = g_aEntities.idx(&en);
 
         const auto& prev = s_aPrevPos[enIdx];
         math::V2 pos = math::lerp(
@@ -617,9 +618,9 @@ cleanup()
     for (auto& e : g_aAllShaders) ShaderDestroy(&e);
 
     for (auto& t : texture::g_aAllTextures) texture::ImgDestroy(&t);
-    MapDestroy(&texture::g_mAllTexturesIdxs);
+    texture::g_mAllTexturesIdxs.destroy();
 
-    AllocatorPoolFreeAll(&s_assetArenas);
+    s_assetArenas.freeAll();
 }
 
 } /* namespace game */

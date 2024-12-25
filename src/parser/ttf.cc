@@ -95,7 +95,7 @@ languageIDToString(u16 languageID)
 static inline MapResult<String, TableRecord>
 getTable(Font* s, String sTableTag)
 {
-    return MapSearch(&s->tableDirectory.mStringToTableRecord, {sTableTag});
+    return s->tableDirectory.mStringToTableRecord.search(sTableTag);
 }
 
 static inline FWord
@@ -286,13 +286,13 @@ readCmapTable(Font* s)
 
     for (u32 i = 0; i < c.numberSubtables; ++i)
     {
-        VecPush(&c.aSubtables, s->p.pAlloc, {
+        c.aSubtables.push(s->p.pAlloc, {
             .platformID = BinRead16Rev(&s->p),
             .platformSpecificID = BinRead16Rev(&s->p),
             .offset = BinRead32Rev(&s->p),
         });
 
-        const auto& lastSt = VecLast(&c.aSubtables);
+        const auto& lastSt = c.aSubtables.last();
 
 #ifdef D_TTF
         LOG_NOTIFY(
@@ -378,7 +378,7 @@ readSimpleGlyph(Font* s, Glyph* g)
     auto& sg = g->uGlyph.simple;
 
     for (s16 i = 0; i < g->numberOfContours; i++)
-        VecPush(&sg.aEndPtsOfContours, s->p.pAlloc, BinRead16Rev(&s->p));
+        sg.aEndPtsOfContours.push(s->p.pAlloc, BinRead16Rev(&s->p));
 
     /* skip instructions */
     sg.instructionLength = BinRead16Rev(&s->p);
@@ -387,13 +387,13 @@ readSimpleGlyph(Font* s, Glyph* g)
     if (g->numberOfContours == 0)
         return;
 
-    u32 numPoints = VecLast(&sg.aEndPtsOfContours) + 1;
+    u32 numPoints = sg.aEndPtsOfContours.last() + 1;
 
     for (u32 i = 0; i < numPoints; i++)
     {
         OUTLINE_FLAG eFlag = OUTLINE_FLAG(BinRead8(&s->p));
-        VecPush(&sg.aeFlags, s->p.pAlloc, eFlag);
-        VecPush(&sg.aPoints, s->p.pAlloc, {
+        sg.aeFlags.push(s->p.pAlloc, eFlag);
+        sg.aPoints.push(s->p.pAlloc, {
             .bOnCurve = bool(eFlag & ON_CURVE)
         });
 
@@ -405,8 +405,8 @@ readSimpleGlyph(Font* s, Glyph* g)
             i += repeatCount;
             while (repeatCount-- > 0)
             {
-                VecPush(&sg.aeFlags, s->p.pAlloc, eFlag);
-                VecPush(&sg.aPoints, s->p.pAlloc, {
+                sg.aeFlags.push(s->p.pAlloc, eFlag);
+                sg.aPoints.push(s->p.pAlloc, {
                     .bOnCurve = bool(eFlag & ON_CURVE)
                 });
             }
@@ -444,7 +444,7 @@ static u32
 getGlyphIdx(Font* s, u16 code)
 {
     auto& c = s->cmapF4;
-    auto fIdx = MapSearch(&c.mCodeToGlyphIdx, {code});
+    auto fIdx = c.mCodeToGlyphIdx.search(code);
 
     if (fIdx) return fIdx.pData->val;
 
@@ -467,7 +467,7 @@ getGlyphIdx(Font* s, u16 code)
             }
             else idx = (std::byteswap(c.idDelta[i]) + code) & 0xffff;
 
-            MapInsert(&c.mCodeToGlyphIdx, s->p.pAlloc, code, u16(idx));
+            c.mCodeToGlyphIdx.insert(s->p.pAlloc, code, u16(idx));
             break;
         }
     }
@@ -484,7 +484,7 @@ FontReadGlyph(Font* s, u32 code)
     const auto glyphIdx = getGlyphIdx(s, code);
     const u32 offset = getGlyphOffset(s, glyphIdx);
 
-    auto fCachedGlyph = MapSearch(&s->mOffsetToGlyph, {offset});
+    auto fCachedGlyph = s->mOffsetToGlyph.search(offset);
     if (fCachedGlyph) return fCachedGlyph.pData->val;
 
     const auto fGlyf = getTable(s, "glyf");
@@ -512,7 +512,7 @@ FontReadGlyph(Font* s, u32 code)
         readCompoundGlyph(s, &g);
     else readSimpleGlyph(s, &g);
 
-    MapInsert(&s->mOffsetToGlyph, s->p.pAlloc, offset, g);
+    s->mOffsetToGlyph.insert(s->p.pAlloc, offset, g);
 
     return g;
 };
@@ -524,14 +524,14 @@ FontPrintGlyphDBG(Font* s, const Glyph& g, bool bNormalize)
     COUT("xMin: {}, yMin: {}, xMax: {}, yMax: {}\n", g.xMin, g.yMin, g.xMax, g.yMax);
     COUT(
         "instructionLength: {}, points: {}, numberOfContours: {}, aEndPtsOfContours.size: {}\n",
-        sg.instructionLength, VecSize(&sg.aPoints), g.numberOfContours, VecSize(&sg.aEndPtsOfContours)
+        sg.instructionLength, sg.aPoints.getSize(), g.numberOfContours, sg.aEndPtsOfContours.getSize()
     );
 
     for (auto& cn : sg.aEndPtsOfContours)
     {
-        u32 idx = VecIdx(&sg.aEndPtsOfContours, &cn);
+        u32 idx = sg.aEndPtsOfContours.idx(&cn);
         COUT("cn({}): {}", idx, cn);
-        if (idx != VecSize(&sg.aEndPtsOfContours) - 1) COUT(", ");
+        if (idx != sg.aEndPtsOfContours.getSize() - 1) COUT(", ");
         else COUT(" ");
     }
     COUT("\n");
@@ -540,7 +540,7 @@ FontPrintGlyphDBG(Font* s, const Glyph& g, bool bNormalize)
     {
         for (auto& e : sg.aPoints)
         {
-            u32 i = VecIdx(&sg.aPoints, &e);
+            u32 i = sg.aPoints.idx(&e);
             COUT(
                 "({}): x: {}, y: {}, bOnCurve: {}\n",
                 i, f32(e.x) / f32(g.xMax), f32(e.y) / f32(g.yMax),
@@ -560,7 +560,7 @@ FontParse(Font* s)
 {
     LOG_GOOD("loading font: '{}'\n", s->p.sPath);
 
-    if (s->p.sFile.size == 0) LOG_FATAL("unable to parse empty file\n");
+    if (s->p.sFile.getSize() == 0) LOG_FATAL("unable to parse empty file\n");
 
     auto& td = s->tableDirectory;
 
@@ -601,7 +601,7 @@ FontParse(Font* s)
             .length = BinRead32Rev(&s->p),
         };
 
-        MapInsert(&td.mStringToTableRecord, s->p.pAlloc, r.tag, r);
+        td.mStringToTableRecord.insert(s->p.pAlloc, r.tag, r);
         if (r.tag != "head")
         {
             auto checkSum = getTableChecksum((u32*)(&s->p.sFile[r.offset]), r.length);

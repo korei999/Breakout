@@ -46,7 +46,7 @@ WaveParse(Wave* s)
     {
         /* skip metadata */
         String __data {};
-        while (__data != "data" && s->bin.pos + 4 < s->bin.sFile.size)
+        while (__data != "data" && s->bin.pos + 4 < s->bin.sFile.getSize())
         {
             __data = BinReadString(&s->bin, 4);
             s->bin.pos -= 3;

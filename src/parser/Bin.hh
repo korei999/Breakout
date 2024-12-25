@@ -42,7 +42,7 @@ BinLoadFile(Bin* s, String path)
 
     s->sFile = rs.data;
 
-    return s->sFile.pData != nullptr;
+    return s->sFile.data() != nullptr;
 }
 
 inline void 
@@ -112,7 +112,7 @@ BinRead64Rev(Bin* s)
 inline bool
 BinFinished(Bin* s)
 {
-    return s->pos >= s->sFile.size;
+    return s->pos >= s->sFile.getSize();
 }
 
 } /* namespace parser */

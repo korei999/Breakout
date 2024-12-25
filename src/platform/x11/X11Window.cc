@@ -131,7 +131,7 @@ WindowStart(Window* s)
         }
     }
 
-    XStoreName(s->pDisplay, s->window, s->super.sName.pData);
+    XStoreName(s->pDisplay, s->window, s->super.sName.data());
 
     XSelectInput(
         s->pDisplay,

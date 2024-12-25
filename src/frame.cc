@@ -104,7 +104,7 @@ static void
 mainLoop()
 {
     Arena arena(SIZE_1K * 20);
-    defer( freeAll(&arena) );
+    defer( arena.freeAll() );
 
     g_gameTime = 0.0;
     g_dt = game::FIXED_DELTA_TIME;
@@ -156,7 +156,7 @@ mainLoop()
 
         game::draw(&arena, alpha);
 
-        ArenaReset(&arena);
+        arena.reset();
 
         WindowSwapBuffers(app::g_pWindow);
         g_nfps++;

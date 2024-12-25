@@ -134,7 +134,7 @@ parseIdent(Parser* s, TagVal* pTV)
 static void
 parseNumber(Parser* s, TagVal* pTV)
 {
-    bool bReal = adt::StringLastOf(s->m_tCurr.sLiteral, '.') != adt::NPOS;
+    bool bReal = s->m_tCurr.sLiteral.lastOf('.') != adt::NPOS;
 
     if (bReal) *pTV = {.tag = TAG::DOUBLE, .val = {.d = atof(s->m_tCurr.sLiteral.m_pData)}};
     else *pTV = TagVal{.tag = TAG::LONG, .val = {.l = atol(s->m_tCurr.sLiteral.m_pData)}};

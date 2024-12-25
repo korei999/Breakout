@@ -32,7 +32,7 @@ platformMixerAlloc(IAllocator* pAlloc)
 #ifdef __linux__
     namespace pw = platform::pipewire;
 
-    auto* pMixer = (pw::Mixer*)alloc(pAlloc, 1, sizeof(pw::Mixer));
+    auto* pMixer = (pw::Mixer*)pAlloc->zalloc(1, sizeof(pw::Mixer));
     *pMixer = pw::Mixer(pAlloc);
 
     return &pMixer->super;
@@ -91,13 +91,13 @@ platformWindowAlloc(IAllocator* pAlloc)
 
     if (bWayland)
     {
-        pWindow = (IWindow*)alloc(pAlloc, 1, sizeof(wl::Client));
+        pWindow = (IWindow*)pAlloc->zalloc(1, sizeof(wl::Client));
         *((wl::Client*)pWindow) = wl::Client("Breakout");
     }
     else
     {
     #ifdef X11_LIB
-        pWindow = (IWindow*)alloc(pAlloc, 1, sizeof(x::Window));
+        pWindow = (IWindow*)pAlloc->zalloc(1, sizeof(x::Window));
         *((x::Window*)pWindow) = x::Window("Breakout");
     #else
         print::err("Can't create graphical window\n");
