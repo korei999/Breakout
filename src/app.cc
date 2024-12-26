@@ -6,6 +6,8 @@
 
 #include "app.hh"
 
+#include "adt/logs.hh" /* IWYU pragma: keep */
+
 #ifdef __linux__
     #include "platform/pipewire/Mixer.hh"
     #include "platform/wayland/Client.hh"
@@ -30,21 +32,30 @@ audio::IMixer*
 platformMixerAlloc(IAllocator* pAlloc)
 {
 #ifdef __linux__
-    namespace pw = platform::pipewire;
+    {
+        namespace pw = platform::pipewire;
 
-    auto* pMixer = (pw::Mixer*)pAlloc->zalloc(1, sizeof(pw::Mixer));
-    *pMixer = pw::Mixer(pAlloc);
+        auto* pMixer = (pw::Mixer*)pAlloc->zalloc(1, sizeof(pw::Mixer));
+        new(pMixer) pw::Mixer(pAlloc);
 
-    return &pMixer->super;
+        return pMixer;
+    }
 #elifdef _WIN32
-    namespace p32 = platform::win32;
+    {
+        namespace p32 = platform::win32;
 
-    auto* pMixer = (p32::Mixer*)alloc(pAlloc, 1, sizeof(p32::Mixer));
-    *pMixer = p32::Mixer(pAlloc);
+        auto* pMixer = (p32::Mixer*)pAlloc->zalloc(1, sizeof(p32::Mixer));
+        new(pMixer) p32::Mixer(pAlloc);
 
-    return &pMixer->super;
+        return pMixer;
+    }
 #else
-    #error "Platform audio"
+    {
+        auto* pMixer = (audio::DummyMixer*)pAlloc->zalloc(1, sizeof(audio::DummyMixer));
+        new(pMixer) audio::DummyMixer();
+        LOG_BAD("Cannot create audio mixer\n");
+        return pMixer;
+    }
 #endif
 }
 
@@ -56,8 +67,8 @@ win32WindowAlloc(IAllocator* pAlloc)
 
     HMODULE hInstance = GetModuleHandle(nullptr);
 
-    auto* pWindow = (IWindow*)alloc(pAlloc, 1, sizeof(w32::Win32Window));
-    *((w32::Win32Window*)pWindow) = w32::Win32Window("Breakout", hInstance);
+    auto* pWindow = (IWindow*)pAlloc->zalloc(1, sizeof(w32::Win32Window));
+    new(pWindow) w32::Win32Window("Breakout", hInstance);
 
     return pWindow;
 }

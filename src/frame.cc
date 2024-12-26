@@ -72,13 +72,13 @@ run()
 
     glClearColor(col.r, col.g, col.b, col.a);
 
-    UboCreateBuffer(&g_uboProjView, sizeof(math::M4)*2, GL_DYNAMIC_DRAW);
+    g_uboProjView.createBuffer(sizeof(math::M4)*2, GL_DYNAMIC_DRAW);
 
     updateDrawTime(); /* reset delta time before drawing */
     updateDrawTime();
 
     app::g_pWindow->setSwapInterval(1);
-    /* WindowSetFullscreen(app::g_pWindow); */
+    /*app::g_pWindow->setFullscreen(); */
 
 #ifndef NDEBUG
     test::math();
@@ -112,9 +112,9 @@ mainLoop()
     f64 currentTime = utils::timeNowS();
     f64 accumulator = 0.0;
 
-    while (app::g_pWindow->bRunning || app::g_pMixer->bRunning)
+    while (app::g_pWindow->m_bRunning || app::g_pMixer->m_bRunning)
     {
-        if (!app::g_pWindow->bPaused)
+        if (!app::g_pWindow->m_bPaused)
         {
             f64 newTime = utils::timeNowS();
             f64 frameTime = newTime - currentTime;
@@ -128,15 +128,15 @@ mainLoop()
         updateDrawTime();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, app::g_pWindow->wWidth, app::g_pWindow->wHeight);
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, app::g_pWindow->m_wWidth, app::g_pWindow->m_wHeight);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
-        UboBufferData(&g_uboProjView, &controls::g_camera, 0, sizeof(math::M4) * 2);
+        g_uboProjView.bufferData(&controls::g_camera, 0, sizeof(math::M4) * 2);
 
         controls::procKeys();
 
-        if (controls::g_bStepDebug && !app::g_pWindow->bPaused)
+        if (controls::g_bStepDebug && !app::g_pWindow->m_bPaused)
         {
             game::updateState();
             g_gameTime += g_dt;
@@ -144,7 +144,7 @@ mainLoop()
         }
         else
         {
-            while (accumulator >= g_dt && !app::g_pWindow->bPaused)
+            while (accumulator >= g_dt && !app::g_pWindow->m_bPaused)
             {
                 game::updateState();
                 g_gameTime += g_dt;
@@ -162,10 +162,10 @@ mainLoop()
         g_nfps++;
     }
 
-    audio::MixerDestroy(app::g_pMixer);
+    app::g_pMixer->destroy();
 
 #ifndef NDEBUG
-    UboDestroy(&g_uboProjView);
+    g_uboProjView.destroy();
     game::cleanup();
 #endif
 }

@@ -313,4 +313,27 @@ namespace colors
             ((hex)       & 0xff) / 255.0f
         };
     }
+
+    inline constexpr int
+    V4ToHex(adt::math::V4 v)
+    {
+        int r {};
+        r |= (int(v.x * 255.0f) << 24);
+        r |= (int(v.y * 255.0f) << 16);
+        r |= (int(v.z * 255.0f) << 8);
+        r |=  int(v.w * 255.0f);
+
+        return r;
+    }
+
+    inline constexpr int
+    V3ToHex(adt::math::V3 v)
+    {
+        int r {};
+        r |= (int(v.x * 255.0f) << 16);
+        r |= (int(v.y * 255.0f) << 8);
+        r |=  int(v.z * 255.0f);
+
+        return r;
+    }
 };

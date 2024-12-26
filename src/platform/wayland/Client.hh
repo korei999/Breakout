@@ -23,40 +23,41 @@ namespace wayland
 
 struct Client : IWindow
 {
-    wl_display* display {};
-    wl_registry* registry {};
+    wl_display* m_display {};
+    wl_registry* m_registry {};
 
-    wl_surface* surface {};
-    xdg_surface* xdgSurface {};
-    xdg_toplevel* xdgToplevel {};
-    wl_output* output {};
+    wl_surface* m_surface {};
+    xdg_surface* m_xdgSurface {};
+    xdg_toplevel* m_xdgToplevel {};
+    wl_output* m_output {};
 
-    wl_egl_window* eglWindow {};
-    EGLDisplay eglDisplay {};
-    EGLContext eglContext {};
-    EGLSurface eglSurface {};
+    wl_egl_window* m_eglWindow {};
+    EGLDisplay m_eglDisplay {};
+    EGLContext m_eglContext {};
+    EGLSurface m_eglSurface {};
 
-    wl_seat* seat {};
-    wl_shm* shm {};
-    wl_compositor* compositor {};
-    xdg_wm_base* xdgWmBase {};
-    [[maybe_unused]] u32 xdgConfigureSerial = 0;
+    wl_seat* m_seat {};
+    wl_shm* m_shm {};
+    wl_compositor* m_compositor {};
+    xdg_wm_base* m_xdgWmBase {};
+    [[maybe_unused]] u32 m_xdgConfigureSerial = 0;
 
-    wl_pointer* pointer {};
-    wl_surface* cursorSurface {};
-    wl_cursor_image* cursorImage {};
-    wl_cursor_theme* cursorTheme {};
+    wl_pointer* m_pointer {};
+    wl_surface* m_cursorSurface {};
+    wl_cursor_image* m_cursorImage {};
+    wl_cursor_theme* m_cursorTheme {};
 
-    u32 _pointerSerial = 0;
-    zwp_pointer_constraints_v1* pointerConstraints {};
-    zwp_locked_pointer_v1* lockedPointer {};
-    zwp_confined_pointer_v1* confinedPointer {};
-    zwp_relative_pointer_v1* relativePointer {};
-    zwp_relative_pointer_manager_v1* relativePointerManager {};
+    u32 m_pointerSerial = 0;
+    zwp_pointer_constraints_v1* m_pointerConstraints {};
+    zwp_locked_pointer_v1* m_lockedPointer {};
+    zwp_confined_pointer_v1* m_confinedPointer {};
+    zwp_relative_pointer_v1* m_relativePointer {};
+    zwp_relative_pointer_manager_v1* m_relativePointerManager {};
 
-    wl_keyboard* keyboard {};
+    wl_keyboard* m_keyboard {};
 
-    bool bRestoreRelativeMode = false;
+    bool m_bRestoreRelativeMode = false;
+    bool m_bConfigured = false;
 
     Client(String name) : IWindow(name) {}
 

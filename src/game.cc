@@ -73,7 +73,7 @@ static void drawTTF(Arena* pAlloc);
 void
 loadAssets()
 {
-    frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->wHeight) / (f32)app::g_pWindow->wWidth;
+    frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->m_wHeight) / (f32)app::g_pWindow->m_wWidth;
 
     s_plain = Plain(GL_STATIC_DRAW);
 
@@ -89,7 +89,7 @@ loadAssets()
     ShaderUse(&s_shSprite);
     ShaderSetI(&s_shSprite, "tex0", 0);
 
-    UboBindShader(&frame::g_uboProjView, &s_shSprite, "ubProjView", 0);
+    frame::g_uboProjView.bindShader(&s_shSprite, "ubProjView", 0);
 
     s_textFPS = text::Bitmap("", 40, 0, 0, GL_DYNAMIC_DRAW);
     parser::ttf::FontLoadParse(&s_fontLiberation, "test-assets/LiberationMono-Regular.ttf");
@@ -203,9 +203,8 @@ blockHit()
 {
     bool bAddSound = false;
     defer(
-        if (bAddSound) audio::MixerAdd(
-            app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.0f)
-        );
+        if (bAddSound)
+            app::g_pMixer->add(parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
     );
 
     auto& enBall = g_aEntities[g_ball.enIdx];
@@ -298,7 +297,7 @@ paddleHit()
     {
         enBall.pos.y = py - pyOff/2.0f;
 
-        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
+        app::g_pMixer->add(parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
 
         enBall.dir.y = 1.0f;
         if (math::V2Length(enPlayer.dir) > 0.0f)
@@ -342,11 +341,11 @@ outOfBounds()
     }
 
     if (bAddSound)
-        audio::MixerAdd(app::g_pMixer, parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
+        app::g_pMixer->add(parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
 }
 
 static inline math::V2
-tilePosToImagePos(f32 x, f32 y)
+tileToImage(const f32 x, const f32 y)
 {
     namespace f = frame;
     return {
@@ -422,7 +421,7 @@ loadLevel()
     enBall.zOff = 10.0f;
     enBall.bRemoveAfterDraw = false;
 
-    audio::MixerAddBackground(app::g_pMixer, parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
+    app::g_pMixer->addBackground(parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
 
     s_aPrevPos.setSize(0);
     for (auto& en : g_aEntities)
@@ -584,13 +583,13 @@ drawEntities([[maybe_unused]] Arena* pArena, const f64 alpha)
 
         const auto& prev = s_aPrevPos[enIdx];
         math::V2 pos = math::lerp(
-            tilePosToImagePos(prev.x, prev.y),
-            tilePosToImagePos(en.pos.x, en.pos.y),
+            tileToImage(prev.x, prev.y),
+            tileToImage(en.pos.x, en.pos.y),
             alpha
         );
 
-        pos = tilePosToImagePos(en.pos.x, en.pos.y);
-        math::V2 off = tilePosToImagePos(en.xOff, en.yOff);
+        pos = tileToImage(en.pos.x, en.pos.y);
+        math::V2 off = tileToImage(en.xOff, en.yOff);
 
         math::M4 tm = math::M4Iden();
         tm = M4Translate(tm, {pos.x + off.x, pos.y + off.y, 0.0f + en.zOff});

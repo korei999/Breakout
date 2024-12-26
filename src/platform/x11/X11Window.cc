@@ -41,7 +41,7 @@ Window::start()
     this->window = XCreateWindow(
         this->pDisplay,
         DefaultRootWindow(this->pDisplay),
-        0, 0, this->wWidth, this->wHeight,
+        0, 0, this->m_wWidth, this->m_wHeight,
         0, CopyFromParent, InputOutput, CopyFromParent, CWEventMask,
         &attrs
     );
@@ -131,7 +131,7 @@ Window::start()
         }
     }
 
-    XStoreName(this->pDisplay, this->window, this->sName.data());
+    XStoreName(this->pDisplay, this->window, this->m_sName.data());
 
     XSelectInput(
         this->pDisplay,
@@ -182,9 +182,9 @@ Window::setCursorImage(String cursorType)
 void
 Window::setFullscreen()
 {
-    if (this->bFullscreen) return;
+    if (this->m_bFullscreen) return;
 
-    this->bFullscreen = true;
+    this->m_bFullscreen = true;
     Atom atomWmState = XInternAtom(this->pDisplay, "_NET_WM_STATE", true);
     Atom atomWmFullscreen = XInternAtom(this->pDisplay, "_NET_WM_STATE_FULLSCREEN", true);
 
@@ -194,7 +194,7 @@ Window::setFullscreen()
 void
 Window::unsetFullscreen()
 {
-    this->bFullscreen = false;
+    this->m_bFullscreen = false;
 }
 
 void
@@ -205,10 +205,10 @@ Window::togglePointerRelativeMode()
 void
 Window::toggleFullscreen()
 {
-    if (this->bFullscreen) unsetFullscreen();
+    if (this->m_bFullscreen) unsetFullscreen();
     else setFullscreen();
 
-    LOG_NOTIFY("bFullscreen: {}\n", this->bFullscreen);
+    LOG_NOTIFY("bFullscreen: {}\n", this->m_bFullscreen);
 }
 
 void
@@ -226,16 +226,16 @@ Window::unbindGlContext()
 void
 Window::setSwapInterval(int interval)
 {
-    this->swapInterval = interval;
+    this->m_swapInterval = interval;
     EGLD( eglSwapInterval(this->pEGLDisplay, interval) );
 }
 
 void
 Window::toggleVSync()
 {
-    this->swapInterval = !this->swapInterval;
-    EGLD( eglSwapInterval(this->pEGLDisplay, this->swapInterval) );
-    LOG_OK("swapInterval: {}\n", this->swapInterval);
+    this->m_swapInterval = !this->m_swapInterval;
+    EGLD( eglSwapInterval(this->pEGLDisplay, this->m_swapInterval) );
+    LOG_OK("swapInterval: {}\n", this->m_swapInterval);
 }
 
 void

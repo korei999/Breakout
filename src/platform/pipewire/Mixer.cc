@@ -14,18 +14,16 @@ namespace platform
 namespace pipewire
 {
 
-struct ThrdLoopLockGuard
+struct PwLockGuard
 {
     pw_thread_loop* p;
 
-    ThrdLoopLockGuard() = delete;
-    ThrdLoopLockGuard(pw_thread_loop* _p) : p(_p) { pw_thread_loop_lock(_p); }
-    ~ThrdLoopLockGuard() { pw_thread_loop_unlock(p); }
+    PwLockGuard() = delete;
+    PwLockGuard(pw_thread_loop* _p) : p(_p) { pw_thread_loop_lock(_p); }
+    ~PwLockGuard() { pw_thread_loop_unlock(p); }
 };
 
-static void MixerRunThread(Mixer* s, int argc, char** argv);
 static void onProcess(void* data);
-static bool MixerEmpty(Mixer* s);
 
 static const pw_stream_events s_streamEvents {
     .version = PW_VERSION_STREAM_EVENTS,
@@ -42,21 +40,13 @@ static const pw_stream_events s_streamEvents {
     .trigger_done {},
 };
 
-static const audio::MixerVTable sc_MixerVTable {
-    .start = decltype(audio::MixerVTable::start)(MixerStart),
-    .destroy = decltype(audio::MixerVTable::destroy)(MixerDestroy),
-    .add = decltype(audio::MixerVTable::add)(MixerAdd),
-    .addBackground = decltype(audio::MixerVTable::addBackground)(MixerAddBackground),
-};
-
 Mixer::Mixer(IAllocator* pA)
-    : super(&sc_MixerVTable),
-      aTracks(pA, audio::MAX_TRACK_COUNT),
+    : aTracks(pA, audio::MAX_TRACK_COUNT),
       aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
 {
-    this->super.bRunning = true;
-    this->super.bMuted = false;
-    this->super.volume = 0.1f;
+    this->m_bRunning = true;
+    this->m_bMuted = false;
+    this->m_volume = 0.1f;
 
     this->sampleRate = 48000;
     this->channels = 2;
@@ -66,69 +56,19 @@ Mixer::Mixer(IAllocator* pA)
 }
 
 void
-MixerStart(Mixer* s)
+Mixer::start()
 {
-    MixerRunThread(s, app::g_argc, app::g_argv);
-}
-
-void
-MixerDestroy(Mixer* s)
-{
-    {
-        ThrdLoopLockGuard tLock(s->pThrdLoop);
-        pw_stream_set_active(s->pStream, true);
-    }
-
-    pw_thread_loop_stop(s->pThrdLoop);
-    LOG_NOTIFY("pw_thread_loop_stop()\n");
-
-    s->super.bRunning = false;
-
-    pw_stream_destroy(s->pStream);
-    pw_thread_loop_destroy(s->pThrdLoop);
-    pw_deinit();
-
-    s->aTracks.destroy();
-    s->aBackgroundTracks.destroy();
-    mtx_destroy(&s->mtxAdd);
-}
-
-void
-MixerAdd(Mixer* s, audio::Track t)
-{
-    mtx_lock(&s->mtxAdd);
-
-    if (s->aTracks.getSize() < audio::MAX_TRACK_COUNT) s->aTracks.push(t);
-    else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
-
-    mtx_unlock(&s->mtxAdd);
-}
-
-void
-MixerAddBackground(Mixer* s, audio::Track t)
-{
-    mtx_lock(&s->mtxAdd);
-
-    if (s->aTracks.getSize() < audio::MAX_TRACK_COUNT) s->aBackgroundTracks.push(t);
-    else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
-
-    mtx_unlock(&s->mtxAdd);
-}
-
-static void
-MixerRunThread(Mixer* s, int argc, char** argv)
-{
-    pw_init(&argc, &argv);
+    pw_init(&app::g_argc, &app::g_argv);
 
     u8 aBuff[1024] {};
     const spa_pod* aParams[1] {};
     spa_pod_builder b {};
     spa_pod_builder_init(&b, aBuff, sizeof(aBuff));
 
-    s->pThrdLoop = pw_thread_loop_new("BreakoutThreadLoop", {});
+    this->pThrdLoop = pw_thread_loop_new("BreakoutThreadLoop", {});
 
-    s->pStream = pw_stream_new_simple(
-        pw_thread_loop_get_loop(s->pThrdLoop),
+    this->pStream = pw_stream_new_simple(
+        pw_thread_loop_get_loop(this->pThrdLoop),
         "BreakoutAudioSource",
         pw_properties_new(
             PW_KEY_MEDIA_TYPE, "Audio",
@@ -137,21 +77,21 @@ MixerRunThread(Mixer* s, int argc, char** argv)
             nullptr
         ),
         &s_streamEvents,
-        s
+        this
     );
 
     spa_audio_info_raw rawInfo {
-        .format = s->eformat,
+        .format = this->eformat,
         .flags {},
-        .rate = s->sampleRate,
-        .channels = s->channels,
+        .rate = this->sampleRate,
+        .channels = this->channels,
         .position {}
     };
 
     aParams[0] = spa_format_audio_raw_build(&b, SPA_PARAM_EnumFormat, &rawInfo);
 
     pw_stream_connect(
-        s->pStream,
+        this->pStream,
         PW_DIRECTION_OUTPUT,
         PW_ID_ANY,
         (pw_stream_flags)(PW_STREAM_FLAG_AUTOCONNECT|PW_STREAM_FLAG_INACTIVE|PW_STREAM_FLAG_MAP_BUFFERS),
@@ -159,10 +99,54 @@ MixerRunThread(Mixer* s, int argc, char** argv)
         utils::size(aParams)
     );
 
-    pw_thread_loop_start(s->pThrdLoop);
+    pw_thread_loop_start(this->pThrdLoop);
 
-    ThrdLoopLockGuard tLock(s->pThrdLoop);
-    pw_stream_set_active(s->pStream, true);
+    PwLockGuard tLock(this->pThrdLoop);
+    pw_stream_set_active(this->pStream, true);
+}
+
+void
+Mixer::destroy()
+{
+    {
+        PwLockGuard tLock(this->pThrdLoop);
+        pw_stream_set_active(this->pStream, true);
+    }
+
+    pw_thread_loop_stop(this->pThrdLoop);
+    LOG_NOTIFY("pw_thread_loop_stop()\n");
+
+    this->m_bRunning = false;
+
+    pw_stream_destroy(this->pStream);
+    pw_thread_loop_destroy(this->pThrdLoop);
+    pw_deinit();
+
+    this->aTracks.destroy();
+    this->aBackgroundTracks.destroy();
+    mtx_destroy(&this->mtxAdd);
+}
+
+void
+Mixer::add(audio::Track t)
+{
+    mtx_lock(&this->mtxAdd);
+
+    if (this->aTracks.getSize() < audio::MAX_TRACK_COUNT) this->aTracks.push(t);
+    else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
+
+    mtx_unlock(&this->mtxAdd);
+}
+
+void
+Mixer::addBackground(audio::Track t)
+{
+    mtx_lock(&this->mtxAdd);
+
+    if (this->aTracks.getSize() < audio::MAX_TRACK_COUNT) this->aBackgroundTracks.push(t);
+    else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
+
+    mtx_unlock(&this->mtxAdd);
 }
 
 //__attribute__((target("default")))
@@ -395,16 +379,6 @@ onProcess(void* data)
 
     /*if (!app::g_pWindow->bRunning) pw_main_loop_quit(s->pLoop);*/
     /* set bRunning for the mixer outside */
-}
-
-[[maybe_unused]] static bool
-MixerEmpty(Mixer* s)
-{
-    mtx_lock(&s->mtxAdd);
-    bool r = s->aTracks.getSize() > 0;
-    mtx_unlock(&s->mtxAdd);
-
-    return r;
 }
 
 } /* namespace pipewire */

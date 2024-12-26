@@ -3,7 +3,7 @@
 #include "adt/Pool.hh"
 #include "adt/String.hh"
 #include "adt/math.hh"
-#include "gl/gl.hh"
+#include "gl/gl.hh" /* IWYU pragma: keep */
 
 using namespace adt;
 

@@ -364,40 +364,40 @@ ModelDrawGraph(
 }
 
 void
-UboCreateBuffer(Ubo* s, u32 size, GLint drawMode)
+Ubo::createBuffer(u32 size, GLint drawMode)
 {
-    s->size = size;
-    glGenBuffers(1, &s->id);
-    glBindBuffer(GL_UNIFORM_BUFFER, s->id);
+    this->size = size;
+    glGenBuffers(1, &this->id);
+    glBindBuffer(GL_UNIFORM_BUFFER, this->id);
     glBufferData(GL_UNIFORM_BUFFER, size, nullptr, drawMode);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void
-UboBindShader(Ubo *s, Shader* sh, String block, GLuint point)
+Ubo::bindShader(Shader* sh, String block, GLuint point)
 {
-    s->point = point;
+    this->point = point;
     GLuint index = glGetUniformBlockIndex(sh->id, block.data());
-    glUniformBlockBinding(sh->id, index, s->point);
+    glUniformBlockBinding(sh->id, index, this->point);
     LOG_OK("uniform block: '{}' at '{}', in shader '{}'\n", block, index, sh->id);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, point, s->id);
+    glBindBufferBase(GL_UNIFORM_BUFFER, point, this->id);
     /* or */
     /* glBindBufferRange(GL_UNIFORM_BUFFER, _point, id, 0, size); */
 }
 
 void
-UboBufferData(Ubo* s, void* pData, u32 offset, u32 size)
+Ubo::bufferData(void* pData, u32 offset, u32 size)
 {
-    glBindBuffer(GL_UNIFORM_BUFFER, s->id);
+    glBindBuffer(GL_UNIFORM_BUFFER, this->id);
     glBufferSubData(GL_UNIFORM_BUFFER, offset, size, pData);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void
-UboDestroy(Ubo* s)
+Ubo::destroy()
 {
-    glDeleteBuffers(1, &s->id);
+    glDeleteBuffers(1, &this->id);
 }
 
 Quad::Quad(GLint drawMode)

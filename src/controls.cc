@@ -58,8 +58,8 @@ procKeysOnce(u32 key, u32 pressed)
         case KEY_GRAVE:
             if (pressed)
             {
-                utils::toggle(&app::g_pWindow->bPaused);
-                LOG_WARN("paused: {}\n", app::g_pWindow->bPaused);
+                utils::toggle(&app::g_pWindow->m_bPaused);
+                LOG_WARN("paused: {}\n", app::g_pWindow->m_bPaused);
             } break;
 
         case KEY_Q:
@@ -69,8 +69,8 @@ procKeysOnce(u32 key, u32 pressed)
         case KEY_ESC:
             if (pressed)
             {
-                app::g_pWindow->bRunning = false;
-                app::g_pMixer->bRunning = false;
+                app::g_pWindow->m_bRunning = false;
+                app::g_pMixer->m_bRunning = false;
 
                 LOG_OK("quit...\n");
             } break;

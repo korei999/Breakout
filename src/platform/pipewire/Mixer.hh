@@ -29,14 +29,8 @@ namespace pipewire
 
 struct Mixer;
 
-void MixerStart(Mixer* s);
-void MixerDestroy(Mixer* s);
-void MixerAdd(Mixer* s, audio::Track t);
-void MixerAddBackground(Mixer* s, audio::Track t);
-
-struct Mixer
+struct Mixer : audio::IMixer
 {
-    audio::IMixer super {};
     u32 sampleRate = 48000;
     u8 channels = 2;
     enum spa_audio_format eformat {};
@@ -54,19 +48,18 @@ struct Mixer
 
     thrd_t threadLoop {};
 
+    /* */
+
     Mixer() = default;
     Mixer(IAllocator* pA);
+
+    /* */ 
+
+    virtual void start();
+    virtual void destroy();
+    virtual void add(audio::Track t);
+    virtual void addBackground(audio::Track t);
 };
 
 } /* namespace pipewire */
 } /* namespace platform */
-
-namespace audio
-{
-
-inline void MixerStart(platform::pipewire::Mixer* s) { platform::pipewire::MixerStart(s); }
-inline void MixerDestroy(platform::pipewire::Mixer* s) { platform::pipewire::MixerDestroy(s); }
-inline void MixerAdd(platform::pipewire::Mixer* s, Track t) { platform::pipewire::MixerAdd(s, t); }
-inline void MixerAddBackground(platform::pipewire::Mixer* s, Track t) { platform::pipewire::MixerAddBackground(s, t); }
-
-} /* namespace audio */

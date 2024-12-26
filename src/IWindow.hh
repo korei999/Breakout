@@ -9,21 +9,20 @@ struct IWindow;
 
 struct IWindow
 {
-    String sName {};
-    int wWidth = 1920;
-    int wHeight = 1080;
-    bool bRunning = false;
-    bool bConfigured = false;
-    bool bPaused = false;
-    bool bPointerRelativeMode = false;
-    bool bHideCursor = false;
-    bool bFullscreen = false;
-    int swapInterval = 1;
-    f64 hideCursorTime = 0.0f;
+    String m_sName {};
+    int m_wWidth = 1920;
+    int m_wHeight = 1080;
+    bool m_bRunning = false;
+    bool m_bPaused = false;
+    bool m_bPointerRelativeMode = false;
+    bool m_bHideCursor = false;
+    bool m_bFullscreen = false;
+    int m_swapInterval = 1;
+    f64 m_hideCursorTime = 0.0f;
 
     constexpr IWindow() = default;
     constexpr IWindow(String _sName = "Breakout")
-        : sName(_sName) {}
+        : m_sName(_sName) {}
 
     virtual void start() = 0;
     virtual void disableRelativeMode() = 0;

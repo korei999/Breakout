@@ -2,50 +2,34 @@
 
 #include "gltf/gltf.hh"
 #include "adt/math.hh"
+#include "adt/enum.hh"
 #include "Shader.hh"
 #include "texture.hh"
 
 #include <limits.h>
 
-enum DRAW : int
+enum DRAW : u32
 {
     NONE     = 0,
     DIFF     = 1,      /* bind diffuse textures */
     NORM     = 1 << 1, /* bind normal textures */
     APPLY_TM = 1 << 2, /* apply transformation matrix */
     APPLY_NM = 1 << 3, /* generate and apply normal matrix */
-    ALL      = INT_MAX
+    ALL      = NPOS
 };
-
-constexpr bool
-operator&(DRAW l, DRAW r)
-{
-    return std::underlying_type_t<DRAW>(l) & std::underlying_type_t<DRAW>(r);
-}
-
-constexpr DRAW
-operator|(DRAW l, DRAW r)
-{
-    return DRAW(std::underlying_type_t<DRAW>(l) | std::underlying_type_t<DRAW>(r));
-}
-
-constexpr DRAW
-operator^(DRAW l, DRAW r)
-{
-    return DRAW(std::underlying_type_t<DRAW>(l) ^ std::underlying_type_t<DRAW>(r));
-}
+ADT_ENUM_BITWISE_OPERATORS(DRAW);
 
 struct Ubo
 {
     GLuint id;
     u32 size;
     GLuint point;
-};
 
-void UboCreateBuffer(Ubo* s, u32 size, GLint drawMode);
-void UboBindShader(Ubo *s, Shader* sh, String block, GLuint point);
-void UboBufferData(Ubo* s, void* pData, u32 offset, u32 size);
-void UboDestroy(Ubo* s);
+    void createBuffer(u32 size, GLint drawMode);
+    void bindShader(Shader* sh, String block, GLuint point);
+    void bufferData(void* pData, u32 offset, u32 size);
+    void destroy();
+};
 
 struct Materials
 {

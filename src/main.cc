@@ -33,7 +33,7 @@ startup()
     app::g_pThreadPool = &tpool;
 
     app::g_pMixer = app::platformMixerAlloc(&arena);
-    audio::MixerStart(app::g_pMixer);
+    app::g_pMixer->start();
 
     app::g_pWindow = app::platformWindowAlloc(&arena);
     app::g_pWindow->start();
