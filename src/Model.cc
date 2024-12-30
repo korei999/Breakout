@@ -274,8 +274,8 @@ ModelDraw(Model* s, DRAW flags, Shader* sh, String svUniform, String svUniformM3
 
             if (sh)
             {
-                ShaderSetM4(sh, svUniform, m);
-                if (flags & DRAW::APPLY_NM) ShaderSetM3(sh, svUniformM3Norm, M3Normal(M4ToM3(m)));
+                sh->setM4(svUniform, m);
+                if (flags & DRAW::APPLY_NM) sh->setM3(svUniformM3Norm, M3Normal(M4ToM3(m)));
             }
 
             if (e.triangleCount != NPOS)
@@ -342,9 +342,9 @@ ModelDrawGraph(
 
                 if (sh)
                 {
-                    ShaderSetM4(sh, svUniform, tm);
+                    sh->setM4(svUniform, tm);
                     if (flags & DRAW::APPLY_NM)
-                        ShaderSetM3(sh, svUniformM3Norm, M3Normal(M4ToM3(tm)));
+                        sh->setM3(svUniformM3Norm, M3Normal(M4ToM3(tm)));
                 }
 
                 if (e.triangleCount != NPOS)
@@ -377,9 +377,9 @@ void
 Ubo::bindShader(Shader* sh, String block, GLuint point)
 {
     this->point = point;
-    GLuint index = glGetUniformBlockIndex(sh->id, block.data());
-    glUniformBlockBinding(sh->id, index, this->point);
-    LOG_OK("uniform block: '{}' at '{}', in shader '{}'\n", block, index, sh->id);
+    GLuint index = glGetUniformBlockIndex(sh->m_id, block.data());
+    glUniformBlockBinding(sh->m_id, index, this->point);
+    LOG_OK("uniform block: '{}' at '{}', in shader '{}'\n", block, index, sh->m_id);
 
     glBindBufferBase(GL_UNIFORM_BUFFER, point, this->id);
     /* or */

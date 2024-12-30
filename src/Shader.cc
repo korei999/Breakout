@@ -19,17 +19,17 @@ addToMap()
 }
 
 void
-ShaderLoad(Shader* s, String vertexPath, String fragmentPath)
+Shader::load(String vertexPath, String fragmentPath)
 {
     addToMap();
-    loadVertFrag(s, vertexPath, fragmentPath);
+    loadVertFrag(this, vertexPath, fragmentPath);
 }
 
 void
-ShaderLoad(Shader* s, String vertexPath, String geometryPath, String fragmentPath)
+Shader::load(String vertexPath, String geometryPath, String fragmentPath)
 {
     addToMap();
-    loadVertGeomFrag(s, vertexPath, geometryPath, fragmentPath);
+    loadVertGeomFrag(this, vertexPath, geometryPath, fragmentPath);
 }
 
 static void
@@ -39,31 +39,31 @@ loadVertFrag(Shader* s, String vertexPath, String fragmentPath)
     GLuint vertex = ShaderLoadOne(GL_VERTEX_SHADER, vertexPath);
     GLuint fragment = ShaderLoadOne(GL_FRAGMENT_SHADER, fragmentPath);
 
-    s->id = glCreateProgram();
-    if (s->id == 0)
-        LOG_FATAL("glCreateProgram failed: {}\n", s->id);
+    s->m_id = glCreateProgram();
+    if (s->m_id == 0)
+        LOG_FATAL("glCreateProgram failed: {}\n", s->m_id);
 
-    glAttachShader(s->id, vertex);
-    glAttachShader(s->id, fragment);
+    glAttachShader(s->m_id, vertex);
+    glAttachShader(s->m_id, fragment);
 
-    glLinkProgram(s->id);
-    glGetProgramiv(s->id, GL_LINK_STATUS, &linked);
+    glLinkProgram(s->m_id);
+    glGetProgramiv(s->m_id, GL_LINK_STATUS, &linked);
     if (!linked)
     {
         GLint infoLen = 0;
         char infoLog[255] {};
-        glGetProgramiv(s->id, GL_INFO_LOG_LENGTH, &infoLen);
+        glGetProgramiv(s->m_id, GL_INFO_LOG_LENGTH, &infoLen);
         if (infoLen > 1)
         {
-            glGetProgramInfoLog(s->id, infoLen, nullptr, infoLog);
+            glGetProgramInfoLog(s->m_id, infoLen, nullptr, infoLog);
             LOG_FATAL("error linking program: {}\n", infoLog);
         }
-        glDeleteProgram(s->id);
+        glDeleteProgram(s->m_id);
         LOG_FATAL("error linking program.\n");
     }
 
 #ifndef NDEBUG
-    glValidateProgram(s->id);
+    glValidateProgram(s->m_id);
 #endif
 
     glDeleteShader(vertex);
@@ -80,32 +80,32 @@ loadVertGeomFrag(Shader* s, String vertexPath, String geometryPath, String fragm
     GLuint fragment = ShaderLoadOne(GL_FRAGMENT_SHADER, fragmentPath);
     GLuint geometry = ShaderLoadOne(GL_GEOMETRY_SHADER, geometryPath);
 
-    s->id = glCreateProgram();
-    if (s->id == 0)
-        LOG_FATAL("glCreateProgram failed: {}\n", s->id);
+    s->m_id = glCreateProgram();
+    if (s->m_id == 0)
+        LOG_FATAL("glCreateProgram failed: {}\n", s->m_id);
 
-    glAttachShader(s->id, vertex);
-    glAttachShader(s->id, fragment);
-    glAttachShader(s->id, geometry);
+    glAttachShader(s->m_id, vertex);
+    glAttachShader(s->m_id, fragment);
+    glAttachShader(s->m_id, geometry);
 
-    glLinkProgram(s->id);
-    glGetProgramiv(s->id, GL_LINK_STATUS, &linked);
+    glLinkProgram(s->m_id);
+    glGetProgramiv(s->m_id, GL_LINK_STATUS, &linked);
     if (!linked)
     {
         GLint infoLen = 0;
-        glGetProgramiv(s->id, GL_INFO_LOG_LENGTH, &infoLen);
+        glGetProgramiv(s->m_id, GL_INFO_LOG_LENGTH, &infoLen);
         if (infoLen > 1)
         {
             char infoLog[255] {};
-            glGetProgramInfoLog(s->id, infoLen, nullptr, infoLog);
+            glGetProgramInfoLog(s->m_id, infoLen, nullptr, infoLog);
             LOG_FATAL("error linking program: {}\n", infoLog);
         }
-        glDeleteProgram(s->id);
+        glDeleteProgram(s->m_id);
         LOG_FATAL("error linking program.\n");
     }
 
 #ifndef NDEBUG
-    glValidateProgram(s->id);
+    glValidateProgram(s->m_id);
 #endif
 
     glDeleteShader(vertex);
@@ -114,27 +114,27 @@ loadVertGeomFrag(Shader* s, String vertexPath, String geometryPath, String fragm
 }
 
 void
-ShaderDestroy(Shader* s)
+Shader::destroy()
 {
-    if (s->id != 0)
+    if (m_id != 0)
     {
-        glDeleteProgram(s->id);
-        LOG_OK("Shader '{}' destroyed\n", s->id);
-        s->id = 0;
+        glDeleteProgram(m_id);
+        LOG_OK("Shader '{}' destroyed\n", m_id);
+        m_id = 0;
     }
 }
 
 void
-ShaderQueryActiveUniforms(Shader* s)
+Shader::queryActiveUniforms()
 {
     GLint maxUniformLen;
     GLint nUniforms;
 
-    glGetProgramiv(s->id, GL_ACTIVE_UNIFORMS, &nUniforms);
-    glGetProgramiv(s->id, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformLen);
+    glGetProgramiv(m_id, GL_ACTIVE_UNIFORMS, &nUniforms);
+    glGetProgramiv(m_id, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformLen);
 
     char uniformName[255] {};
-    LOG_OK("queryActiveUniforms for '{}':\n", s->id);
+    LOG_OK("queryActiveUniforms for '{}':\n", m_id);
 
     for (int i = 0; i < nUniforms; i++)
     {
@@ -142,7 +142,7 @@ ShaderQueryActiveUniforms(Shader* s)
         GLenum type;
         String typeName;
 
-        glGetActiveUniform(s->id, i, maxUniformLen, nullptr, &size, &type, uniformName);
+        glGetActiveUniform(m_id, i, maxUniformLen, nullptr, &size, &type, uniformName);
         switch (type)
         {
             case GL_FLOAT:

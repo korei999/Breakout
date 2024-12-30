@@ -76,17 +76,17 @@ loadAssets()
 
     s_plain = Plain(GL_STATIC_DRAW);
 
-    ShaderLoad(&s_shFontBitmap, "shaders/font/font.vert", "shaders/font/font.frag");
-    ShaderUse(&s_shFontBitmap);
-    ShaderSetI(&s_shFontBitmap, "tex0", 0);
+    s_shFontBitmap.load("shaders/font/font.vert", "shaders/font/font.frag");
+    s_shFontBitmap.use();
+    s_shFontBitmap.setI("tex0", 0);
 
-    ShaderLoad(&s_sh1Col, "shaders/font/1col.vert", "shaders/font/1col.frag");
-    ShaderUse(&s_sh1Col);
-    ShaderSetI(&s_sh1Col, "uTex0", 0);
+    s_sh1Col.load("shaders/font/1col.vert", "shaders/font/1col.frag");
+    s_sh1Col.use();
+    s_sh1Col.setI("uTex0", 0);
 
-    ShaderLoad(&s_shSprite, "shaders/2d/sprite.vert", "shaders/2d/sprite.frag");
-    ShaderUse(&s_shSprite);
-    ShaderSetI(&s_shSprite, "tex0", 0);
+    s_shSprite.load("shaders/2d/sprite.vert", "shaders/2d/sprite.frag");
+    s_shSprite.use();
+    s_shSprite.setI("tex0", 0);
 
     frame::g_uboProjView.bindShader(&s_shSprite, "ubProjView", 0);
 
@@ -488,12 +488,12 @@ drawFPSCounter(Arena* pAlloc)
 {
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
     auto* sh = &s_shFontBitmap;
-    ShaderUse(sh);
+    sh->use();
 
     texture::ImgBind(&s_tAsciiMap, GL_TEXTURE0);
 
-    ShaderSetM4(sh, "uProj", proj);
-    ShaderSetV4(sh, "uColor", {colors::hexToV4(0xeeeeeeff)});
+    sh->setM4("uProj", proj);
+    sh->setV4("uColor", {colors::hexToV4(0xeeeeeeff)});
 
     f64 currTime = utils::timeNowMS();
     if (currTime >= frame::g_prevTime + 1000.0)
@@ -516,10 +516,10 @@ drawFPSCounterTTF(Arena* pAlloc)
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
 
     auto* sh = &s_sh1Col;
-    ShaderUse(sh);
+    sh->use();
 
-    ShaderSetM4(sh, "uProj", proj);
-    ShaderSetV4(sh, "uColor", colors::hexToV4(0x00ff00ff));
+    sh->setM4("uProj", proj);
+    sh->setV4("uColor", colors::hexToV4(0x00ff00ff));
 
     texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
 
@@ -548,10 +548,10 @@ drawInfo(Arena* pArena)
 {
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
     auto* sh = &s_sh1Col;
-    ShaderUse(sh);
+    sh->use();
 
-    ShaderSetM4(sh, "uProj", proj);
-    ShaderSetV4(sh, "uColor", {colors::hexToV4(0x666666ff)});
+    sh->setM4("uProj", proj);
+    sh->setV4("uColor", {colors::hexToV4(0x666666ff)});
 
     texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
 
@@ -571,7 +571,7 @@ drawInfo(Arena* pArena)
 static void
 drawEntities([[maybe_unused]] Arena* pArena, const f64 alpha)
 {
-    ShaderUse(&s_shSprite);
+    s_shSprite.use();
     GLuint idxLastTex = 0;
 
     for (const Entity& en : g_aEntities)
@@ -600,8 +600,8 @@ drawEntities([[maybe_unused]] Arena* pArena, const f64 alpha)
             texture::ImgBind(en.texIdx, GL_TEXTURE0);
         }
 
-        ShaderSetM4(&s_shSprite, "uModel", tm);
-        ShaderSetV3(&s_shSprite, "uColor", blockColorToV3(en.eColor));
+        s_shSprite.setM4("uModel", tm);
+        s_shSprite.setV3("uColor", blockColorToV3(en.eColor));
         PlainDraw(&s_plain);
     }
 }
@@ -611,7 +611,7 @@ cleanup()
 {
     PlainDestroy(&s_plain);
 
-    for (auto& e : g_aAllShaders) ShaderDestroy(&e);
+    for (auto& e : g_aAllShaders) e.destroy();
 
     for (auto& t : texture::g_aAllTextures) texture::ImgDestroy(&t);
     texture::g_mAllTexturesIdxs.destroy();
