@@ -602,14 +602,14 @@ drawEntities([[maybe_unused]] Arena* pArena, const f64 alpha)
 
         s_shSprite.setM4("uModel", tm);
         s_shSprite.setV3("uColor", blockColorToV3(en.eColor));
-        PlainDraw(&s_plain);
+        s_plain.draw();
     }
 }
 
 void
 cleanup()
 {
-    PlainDestroy(&s_plain);
+    s_plain.destroy();
 
     for (auto& e : g_aAllShaders) e.destroy();
 

@@ -423,17 +423,17 @@ Quad::Quad(GLint drawMode)
 
     Quad q {};
 
-    glGenVertexArrays(1, &q.vao);
-    glBindVertexArray(q.vao);
+    glGenVertexArrays(1, &q.m_vao);
+    glBindVertexArray(q.m_vao);
 
-    glGenBuffers(1, &q.vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, q.vbo);
+    glGenBuffers(1, &q.m_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, q.m_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, drawMode);
 
-    glGenBuffers(1, &q.ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, q.ebo);
+    glGenBuffers(1, &q.m_ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, q.m_ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, drawMode);
-    q.eboSize = utils::size(indices);
+    q.m_eboSize = utils::size(indices);
 
     /* positions */
     glEnableVertexAttribArray(0);
@@ -444,15 +444,15 @@ Quad::Quad(GLint drawMode)
 
     glBindVertexArray(0);
 
-    LOG_OK("quad '{}' created\n", q.vao);
+    LOG_OK("quad '{}' created\n", q.m_vao);
     *this = q;
 }
 
 void
-QuadDraw(Quad* s)
+Quad::draw()
 {
-    glBindVertexArray(s->vao);
-    glDrawElements(GL_TRIANGLES, s->eboSize, GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(m_vao);
+    glDrawElements(GL_TRIANGLES, m_eboSize, GL_UNSIGNED_INT, nullptr);
 }
 
 Plain::Plain(GLint drawMode)
@@ -479,11 +479,11 @@ Plain::Plain(GLint drawMode)
 
     Plain p;
 
-    glGenVertexArrays(1, &p.vao);
-    glBindVertexArray(p.vao);
+    glGenVertexArrays(1, &p.m_vao);
+    glBindVertexArray(p.m_vao);
 
-    glGenBuffers(1, &p.vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, p.vbo);
+    glGenBuffers(1, &p.m_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, p.m_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(plainVertices), plainVertices, drawMode);
 
     constexpr u32 v3Size = sizeof(math::V3) / sizeof(f32);
@@ -501,30 +501,30 @@ Plain::Plain(GLint drawMode)
 
     glBindVertexArray(0);
 
-    LOG_OK("plane '{}' created\n", p.vao);
+    LOG_OK("plane '{}' created\n", p.m_vao);
     *this = p;
 }
 
 void
-PlainDraw(Plain* s)
+Plain::draw()
 {
-    glBindVertexArray(s->vao);
+    glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void
-PlainDrawBox(Plain* s)
+Plain::drawBox()
 {
-    glBindVertexArray(s->vao);
+    glBindVertexArray(m_vao);
     glDrawArrays(GL_LINE_LOOP, 0, 6);
 }
 
 void
-PlainDestroy(Plain* s)
+Plain::destroy()
 {
-    glDeleteBuffers(1, &s->vao);
-    /*glDeleteBuffers(1, &s->vbo);*/
-    LOG_OK("plain {}(vao), {}(vbo) destroyed\n", s->vao, s->vbo);
+    glDeleteBuffers(1, &m_vao);
+    /*glDeleteBuffers(1, &vbo);*/
+    LOG_OK("plain {}(vao), {}(vbo) destroyed\n", m_vao, m_vbo);
 }
 
 TextPlain::TextPlain(GLint drawMode)

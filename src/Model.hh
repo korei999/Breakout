@@ -70,22 +70,28 @@ struct Model
 
 struct Quad
 {
-    GLuint vao;
-    GLuint vbo;
-    GLuint ebo;
-    GLuint eboSize;
+    GLuint m_vao;
+    GLuint m_vbo;
+    GLuint m_ebo;
+    GLuint m_eboSize;
 
     Quad() = default;
     Quad(GLint drawMode);
+
+    void draw();
 };
 
 struct Plain
 {
-    GLuint vao;
-    GLuint vbo;
+    GLuint m_vao;
+    GLuint m_vbo;
 
     Plain() = default;
     Plain(GLint drawMode);
+
+    void draw();
+    void drawBox();
+    void destroy();
 };
 
 void ModelLoad(Model* s, String path, GLint drawMode, GLint texMode);
@@ -108,11 +114,6 @@ ModelDrawGraph(
     String svUniformM3Norm,
     const math::M4& tmGlobal
 );
-
-void PlainDraw(Plain* s);
-void PlainDrawBox(Plain* s);
-void PlainDestroy(Plain* s);
-void QuadDraw(Quad* s);
 
 struct TextPlain
 {
