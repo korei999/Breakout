@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RBTree.hh"
+#include "OsAllocator.hh"
 
 #if defined ADT_DBG_MEMORY
     #include "logs.hh"
@@ -39,15 +40,16 @@ struct FreeListData
     constexpr void addSize(u64 _size) { setSize(_size + getSize()); }
 };
 
-struct FreeList : public IAllocator
+class FreeList : public IAllocator
 {
+public:
     using Node = RBNode<FreeListData>; /* node is the header + memory chunk of the allocation */
 
     /* */
 
 private:
-    IAllocator* m_pBackAlloc {};
     u64 m_blockSize {};
+    IAllocator* m_pBackAlloc {};
     u64 m_totalAllocated {};
     RBTreeBase<FreeListData> m_tree {}; /* free nodes sorted by size */
     FreeListBlock* m_pBlocks {};
@@ -56,9 +58,9 @@ private:
 
 public:
     FreeList() = default;
-    FreeList(IAllocator* pBackAlloc, u64 _blockSize)
-        : m_pBackAlloc(pBackAlloc),
-          m_blockSize(align8(_blockSize + sizeof(FreeListBlock) + sizeof(FreeList::Node))),
+    FreeList(u64 _blockSize, IAllocator* pBackAlloc = OsAllocatorGet())
+        : m_blockSize(align8(_blockSize + sizeof(FreeListBlock) + sizeof(FreeList::Node))),
+          m_pBackAlloc(pBackAlloc),
           m_pBlocks(allocBlock(m_blockSize)) {}
 
     /* */

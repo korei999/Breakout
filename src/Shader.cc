@@ -1,7 +1,6 @@
 #include "Shader.hh"
 
 #include "adt/Arena.hh"
-#include "adt/OsAllocator.hh"
 #include "adt/file.hh"
 #include "adt/logs.hh"
 
@@ -189,7 +188,7 @@ ShaderLoadOne(GLenum type, String path)
     if (!shader)
         return 0;
 
-    Arena al(OsAllocatorGet(), SIZE_8K);
+    Arena al(SIZE_8K);
     defer( al.freeAll() );
 
     Opt<String> src = file::load(&al, path);

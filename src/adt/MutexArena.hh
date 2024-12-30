@@ -1,8 +1,8 @@
 #pragma once
 
-#include <threads.h>
-
 #include "Arena.hh"
+
+#include <threads.h>
 
 namespace adt
 {
@@ -15,8 +15,8 @@ struct MutexArena : IAllocator
     /* */
 
     MutexArena() = default;
-    MutexArena(IAllocator* pBackAlloc, u32 blockCap)
-        : m_arena(pBackAlloc, blockCap)
+    MutexArena(u32 blockCap, IAllocator* pBackAlloc = OsAllocatorGet())
+        : m_arena(blockCap, pBackAlloc)
     {
         mtx_init(&m_mtx, mtx_plain);
     }

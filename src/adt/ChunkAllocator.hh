@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IAllocator.hh"
+#include "OsAllocator.hh"
 
 #include <cassert>
 #include <cstdlib>
@@ -26,19 +26,19 @@ struct ChunkAllocatorBlock
 
 class ChunkAllocator : public IAllocator
 {
-    IAllocator* m_pBackAlloc {};
     u64 m_blockCap = 0; 
     u64 m_chunkSize = 0;
+    IAllocator* m_pBackAlloc {};
     ChunkAllocatorBlock* m_pBlocks = nullptr;
 
     /* */
 
 public:
     ChunkAllocator() = default;
-    ChunkAllocator(IAllocator* pBackAlloc, u64 chunkSize, u64 blockSize)
-        : m_pBackAlloc(pBackAlloc),
-          m_blockCap {align(blockSize, chunkSize + sizeof(ChunkAllocatorNode))},
+    ChunkAllocator(u64 chunkSize, u64 blockSize, IAllocator* pBackAlloc = OsAllocatorGet())
+        : m_blockCap {align(blockSize, chunkSize + sizeof(ChunkAllocatorNode))},
           m_chunkSize {chunkSize + sizeof(ChunkAllocatorNode)},
+          m_pBackAlloc(pBackAlloc),
           m_pBlocks {newBlock()} {}
 
     /* */

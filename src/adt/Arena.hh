@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IAllocator.hh"
+#include "OsAllocator.hh"
 #include "utils.hh"
 
 #include <cassert>
@@ -27,8 +27,8 @@ struct ArenaBlock
 /* fast region based allocator, only freeAll() free's memory, free() does nothing */
 class Arena : public IAllocator
 {
-    IAllocator* m_pBackAlloc {};
     u64 m_defaultCapacity {};
+    IAllocator* m_pBackAlloc {};
     ArenaBlock* m_pBlocks {};
 
     /* */
@@ -36,9 +36,9 @@ class Arena : public IAllocator
 public:
     Arena() = default;
 
-    Arena(IAllocator* pBackingAlloc, u64 capacity)
-        : m_pBackAlloc(pBackingAlloc),
-          m_defaultCapacity(align8(capacity + sizeof(ArenaBlock))),
+    Arena(u64 capacity, IAllocator* pBackingAlloc = OsAllocatorGet())
+        : m_defaultCapacity(align8(capacity + sizeof(ArenaBlock))),
+          m_pBackAlloc(pBackingAlloc),
           m_pBlocks(allocBlock(m_defaultCapacity)) {}
 
     /* */

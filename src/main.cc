@@ -1,5 +1,4 @@
 #include "adt/FreeList.hh"
-#include "adt/OsAllocator.hh"
 #include "app.hh"
 #include "frame.hh"
 
@@ -26,7 +25,7 @@ startup()
 {
     setlocale(LC_ALL, "");
 
-    FreeList alloc(OsAllocatorGet(), SIZE_1M);
+    FreeList alloc(SIZE_1M);
     defer( alloc.freeAll() );
 
     auto tpool = ThreadPool(&alloc, utils::max(getNCores() - 2, 2));

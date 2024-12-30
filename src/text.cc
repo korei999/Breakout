@@ -2,7 +2,6 @@
 
 #include "adt/Arena.hh"
 #include "adt/Arr.hh"
-#include "adt/OsAllocator.hh"
 #include "adt/Vec.hh"
 #include "adt/defer.hh"
 #include "app.hh"
@@ -48,7 +47,7 @@ Bitmap::Bitmap(String s, u64 size, int x, int y, GLint drawMode)
 static void
 TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode)
 {
-    Arena arena(OsAllocatorGet(), SIZE_1M);
+    Arena arena(SIZE_1M);
     defer( arena.freeAll() );
 
     auto aQuads = TextUpdateBuffer(s, &arena, s->str, s->maxSize, xOrigin, yOrigin);
@@ -729,7 +728,7 @@ TTF::rasterizeAscii(parser::ttf::Font* pFont)
     /* width*height*128 */
     m_pBitmap = (u8*)m_pAlloc->zalloc(1, math::sq(iScale)*128);
 
-    Arena arena(OsAllocatorGet(), SIZE_1M);
+    Arena arena(SIZE_1M);
     defer( arena.freeAll() );
 
     for (int character = '!'; character <= '~'; ++character)

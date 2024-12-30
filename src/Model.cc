@@ -1,7 +1,6 @@
 #include "Model.hh"
 
 #include "adt/MutexArena.hh"
-#include "adt/OsAllocator.hh"
 #include "adt/ThreadPool.hh"
 #include "adt/file.hh"
 #include "adt/logs.hh"
@@ -26,7 +25,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
     auto& a = s->modelData;;
 
-    MutexArena atmAl(OsAllocatorGet(), SIZE_1M * 10);
+    MutexArena atmAl(SIZE_1M * 10);
     defer( atmAl.freeAll() );
 
     /* load buffers first */

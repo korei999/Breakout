@@ -1,7 +1,6 @@
 #include "frame.hh"
 
 #include "adt/Arena.hh"
-#include "adt/OsAllocator.hh"
 #include "adt/defer.hh"
 #include "app.hh"
 #include "colors.hh"
@@ -104,7 +103,7 @@ run()
 static void
 mainLoop()
 {
-    Arena arena(OsAllocatorGet(), SIZE_1K * 20);
+    Arena arena(SIZE_1K * 20);
     defer( arena.freeAll() );
 
     g_gameTime = 0.0;

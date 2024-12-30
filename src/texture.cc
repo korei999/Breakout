@@ -2,7 +2,6 @@
 
 #include "IWindow.hh"
 #include "adt/Arena.hh"
-#include "adt/OsAllocator.hh"
 #include "adt/logs.hh"
 #include "app.hh"
 #include "parser/Bin.hh"
@@ -69,7 +68,7 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
 
     if (s->id != 0) LOG_FATAL("id != 0: '{}'\n", s->id);
 
-    Arena al(OsAllocatorGet(), SIZE_1M * 5);
+    Arena al(SIZE_1M * 5);
     defer( al.freeAll() );
     Data img = loadBMP(&al, path, bFlip);
 
@@ -270,7 +269,7 @@ CubeMapShadowMapCreate(const int width, const int height)
 CubeMap
 skyBoxCreate(String sFaces[6])
 {
-    Arena al(OsAllocatorGet(), SIZE_1M * 6);
+    Arena al(SIZE_1M * 6);
     defer( al.freeAll() );
 
     CubeMap cmNew {};
