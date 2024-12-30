@@ -25,6 +25,8 @@ struct Bin
     String m_sPath;
     u32 m_pos;
 
+    /* */
+
     Bin() = default;
     Bin(IAllocator* p) : m_pAlloc(p) {}
 
@@ -32,7 +34,7 @@ struct Bin
 
     char& operator[](u32 i) { return m_sFile[i]; };
 
-    bool load(String sFile);
+    bool load(String sPath);
     void skipBytes(u32 n);
     String readString(u32 bytes);
     u8 read8();

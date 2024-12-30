@@ -558,10 +558,10 @@ TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8
     VecBase<PointOnCurve> aPoints = getPointsWithMissingOnCurve(pAlloc, pGlyph);
     auto aCurvyPoints = makeItCurvy(pAlloc, aPoints, &endIdxs, true);
 
-    f32 xMax = s->m_pFont->head.xMax;
-    f32 xMin = s->m_pFont->head.xMin;
-    f32 yMax = s->m_pFont->head.yMax;
-    f32 yMin = s->m_pFont->head.yMin;
+    f32 xMax = s->m_pFont->m_head.xMax;
+    f32 xMin = s->m_pFont->m_head.xMin;
+    f32 yMax = s->m_pFont->m_head.yMax;
+    f32 yMin = s->m_pFont->m_head.yMin;
 
     Arr<f32, 32> aIntersections {};
 
@@ -671,7 +671,7 @@ TTFGenStringMesh(
     {
         if (c == '\0') break;
 
-        auto g = FontReadGlyph(s->m_pFont, c);
+        auto g = s->m_pFont->readGlyph(c);
 
         /* FIXME: uv ordering is messed up (but works correctly) */
 
@@ -731,13 +731,13 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
     Arena arena(SIZE_1M);
     defer( arena.freeAll() );
 
-    for (int character = '!'; character <= '~'; ++character)
+    for (int ch = '!'; ch <= '~'; ++ch)
     {
         u8* pTmp = (u8*)arena.zalloc(1, math::sq(iScale));
 
-        auto g = FontReadGlyph(pFont, character);
+        auto g = pFont->readGlyph(ch);
         TTFRasterizeGlyphTEST(this, &arena, &g, pTmp, iScale, iScale);
-        memcpy(m_pBitmap + character*math::sq(iScale), pTmp, math::sq(iScale));
+        memcpy(m_pBitmap + ch*math::sq(iScale), pTmp, math::sq(iScale));
 
         arena.reset();
     }

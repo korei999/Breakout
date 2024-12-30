@@ -10,15 +10,6 @@ namespace reader
 namespace ttf
 {
 
-struct Font;
-struct Glyph;
-
-bool FontLoadParse(Font* s, String sPath);
-Glyph FontReadGlyph(Font* s, u32 codePoint);
-void FontPrintGlyphDBG(Font* s, const Glyph& g, bool bNormalize = false);
-void FontDestroy(Font* s);
-inline int FontLoadParseSubmit(void* pArg);
-
 /*******************************************************************************/
 /* RESOURCES: */
 /* https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6.html */
@@ -466,15 +457,39 @@ struct Post
 
 struct Font
 {
-    Bin p {};
-    TableDirectory tableDirectory {};
-    Head head {};
-    Cmap cmap {};
-    CmapFormat4 cmapF4 {};
-    MapBase<u32, Glyph> mOffsetToGlyph {};
+    Bin m_bin {};
+    TableDirectory m_tableDirectory {};
+    Head m_head {};
+    Cmap m_cmap {};
+    CmapFormat4 m_cmapF4 {};
+    MapBase<u32, Glyph> m_mOffsetToGlyph {};
+
+    /* */
 
     Font() = default;
-    Font(IAllocator* _pA) : p(_pA), mOffsetToGlyph(_pA, 128) {}
+    Font(IAllocator* _pA) : m_bin(_pA), m_mOffsetToGlyph(_pA, 128) {}
+
+    /* */
+
+    bool loadParse(String sPath);
+    Glyph readGlyph(u32 codePoint);
+    void printGlyphDBG(const Glyph& g, bool bNormalize = false);
+    void destroy();
+
+    /* */
+
+private:
+    void parse();
+    MapResult<String, TableRecord> getTable(String sTableTag);
+    void readHeadTable();
+    void readCmapTable();
+    void readCmap(u32 offset);
+    void readCmapFormat4();
+    u32 getGlyphOffset(u32 idx);
+    u32 getGlyphIdx(u16 code);
+    FWord readFWord();
+    void readCompoundGlyph(Glyph* g);
+    void readSimpleGlyph(Glyph* g);
 };
 
 struct FontLoadParseArg
@@ -487,7 +502,7 @@ inline int
 FontLoadParseSubmit(void* pArg)
 {
     auto arg = *(FontLoadParseArg*)pArg;
-    FontLoadParse(arg.self, arg.sPath);
+    arg.self->loadParse(arg.sPath);
 
     return 0;
 }

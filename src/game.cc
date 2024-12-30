@@ -91,7 +91,7 @@ loadAssets()
     frame::g_uboProjView.bindShader(&s_shSprite, "ubProjView", 0);
 
     s_textFPS = text::Bitmap("", 40, 0, 0, GL_DYNAMIC_DRAW);
-    reader::ttf::FontLoadParse(&s_fontLiberation, "test-assets/LiberationMono-Regular.ttf");
+    s_fontLiberation.loadParse("test-assets/LiberationMono-Regular.ttf");
 
     /* unbind before creating threads */
     app::g_pWindow->unbindGlContext();

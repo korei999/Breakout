@@ -71,7 +71,7 @@ Wave::parse()
 
     m_sampleRate = nSamplesPerSec;
     m_nChannels = nChannels;
-    m_pPcmData = reinterpret_cast<s16*>(&m_bin.m_sFile[m_bin.m_pos]);
+    m_pPcmData = reinterpret_cast<s16*>(&m_bin[m_bin.m_pos]);
     m_pcmSize = subchunk2Size / sizeof(s16);
 
 #ifdef D_WAVE
