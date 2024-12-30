@@ -77,7 +77,7 @@ sorted(const auto& a, const ORDER eOrder = INC)
     return sorted(a.data(), a.getSize(), eOrder);
 }
 
-template<typename T, decltype(utils::compare<T>) FN_CMP = utils::compare>
+template<typename T, auto FN_CMP = utils::compare<T>>
 constexpr void
 insertion(T* a, s64 l, s64 h)
 {
@@ -92,7 +92,7 @@ insertion(T* a, s64 l, s64 h)
     }
 }
 
-template<template<typename> typename CON_T, typename T, decltype(utils::compare<T>) FN_CMP = utils::compare>
+template<template<typename> typename CON_T, typename T, auto FN_CMP = utils::compare<T>>
 constexpr void
 insertion(CON_T<T>* a)
 {
@@ -125,7 +125,7 @@ median3(const auto& x, const auto& y, const auto& z)
     else return z;
 }
 
-template<typename T, decltype(utils::compare<T>) FN_CMP = utils::compare>
+template<typename T, auto FN_CMP = utils::compare<T>>
 constexpr s64
 partition(T a[], s64 l, s64 r, const T& pivot)
 {
@@ -140,7 +140,7 @@ partition(T a[], s64 l, s64 r, const T& pivot)
     return r;
 }
 
-template<typename T, decltype(utils::compare<T>) FN_CMP = utils::compare>
+template<typename T, auto FN_CMP = utils::compare<T>>
 constexpr void
 quick(T a[], s64 l, s64 r)
 {
@@ -168,7 +168,7 @@ quick(T a[], s64 l, s64 r)
     }
 }
 
-template<template<typename> typename CON_T, typename T, decltype(utils::compare<T>) FN_CMP = utils::compare>
+template<template<typename> typename CON_T, typename T, auto FN_CMP = utils::compare<T>>
 constexpr void
 quick(CON_T<T>* pArrayContainer)
 {
