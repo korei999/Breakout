@@ -3,7 +3,7 @@
 #include "adt/String.hh"
 #include "adt/math.hh"
 #include "gl/gl.hh" /* IWYU pragma: keep */
-#include "parser/ttf.hh"
+#include "reader/ttf.hh"
 
 using namespace adt;
 
@@ -39,7 +39,7 @@ struct CharToUV
 struct TTF
 {
     IAllocator* m_pAlloc {};
-    parser::ttf::Font* m_pFont {};
+    reader::ttf::Font* m_pFont {};
     u8* m_pBitmap {};
     String m_str {};
     u32 m_maxSize {};
@@ -52,7 +52,7 @@ struct TTF
     TTF() = default;
     TTF(IAllocator* p) : m_pAlloc(p) {}
 
-    void rasterizeAscii(parser::ttf::Font* pFont);
+    void rasterizeAscii(reader::ttf::Font* pFont);
     void updateText(IAllocator* pAlloc, const String str, const int x, const int y, const f32 z);
     void draw();
 };
@@ -60,7 +60,7 @@ struct TTF
 struct TTFRasterizeArg
 {
     TTF* self {};
-    parser::ttf::Font* pFont {};
+    reader::ttf::Font* pFont {};
 };
 
 inline int

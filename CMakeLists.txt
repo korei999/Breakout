@@ -38,8 +38,8 @@ add_executable(
     src/json/Lexer.cc
     src/json/Parser.cc
     src/gltf/gltf.cc
-    src/parser/Wave.cc
-    src/parser/ttf.cc
+    src/reader/Wave.cc
+    src/reader/ttf.cc
     src/texture.cc
     src/Model.cc
     src/text.cc

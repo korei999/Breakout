@@ -4,7 +4,7 @@
 #include "adt/Arena.hh"
 #include "adt/logs.hh"
 #include "app.hh"
-#include "parser/Bin.hh"
+#include "reader/Bin.hh"
 
 #include <immintrin.h>
 
@@ -306,34 +306,34 @@ loadBMP(IAllocator* pAlloc, String path, bool flip)
     u16 bitDepth;
     u8 byteDepth;
 
-    parser::Bin p(pAlloc);
-    parser::BinLoadFile(&p, path);
-    auto BM = parser::BinReadString(&p, 2);
+    reader::Bin p(pAlloc);
+    p.load(path);
+    auto BM = p.readString(2);
 
     if (BM != "BM")
         LOG_FATAL("BM: '{}', bmp file should have 'BM' as first 2 bytes\n", BM);
 
-    parser::BinSkipBytes(&p, 8);
-    imageDataAddress = parser::BinRead32(&p);
+    p.skipBytes(8);
+    imageDataAddress = p.read32();
 
 #ifdef D_TEXTURE
     LOG_OK("imageDataAddress: {}\n", imageDataAddress);
 #endif
 
-    parser::BinSkipBytes(&p, 4);
-    width = parser::BinRead32(&p);
-    height = parser::BinRead32(&p);
+    p.skipBytes(4);
+    width = p.read32();
+    height = p.read32();
 #ifdef D_TEXTURE
     LOG_OK("width: {}, height: {}\n", width, height);
 #endif
 
-    [[maybe_unused]] auto colorPlane = parser::BinRead16(&p);
+    [[maybe_unused]] auto colorPlane = p.read16();
 #ifdef D_TEXTURE
     LOG_OK("colorPlane: {}\n", colorPlane);
 #endif
 
     GLint format = GL_RGB;
-    bitDepth = parser::BinRead16(&p);
+    bitDepth = p.read16();
 #ifdef D_TEXTURE
     LOG_OK("bitDepth: {}\n", bitDepth);
 #endif
@@ -361,18 +361,18 @@ loadBMP(IAllocator* pAlloc, String path, bool flip)
 #endif
     Vec<u8> pixels(pAlloc, nPixels * byteDepth);
 
-    p.pos = imageDataAddress;
+    p.m_pos = imageDataAddress;
 
     switch (format)
     {
         default:
         case GL_RGB:
-            flipCpyBGRtoRGBA(pixels.data(), (u8*)(&p[p.pos]), width, height, flip);
+            flipCpyBGRtoRGBA(pixels.data(), (u8*)(&p[p.m_pos]), width, height, flip);
             format = GL_RGBA;
             break;
 
         case GL_RGBA:
-            flipCpyBGRAtoRGBA(pixels.data(), (u8*)(&p[p.pos]), width, height, flip);
+            flipCpyBGRAtoRGBA(pixels.data(), (u8*)(&p[p.m_pos]), width, height, flip);
             break;
     }
 

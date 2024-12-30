@@ -264,7 +264,7 @@ makeItCurvy(IAllocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cu
 }
 
 VecBase<PointOnCurve>
-getPointsWithMissingOnCurve(IAllocator* pAlloc, parser::ttf::Glyph* g)
+getPointsWithMissingOnCurve(IAllocator* pAlloc, reader::ttf::Glyph* g)
 {
     const auto& aGlyphPoints = g->uGlyph.simple.aPoints;
     u32 size = aGlyphPoints.getSize();
@@ -449,7 +449,7 @@ skip:
 /* NOTE: this doesn't actually work for filling shapes like 'U' or 'G' etc... */
 static Pair<u16, u16>
 polygonCentroid(
-    parser::ttf::Glyph* pGlyph,
+    reader::ttf::Glyph* pGlyph,
     const VecBase<PointOnCurve>& aPoints,
     u32 startIdx,
     u32 width,
@@ -549,7 +549,7 @@ blit(u8* pDst, u8* pSrc, u32 width, u32 height, BLIT_MODE eMode)
 
 /* https://sharo.dev/post/reading-ttf-files-and-rasterizing-them-using-a-handmade- */
 static void
-TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, parser::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height)
+TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height)
 {
     const auto& aGlyphPoints = pGlyph->uGlyph.simple.aPoints;
     u32 size = aGlyphPoints.getSize();
@@ -716,7 +716,7 @@ TTFGenStringMesh(
 }
 
 void
-TTF::rasterizeAscii(parser::ttf::Font* pFont)
+TTF::rasterizeAscii(reader::ttf::Font* pFont)
 {
     const f32 scale = 64.0f;
     const int iScale = std::round(scale);

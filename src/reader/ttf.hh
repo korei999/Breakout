@@ -5,7 +5,7 @@
 #include "adt/String.hh"
 #include "adt/Vec.hh"
 
-namespace parser
+namespace reader
 {
 namespace ttf
 {
@@ -493,4 +493,4 @@ FontLoadParseSubmit(void* pArg)
 }
 
 } /* namespace ttf */
-} /* namespace parser */
+} /* namespace reader */

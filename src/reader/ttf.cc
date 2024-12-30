@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-namespace parser
+namespace reader
 {
 namespace ttf
 {
@@ -21,7 +21,7 @@ F2Dot14Tof32(F2Dot14 x)
 bool
 FontLoadParse(Font* s, String path)
 {
-    auto bSuc = BinLoadFile(&s->p, path);
+    auto bSuc = s->p.load(path);
     if (!bSuc) LOG_FATAL("BinLoadFile failed: '{}'\n", path);
 
     FontParse(s);
@@ -101,41 +101,41 @@ getTable(Font* s, String sTableTag)
 static inline FWord
 readFWord(Font* s)
 {
-    return BinRead16Rev(&s->p);
+    return s->p.read16Rev();
 }
 
 static void
 readHeadTable(Font* s)
 {
-    const u32 savedPos = s->p.pos;
-    defer(s->p.pos = savedPos);
+    const u32 savedPos = s->p.m_pos;
+    defer(s->p.m_pos = savedPos);
 
     auto fHead = getTable(s, "head");
     assert(fHead);
 
-    s->p.pos = fHead.pData->val.offset;
+    s->p.m_pos = fHead.pData->val.offset;
 
     auto& h = s->head;
 
-    h.version.l = BinRead16Rev(&s->p);
-    h.version.r = BinRead16Rev(&s->p);
-    h.fontRevision.l = BinRead16Rev(&s->p);
-    h.fontRevision.r = BinRead16Rev(&s->p);
-    h.checkSumAdjustment = BinRead32Rev(&s->p);
-    h.magicNumber = BinRead32Rev(&s->p);
-    h.flags = BinRead16Rev(&s->p);
-    h.unitsPerEm = BinRead16Rev(&s->p);
-    h.created = BinRead64Rev(&s->p);
-    h.modified = BinRead64Rev(&s->p);
-    h.xMin = BinRead16Rev(&s->p);
-    h.yMin = BinRead16Rev(&s->p);
-    h.xMax = BinRead16Rev(&s->p);
-    h.yMax = BinRead16Rev(&s->p);
-    h.macStyle = BinRead16Rev(&s->p);
-    h.lowestRecPPEM = BinRead16Rev(&s->p);
-    h.fontDirectionHint = BinRead16Rev(&s->p);
-    h.indexToLocFormat = BinRead16Rev(&s->p);
-    h.glyphDataFormat = BinRead16Rev(&s->p);
+    h.version.l = s->p.read16Rev();
+    h.version.r = s->p.read16Rev();
+    h.fontRevision.l = s->p.read16Rev();
+    h.fontRevision.r = s->p.read16Rev();
+    h.checkSumAdjustment = s->p.read32Rev();
+    h.magicNumber = s->p.read32Rev();
+    h.flags = s->p.read16Rev();
+    h.unitsPerEm = s->p.read16Rev();
+    h.created = s->p.read64Rev();
+    h.modified = s->p.read64Rev();
+    h.xMin = s->p.read16Rev();
+    h.yMin = s->p.read16Rev();
+    h.xMax = s->p.read16Rev();
+    h.yMax = s->p.read16Rev();
+    h.macStyle = s->p.read16Rev();
+    h.lowestRecPPEM = s->p.read16Rev();
+    h.fontDirectionHint = s->p.read16Rev();
+    h.indexToLocFormat = s->p.read16Rev();
+    h.glyphDataFormat = s->p.read16Rev();
 
 #ifdef D_TTF
     LOG(
@@ -181,40 +181,40 @@ readHeadTable(Font* s)
 static void
 readCmapFormat4(Font* s)
 {
-    u32 savedPos = s->p.pos;
-    defer(s->p.pos = savedPos);
+    u32 savedPos = s->p.m_pos;
+    defer(s->p.m_pos = savedPos);
 
     auto& c = s->cmapF4;
 
-    c.segCountX2 = BinRead16Rev(&s->p);
-    c.searchRange = BinRead16Rev(&s->p);
-    c.entrySelector = BinRead16Rev(&s->p);
-    c.rangeShift = BinRead16Rev(&s->p);
+    c.segCountX2 = s->p.read16Rev();
+    c.searchRange = s->p.read16Rev();
+    c.entrySelector = s->p.read16Rev();
+    c.rangeShift = s->p.read16Rev();
 
     auto segCount = c.segCountX2 / 2;
-    c.mCodeToGlyphIdx = {s->p.pAlloc, u32(segCount)};
+    c.mCodeToGlyphIdx = {s->p.m_pAlloc, u32(segCount)};
 
     auto searchRangeCheck = 2*(std::pow(2, std::floor(std::log2(segCount))));
     assert(c.searchRange == searchRangeCheck);
 
     /* just set pointer and skip bytes, swap bytes after */
-    c.endCode = (u16*)&s->p.sFile[s->p.pos];
-    s->p.pos += c.segCountX2;
+    c.endCode = (u16*)&s->p.m_sFile[s->p.m_pos];
+    s->p.m_pos += c.segCountX2;
 
     assert(c.endCode[segCount - 1] == 0xffff);
 
-    c.reservedPad = BinRead16Rev(&s->p);
+    c.reservedPad = s->p.read16Rev();
     assert(c.reservedPad == 0);
 
-    c.startCode = (u16*)&s->p.sFile[s->p.pos];
-    s->p.pos += c.segCountX2;
+    c.startCode = (u16*)&s->p.m_sFile[s->p.m_pos];
+    s->p.m_pos += c.segCountX2;
     assert(c.startCode[segCount - 1] == 0xffff);
 
-    c.idDelta = (u16*)&s->p.sFile[s->p.pos];
-    s->p.pos += c.segCountX2;
+    c.idDelta = (u16*)&s->p.m_sFile[s->p.m_pos];
+    s->p.m_pos += c.segCountX2;
 
-    c.idRangeOffset = (u16*)&s->p.sFile[s->p.pos];
-    s->p.pos += c.segCountX2;
+    c.idRangeOffset = (u16*)&s->p.m_sFile[s->p.m_pos];
+    s->p.m_pos += c.segCountX2;
 
 #ifdef D_TTF
     LOG_NOTIFY(
@@ -242,14 +242,14 @@ readCmapFormat4(Font* s)
 static void
 readCmap(Font* s, u32 offset)
 {
-    u32 savedPos = s->p.pos;
-    defer(s->p.pos = savedPos);
+    u32 savedPos = s->p.m_pos;
+    defer(s->p.m_pos = savedPos);
 
-    s->p.pos = offset;
+    s->p.m_pos = offset;
 
-    u16 format = BinRead16Rev(&s->p);
-    u16 length = BinRead16Rev(&s->p);
-    u16 language = BinRead16Rev(&s->p);
+    u16 format = s->p.read16Rev();
+    u16 length = s->p.read16Rev();
+    u16 language = s->p.read16Rev();
 
 #ifdef D_TTF
     LOG_NOTIFY("readCmap: format: {}, length: {}, language: {}\n", format, length, language);
@@ -268,28 +268,28 @@ readCmap(Font* s, u32 offset)
 static void
 readCmapTable(Font* s)
 {
-    const u32 savedPos = s->p.pos;
-    defer(s->p.pos = savedPos);
+    const u32 savedPos = s->p.m_pos;
+    defer(s->p.m_pos = savedPos);
 
     auto fCmap = getTable(s, "cmap");
     assert(fCmap);
 
-    s->p.pos = fCmap.pData->val.offset;
+    s->p.m_pos = fCmap.pData->val.offset;
 
     auto& c = s->cmap;
 
-    c.version = BinRead16Rev(&s->p);
+    c.version = s->p.read16Rev();
     assert(c.version == 0 && "they say it's set to zero");
-    c.numberSubtables = BinRead16Rev(&s->p);
+    c.numberSubtables = s->p.read16Rev();
 
-    c.aSubtables = {s->p.pAlloc, c.numberSubtables};
+    c.aSubtables = {s->p.m_pAlloc, c.numberSubtables};
 
     for (u32 i = 0; i < c.numberSubtables; ++i)
     {
-        c.aSubtables.push(s->p.pAlloc, {
-            .platformID = BinRead16Rev(&s->p),
-            .platformSpecificID = BinRead16Rev(&s->p),
-            .offset = BinRead32Rev(&s->p),
+        c.aSubtables.push(s->p.m_pAlloc, {
+            .platformID = s->p.read16Rev(),
+            .platformSpecificID = s->p.read16Rev(),
+            .offset = s->p.read32Rev(),
         });
 
         const auto& lastSt = c.aSubtables.last();
@@ -339,8 +339,8 @@ readCmapTable(Font* s)
 static u32
 getGlyphOffset(Font* s, u32 idx)
 {
-    const u32 savedPos = s->p.pos;
-    defer(s->p.pos = savedPos);
+    const u32 savedPos = s->p.m_pos;
+    defer(s->p.m_pos = savedPos);
 
     auto fLoca = getTable(s, "loca");
     assert(fLoca);
@@ -350,13 +350,13 @@ getGlyphOffset(Font* s, u32 idx)
 
     if (s->head.indexToLocFormat == 1)
     {
-        s->p.pos = locaTable.val.offset + idx*4;
-        offset = BinRead32Rev(&s->p);
+        s->p.m_pos = locaTable.val.offset + idx*4;
+        offset = s->p.read32Rev();
     }
     else
     {
-        s->p.pos = locaTable.val.offset + idx*2;
-        offset = BinRead16Rev(&s->p);
+        s->p.m_pos = locaTable.val.offset + idx*2;
+        offset = s->p.read16Rev();
     }
 
     auto fGlyf = getTable(s, "glyf");
@@ -378,11 +378,11 @@ readSimpleGlyph(Font* s, Glyph* g)
     auto& sg = g->uGlyph.simple;
 
     for (s16 i = 0; i < g->numberOfContours; i++)
-        sg.aEndPtsOfContours.push(s->p.pAlloc, BinRead16Rev(&s->p));
+        sg.aEndPtsOfContours.push(s->p.m_pAlloc, s->p.read16Rev());
 
     /* skip instructions */
-    sg.instructionLength = BinRead16Rev(&s->p);
-    s->p.pos += sg.instructionLength;
+    sg.instructionLength = s->p.read16Rev();
+    s->p.m_pos += sg.instructionLength;
 
     if (g->numberOfContours == 0)
         return;
@@ -391,22 +391,22 @@ readSimpleGlyph(Font* s, Glyph* g)
 
     for (u32 i = 0; i < numPoints; i++)
     {
-        OUTLINE_FLAG eFlag = OUTLINE_FLAG(BinRead8(&s->p));
-        sg.aeFlags.push(s->p.pAlloc, eFlag);
-        sg.aPoints.push(s->p.pAlloc, {
+        OUTLINE_FLAG eFlag = OUTLINE_FLAG(s->p.read8());
+        sg.aeFlags.push(s->p.m_pAlloc, eFlag);
+        sg.aPoints.push(s->p.m_pAlloc, {
             .bOnCurve = bool(eFlag & ON_CURVE)
         });
 
         if (eFlag & REPEAT)
         {
-            u32 repeatCount = BinRead8(&s->p);
+            u32 repeatCount = s->p.read8();
             assert(repeatCount > 0);
 
             i += repeatCount;
             while (repeatCount-- > 0)
             {
-                sg.aeFlags.push(s->p.pAlloc, eFlag);
-                sg.aPoints.push(s->p.pAlloc, {
+                sg.aeFlags.push(s->p.m_pAlloc, eFlag);
+                sg.aPoints.push(s->p.m_pAlloc, {
                     .bOnCurve = bool(eFlag & ON_CURVE)
                 });
             }
@@ -422,13 +422,13 @@ readSimpleGlyph(Font* s, Glyph* g)
             if (eFlag & eByte)
             {
                 if (eFlag & eDelta)
-                    val += BinRead8(&s->p);
+                    val += s->p.read8();
                 else
-                    val -= BinRead8(&s->p);
+                    val -= s->p.read8();
             }
             else if (~eFlag & eDelta)
             {
-                val += BinRead16Rev(&s->p);
+                val += s->p.read16Rev();
             }
 
             if (bXorY) sg.aPoints[i].x = val;
@@ -448,8 +448,8 @@ getGlyphIdx(Font* s, u16 code)
 
     if (fIdx) return fIdx.pData->val;
 
-    u32 savedPos = s->p.pos;
-    defer(s->p.pos = savedPos);
+    u32 savedPos = s->p.m_pos;
+    defer(s->p.m_pos = savedPos);
 
     u32 idx = 0, glyphIndexAddr = 0;
 
@@ -462,12 +462,12 @@ getGlyphIdx(Font* s, u16 code)
             {
                 glyphIndexAddr = std::byteswap(c.idRangeOffset[i]) +
                     2 * (code - std::byteswap(c.startCode[i]));
-                s->p.pos = glyphIndexAddr;
-                idx = BinRead16Rev(&s->p);
+                s->p.m_pos = glyphIndexAddr;
+                idx = s->p.read16Rev();
             }
             else idx = (std::byteswap(c.idDelta[i]) + code) & 0xffff;
 
-            c.mCodeToGlyphIdx.insert(s->p.pAlloc, code, u16(idx));
+            c.mCodeToGlyphIdx.insert(s->p.m_pAlloc, code, u16(idx));
             break;
         }
     }
@@ -478,8 +478,8 @@ getGlyphIdx(Font* s, u16 code)
 Glyph
 FontReadGlyph(Font* s, u32 code)
 {
-    const u32 savedPos = s->p.pos;
-    defer(s->p.pos = savedPos);
+    const u32 savedPos = s->p.m_pos;
+    defer(s->p.m_pos = savedPos);
 
     const auto glyphIdx = getGlyphIdx(s, code);
     const u32 offset = getGlyphOffset(s, glyphIdx);
@@ -497,9 +497,9 @@ FontReadGlyph(Font* s, u32 code)
     if (offset >= glyfTable.val.offset + glyfTable.val.length)
         return {{}, false};
 
-    s->p.pos = offset;
+    s->p.m_pos = offset;
     Glyph g {
-        .numberOfContours = s16(BinRead16Rev(&s->p)),
+        .numberOfContours = s16(s->p.read16Rev()),
         .xMin = readFWord(s),
         .yMin = readFWord(s),
         .xMax = readFWord(s),
@@ -512,7 +512,7 @@ FontReadGlyph(Font* s, u32 code)
         readCompoundGlyph(s, &g);
     else readSimpleGlyph(s, &g);
 
-    s->mOffsetToGlyph.insert(s->p.pAlloc, offset, g);
+    s->mOffsetToGlyph.insert(s->p.m_pAlloc, offset, g);
 
     return g;
 };
@@ -558,20 +558,20 @@ FontPrintGlyphDBG(Font* s, const Glyph& g, bool bNormalize)
 static void
 FontParse(Font* s)
 {
-    LOG_GOOD("loading font: '{}'\n", s->p.sPath);
+    LOG_GOOD("loading font: '{}'\n", s->p.m_sPath);
 
-    if (s->p.sFile.getSize() == 0) LOG_FATAL("unable to parse empty file\n");
+    if (s->p.m_sFile.getSize() == 0) LOG_FATAL("unable to parse empty file\n");
 
     auto& td = s->tableDirectory;
 
-    td.sfntVersion = BinRead32Rev(&s->p);
-    td.numTables = BinRead16Rev(&s->p);
-    td.searchRange = BinRead16Rev(&s->p);
-    td.entrySelector = BinRead16Rev(&s->p);
-    td.rangeShift = BinRead16Rev(&s->p);
+    td.sfntVersion = s->p.read32Rev();
+    td.numTables = s->p.read16Rev();
+    td.searchRange = s->p.read16Rev();
+    td.entrySelector = s->p.read16Rev();
+    td.rangeShift = s->p.read16Rev();
 
     if (td.sfntVersion != 0x00010000 && td.sfntVersion != 0x4f54544f)
-        LOG_FATAL("Unable to read this ('{}') ttf header: sfntVersion: {}'\n", s->p.sPath, td.sfntVersion);
+        LOG_FATAL("Unable to read this ('{}') ttf header: sfntVersion: {}'\n", s->p.m_sPath, td.sfntVersion);
 
 #ifdef D_TTF
     u16 _searchRangeCheck = pow(2, std::floor(log2(td.numTables))) * 16;
@@ -590,21 +590,21 @@ FontParse(Font* s)
 #endif
 
     auto& map = td.mStringToTableRecord;
-    map = MapBase<String, TableRecord>(s->p.pAlloc, td.numTables * MAP_DEFAULT_LOAD_FACTOR_INV);
+    map = MapBase<String, TableRecord>(s->p.m_pAlloc, td.numTables * MAP_DEFAULT_LOAD_FACTOR_INV);
 
     for (u32 i = 0; i < td.numTables; i++)
     {
         TableRecord r {
-            .tag = BinReadString(&s->p, 4),
-            .checkSum = BinRead32Rev(&s->p),
-            .offset = BinRead32Rev(&s->p),
-            .length = BinRead32Rev(&s->p),
+            .tag = s->p.readString(4),
+            .checkSum = s->p.read32Rev(),
+            .offset = s->p.read32Rev(),
+            .length = s->p.read32Rev(),
         };
 
-        td.mStringToTableRecord.insert(s->p.pAlloc, r.tag, r);
+        td.mStringToTableRecord.insert(s->p.m_pAlloc, r.tag, r);
         if (r.tag != "head")
         {
-            auto checkSum = getTableChecksum((u32*)(&s->p.sFile[r.offset]), r.length);
+            auto checkSum = getTableChecksum((u32*)(&s->p.m_sFile[r.offset]), r.length);
             if (r.checkSum - checkSum != 0)
                 LOG_WARN("checkSums don't match: expected: {}, got: {}\n", r.checkSum, checkSum);
         }
@@ -650,4 +650,4 @@ FontDestroy(Font* s)
 }
 
 } /* namespace ttf */
-} /* namespace parser */
+} /* namespace reader */

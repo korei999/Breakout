@@ -9,8 +9,8 @@
 #include "app.hh"
 #include "controls.hh"
 #include "frame.hh"
-#include "parser/Wave.hh"
-#include "parser/ttf.hh"
+#include "reader/Wave.hh"
+#include "reader/ttf.hh"
 #include "text.hh"
 #include "texture.hh"
 
@@ -39,12 +39,12 @@ static texture::Img s_tBall(s_assetArenas.get(SIZE_1K * 100));
 static texture::Img s_tPaddle(s_assetArenas.get(SIZE_1K * 100));
 static texture::Img s_tWhitePixel(s_assetArenas.get(250));
 
-static parser::Wave s_sndBeep(s_assetArenas.get(SIZE_1K * 400));
-static parser::Wave s_sndUnatco(s_assetArenas.get(SIZE_1M * 35));
+static reader::Wave s_sndBeep(s_assetArenas.get(SIZE_1K * 400));
+static reader::Wave s_sndUnatco(s_assetArenas.get(SIZE_1M * 35));
 
 static Plain s_plain;
 
-static parser::ttf::Font s_fontLiberation(s_assetArenas.get(SIZE_1K * 500));
+static reader::ttf::Font s_fontLiberation(s_assetArenas.get(SIZE_1K * 500));
 static text::Bitmap s_textFPS;
 static text::TTF s_ttfTest(s_assetArenas.get(SIZE_1K * 520));
 
@@ -91,7 +91,7 @@ loadAssets()
     frame::g_uboProjView.bindShader(&s_shSprite, "ubProjView", 0);
 
     s_textFPS = text::Bitmap("", 40, 0, 0, GL_DYNAMIC_DRAW);
-    parser::ttf::FontLoadParse(&s_fontLiberation, "test-assets/LiberationMono-Regular.ttf");
+    reader::ttf::FontLoadParse(&s_fontLiberation, "test-assets/LiberationMono-Regular.ttf");
 
     /* unbind before creating threads */
     app::g_pWindow->unbindGlContext();
@@ -99,8 +99,8 @@ loadAssets()
 
     text::TTFRasterizeArg argTTF {&s_ttfTest, &s_fontLiberation};
 
-    parser::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
-    parser::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
+    reader::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
+    reader::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
 
     texture::ImgLoadArg argFontBitmap {&s_tAsciiMap, "test-assets/bitmapFont20.bmp"};
     texture::ImgLoadArg argBox {&s_tBox, "test-assets/box3.bmp"};
@@ -110,8 +110,8 @@ loadAssets()
 
     app::g_pThreadPool->submit(text::TTFRasterizeSubmit, &argTTF);
 
-    app::g_pThreadPool->submit(parser::WaveSubmit, &argBeep);
-    app::g_pThreadPool->submit(parser::WaveSubmit, &argUnatco);
+    app::g_pThreadPool->submit(reader::WaveSubmit, &argBeep);
+    app::g_pThreadPool->submit(reader::WaveSubmit, &argUnatco);
 
     app::g_pThreadPool->submit(texture::ImgSubmit, &argFontBitmap);
     app::g_pThreadPool->submit(texture::ImgSubmit, &argBox);
@@ -203,7 +203,7 @@ blockHit()
     bool bAddSound = false;
     defer(
         if (bAddSound)
-            app::g_pMixer->add(parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
+            app::g_pMixer->add(s_sndBeep.getTrack(false, 1.0f));
     );
 
     auto& enBall = g_aEntities[g_ball.enIdx];
@@ -296,7 +296,7 @@ paddleHit()
     {
         enBall.pos.y = py - pyOff/2.0f;
 
-        app::g_pMixer->add(parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
+        app::g_pMixer->add(s_sndBeep.getTrack(false, 1.0f));
 
         enBall.dir.y = 1.0f;
         if (math::V2Length(enPlayer.dir) > 0.0f)
@@ -340,7 +340,7 @@ outOfBounds()
     }
 
     if (bAddSound)
-        app::g_pMixer->add(parser::WaveGetTrack(&s_sndBeep, false, 1.0f));
+        app::g_pMixer->add(s_sndBeep.getTrack(false, 1.0f));
 }
 
 static inline math::V2
@@ -420,7 +420,7 @@ loadLevel()
     enBall.zOff = 10.0f;
     enBall.bRemoveAfterDraw = false;
 
-    app::g_pMixer->addBackground(parser::WaveGetTrack(&s_sndUnatco, true, 0.7f));
+    app::g_pMixer->addBackground(s_sndUnatco.getTrack(true, 0.7f));
 
     s_aPrevPos.setSize(0);
     for (auto& en : g_aEntities)
