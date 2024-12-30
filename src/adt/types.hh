@@ -3,6 +3,7 @@
 #ifdef ADT_STD_TYPES
     #include <cstdint>
     #include <limits>
+    #include <cstddef>
 #endif
 
 namespace adt

@@ -24,16 +24,22 @@ struct ChunkAllocatorBlock
     u8 pMem[];
 };
 
-struct ChunkAllocator : IAllocator
+class ChunkAllocator : public IAllocator
 {
+    IAllocator* m_pBackAlloc {};
     u64 m_blockCap = 0; 
     u64 m_chunkSize = 0;
     ChunkAllocatorBlock* m_pBlocks = nullptr;
 
     /* */
 
+public:
     ChunkAllocator() = default;
-    ChunkAllocator(u64 chunkSize, u64 blockSize);
+    ChunkAllocator(IAllocator* pBackAlloc, u64 chunkSize, u64 blockSize)
+        : m_pBackAlloc(pBackAlloc),
+          m_blockCap {align(blockSize, chunkSize + sizeof(ChunkAllocatorNode))},
+          m_chunkSize {chunkSize + sizeof(ChunkAllocatorNode)},
+          m_pBlocks {newBlock()} {}
 
     /* */
 
@@ -42,23 +48,28 @@ struct ChunkAllocator : IAllocator
     [[nodiscard]] virtual void* realloc(void* ptr, u64 mCount, u64 mSize) override final;
     void virtual free(void* ptr) override final;
     void virtual freeAll() override final;
+
+    /* */
+
+private:
+    [[nodiscard]] ChunkAllocatorBlock* newBlock();
 };
 
 inline ChunkAllocatorBlock*
-_ChunkAllocatorNewBlock(ChunkAllocator* s)
+ChunkAllocator::newBlock()
 {
-    u64 total = s->m_blockCap + sizeof(ChunkAllocatorBlock);
-    auto* r = (ChunkAllocatorBlock*)::calloc(1, total);
+    u64 total = m_blockCap + sizeof(ChunkAllocatorBlock);
+    auto* r = (ChunkAllocatorBlock*)m_pBackAlloc->zalloc(1, total);
     assert(r != nullptr && "[ChunkAllocator]: calloc failed");
     r->head = (ChunkAllocatorNode*)r->pMem;
 
-    u32 chunks = s->m_blockCap / s->m_chunkSize;
+    u32 chunks = m_blockCap / m_chunkSize;
 
     auto* head = r->head;
     ChunkAllocatorNode* p = head;
     for (u64 i = 0; i < chunks - 1; i++)
     {
-        p->next = (ChunkAllocatorNode*)((u8*)p + s->m_chunkSize);
+        p->next = (ChunkAllocatorNode*)((u8*)p + m_chunkSize);
         p = p->next;
     }
     p->next = nullptr;
@@ -83,7 +94,7 @@ ChunkAllocator::malloc([[maybe_unused]] u64 ignored0, [[maybe_unused]] u64 ignor
 
     if (!pBlock)
     {
-        pPrev->next = _ChunkAllocatorNewBlock(this);
+        pPrev->next = newBlock();
         pBlock = pPrev->next;
     }
 
@@ -97,8 +108,8 @@ ChunkAllocator::malloc([[maybe_unused]] u64 ignored0, [[maybe_unused]] u64 ignor
 inline void*
 ChunkAllocator::zalloc([[maybe_unused]] u64 ignored0, [[maybe_unused]] u64 ignored1)
 {
-    auto* p = malloc(ignored0, ignored1);
-    memset(p, 0, m_chunkSize);
+    auto* p = malloc(0, 0);
+    memset(p, 0, m_chunkSize - sizeof(ChunkAllocatorNode));
     return p;
 }
 
@@ -144,11 +155,5 @@ ChunkAllocator::freeAll()
     }
     m_pBlocks = nullptr;
 }
-
-inline
-ChunkAllocator::ChunkAllocator(u64 chunkSize, u64 blockSize)
-    : m_blockCap {align(blockSize, chunkSize + sizeof(ChunkAllocatorNode))},
-      m_chunkSize {chunkSize + sizeof(ChunkAllocatorNode)},
-      m_pBlocks {_ChunkAllocatorNewBlock(this)} {}
 
 } /* namespace adt */

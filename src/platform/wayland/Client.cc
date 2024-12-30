@@ -1,3 +1,4 @@
+#include "adt/OsAllocator.hh"
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199309L
 #endif
@@ -281,7 +282,7 @@ Client::destroy()
 void
 Client::start()
 {
-    Arena arena(SIZE_8K);
+    Arena arena(OsAllocatorGet(), SIZE_8K);
     defer( arena.freeAll() );
 
     if ((m_display = wl_display_connect(nullptr)))

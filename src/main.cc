@@ -1,4 +1,5 @@
 #include "adt/FreeList.hh"
+#include "adt/OsAllocator.hh"
 #include "app.hh"
 #include "frame.hh"
 
@@ -25,17 +26,17 @@ startup()
 {
     setlocale(LC_ALL, "");
 
-    FreeList arena(SIZE_1M);
-    defer( arena.freeAll() );
+    FreeList alloc(OsAllocatorGet(), SIZE_1M);
+    defer( alloc.freeAll() );
 
-    auto tpool = ThreadPool(&arena, utils::max(getNCores() - 2, 2));
+    auto tpool = ThreadPool(&alloc, utils::max(getNCores() - 2, 2));
     tpool.start();
     app::g_pThreadPool = &tpool;
 
-    app::g_pMixer = app::platformMixerAlloc(&arena);
+    app::g_pMixer = app::platformMixerAlloc(&alloc);
     app::g_pMixer->start();
 
-    app::g_pWindow = app::platformWindowAlloc(&arena);
+    app::g_pWindow = app::platformWindowAlloc(&alloc);
     app::g_pWindow->start();
 
     frame::run();

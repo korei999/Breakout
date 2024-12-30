@@ -2,14 +2,20 @@
 
 #include "types.hh"
 
+#if __has_include(<unistd.h>)
+    #include <unistd.h>
+#elifdef _WIN32
+    #include <sysinfoapi.h>
+#endif
+
 namespace adt
 {
 
-constexpr u64 align(u64 x, u64 to) { return ((x) + to - 1) & (~(to - 1)); }
-constexpr u64 align8(u64 x) { return align(x, 8); }
-constexpr bool isPowerOf2(u64 x) { return (x & (x - 1)) == 0; }
+inline constexpr u64 align(u64 x, u64 to) { return ((x) + to - 1) & (~(to - 1)); }
+inline constexpr u64 align8(u64 x) { return align(x, 8); }
+inline constexpr bool isPowerOf2(u64 x) { return (x & (x - 1)) == 0; }
 
-constexpr u64
+inline constexpr u64
 nextPowerOf2(u64 x)
 {
     --x;
@@ -21,6 +27,32 @@ nextPowerOf2(u64 x)
     ++x;
 
     return x;
+}
+
+#if __has_include(<unistd.h>)
+
+inline constexpr u64
+getPageSize()
+{
+    return getpagesize();
+}
+
+#elifdef _WIN32
+
+inline constexpr u64
+getPageSize()
+{
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return si.dwAllocationGranularity;
+}
+
+#endif
+
+inline constexpr u64
+alignPage(u64 x)
+{
+    return align(x, getPageSize());
 }
 
 constexpr u64 SIZE_MIN = 2ULL;

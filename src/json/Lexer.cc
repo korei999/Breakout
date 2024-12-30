@@ -27,7 +27,7 @@ RESULT Lexer::loadFile(IAllocator* pAlloc, adt::String path)
     Opt<String> rs = file::load(pAlloc, path);
     if (!rs) return FAIL;
 
-    m_sFile = rs.getData();
+    m_sFile = rs.value();
     m_pos = 0;
 
     return OK;

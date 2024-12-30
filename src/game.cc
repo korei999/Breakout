@@ -3,6 +3,7 @@
 #include "IWindow.hh"
 #include "Shader.hh"
 #include "adt/Arena.hh"
+#include "adt/OsAllocator.hh"
 #include "adt/Pool.hh"
 #include "adt/ThreadPool.hh"
 #include "adt/defer.hh"
@@ -19,39 +20,38 @@
 namespace game
 {
 
-template<typename A, typename B>
 struct WidthHeight
 {
-    A width {};
-    B height {};
+    f32 width {};
+    f32 height {};
 };
 
 static AllocatorPool<Arena, ASSET_MAX_COUNT> s_assetArenas {};
 
-static Vec<game::Block> s_aBlocks(s_assetArenas.get(SIZE_1K));
+static Vec<game::Block> s_aBlocks(s_assetArenas.get(OsAllocatorGet(), SIZE_1K));
 
 static Shader s_shFontBitmap;
 static Shader s_shSprite;
 static Shader s_sh1Col;
 
-static texture::Img s_tAsciiMap(s_assetArenas.get(SIZE_1M));
-static texture::Img s_tBox(s_assetArenas.get(SIZE_1K * 100));
-static texture::Img s_tBall(s_assetArenas.get(SIZE_1K * 100));
-static texture::Img s_tPaddle(s_assetArenas.get(SIZE_1K * 100));
-static texture::Img s_tWhitePixel(s_assetArenas.get(250));
+static texture::Img s_tAsciiMap(s_assetArenas.get(OsAllocatorGet(), SIZE_1M));
+static texture::Img s_tBox(s_assetArenas.get(OsAllocatorGet(), SIZE_1K * 100));
+static texture::Img s_tBall(s_assetArenas.get(OsAllocatorGet(), SIZE_1K * 100));
+static texture::Img s_tPaddle(s_assetArenas.get(OsAllocatorGet(), SIZE_1K * 100));
+static texture::Img s_tWhitePixel(s_assetArenas.get(OsAllocatorGet(), 250));
 
-static parser::Wave s_sndBeep(s_assetArenas.get(SIZE_1K * 400));
-static parser::Wave s_sndUnatco(s_assetArenas.get(SIZE_1M * 35));
+static parser::Wave s_sndBeep(s_assetArenas.get(OsAllocatorGet(), SIZE_1K * 400));
+static parser::Wave s_sndUnatco(s_assetArenas.get(OsAllocatorGet(), SIZE_1M * 35));
 
 static Plain s_plain;
 
-static parser::ttf::Font s_fontLiberation(s_assetArenas.get(SIZE_1K * 500));
+static parser::ttf::Font s_fontLiberation(s_assetArenas.get(OsAllocatorGet(), SIZE_1K * 500));
 static text::Bitmap s_textFPS;
-static text::TTF s_ttfTest(s_assetArenas.get(SIZE_1K * 520));
+static text::TTF s_ttfTest(s_assetArenas.get(OsAllocatorGet(), SIZE_1K * 520));
 
 Pool<Entity, ASSET_MAX_COUNT> g_aEntities;
 static Arr<math::V2, ASSET_MAX_COUNT> s_aPrevPos;
-static Pair<f32, f32, WidthHeight> s_currLvlSize {};
+static WidthHeight s_currLvlSize {};
 
 Player g_player {
     .enIdx = 0,

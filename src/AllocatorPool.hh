@@ -5,10 +5,11 @@ struct AllocatorPool
 {
     adt::Pool<ALLOC_T, CAP> pool {};
 
+    template<typename ...ARGS>
     [[nodiscard]] ALLOC_T*
-    get(adt::u32 size)
+    get(ARGS&&... args)
     {
-        adt::u32 idx = pool.getHandle(size);
+        adt::u32 idx = pool.emplace(std::forward<ARGS>(args)...);
         return &pool[idx];
     }
 
