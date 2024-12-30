@@ -33,7 +33,7 @@
 namespace texture
 {
 
-Pool<Img, texture::MAX_COUNT> g_aAllTextures(INIT_FLAG::INIT);
+Pool<Img, texture::MAX_COUNT> g_aAllTextures(INIT);
 Map<String, PoolHnd> g_mAllTexturesIdxs(OsAllocatorGet(), texture::MAX_COUNT);
 
 static mtx_t s_mtxAllTextures;

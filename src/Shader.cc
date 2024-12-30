@@ -4,7 +4,7 @@
 #include "adt/file.hh"
 #include "adt/logs.hh"
 
-Pool<Shader, SHADER_MAX_COUNT> g_aAllShaders(INIT_FLAG::INIT);
+Pool<Shader, SHADER_MAX_COUNT> g_aAllShaders(INIT);
 
 static GLuint ShaderLoadOne(GLenum type, String path);
 static mtx_t s_mtxAllShaders;
