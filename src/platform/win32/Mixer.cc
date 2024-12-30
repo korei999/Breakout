@@ -30,39 +30,31 @@ static XAudio2VoiceInterface s_aVoices[audio::MAX_TRACK_COUNT];
 /*static XAudio2Voice s_xVoice {};*/
 /*static s16 s_chunk[audio::CHUNK_SIZE] {};*/
 
-static const audio::MixerVTable sc_XAudio2MixerVTable {
-    .start = decltype(audio::MixerVTable::start)(MixerStart),
-    .destroy = decltype(audio::MixerVTable::destroy)(MixerDestroy),
-    .add = decltype(audio::MixerVTable::add)(MixerAdd),
-    .addBackground = decltype(audio::MixerVTable::addBackground)(MixerAddBackground),
-};
-
 Mixer::Mixer(IAllocator* pA)
-    : super {&sc_XAudio2MixerVTable},
-      aTracks(pA, audio::MAX_TRACK_COUNT),
+    : aTracks(pA, audio::MAX_TRACK_COUNT),
       aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
 {
-    this->super.bRunning = true;
-    this->super.bMuted = false;
-    this->super.volume = 0.1f;
+    m_bRunning = true;
+    m_bMuted = false;
+    m_volume = 0.1f;
 
     mtx_init(&this->mtxAdd, mtx_plain);
 }
 
 void
-MixerStart(Mixer* s)
+Mixer::start()
 {
-    MixerRunThread(s);
+    MixerRunThread(this);
 }
 
 void
-MixerDestroy([[maybe_unused]] Mixer* s)
+Mixer::destroy()
 {
     //
 }
 
 void
-MixerAdd(Mixer* s, audio::Track t)
+Mixer::add(audio::Track t)
 {
     /* find free slot */
     for (auto& v : s_aVoices)
@@ -78,7 +70,7 @@ MixerAdd(Mixer* s, audio::Track t)
                 .LoopBegin = 0,
                 .LoopLength = 0,
                 .LoopCount = 0,
-                .pContext = s
+                .pContext = this
             };
 
             auto hr = v.m_pVoice->SubmitSourceBuffer(&b);
@@ -92,7 +84,7 @@ MixerAdd(Mixer* s, audio::Track t)
 }
 
 void
-MixerAddBackground(Mixer* s, audio::Track t)
+Mixer::addBackground(audio::Track t)
 {
     /* find free slot */
     for (auto& v : s_aVoices)

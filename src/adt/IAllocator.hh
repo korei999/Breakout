@@ -2,12 +2,6 @@
 
 #include "types.hh"
 
-#if __has_include(<unistd.h>)
-    #include <unistd.h>
-#elifdef _WIN32
-    #include <sysinfoapi.h>
-#endif
-
 namespace adt
 {
 
@@ -27,32 +21,6 @@ nextPowerOf2(u64 x)
     ++x;
 
     return x;
-}
-
-#if __has_include(<unistd.h>)
-
-inline constexpr u64
-getPageSize()
-{
-    return getpagesize();
-}
-
-#elifdef _WIN32
-
-inline constexpr u64
-getPageSize()
-{
-    SYSTEM_INFO si;
-    GetSystemInfo(&si);
-    return si.dwAllocationGranularity;
-}
-
-#endif
-
-inline constexpr u64
-alignPage(u64 x)
-{
-    return align(x, getPageSize());
 }
 
 constexpr u64 SIZE_MIN = 2ULL;

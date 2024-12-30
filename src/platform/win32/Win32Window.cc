@@ -58,13 +58,13 @@ getWglFunctions(void)
 
     String sExt(ext);
 
-    for (u32 i = 0; i < sExt.size; )
+    for (u32 i = 0; i < sExt.getSize(); )
     {
         u32 start = i;
         u32 end = i;
 
         auto skipSpace = [&]() -> void {
-            while (end < sExt.size && sExt[end] != ' ')
+            while (end < sExt.getSize() && sExt[end] != ' ')
                 end++;
         };
 
@@ -92,82 +92,54 @@ getWglFunctions(void)
     DestroyWindow(dummy);
 }
 
-Win32Window::Win32Window(String sName, HINSTANCE hInstance)
-{
-    static WindowVTable vTable {
-        .start = (decltype(WindowVTable::start))Win32Start,
-        .disableRelativeMode = (decltype(WindowVTable::disableRelativeMode))Win32DisableRelativeMode,
-        .enableRelativeMode = (decltype(WindowVTable::enableRelativeMode))Win32EnableRelativeMode,
-        .togglePointerRelativeMode = (decltype(WindowVTable::togglePointerRelativeMode))Win32TogglePointerRelativeMode,
-        .toggleFullscreen = (decltype(WindowVTable::toggleFullscreen))Win32ToggleFullscreen,
-        .hideCursor = (decltype(WindowVTable::hideCursor))Win32HideCursor,
-        .setCursorImage = (decltype(WindowVTable::setCursorImage))Win32SetCursorImage,
-        .setFullscreen = (decltype(WindowVTable::setFullscreen))Win32SetFullscreen,
-        .unsetFullscreen = (decltype(WindowVTable::unsetFullscreen))Win32UnsetFullscreen,
-        .bindGlContext = (decltype(WindowVTable::bindGlContext))Win32BindGlContext,
-        .unbindGlContext = (decltype(WindowVTable::unbindGlContext))Win32UnbindGlContext,
-        .setSwapInterval = (decltype(WindowVTable::setSwapInterval))Win32SetSwapInterval,
-        .toggleVSync = (decltype(WindowVTable::toggleVSync))Win32ToggleVSync,
-        .swapBuffers = (decltype(WindowVTable::swapBuffers))Win32SwapBuffers,
-        .procEvents = (decltype(WindowVTable::procEvents))Win32ProcEvents,
-        .showWindow = (decltype(WindowVTable::showWindow))Win32ShowWindow,
-        .destroy = (decltype(WindowVTable::destroy))Win32Destroy,
-    };
-
-    this->super.pVTable = {&vTable};
-
-    this->super.sName = sName;
-    this->hInstance = hInstance;
-}
-
 void
-Win32Start(Win32Window* s)
+Win32Window::start()
 {
     getWglFunctions();
 
-    s->windowClass = {};
-    s->windowClass.cbSize = sizeof(s->windowClass);
-    s->windowClass.lpfnWndProc = input::windowProc;
-    s->windowClass.hInstance = s->hInstance;
-    s->windowClass.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-    s->windowClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    s->windowClass.lpszClassName = L"opengl_window_class";
+    this->windowClass = {};
+    this->windowClass.cbSize = sizeof(this->windowClass);
+    this->windowClass.lpfnWndProc = input::windowProc;
+    this->windowClass.hInstance = this->_hInstance;
+    this->windowClass.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+    this->windowClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    this->windowClass.lpszClassName = L"opengl_window_class";
 
-    ATOM atom = RegisterClassExW(&s->windowClass);
+    ATOM atom = RegisterClassExW(&this->windowClass);
     if (!atom) LOG_FATAL("RegisterClassExW failed\n");
 
-    s->super.wWidth = 1280;
-    s->super.wHeight = 960;
+    this->m_wWidth = 1280;
+    this->m_wHeight = 960;
     DWORD exstyle = WS_EX_APPWINDOW;
     DWORD style = WS_OVERLAPPEDWINDOW;
 
     // style &= ~WS_THICKFRAME & ~WS_MAXIMIZEBOX;
     RECT rect = { 0, 0, 1280, 960 };
     AdjustWindowRectEx(&rect, style, false, exstyle);
-    s->super.wWidth = rect.right - rect.left;
-    s->super.wHeight = rect.bottom - rect.top;
+    this->m_wWidth = rect.right - rect.left;
+    this->m_wHeight = rect.bottom - rect.top;
 
-    s->hWindow = CreateWindowExW(exstyle,
-        s->windowClass.lpszClassName,
+    this->hWindow = CreateWindowExW(exstyle,
+        this->windowClass.lpszClassName,
         L"Breakout",
         style,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        s->super.wWidth,
-        s->super.wHeight,
+        this->m_wWidth,
+        this->m_wHeight,
         nullptr,
         nullptr,
-        s->windowClass.hInstance,
-        s
+        this->windowClass.hInstance,
+        this
     );
 
-    if (!s->hWindow) LOG_FATAL("CreateWindowExW failed\n");
+    if (!this->hWindow) LOG_FATAL("CreateWindowExW failed\n");
 
-    s->hDeviceContext = GetDC(s->hWindow);
-    if (!s->hDeviceContext) LOG_FATAL("GetDC failed\n");
+    this->hDeviceContext = GetDC(this->hWindow);
+    if (!this->hDeviceContext) LOG_FATAL("GetDC failed\n");
 
     /* FIXME: find better way to toggle this on startup */
-    input::registerRawMouseDevice(s, true);
+    input::registerRawMouseDevice(this, true);
 
     int attrib[] {
         WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
@@ -187,15 +159,15 @@ Win32Start(Win32Window* s)
 
     int format;
     UINT formats;
-    if (!wglChoosePixelFormatARB(s->hDeviceContext, attrib, nullptr, 1, &format, &formats) || formats == 0)
+    if (!wglChoosePixelFormatARB(this->hDeviceContext, attrib, nullptr, 1, &format, &formats) || formats == 0)
         LOG_FATAL("OpenGL does not support required pixel format!");
 
     PIXELFORMATDESCRIPTOR desc {};
     desc.nSize = sizeof(desc);
-    int ok = DescribePixelFormat(s->hDeviceContext, format, sizeof(desc), &desc);
+    int ok = DescribePixelFormat(this->hDeviceContext, format, sizeof(desc), &desc);
     if (!ok) LOG_FATAL("DescribePixelFormat failed\n");
 
-    if (!SetPixelFormat(s->hDeviceContext, format, &desc)) LOG_FATAL("Cannot set OpenGL selected pixel format!");
+    if (!SetPixelFormat(this->hDeviceContext, format, &desc)) LOG_FATAL("Cannot set OpenGL selected pixel format!");
 
     int attribContext[] {
         WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
@@ -209,125 +181,125 @@ Win32Start(Win32Window* s)
         0,
     };
 
-    s->hGlContext = wglCreateContextAttribsARB(s->hDeviceContext, nullptr, attribContext);
-    if (!s->hGlContext) LOG_FATAL("Cannot create OpenGL context! OpenGL version 4.5 is not supported");
+    this->hGlContext = wglCreateContextAttribsARB(this->hDeviceContext, nullptr, attribContext);
+    if (!this->hGlContext) LOG_FATAL("Cannot create OpenGL context! OpenGL version 4.5 is not supported");
 
-    bool okContext = wglMakeCurrent(s->hDeviceContext, s->hGlContext);
+    bool okContext = wglMakeCurrent(this->hDeviceContext, this->hGlContext);
     if (!okContext) LOG_FATAL("wglMakeCurrent failed\n");
 
     if (!gladLoadGL()) LOG_FATAL("gladLoadGL failed\n");
 
-    Win32UnbindGlContext(s);
+    unbindGlContext();
 
-    s->super.bPointerRelativeMode = false;
-    s->super.bPaused = false;
+    this->m_bPointerRelativeMode = false;
+    this->m_bPaused = false;
 }
 
 void
-Win32Destroy([[maybe_unused]] Win32Window* s)
+Win32Window::destroy()
 {
-    DestroyWindow(s->hWindow);
+    DestroyWindow(hWindow);
 }
 
 void
-Win32DisableRelativeMode(Win32Window* s)
+Win32Window::disableRelativeMode()
 {
-    s->super.bPointerRelativeMode = false;
-    input::registerRawMouseDevice(s, false);
+    m_bPointerRelativeMode = false;
+    input::registerRawMouseDevice(this, false);
 }
 
 void
-Win32EnableRelativeMode(Win32Window* s)
+Win32Window::enableRelativeMode()
 {
-    s->super.bPointerRelativeMode = true;
-    input::registerRawMouseDevice(s, true);
+    m_bPointerRelativeMode = true;
+    input::registerRawMouseDevice(this, true);
 }
 
 void
-Win32TogglePointerRelativeMode(Win32Window* s)
+Win32Window::togglePointerRelativeMode()
 {
-    s->super.bPointerRelativeMode = !s->super.bPointerRelativeMode;
-    s->super.bPointerRelativeMode ? Win32EnableRelativeMode(s) : Win32DisableRelativeMode(s);
-    LOG_OK("relative mode: {}\n", s->super.bPointerRelativeMode);
+    this->m_bPointerRelativeMode = !this->m_bPointerRelativeMode;
+    this->m_bPointerRelativeMode ? enableRelativeMode() : disableRelativeMode();
+    LOG_OK("relative mode: {}\n", this->m_bPointerRelativeMode);
 }
 
 void
-Win32ToggleFullscreen(Win32Window* s)
+Win32Window::toggleFullscreen()
 {
-    s->super.bFullscreen = !s->super.bFullscreen;
-    s->super.bFullscreen ? Win32SetFullscreen(s) : Win32UnsetFullscreen(s);
-    LOG_OK("fullscreen: {}\n", s->super.bPointerRelativeMode);
+    this->m_bFullscreen = !this->m_bFullscreen;
+    this->m_bFullscreen ? setFullscreen() : unsetFullscreen();
+    LOG_OK("fullscreen: {}\n", this->m_bPointerRelativeMode);
 }
 
 void 
-Win32HideCursor([[maybe_unused]] Win32Window* s)
+Win32Window::hideCursor()
 {
     /* TODO: */
 }
 
 void 
-Win32SetCursorImage([[maybe_unused]] Win32Window* s, [[maybe_unused]] String cursorType)
+Win32Window::setCursorImage([[maybe_unused]] String cursorType)
 {
     /* TODO: */
 }
 
 void 
-Win32SetFullscreen(Win32Window* s) 
+Win32Window::setFullscreen() 
 {
-    s->super.bFullscreen = true;
+    m_bFullscreen = true;
 
     input::enterFullscreen(
-        s->hWindow,
-        GetDeviceCaps(s->hDeviceContext, 0),
-        GetDeviceCaps(s->hDeviceContext, 1),
-        GetDeviceCaps(s->hDeviceContext, 2),
-        GetDeviceCaps(s->hDeviceContext, 3)
+        this->hWindow,
+        GetDeviceCaps(this->hDeviceContext, 0),
+        GetDeviceCaps(this->hDeviceContext, 1),
+        GetDeviceCaps(this->hDeviceContext, 2),
+        GetDeviceCaps(this->hDeviceContext, 3)
     );
 }
 
 void
-Win32UnsetFullscreen(Win32Window* s)
+Win32Window::unsetFullscreen()
 {
-    s->super.bFullscreen = false;
+    this->m_bFullscreen = false;
 
-    input::exitFullscreen(s->hWindow, 0, 0, 800, 600, 0, 0);
+    input::exitFullscreen(this->hWindow, 0, 0, 800, 600, 0, 0);
 }
 
 void 
-Win32BindGlContext(Win32Window* s)
+Win32Window::bindGlContext()
 {
-    wglMakeCurrent(s->hDeviceContext, s->hGlContext);
+    wglMakeCurrent(hDeviceContext, hGlContext);
 }
 
 void 
-Win32UnbindGlContext([[maybe_unused]] Win32Window* s)
+Win32Window::unbindGlContext()
 {
     wglMakeCurrent(nullptr, nullptr);
 }
 
 void
-Win32SetSwapInterval(Win32Window* s, int interval)
+Win32Window::setSwapInterval(int interval)
 {
-    s->super.swapInterval = interval;
+    m_swapInterval = interval;
     wglSwapIntervalEXT(interval);
 }
 
 void 
-Win32ToggleVSync(Win32Window* s)
+Win32Window::toggleVSync()
 {
-    s->super.swapInterval = !s->super.swapInterval;
-    wglSwapIntervalEXT(s->super.swapInterval);
-    LOG_OK("swapInterval: {}\n", s->super.swapInterval);
+    this->m_swapInterval = !this->m_swapInterval;
+    wglSwapIntervalEXT(this->m_swapInterval);
+    LOG_OK("swapInterval: {}\n", this->m_swapInterval);
 }
 
 void
-Win32SwapBuffers(Win32Window* s)
+Win32Window::swapBuffers()
 {
-    if (!SwapBuffers(s->hDeviceContext)) LOG_WARN("SwapBuffers(dc): failed\n");
+    if (!SwapBuffers(this->hDeviceContext)) LOG_WARN("SwapBuffers(dc): failed\n");
 }
 
 void 
-Win32ProcEvents(Win32Window* s)
+Win32Window::procEvents()
 {
     MSG msg;
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -335,7 +307,7 @@ Win32ProcEvents(Win32Window* s)
         switch (msg.message)
         {
             case WM_QUIT:
-                s->super.bRunning = false;
+                m_bRunning = false;
                 break;
 
             default:
@@ -348,9 +320,9 @@ Win32ProcEvents(Win32Window* s)
 }
 
 void
-Win32ShowWindow(Win32Window* s)
+Win32Window::showWindow()
 {
-    ShowWindow(s->hWindow, SW_SHOWDEFAULT);
+    ShowWindow(hWindow, SW_SHOWDEFAULT);
 }
 
 } /* namespace win32 */

@@ -231,13 +231,13 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg)
     {
         case WM_DESTROY:
-            s->super.bRunning = false;
-            app::g_pMixer->bRunning = false;
+            s->m_bRunning = false;
+            app::g_pMixer->m_bRunning = false;
             return 0;
 
         case WM_SIZE:
-            s->super.wWidth = LOWORD(lParam);
-            s->super.wHeight = HIWORD(lParam);
+            s->m_wWidth = LOWORD(lParam);
+            s->m_wHeight = HIWORD(lParam);
             break;
 
         case WM_KILLFOCUS:
@@ -293,14 +293,14 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
     }
 
-    if (s && s->super.bPointerRelativeMode)
+    if (s && s->m_bPointerRelativeMode)
     {
         RECT r;
         GetWindowRect(s->hWindow, &r);
 
         SetCursorPos(
-            s->super.wWidth / 2 + r.left,
-            s->super.wHeight / 2 + r.top
+            s->m_wWidth / 2 + r.left,
+            s->m_wHeight / 2 + r.top
         );
         SetCursor(nullptr);
     }

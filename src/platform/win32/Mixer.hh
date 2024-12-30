@@ -27,9 +27,8 @@ void MixerDestroy(Mixer* s);
 void MixerAdd(Mixer* s, audio::Track t);
 void MixerAddBackground(Mixer* s, audio::Track t);
 
-struct Mixer
+struct Mixer : public audio::IMixer
 {
-    audio::IMixer super;
     IXAudio2* pXAudio2 = nullptr;
     IXAudio2SourceVoice* pSourceVoice = nullptr;
 
@@ -42,17 +41,12 @@ struct Mixer
 
     Mixer() = default;
     Mixer(IAllocator* pA);
+
+    virtual void start();
+    virtual void destroy();
+    virtual void add(audio::Track t);
+    virtual void addBackground(audio::Track t);
 };
 
 } /* namespace win32 */
 } /* namespace platform */
-
-namespace audio
-{
-
-inline void MixerStart(platform::win32::Mixer* s) { platform::win32::MixerStart(s); }
-inline void MixerDestroy(platform::win32::Mixer* s) { platform::win32::MixerDestroy(s); }
-inline void MixerAdd(platform::win32::Mixer* s, audio::Track t) { platform::win32::MixerAdd(s, t); }
-inline void MixerAddBackground(platform::win32::Mixer* s, audio::Track t) { platform::win32::MixerAddBackground(s, t); }
-
-} /* namespace audio */

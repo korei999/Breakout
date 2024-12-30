@@ -383,7 +383,7 @@ loadLevel()
                 auto& e = g_aEntities[idx];
 
                 s_aBlocks.push({u16(idx)});
-                e.pos = {x, lvl.height - y - 1};
+                e.pos = {static_cast<f32>(x), static_cast<f32>(lvl.height - y - 1)};
                 e.width = 1.0f;
                 e.height = 1.0f;
                 e.xOff = 0.0f;
@@ -526,7 +526,7 @@ drawFPSCounterTTF(Arena* pAlloc)
     static int nLastFps = frame::g_nfps;
 
     f64 currTime = utils::timeNowMS();
-    if (currTime >= frame::g_prevTime + 1000.0)
+    if ((currTime - frame::g_prevTime) >= 1000.0)
         nLastFps = frame::g_nfps; 
 
     String s = StringAlloc((IAllocator*)pAlloc, s_ttfTest.m_maxSize);
