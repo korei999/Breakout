@@ -34,25 +34,25 @@ static const pw_stream_events s_streamEvents {
     .param_changed {},
     .add_buffer {},
     .remove_buffer {},
-    .process = onProcess,
+    .process = decltype(pw_stream_events::process)(Mixer::getOnProcessMethod()),
     .drained {},
     .command {},
     .trigger_done {},
 };
 
 Mixer::Mixer(IAllocator* pA)
-    : aTracks(pA, audio::MAX_TRACK_COUNT),
-      aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
+    : m_aTracks(pA, audio::MAX_TRACK_COUNT),
+      m_aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
 {
     this->m_bRunning = true;
     this->m_bMuted = false;
     this->m_volume = 0.1f;
 
-    this->sampleRate = 48000;
-    this->channels = 2;
-    this->eformat = SPA_AUDIO_FORMAT_S16_LE;
+    this->m_sampleRate = 48000;
+    this->m_channels = 2;
+    this->m_eformat = SPA_AUDIO_FORMAT_S16_LE;
 
-    mtx_init(&this->mtxAdd, mtx_plain);
+    mtx_init(&this->m_mtxAdd, mtx_plain);
 }
 
 void
@@ -65,10 +65,10 @@ Mixer::start()
     spa_pod_builder b {};
     spa_pod_builder_init(&b, aBuff, sizeof(aBuff));
 
-    this->pThrdLoop = pw_thread_loop_new("BreakoutThreadLoop", {});
+    this->m_pThrdLoop = pw_thread_loop_new("BreakoutThreadLoop", {});
 
-    this->pStream = pw_stream_new_simple(
-        pw_thread_loop_get_loop(this->pThrdLoop),
+    this->m_pStream = pw_stream_new_simple(
+        pw_thread_loop_get_loop(this->m_pThrdLoop),
         "BreakoutAudioSource",
         pw_properties_new(
             PW_KEY_MEDIA_TYPE, "Audio",
@@ -81,76 +81,76 @@ Mixer::start()
     );
 
     spa_audio_info_raw rawInfo {
-        .format = this->eformat,
+        .format = this->m_eformat,
         .flags {},
-        .rate = this->sampleRate,
-        .channels = this->channels,
+        .rate = this->m_sampleRate,
+        .channels = this->m_channels,
         .position {}
     };
 
     aParams[0] = spa_format_audio_raw_build(&b, SPA_PARAM_EnumFormat, &rawInfo);
 
     pw_stream_connect(
-        this->pStream,
+        this->m_pStream,
         PW_DIRECTION_OUTPUT,
         PW_ID_ANY,
-        (pw_stream_flags)(PW_STREAM_FLAG_AUTOCONNECT|PW_STREAM_FLAG_INACTIVE|PW_STREAM_FLAG_MAP_BUFFERS),
+        (pw_stream_flags)(PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_INACTIVE | PW_STREAM_FLAG_MAP_BUFFERS),
         aParams,
         utils::size(aParams)
     );
 
-    pw_thread_loop_start(this->pThrdLoop);
+    pw_thread_loop_start(this->m_pThrdLoop);
 
-    PwLockGuard tLock(this->pThrdLoop);
-    pw_stream_set_active(this->pStream, true);
+    PwLockGuard tLock(this->m_pThrdLoop);
+    pw_stream_set_active(this->m_pStream, true);
 }
 
 void
 Mixer::destroy()
 {
     {
-        PwLockGuard tLock(this->pThrdLoop);
-        pw_stream_set_active(this->pStream, true);
+        PwLockGuard tLock(this->m_pThrdLoop);
+        pw_stream_set_active(this->m_pStream, true);
     }
 
-    pw_thread_loop_stop(this->pThrdLoop);
+    pw_thread_loop_stop(this->m_pThrdLoop);
     LOG_NOTIFY("pw_thread_loop_stop()\n");
 
     this->m_bRunning = false;
 
-    pw_stream_destroy(this->pStream);
-    pw_thread_loop_destroy(this->pThrdLoop);
+    pw_stream_destroy(this->m_pStream);
+    pw_thread_loop_destroy(this->m_pThrdLoop);
     pw_deinit();
 
-    this->aTracks.destroy();
-    this->aBackgroundTracks.destroy();
-    mtx_destroy(&this->mtxAdd);
+    this->m_aTracks.destroy();
+    this->m_aBackgroundTracks.destroy();
+    mtx_destroy(&this->m_mtxAdd);
 }
 
 void
 Mixer::add(audio::Track t)
 {
-    mtx_lock(&this->mtxAdd);
+    mtx_lock(&this->m_mtxAdd);
 
-    if (this->aTracks.getSize() < audio::MAX_TRACK_COUNT) this->aTracks.push(t);
+    if (this->m_aTracks.getSize() < audio::MAX_TRACK_COUNT) this->m_aTracks.push(t);
     else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
 
-    mtx_unlock(&this->mtxAdd);
+    mtx_unlock(&this->m_mtxAdd);
 }
 
 void
 Mixer::addBackground(audio::Track t)
 {
-    mtx_lock(&this->mtxAdd);
+    mtx_lock(&this->m_mtxAdd);
 
-    if (this->aTracks.getSize() < audio::MAX_TRACK_COUNT) this->aBackgroundTracks.push(t);
+    if (this->m_aTracks.getSize() < audio::MAX_TRACK_COUNT) this->m_aBackgroundTracks.push(t);
     else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
 
-    mtx_unlock(&this->mtxAdd);
+    mtx_unlock(&this->m_mtxAdd);
 }
 
-static void
-writeFrames(Mixer* s, void* pBuff, u32 nFrames)
+void
+Mixer::writeFrames(void* pBuff, u32 nFrames)
 {
     __m128i_u* pSimdDest = (__m128i_u*)pBuff;
 
@@ -158,9 +158,9 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
     {
         __m128i packed8Samples {};
 
-        if (s->aBackgroundTracks.getSize() > 0)
+        if (m_aBackgroundTracks.getSize() > 0)
         {
-            auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
+            auto& t = m_aBackgroundTracks[m_currentBackgroundTrackIdx];
             f32 vol = std::pow(t.volume * audio::g_globalVolume, 3.0f);
 
             if (t.pcmPos + 8 <= t.pcmSize)
@@ -183,15 +183,15 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
             else
             {
                 t.pcmPos = 0;
-                auto current = s->currentBackgroundTrackIdx + 1;
-                if (current > s->aBackgroundTracks.getSize() - 1) current = 0;
-                s->currentBackgroundTrackIdx = current;
+                auto current = m_currentBackgroundTrackIdx + 1;
+                if (current > m_aBackgroundTracks.getSize() - 1) current = 0;
+                m_currentBackgroundTrackIdx = current;
             }
         }
 
-        for (u32 i = 0; i < s->aTracks.getSize(); ++i)
+        for (u32 i = 0; i < m_aTracks.getSize(); ++i)
         {
-            auto& t = s->aTracks[i];
+            auto& t = m_aTracks[i];
             f32 vol = powf(t.volume, 3.0f);
 
             if (t.pcmPos + 8 <= t.pcmSize)
@@ -219,10 +219,10 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
                 }
                 else
                 {
-                    mtx_lock(&s->mtxAdd);
-                    s->aTracks.popAsLast(i);
+                    mtx_lock(&m_mtxAdd);
+                    m_aTracks.popAsLast(i);
                     --i;
-                    mtx_unlock(&s->mtxAdd);
+                    mtx_unlock(&m_mtxAdd);
                 }
             }
         }
@@ -233,12 +233,10 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
     }
 }
 
-static void
-onProcess(void* data)
+void
+Mixer::onProcess()
 {
-    auto* s = (Mixer*)data;
-
-    pw_buffer* pPwBuffer = pw_stream_dequeue_buffer(s->pStream);
+    pw_buffer* pPwBuffer = pw_stream_dequeue_buffer(m_pStream);
     if (!pPwBuffer)
     {
         pw_log_warn("out of buffers: %m");
@@ -254,23 +252,23 @@ onProcess(void* data)
         return;
     }
 
-    u32 stride = sizeof(s16) * s->channels;
+    u32 stride = sizeof(s16) * m_channels;
     u32 nFrames = pBuffData.maxsize / stride;
     if (pPwBuffer->requested) nFrames = SPA_MIN(pPwBuffer->requested, (u64)nFrames);
 
     if (nFrames > 1024*4) nFrames = 1024*4; /* limit to arbitrary number */
 
-    s->lastNFrames = nFrames;
+    m_lastNFrames = nFrames;
 
-    writeFrames(s, pDest, nFrames);
+    writeFrames(pDest, nFrames);
 
     pBuffData.chunk->offset = 0;
     pBuffData.chunk->stride = stride;
     pBuffData.chunk->size = nFrames * stride;
 
-    pw_stream_queue_buffer(s->pStream, pPwBuffer);
+    pw_stream_queue_buffer(m_pStream, pPwBuffer);
 
-    /*if (!app::g_pWindow->bRunning) pw_main_loop_quit(s->pLoop);*/
+    /*if (!app::g_pWindow->bRunning) pw_main_loop_quit(pLoop);*/
     /* set bRunning for the mixer outside */
 }
 

@@ -27,29 +27,24 @@ namespace platform
 namespace pipewire
 {
 
-struct Mixer;
-
-struct Mixer : audio::IMixer
+class Mixer : public audio::IMixer
 {
-    u32 sampleRate = 48000;
-    u8 channels = 2;
-    enum spa_audio_format eformat {};
+    u32 m_sampleRate = 48000;
+    u8 m_channels = 2;
+    enum spa_audio_format m_eformat {};
 
-    pw_core* pCore {};
-    pw_context* pCtx {};
-    pw_thread_loop* pThrdLoop {};
-    pw_stream* pStream = nullptr;
-    u32 lastNFrames {};
+    pw_thread_loop* m_pThrdLoop {};
+    pw_stream* m_pStream = nullptr;
+    u32 m_lastNFrames {};
 
-    mtx_t mtxAdd {};
-    Vec<audio::Track> aTracks {};
-    u32 currentBackgroundTrackIdx {};
-    Vec<audio::Track> aBackgroundTracks {};
-
-    thrd_t threadLoop {};
+    mtx_t m_mtxAdd {};
+    Vec<audio::Track> m_aTracks {};
+    u32 m_currentBackgroundTrackIdx {};
+    Vec<audio::Track> m_aBackgroundTracks {};
 
     /* */
 
+public:
     Mixer() = default;
     Mixer(IAllocator* pA);
 
@@ -59,6 +54,15 @@ struct Mixer : audio::IMixer
     virtual void destroy();
     virtual void add(audio::Track t);
     virtual void addBackground(audio::Track t);
+
+    /* */
+
+    static void* getOnProcessMethod() { return methodPointer(&Mixer::onProcess); }
+
+    /* */
+private:
+    void writeFrames(void* pBuff, u32 nFrames);
+    void onProcess();
 };
 
 } /* namespace pipewire */
