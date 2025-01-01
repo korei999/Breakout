@@ -23,8 +23,6 @@ struct PwLockGuard
     ~PwLockGuard() { pw_thread_loop_unlock(p); }
 };
 
-static void onProcess(void* data);
-
 static const pw_stream_events s_streamEvents {
     .version = PW_VERSION_STREAM_EVENTS,
     .destroy {},

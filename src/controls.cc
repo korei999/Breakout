@@ -18,7 +18,7 @@ bool g_bStepDebug = false;
 bool g_bPause = false;
 bool g_bJoke = false;
 
-static void PlayerProcMovements(game::Player* s);
+static void PlayerProcMovements();
 
 void
 procMouse()
@@ -133,11 +133,11 @@ procKeysOnce(u32 key, u32 pressed)
 void
 procKeys()
 {
-    PlayerProcMovements(&game::g_player);
+    PlayerProcMovements();
 }
 
 static void
-PlayerProcMovements(game::Player* s)
+PlayerProcMovements()
 {
     auto& enPlayer = game::g_aEntities[game::g_player.enIdx];
     enPlayer.dir = {};
@@ -155,7 +155,7 @@ updateView()
 }
 
 void
-updateProj(game::Player* s, f32 fov, f32 aspect, f32 near, f32 far)
+updateProj(f32 fov, f32 aspect, f32 near, f32 far)
 {
     g_camera.proj = math::M4Pers(fov, aspect, near, far);
 }
