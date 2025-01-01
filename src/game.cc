@@ -203,12 +203,12 @@ AABB(
 }
 
 static void
-explodeBlock(Arena* pArena, Entity* p)
+explodeBlockDFS(Vec<Entity*>* pVDfsMap, Entity* pEntity)
 {
     const u32 lvlWidth = s_pCurrLvl->width;
     const u32 lvlHeight = s_pCurrLvl->height;
 
-    auto fPos = s_mapPEntityToTilePos.search(p);
+    auto fPos = s_mapPEntityToTilePos.search(pEntity);
     if (!fPos) return;
 
     const auto& [tileX, tileY] = fPos.data().val;
@@ -221,6 +221,7 @@ explodeBlock(Arena* pArena, Entity* p)
     };
 
     TwoDSpan span(s_aPBlocksMap.data(), lvlWidth, lvlHeight);
+    TwoDSpan dfsMap(pVDfsMap->data(), lvlWidth, lvlHeight);
 
     for (auto [x, y] : aKernel)
     {
@@ -230,21 +231,29 @@ explodeBlock(Arena* pArena, Entity* p)
         if (px < lvlWidth && py < lvlHeight)
         {
             auto* pEn = span[px, py];
-            if (pEn != nullptr)
+            if (pEn && !dfsMap[px, py])
             {
-                pEn->bDead = true;
+                dfsMap[px, py] = pEn;
 
-                /* FIXME: endless recursion */
-                /*if (pEn->eColor == game::COLOR::RED)*/
-                /*    explodeBlock(pEn);*/
+                if (pEn->eColor == game::COLOR::RED)
+                    explodeBlockDFS(pVDfsMap, pEn);
             }
         }
     }
 }
 
 static void
-explodeBlockDFS(Arena* pArena, Entity* p)
+explodeBlock(Arena* pArena, Entity* p)
 {
+    const u32 lvlWidth = s_pCurrLvl->width;
+    const u32 lvlHeight = s_pCurrLvl->height;
+
+    Vec<Entity*> vDfsMap(pArena, lvlWidth * lvlHeight);
+    vDfsMap.setSize(lvlWidth * lvlHeight);
+
+    explodeBlockDFS(&vDfsMap, p);
+    for (auto pEn : vDfsMap)
+        if (pEn) pEn->bDead = true;
 }
 
 static void
