@@ -38,10 +38,10 @@ struct IMixer
 
 struct DummyMixer : IMixer
 {
-    virtual void start() {};
-    virtual void destroy() {};
-    virtual void add([[maybe_unused]] Track t) {};
-    virtual void addBackground([[maybe_unused]] Track t) {};
+    virtual void start() override final {};
+    virtual void destroy() override final {};
+    virtual void add([[maybe_unused]] Track t) override final {};
+    virtual void addBackground([[maybe_unused]] Track t) override final {};
 };
 
 } /* namespace audio */

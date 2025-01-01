@@ -42,10 +42,10 @@ struct Mixer : public audio::IMixer
     Mixer() = default;
     Mixer(IAllocator* pA);
 
-    virtual void start();
-    virtual void destroy();
-    virtual void add(audio::Track t);
-    virtual void addBackground(audio::Track t);
+    virtual void start() override final;
+    virtual void destroy() override final;
+    virtual void add(audio::Track t) override final;
+    virtual void addBackground(audio::Track t) override final;
 };
 
 } /* namespace win32 */
