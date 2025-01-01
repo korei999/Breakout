@@ -139,7 +139,7 @@ mainLoop()
 
         if (controls::g_bStepDebug && !win.m_bPaused)
         {
-            game::updateState();
+            game::updateState(&arena);
             g_gameTime += g_dt;
             accumulator -= g_dt;
         }
@@ -147,7 +147,7 @@ mainLoop()
         {
             while (accumulator >= g_dt && !win.m_bPaused)
             {
-                game::updateState();
+                game::updateState(&arena);
                 g_gameTime += g_dt;
                 accumulator -= g_dt;
             }

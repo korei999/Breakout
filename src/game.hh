@@ -94,7 +94,7 @@ struct Level
 
 void loadAssets();
 void loadLevel();
-void updateState();
+void updateState(Arena* pArena);
 void draw(Arena* pAlloc, const f64 alpha);
 void cleanup();
 

@@ -13,6 +13,7 @@
 #include "reader/ttf.hh"
 #include "text.hh"
 #include "texture.hh"
+#include "adt/TwoDSpan.hh"
 
 #include "AllocatorPool.hh"
 
@@ -138,10 +139,10 @@ nextPos(const T& e, bool bNormalizeDir)
 getReflectionSide(math::V2 tar)
 {
     constexpr math::V2 compass[] {
-        { 0.0,  1.0 }, /* up */
-        { 1.0,  0.0 }, /* right */
-        { 0.0, -1.0 }, /* down */
-        {-1.0,  0.0 }, /* left */
+        { 0.0,  1.0}, /* up */
+        { 1.0,  0.0}, /* right */
+        { 0.0, -1.0}, /* down */
+        {-1.0,  0.0}, /* left */
     };
 
     f32 max = 0.0f;
@@ -202,7 +203,7 @@ AABB(
 }
 
 static void
-explodeBlock(Entity* p)
+explodeBlock(Arena* pArena, Entity* p)
 {
     const u32 lvlWidth = s_pCurrLvl->width;
     const u32 lvlHeight = s_pCurrLvl->height;
@@ -212,14 +213,14 @@ explodeBlock(Entity* p)
 
     const auto& [tileX, tileY] = fPos.data().val;
 
-    if (s_aPBlocksMap[tileY*lvlWidth + tileX]->bDead) return;
-
     /* xy offsets */
-    const Pair<s8, s8> aKernel[] {
+    constexpr Pair<s8, s8> aKernel[] {
         {-1,  1}, {0,  1}, {1,  1},
         {-1,  0},          {1,  0},
         {-1, -1}, {0, -1}, {1, -1},
     };
+
+    TwoDSpan span(s_aPBlocksMap.data(), lvlWidth, lvlHeight);
 
     for (auto [x, y] : aKernel)
     {
@@ -228,7 +229,7 @@ explodeBlock(Entity* p)
 
         if (px < lvlWidth && py < lvlHeight)
         {
-            auto* pEn = s_aPBlocksMap[py*lvlWidth + px];
+            auto* pEn = span[px, py];
             if (pEn != nullptr)
             {
                 pEn->bDead = true;
@@ -242,7 +243,12 @@ explodeBlock(Entity* p)
 }
 
 static void
-blockHit()
+explodeBlockDFS(Arena* pArena, Entity* p)
+{
+}
+
+static void
+blockHit(Arena* pArena)
 {
     auto& mix = *app::g_pMixer;
     bool bAddSound = false;
@@ -327,7 +333,7 @@ blockHit()
                 enBall.dir = enBall.pos - b.pos;
                 bExplosive = true;
 
-                explodeBlock(&b);
+                explodeBlock(pArena, &b);
             }
 
             break;
@@ -420,9 +426,7 @@ loadLevel()
     const auto& aTiles = lvl.aTiles;
     s_pCurrLvl = &lvl;
 
-    auto lvlAt = [&](int y, int x) -> s8& {
-        return aTiles[y*lvl.width + x];
-    };
+    TwoDSpan lvlAt(aTiles, lvl.width, lvl.height);
 
     frame::g_unit.first = frame::WIDTH / lvl.width / 2;
     frame::g_unit.second = frame::HEIGHT / lvl.height / 2;
@@ -442,7 +446,7 @@ loadLevel()
     {
         for (u32 x = 0; x < lvl.width; ++x)
         {
-            if (lvlAt(y, x) != s8(game::COLOR::INVISIBLE))
+            if (lvlAt[x, y] != s8(game::COLOR::INVISIBLE))
             {
                 u32 idx = g_aEntities.getHandle();
                 auto& e = g_aEntities[idx];
@@ -456,7 +460,7 @@ loadLevel()
                 e.zOff = 0.0f;
                 e.shaderIdx = 0;
                 e.texIdx = u16(boxTexId);
-                e.eColor = game::COLOR(lvlAt(y, x));
+                e.eColor = game::COLOR(lvlAt[x, y]);
                 e.bDead = false;
                 e.bRemoveAfterDraw = false;
 
@@ -499,7 +503,7 @@ loadLevel()
 }
 
 void
-updateState()
+updateState(Arena* pArena)
 {
     auto& enBall = g_aEntities[g_ball.enIdx];
     auto& enPlayer = g_aEntities[g_player.enIdx];
@@ -533,7 +537,7 @@ updateState()
     {
         if (g_ball.bReleased)
         {
-            blockHit();
+            blockHit(pArena);
             paddleHit();
             outOfBounds();
             enBall.pos = nextPos(enBall, true);
