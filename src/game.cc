@@ -130,7 +130,7 @@ nextPos(const T& e, bool bNormalizeDir)
     return e.pos + (dir * (frame::g_dt * e.speed));
 }
 
-static REFLECT_SIDE
+[[maybe_unused]] static REFLECT_SIDE
 getReflectionSide(math::V2 tar)
 {
     constexpr math::V2 compass[] {
@@ -200,10 +200,19 @@ AABB(
 static void
 blockHit()
 {
+    auto& mix = *app::g_pMixer;
     bool bAddSound = false;
+    bool bExplosive = false;
+
     defer(
         if (bAddSound)
-            app::g_pMixer->add(s_sndBeep.getTrack(false, 1.0f));
+        {
+            f32 vol = 1.0f;
+            if (bExplosive)
+                vol *= 1.6;
+
+            mix.add(s_sndBeep.getTrack(false, vol));
+        }
     );
 
     auto& enBall = g_aEntities[g_ball.enIdx];
@@ -214,12 +223,6 @@ blockHit()
         if (b.bDead || b.eColor == COLOR::INVISIBLE) continue;
 
         math::V2 center = nextPos(enBall, true);
-        const auto& bx = center.x;
-        const auto& by = center.y;
-
-        const auto& ex = b.pos.x;
-        const auto& ey = b.pos.y;
-
         if (AABB(center, g_ball.radius, g_ball.radius, b.pos, b.width, b.height))
         {
             if (g_ball.bCollided)
@@ -228,16 +231,12 @@ blockHit()
                 break;
             }
 
-            if (b.eColor != COLOR::INVISIBLE && b.eColor != COLOR::DIMGRAY)
-                b.bDead = true;
-
             bAddSound = true;
             g_ball.bCollided = true;
 
             auto eSide = getReflectionSideV2(b);
 
             auto& enBall = g_aEntities[g_ball.enIdx];
-            const f32 off = g_ball.radius * 1.0f;
             switch (eSide)
             {
                 case REFLECT_SIDE::NONE:
@@ -270,6 +269,15 @@ blockHit()
                 break;
             }
 
+            if (b.eColor != COLOR::INVISIBLE && b.eColor != COLOR::DIMGRAY)
+                b.bDead = true;
+
+            if (b.eColor == COLOR::RED)
+            {
+                enBall.dir = enBall.pos - b.pos;
+                bExplosive = true;
+            }
+
             break;
         }
     }
@@ -298,7 +306,7 @@ paddleHit()
 
         app::g_pMixer->add(s_sndBeep.getTrack(false, 1.0f));
 
-        enBall.dir.y = 1.0f;
+        utils::negate(&enBall.dir.y);
         if (math::V2Length(enPlayer.dir) > 0.0f)
             enBall.dir += enPlayer.dir * 0.1f;
     }
@@ -315,7 +323,7 @@ outOfBounds()
         if (controls::g_bStepDebug)
         {
             enBall.pos.y = -0.5f;
-            enBall.dir.y = 1.0f;
+            utils::negate(&enBall.dir.y);
             bAddSound = true;
         }
         else g_ball.bReleased = false;
@@ -323,19 +331,19 @@ outOfBounds()
     else if (enBall.pos.y > s_currLvlSize.height - 0.5f)
     {
         enBall.pos.y = s_currLvlSize.height - 0.5f;
-        enBall.dir.y = -1.0f;
+        utils::negate(&enBall.dir.y);
         bAddSound = true;
     }
     else if (enBall.pos.x < -0.5f)
     {
         enBall.pos.x = -0.5f;
-        enBall.dir.x = -enBall.dir.x;
+        utils::negate(&enBall.dir.x);
         bAddSound = true;
     }
     else if (enBall.pos.x > s_currLvlSize.width - 0.5f)
     {
         enBall.pos.x = s_currLvlSize.width - 0.5f;
-        enBall.dir.x = -enBall.dir.x;
+        utils::negate(&enBall.dir.x);
         bAddSound = true;
     }
 
@@ -489,7 +497,7 @@ draw(Arena* pArena, const f64 alpha)
     }
 }
 
-static void
+[[maybe_unused]] static void
 drawFPSCounter(Arena* pAlloc)
 {
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);

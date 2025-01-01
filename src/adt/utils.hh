@@ -33,14 +33,14 @@ namespace utils
 {
 
 /* bit number starts from 0 */
-constexpr u64
+inline constexpr u64
 setBit(u64 num, u64 bit, bool val)
 {
     return (num & ~((u64)1 << bit)) | ((u64)val << bit);
 }
 
 template<typename T>
-constexpr void
+inline constexpr void
 swap(T* l, T* r)
 {
     T t0 = *l;
@@ -49,76 +49,82 @@ swap(T* l, T* r)
     *r = t0;
 }
 
-constexpr void
+inline constexpr void
 toggle(auto* x)
 {
     *x = !*x;
 }
 
-[[nodiscard]] constexpr const auto&
+inline constexpr void
+negate(auto* x)
+{
+    *x = -(*x);
+}
+
+[[nodiscard]] inline constexpr const auto&
 max(const auto& l, const auto& r)
 {
     return l > r ? l : r;
 }
 
-[[nodiscard]] constexpr auto&
+[[nodiscard]] inline constexpr auto&
 max(auto& l, auto& r)
 {
     return l > r ? l : r;
 }
 
-[[nodiscard]] constexpr const auto&
+[[nodiscard]] inline constexpr const auto&
 min(const auto& l, const auto& r)
 {
     return l < r ? l : r;
 }
 
-[[nodiscard]] constexpr auto&
+[[nodiscard]] inline constexpr auto&
 min(auto& l, auto& r)
 {
     return l < r ? l : r;
 }
 
-[[nodiscard]] constexpr auto
+[[nodiscard]] inline constexpr auto
 maxVal(const auto& l, const auto& r)
 {
     return l > r ? l : r;
 }
 
-[[nodiscard]] constexpr auto
+[[nodiscard]] inline constexpr auto
 minVal(const auto& l, const auto& r)
 {
     return l < r ? l : r;
 }
 
-[[nodiscard]] constexpr u64
+[[nodiscard]] inline constexpr u64
 size(const auto& a)
 {
     return sizeof(a) / sizeof(a[0]);
 }
 
 template<typename T>
-[[nodiscard]] constexpr bool
+[[nodiscard]] inline constexpr bool
 odd(const T& a)
 {
     return a & 1;
 }
 
-[[nodiscard]] constexpr bool
+[[nodiscard]] inline constexpr bool
 even(const auto& a)
 {
     return !odd(a);
 }
 
 template<typename T>
-[[nodiscard]] constexpr s64
+[[nodiscard]] inline constexpr s64
 compare(const T& l, const T& r)
 {
     return l - r;
 }
 
 template<typename T>
-[[nodiscard]] constexpr s64
+[[nodiscard]] inline constexpr s64
 compareRev(const T& l, const T& r)
 {
     return r - l;
@@ -176,7 +182,7 @@ sleepS(f64 s)
 #endif
 }
 
-constexpr void
+inline constexpr void
 addNSToTimespec(timespec* const pTs, const s64 nsec)
 {
     constexpr s64 nsecMax = 1000000000;
@@ -199,7 +205,7 @@ copy(T* pDest, T* pSrc, u64 size)
 }
 
 template<typename T>
-constexpr void
+inline constexpr void
 fill(T* pData, T x, u64 size)
 {
     for (u64 i = 0; i < size; ++i)
@@ -207,7 +213,7 @@ fill(T* pData, T x, u64 size)
 }
 
 template<typename T>
-[[nodiscard]] constexpr auto
+[[nodiscard]] inline constexpr auto
 clamp(const T& x, const T& _min, const T& _max)
 {
     return max(_min, min(_max, x));
@@ -239,7 +245,7 @@ searchMin(CON_T<T>* s)
     return *_min;
 }
 
-constexpr void
+inline constexpr void
 reverse(auto* a, const u32 size)
 {
     assert(size > 0);
@@ -248,7 +254,7 @@ reverse(auto* a, const u32 size)
         swap(&a[i], &a[size - 1 - i]);
 }
 
-constexpr void
+inline constexpr void
 reverse(auto* a)
 {
     reverse(a->pData, a->size);

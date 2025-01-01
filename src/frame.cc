@@ -94,7 +94,6 @@ run()
     controls::procKeys();
     app::g_pWindow->procEvents();
 
-    /*WindowEnableRelativeMode(app::g_pWindow);*/
     app::g_pWindow->disableRelativeMode();
 
     mainLoop();
@@ -112,9 +111,11 @@ mainLoop()
     f64 currentTime = utils::timeNowS();
     f64 accumulator = 0.0;
 
-    while (app::g_pWindow->m_bRunning || app::g_pMixer->m_bRunning)
+    auto& win = *app::g_pWindow;
+
+    while (win.m_bRunning || win.m_bRunning)
     {
-        if (!app::g_pWindow->m_bPaused)
+        if (!win.m_bPaused)
         {
             f64 newTime = utils::timeNowS();
             f64 frameTime = newTime - currentTime;
@@ -124,11 +125,11 @@ mainLoop()
             accumulator += frameTime;
         }
 
-        app::g_pWindow->procEvents();
+        win.procEvents();
         updateDrawTime();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, app::g_pWindow->m_wWidth, app::g_pWindow->m_wHeight);
+        glViewport(0, 0, win.m_wWidth, win.m_wHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         controls::g_camera.proj = math::M4Ortho(-0.0f, WIDTH, 0.0f, HEIGHT, -50.0f, 50.0f);
@@ -136,7 +137,7 @@ mainLoop()
 
         controls::procKeys();
 
-        if (controls::g_bStepDebug && !app::g_pWindow->m_bPaused)
+        if (controls::g_bStepDebug && !win.m_bPaused)
         {
             game::updateState();
             g_gameTime += g_dt;
@@ -144,7 +145,7 @@ mainLoop()
         }
         else
         {
-            while (accumulator >= g_dt && !app::g_pWindow->m_bPaused)
+            while (accumulator >= g_dt && !win.m_bPaused)
             {
                 game::updateState();
                 g_gameTime += g_dt;
