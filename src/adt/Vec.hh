@@ -36,31 +36,53 @@ struct VecBase
     const T& operator[](u32 i) const { assert(i < m_size && "[Vec] out of size"); return m_pData[i]; }
 
     [[nodiscard]] bool empty() const { return m_size == 0; }
+
     u32 push(IAllocator* p, const T& data);
-    template<typename ...ARGS> u32 emplace(IAllocator* p, ARGS&&... args);
+
+    template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>)
+        u32 emplace(IAllocator* p, ARGS&&... args);
+
     [[nodiscard]] T& last();
+
     [[nodiscard]] const T& last() const;
+
     [[nodiscard]] T& first();
+
     [[nodiscard]] const T& first() const;
+
     T* pop();
+
     void setSize(IAllocator* p, u32 size);
+
     void setCap(IAllocator* p, u32 cap);
+
     void swapWithLast(u32 i);
+
     void popAsLast(u32 i);
+
     [[nodiscard]] u32 idx(const T* x) const;
+
     [[nodiscard]] u32 lastI() const;
+
     void destroy(IAllocator* p);
+
     [[nodiscard]] u32 getSize() const;
+
     [[nodiscard]] u32 getCap() const;
-    [[nodiscard]] T*& data();
-    [[nodiscard]] T* const& data() const;
+
+    [[nodiscard]] T* data();
+
+    [[nodiscard]] T* const data() const;
+
     void zeroOut(); /* set size to zero and memset */
+
     [[nodiscard]] VecBase<T> clone(IAllocator* pAlloc) const;
 
     /* */
 
 private:
     void grow(IAllocator* p, u32 newCapacity);
+
     void growIfNeeded(IAllocator* p);
 
     /* */
@@ -106,7 +128,7 @@ VecBase<T>::push(IAllocator* p, const T& data)
 }
 
 template<typename T>
-template<typename ...ARGS>
+template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>)
 inline u32
 VecBase<T>::emplace(IAllocator* p, ARGS&&... args)
 {
@@ -225,14 +247,14 @@ VecBase<T>::getCap() const
 }
 
 template<typename T>
-[[nodiscard]] inline T*&
+[[nodiscard]] inline T*
 VecBase<T>::data()
 {
     return m_pData;
 }
 
 template<typename T>
-[[nodiscard]] inline T* const&
+[[nodiscard]] inline T* const
 VecBase<T>::data() const
 {
     return m_pData;
@@ -243,7 +265,6 @@ inline void
 VecBase<T>::zeroOut()
 {
     memset(m_pData, 0, m_size * sizeof(T));
-    m_size = 0;
 }
 
 template<typename T>
@@ -296,25 +317,46 @@ struct Vec
     const T& operator[](u32 i) const { return base[i]; }
 
     [[nodiscard]] bool empty() const { return base.empty(); }
+
     u32 push(const T& data) { return base.push(m_pAlloc, data); }
-    template<typename ...ARGS> u32 emplace(ARGS&&... args) { return base.emplace(m_pAlloc, std::forward<ARGS>(args)...); }
+
+    template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>)
+        u32 emplace(ARGS&&... args) { return base.emplace(m_pAlloc, std::forward<ARGS>(args)...); }
+
     [[nodiscard]] T& VecLast() { return base.last(); }
+
     [[nodiscard]] T& last() { return base.last(); }
+
     [[nodiscard]] const T& last() const { return base.last(); }
+
     [[nodiscard]] T& first() { return base.first(); }
+
     [[nodiscard]] const T& first() const { return base.first(); }
+
     T* pop() { return base.pop(); }
+
     void setSize(u32 size) { base.setSize(m_pAlloc, size); }
+
     void setCap(u32 cap) { base.setCap(m_pAlloc, cap); }
+
     void swapWithLast(u32 i) { base.swapWithLast(i); }
+
     void popAsLast(u32 i) { base.popAsLast(i); }
+
     [[nodiscard]] u32 idx(const T* x) const { return base.idx(x); }
+
     [[nodiscard]] u32 lastI() const { return base.lastI(); }
+
     void destroy() { base.destroy(m_pAlloc); }
+
     [[nodiscard]] u32 getSize() const { return base.getSize(); }
+
     [[nodiscard]] u32 getCap() const { return base.getCap(); }
-    [[nodiscard]] T*& data() { return base.data(); }
-    [[nodiscard]] const T*& data() const { return base.data(); }
+
+    [[nodiscard]] T* data() { return base.data(); }
+
+    [[nodiscard]] const T* data() const { return base.data(); }
+
     void zeroOut() { base.zeroOut(); }
 
     [[nodiscard]] Vec<T>

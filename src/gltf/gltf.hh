@@ -9,10 +9,6 @@ using namespace adt;
 namespace gltf
 {
 
-struct Model;
-
-bool ModelLoad(Model* s, String path);
-
 /* match gl macros */
 enum class COMPONENT_TYPE
 {
@@ -206,7 +202,7 @@ struct Material
 
 struct Model
 {
-    IAllocator* pAl;
+    IAllocator* m_pAlloc {};
     struct {
         json::Object* scene;
         json::Object* scenes;
@@ -222,33 +218,52 @@ struct Model
         json::Object* samplers;
         json::Object* skins;
         json::Object* animations;
-    } jsonObjs {};
-    json::Parser parser;
-    String sGenerator;
-    String sVersion;
-    u32 defaultSceneIdx;
-    VecBase<Scene> aScenes;
-    VecBase<Buffer> aBuffers;
-    VecBase<BufferView> aBufferViews;
-    VecBase<Accessor> aAccessors;
-    VecBase<Mesh> aMeshes;
-    VecBase<Texture> aTextures;
-    VecBase<Material> aMaterials;
-    VecBase<Image> aImages;
-    VecBase<Node> aNodes;
+    } m_jsonObjs {};
+    json::Parser m_parser {};
+    String m_sGenerator {};
+    String m_sVersion {};
+    u32 m_defaultSceneIdx {};
+    VecBase<Scene> m_aScenes {};
+    VecBase<Buffer> m_aBuffers {};
+    VecBase<BufferView> m_aBufferViews {};
+    VecBase<Accessor> m_aAccessors {};
+    VecBase<Mesh> m_aMeshes {};
+    VecBase<Texture> m_aTextures {};
+    VecBase<Material> m_aMaterials {};
+    VecBase<Image> m_aImages {};
+    VecBase<Node> m_aNodes {};
+
+    String m_sPath {};
+    String m_sFile {};
 
     Model(IAllocator* p)
-        : pAl(p),
-          parser(p),
-          aScenes(p),
-          aBuffers(p),
-          aBufferViews(p),
-          aAccessors(p),
-          aMeshes(p),
-          aTextures(p),
-          aMaterials(p),
-          aImages(p),
-          aNodes(p) {}
+        : m_pAlloc(p),
+          m_parser(p),
+          m_aScenes(p),
+          m_aBuffers(p),
+          m_aBufferViews(p),
+          m_aAccessors(p),
+          m_aMeshes(p),
+          m_aTextures(p),
+          m_aMaterials(p),
+          m_aImages(p),
+          m_aNodes(p) {}
+
+    bool load(String path);
+
+    /* */
+
+private:
+    void procJSONObjs();
+    void procScenes();
+    void procBuffers();
+    void procBufferViews();
+    void procAccessors();
+    void procMeshes();
+    void procTexures();
+    void procMaterials();
+    void procImages();
+    void procNodes();
 };
 
 inline String

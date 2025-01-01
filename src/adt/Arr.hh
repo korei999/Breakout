@@ -6,6 +6,7 @@
 #include <cassert>
 #include <initializer_list>
 #include <new> /* IWYU pragma: keep */
+#include <utility>
 
 namespace adt
 {
@@ -33,6 +34,7 @@ struct Arr
     constexpr const T* data() const { return m_aData; }
     constexpr bool empty() const { return m_size == 0; }
     constexpr u32 push(const T& x);
+    template<typename ...ARGS> requires (std::is_constructible_v<T, ARGS...>) constexpr u32 emplace(ARGS&&... args);
     constexpr u32 fakePush();
     constexpr T* pop();
     constexpr void fakePop();
@@ -84,6 +86,18 @@ Arr<T, CAP>::push(const T& x)
     assert(getSize() < CAP && "[Arr]: pushing over capacity");
 
     new(m_aData + m_size++) T(x);
+
+    return m_size - 1;
+}
+
+template<typename T, u32 CAP> requires(CAP > 0)
+template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>)
+inline constexpr u32
+Arr<T, CAP>::emplace(ARGS&&... args)
+{
+    assert(getSize() < CAP && "[Arr]: pushing over capacity");
+
+    new(m_aData + m_size++) T(std::forward<ARGS>(args)...);
 
     return m_size - 1;
 }

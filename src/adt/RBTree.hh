@@ -129,7 +129,7 @@ struct RBTreeBase
     void removeAndFree(IAllocator* p, RBNode<T>* elm);
     RBNode<T>* insert(bool bAllowDuplicates, RBNode<T>* elm);
     RBNode<T>* insert(IAllocator* pA, bool bAllowDuplicates, const T& data);
-    template<typename ...ARGS> RBNode<T>* emplace(IAllocator* pA, bool bAllowDuplicates, ARGS&&... args);
+    template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>) RBNode<T>* emplace(IAllocator* pA, bool bAllowDuplicates, ARGS&&... args);
     void destroy(IAllocator* pA);
 };
 
@@ -502,7 +502,7 @@ RBTreeBase<T>::insert(IAllocator* pA, bool bAllowDuplicates, const T& data)
 }
 
 template<typename T>
-template<typename ...ARGS>
+template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>) 
 inline RBNode<T>*
 RBTreeBase<T>::emplace(IAllocator* pA, bool bAllowDuplicates, ARGS&&... args)
 {
@@ -696,7 +696,7 @@ struct RBTree
     void removeAndFree(const T& x) { base.removeAndFree(m_pAlloc, RBSearch<T>(getRoot(), x)); }
     RBNode<T>* insert(bool bAllowDuplicates, RBNode<T>* elm) { return base.insert(bAllowDuplicates, elm); }
     RBNode<T>* insert(bool bAllowDuplicates, const T& data) { return base.insert(m_pAlloc, bAllowDuplicates, data); }
-    template<typename ...ARGS> RBNode<T>* emplace(bool bAllowDuplicates, ARGS&&... args)
+    template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>) RBNode<T>* emplace(bool bAllowDuplicates, ARGS&&... args)
     { return base.emplace(m_pAlloc, bAllowDuplicates, std::forward<ARGS>(args)...); }
     void destroy() { base.destroy(m_pAlloc); }
 };

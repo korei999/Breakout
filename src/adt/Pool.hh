@@ -54,7 +54,7 @@ struct Pool
     void destroy();
     [[nodiscard]] PoolHnd getHandle();
     [[nodiscard]] PoolHnd push(const T& value);
-    template<typename ...ARGS> [[nodiscard]] PoolHnd emplace(ARGS&&... args);
+    template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>) [[nodiscard]] PoolHnd emplace(ARGS&&... args);
     void giveBack(PoolHnd hnd);
     u32 getCap() const { return CAP; }
 
@@ -217,7 +217,7 @@ Pool<T, CAP>::push(const T& value)
 }
 
 template<typename T, u32 CAP>
-template<typename ...ARGS>
+template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>)
 inline PoolHnd
 Pool<T, CAP>::emplace(ARGS&&... args)
 {

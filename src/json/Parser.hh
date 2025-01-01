@@ -8,24 +8,26 @@
 namespace json
 {
 
-struct Parser
+enum class STATUS : adt::u8 { OK, FAIL };
+
+class Parser
 {
     adt::IAllocator* m_pAlloc;
     Lexer m_lex;
-    adt::String m_sName;
     adt::VecBase<Object> m_aObjects {};
     Token m_tCurr;
     Token m_tNext;
 
     /* */
 
+public:
     Parser() = default;
     Parser(adt::IAllocator* p) : m_pAlloc(p) {}
 
+    /* */
+
     void destroy();
-    RESULT load(adt::String path);
-    RESULT parse();
-    RESULT loadParse(adt::String path);
+    STATUS parse(adt::String sJson);
     void print(FILE* fp);
     void traverse(Object* pNode, bool (*pfn)(Object* pNode, void* pArgs), void* pArgs);
     /* if root json object consists of only one object return that, otherwise get array of root objects */
@@ -36,136 +38,137 @@ struct Parser
     {
         for (auto& obj : m_aObjects) traverse(&obj, pfn, pArgs);
     }
+
+private:
+    STATUS parseNode(Object* pNode);
+    STATUS parseObject(Object* pNode);
+    STATUS parseArray(Object* pNode); /* arrays are same as objects */
+    void parseIdent(TagVal* pTV);
+    void parseString(TagVal* pTV);
+    void parseNumber(TagVal* pTV);
+    void parseFloat(TagVal* pTV);
+    STATUS expect(TOKEN_TYPE t);
+    STATUS expectNot(TOKEN_TYPE t);
+    STATUS printNodeError();
+    void next();
 };
 
-void printNode(FILE* fp, Object* pNode, adt::String svEnd, int depth);
+void printNode(FILE* fp, Object* pNode, adt::String sEnd = "", int depth = 0);
 
 /* Linear search inside JSON object. Returns nullptr if not found */
-inline Object*
-searchObject(adt::VecBase<Object>& aObj, adt::String svKey)
+[[nodiscard]] inline Object*
+searchObject(adt::VecBase<Object>& aObj, adt::String sKey)
 {
     for (adt::u32 i = 0; i < aObj.getSize(); i++)
-        if (aObj[i].svKey == svKey)
+        if (aObj[i].sKey == sKey)
             return &aObj[i];
 
     return nullptr;
 }
 
-inline adt::VecBase<Object>&
+[[nodiscard]] inline adt::VecBase<Object>&
 getObject(Object* obj)
 {
     assert(obj->tagVal.tag == TAG::OBJECT);
     return obj->tagVal.val.o;
 }
 
-inline adt::VecBase<Object>&
+[[nodiscard]] inline adt::VecBase<Object>&
 getArray(Object* obj)
 {
     assert(obj->tagVal.tag == TAG::ARRAY);
     return obj->tagVal.val.a;
 }
 
-inline long
+[[nodiscard]] inline long
 getLong(Object* obj)
 {
     assert(obj->tagVal.tag == TAG::LONG);
     return obj->tagVal.val.l;
 }
 
-inline double
+[[nodiscard]] inline double
 getDouble(Object* obj)
 {
     assert(obj->tagVal.tag == TAG::DOUBLE);
     return obj->tagVal.val.d;
 }
 
-inline adt::String
+[[nodiscard]] inline adt::String
 getString(Object* obj)
 {
     assert(obj->tagVal.tag == TAG::STRING);
-    return obj->tagVal.val.sv;
+    return obj->tagVal.val.s;
 }
 
-inline bool
+[[nodiscard]] inline bool
 getBool(Object* obj)
 {
     assert(obj->tagVal.tag == TAG::BOOL);
     return obj->tagVal.val.b;
 }
 
-inline Object
-makeObject(adt::String key, adt::IAllocator* pAlloc)
+[[nodiscard]] inline Object
+makeObject(adt::IAllocator* pAlloc, adt::String key)
 {
     return {
-        .svKey = key,
+        .sKey = key,
         .tagVal {.tag = TAG::OBJECT, .val {.o {pAlloc}}}
     };
 }
 
-inline Object
-makeArray(adt::String key, adt::IAllocator* pAlloc)
+[[nodiscard]] inline Object
+makeArray(adt::IAllocator* pAlloc, adt::String key)
 {
     return {
-        .svKey = key,
+        .sKey = key,
         .tagVal {.tag = TAG::ARRAY, .val {.a {pAlloc}}}
     };
 }
 
-inline Object
-makeLong(adt::String key, long l)
+[[nodiscard]] inline Object
+makeNumber(adt::String key, adt::s64 l)
 {
     return {
-        .svKey = key,
+        .sKey = key,
         .tagVal {.tag = TAG::LONG, .val {.l = l}}
     };
 }
 
-inline Object
-makeDouble(adt::String key, double d)
+[[nodiscard]] inline Object
+makeFloat(adt::String key, adt::f64 d)
 {
     return {
-        .svKey = key,
+        .sKey = key,
         .tagVal {.tag = TAG::DOUBLE, .val {.d = d}}
     };
 }
 
-inline Object
+[[nodiscard]] inline Object
 makeString(adt::String key, adt::String s)
 {
     return {
-        .svKey = key,
-        .tagVal {.tag = TAG::STRING, .val {.sv = s}}
+        .sKey = key,
+        .tagVal {.tag = TAG::STRING, .val {.s = s}}
     };
 }
 
-inline Object
+[[nodiscard]] inline Object
 makeBool(adt::String key, bool b)
 {
     return {
-        .svKey = key,
+        .sKey = key,
         .tagVal {.tag = TAG::BOOL, .val {.b = b}}
     };
 }
 
-inline Object
+[[nodiscard]] inline Object
 makeNull(adt::String key)
 {
     return {
-        .svKey = key,
+        .sKey = key,
         .tagVal {.tag = TAG::NULL_, .val {.n = nullptr}}
     };
-}
-
-inline adt::u32
-pushToObject(Object* pObj, adt::IAllocator* p, Object o)
-{
-    return pObj->tagVal.val.o.push(p, o);
-}
-
-inline adt::u32
-pushToArray(Object* pObj, adt::IAllocator* p, Object o)
-{
-    return pObj->tagVal.val.a.push(p, o);
 }
 
 } /* namespace json */

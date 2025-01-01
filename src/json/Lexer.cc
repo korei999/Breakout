@@ -1,219 +1,182 @@
 #include "Lexer.hh"
 
-#include "adt/file.hh"
-#include "adt/logs.hh"
-
-#include <ctype.h>
+#include <cctype>
 
 using namespace adt;
 
 namespace json
 {
 
-static void skipWhiteSpace(Lexer* s);
-static Token number(Lexer* s);
-static Token stringNoQuotes(Lexer* s);
-static Token string(Lexer* s);
-static Token character(Lexer* s, Token::TYPE type);
+Token
+Lexer::next()
+{
+    skipWhitespace();
+    if (m_pos >= m_sJson.getSize()) return {};
+
+    Token tok {};
+
+    switch (m_sJson[m_pos])
+    {
+        case '{':
+        tok = nextChar(TOKEN_TYPE::L_BRACE);
+        advanceOne();
+        break;
+
+        case '}':
+        tok = nextChar(TOKEN_TYPE::R_BRACE);
+        advanceOne();
+        break;
+
+        case '"':
+        tok = nextString();
+        advanceOne();
+        break;
+
+        case ':':
+        tok = nextChar(TOKEN_TYPE::COLON);
+        advanceOne();
+        break;
+
+        case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': case '-': case '+':
+        tok = nextNumber();
+        break;
+
+        case '[':
+        tok = nextChar(TOKEN_TYPE::L_BRACKET);
+        advanceOne();
+        break;
+
+        case ']':
+        tok = nextChar(TOKEN_TYPE::R_BRACKET);
+        advanceOne();
+        break;
+
+        case ',':
+        tok = nextChar(TOKEN_TYPE::COMMA);
+        advanceOne();
+        break;
+
+        default:
+        tok = nextStringNoQuotes();
+        break;
+    }
+
+    return tok;
+}
 
 void
-Lexer::destroy(adt::IAllocator* pAlloc)
+Lexer::skipWhitespace()
 {
-    pAlloc->free(m_sFile.m_pData);
-}
-
-RESULT Lexer::loadFile(IAllocator* pAlloc, adt::String path)
-{
-    Opt<String> rs = file::load(pAlloc, path);
-    if (!rs) return FAIL;
-
-    m_sFile = rs.value();
-    m_pos = 0;
-
-    return OK;
-}
-
-static void
-skipWhiteSpace(Lexer* s)
-{
-    auto oneOf = [](char c) -> bool {
-        const char skipChars[] = " \t\n\r";
-
-        for (auto ch : skipChars)
-            if (c == ch) return true;
+    auto oneOf = [](char ch) -> bool {
+        constexpr char nts[] = " \n\r\t\v\f";
+        for (auto& c : nts)
+            if (ch == c) return true;
 
         return false;
     };
 
-    while (s->m_pos < s->m_sFile.m_size && oneOf(s->m_sFile[s->m_pos]))
-        s->m_pos++;
-}
-
-static Token
-number(Lexer* s)
-{
-    Token r {};
-    u32 start = s->m_pos;
-    u32 i = start;
-
-    while (
-        isxdigit(s->m_sFile[i]) ||
-        s->m_sFile[i] == '.'    ||
-        s->m_sFile[i] == '-'    ||
-        s->m_sFile[i] == '+'
-    )
+    while (m_pos < m_sJson.getSize() && oneOf(m_sJson[m_pos]))
     {
-        i++;
-    }
-
-    r.type = Token::NUMBER;
-    r.sLiteral = {&s->m_sFile[start], i - start};
-    
-    s->m_pos = i - 1;
-    return r;
-}
-
-static Token
-stringNoQuotes(Lexer* s)
-{
-    Token r {};
-
-    u32 start = s->m_pos;
-    u32 i = start;
-
-    while (isalpha(s->m_sFile[i]))
-        i++;
-
-    r.sLiteral = {&s->m_sFile[start], i - start};
-
-    if ("null" == r.sLiteral)
-        r.type = Token::NULL_;
-    else if ("false" == r.sLiteral)
-        r.type = Token::FALSE_;
-    else if ("true" == r.sLiteral)
-        r.type = Token::TRUE_;
-    else
-        r.type = Token::IDENT;
-
-    s->m_pos = i - 1;
-    return r;
-}
-
-static Token
-string(Lexer* s)
-{
-    Token r {};
-
-    u32 start = s->m_pos;
-    u32 i = start + 1;
-    bool bEsc = false;
-
-    while (s->m_sFile[i])
-    {
-        switch (s->m_sFile[i])
+        if (m_sJson[m_pos] == '\n')
         {
-            default:
-                if (bEsc)
-                    bEsc = false;
-                break;
-
-            case Token::EOF_:
-                CERR("unterminated string\n");
-                exit(1);
-
-            case '\n':
-                CERR("Unexpected newline within string");
-                exit(1);
-
-            case '\\':
-                bEsc = !bEsc;
-                break;
-
-            case '"':
-                if (!bEsc)
-                    goto done;
-                else
-                    bEsc = false;
-                break;
+            ++m_row;
+            m_column = 0;
         }
 
-        i++;
+        advanceOne();
     }
-
-done:
-
-    r.type = Token::IDENT;
-    r.sLiteral = {&s->m_sFile[start + 1], (i - start) - 1};
-
-    s->m_pos = i;
-    return r;
 }
 
-static Token
-character(Lexer* s, Token::TYPE type)
+Token
+Lexer::nextChar(TOKEN_TYPE eType)
 {
     return {
-        .type = type,
-        .sLiteral = {&s->m_sFile[s->m_pos], 1}
+        .eType = eType,
+        .sLiteral = {&m_sJson[m_pos], 1},
+        .row = static_cast<decltype(Token::row)>(m_row),
+        .column = static_cast<decltype(Token::column)>(m_column),
+    };
+}
+
+
+Token
+Lexer::nextString()
+{
+    assert(m_sJson[m_pos] == '"');
+
+    advanceOne();
+    if (done()) return {};
+
+    auto fPos = m_pos;
+
+    bool bEsc = false;
+    for (; m_pos < m_sJson.getSize(); advanceOne())
+    {
+        if (!bEsc && m_sJson[m_pos] == '\\')
+        {
+            bEsc = true;
+            continue;
+        }
+
+        if (m_sJson[m_pos] == '"' && !bEsc)
+            break;
+
+        bEsc = false;
+    }
+
+    return {
+        .eType = TOKEN_TYPE::QUOTED_STRING,
+        .sLiteral = {&m_sJson[fPos], m_pos - fPos},
+        .row = static_cast<decltype(Token::row)>(m_row),
+        .column = static_cast<decltype(Token::column)>(m_column - (m_pos - fPos + 1)),
     };
 }
 
 Token
-Lexer::next()
+Lexer::nextStringNoQuotes()
 {
-    Token r {};
+    auto fPos = m_pos;
 
-    if (m_pos >= m_sFile.m_size)
-            return r;
+    while (m_pos < m_sJson.getSize() && isalnum(m_sJson[m_pos]))
+        advanceOne();
 
-    skipWhiteSpace(this);
+    return {
+        .eType = TOKEN_TYPE::STRING,
+        .sLiteral = {&m_sJson[fPos], m_pos - fPos},
+        .row = static_cast<decltype(Token::row)>(m_row),
+        .column = static_cast<decltype(Token::column)>(m_column - (m_pos - fPos)),
+    };
+}
 
-    switch (m_sFile[m_pos])
+Token
+Lexer::nextNumber()
+{
+    assert(std::isdigit(m_sJson[m_pos]));
+
+    auto fPos = m_pos;
+    TOKEN_TYPE eType = TOKEN_TYPE::NUMBER;
+
+    while (
+        m_pos < m_sJson.getSize() &&
+        (isdigit(m_sJson[m_pos])  ||
+            m_sJson[m_pos] == '.' ||
+            m_sJson[m_pos] == '+' ||
+            m_sJson[m_pos] == '-'
+        )
+    )
     {
-        default:
-        /* solves bools and nulls */
-        r = stringNoQuotes(this);
-        break;
+        if (m_sJson[m_pos] == '.') 
+            eType = TOKEN_TYPE::FLOAT;
 
-        case '-': case '+': case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-        r = number(this);
-        break;
-
-        case Token::QUOTE:
-        r = string(this);
-        break;
-
-        case Token::COMMA:
-        r = character(this, Token::COMMA);
-        break;
-
-        case Token::ASSIGN:
-        r = character(this, Token::ASSIGN);
-        break;
-
-        case Token::LBRACE:
-        r = character(this, Token::LBRACE);
-        break;
-
-        case Token::RBRACE:
-        r = character(this, Token::RBRACE);
-        break;
-
-        case Token::RBRACKET:
-        r = character(this, Token::RBRACKET);
-        break;
-
-        case Token::LBRACKET:
-        r = character(this, Token::LBRACKET);
-        break;
-
-        case Token::EOF_:
-        r.type = Token::EOF_;
-        break;
+        advanceOne();
     }
 
-    m_pos++;
-    return r;
+    return {
+        .eType = eType,
+        .sLiteral = {&m_sJson[fPos], m_pos - fPos},
+        .row = static_cast<decltype(Token::row)>(m_row),
+        .column = static_cast<decltype(Token::column)>(m_column - (m_pos - fPos)),
+    };
 }
 
 } /* namespace json */

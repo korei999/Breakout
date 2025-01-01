@@ -21,7 +21,7 @@ ModelLoad(Model* s, String path, GLint drawMode, GLint texMode)
 bool
 ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 {
-    if (!gltf::ModelLoad(&s->modelData, path)) return false;
+    if (!s->modelData.load(path)) return false;
 
     auto& a = s->modelData;;
 
@@ -30,7 +30,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
     /* load buffers first */
     Vec<GLuint> aBufferMap(&atmAl);
-    for (u32 i = 0; i < a.aBuffers.getSize(); i++)
+    for (u32 i = 0; i < a.m_aBuffers.getSize(); i++)
     {
         mtx_lock(&gl::g_mtxGlContext);
         app::g_pWindow->bindGlContext();
@@ -42,7 +42,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         GLuint b;
         glGenBuffers(1, &b);
         glBindBuffer(GL_ARRAY_BUFFER, b);
-        glBufferData(GL_ARRAY_BUFFER, a.aBuffers[i].byteLength, a.aBuffers[i].aBin.data(), drawMode);
+        glBufferData(GL_ARRAY_BUFFER, a.m_aBuffers[i].byteLength, a.m_aBuffers[i].aBin.data(), drawMode);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         aBufferMap.push(b);
     }
@@ -52,12 +52,12 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     defer( tp.destroy() );
 
     /* preload texures */
-    Vec<texture::Img> aTex(&atmAl, a.aImages.getSize());
-    aTex.setSize(a.aImages.getCap());
+    Vec<texture::Img> aTex(&atmAl, a.m_aImages.getSize());
+    aTex.setSize(a.m_aImages.getCap());
 
-    for (u32 i = 0; i < a.aImages.getSize(); i++)
+    for (u32 i = 0; i < a.m_aImages.getSize(); i++)
     {
-        auto uri = a.aImages[i].uri;
+        auto uri = a.m_aImages[i].uri;
 
         if (!uri.endsWith(".bmp"))
             LOG_FATAL("trying to load unsupported texture: '{}'\n", uri);
@@ -94,7 +94,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
     tp.wait();
 
-    for (auto& mesh : a.aMeshes)
+    for (auto& mesh : a.m_aMeshes)
     {
         VecBase<Mesh> aNMeshes(s->pAlloc);
 
@@ -108,11 +108,11 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             u32 accMatIdx = primitive.material;
             gltf::PRIMITIVES mode = primitive.mode;
 
-            auto& accPos = a.aAccessors[accPosIdx];
-            auto& accTex = a.aAccessors[accTexIdx];
+            auto& accPos = a.m_aAccessors[accPosIdx];
+            auto& accTex = a.m_aAccessors[accTexIdx];
 
-            auto& bvPos = a.aBufferViews[accPos.bufferView];
-            auto& bvTex = a.aBufferViews[accTex.bufferView];
+            auto& bvPos = a.m_aBufferViews[accPos.bufferView];
+            auto& bvTex = a.m_aBufferViews[accTex.bufferView];
 
             Mesh nMesh {};
 
@@ -131,8 +131,8 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
                 if (accIndIdx != NPOS)
                 {
-                    auto& accInd = a.aAccessors[accIndIdx];
-                    auto& bvInd = a.aBufferViews[accInd.bufferView];
+                    auto& accInd = a.m_aAccessors[accIndIdx];
+                    auto& bvInd = a.m_aBufferViews[accInd.bufferView];
                     nMesh.indType = accInd.componentType;
                     nMesh.meshData.eboSize = accInd.count;
                     nMesh.triangleCount = NPOS;
@@ -142,7 +142,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, nMesh.meshData.ebo);
                     glBufferData(
                         GL_ELEMENT_ARRAY_BUFFER, bvInd.byteLength,
-                        &a.aBuffers[bvInd.buffer].aBin[bvInd.byteOffset + accInd.byteOffset], drawMode
+                        &a.m_aBuffers[bvInd.buffer].aBin[bvInd.byteOffset + accInd.byteOffset], drawMode
                     );
                 }
                 else
@@ -175,8 +175,8 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                  /*normals */
                 if (accNormIdx != NPOS)
                 {
-                    auto& accNorm = a.aAccessors[accNormIdx];
-                    auto& bvNorm = a.aBufferViews[accNorm.bufferView];
+                    auto& accNorm = a.m_aAccessors[accNormIdx];
+                    auto& bvNorm = a.m_aBufferViews[accNorm.bufferView];
 
                     glEnableVertexAttribArray(2);
                     glVertexAttribPointer(
@@ -188,8 +188,8 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                 /* tangents */
                 if (accTanIdx != NPOS)
                 {
-                    auto& accTan = a.aAccessors[accTanIdx];
-                    auto& bvTan = a.aBufferViews[accTan.bufferView];
+                    auto& accTan = a.m_aAccessors[accTanIdx];
+                    auto& bvTan = a.m_aBufferViews[accTan.bufferView];
 
                     glEnableVertexAttribArray(3);
                     glVertexAttribPointer(
@@ -204,12 +204,12 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
             /* load textures */
             if (accMatIdx != NPOS)
             {
-                auto& mat = a.aMaterials[accMatIdx];
+                auto& mat = a.m_aMaterials[accMatIdx];
                 u32 baseColorSourceIdx = mat.pbrMetallicRoughness.baseColorTexture.index;
 
                 if (baseColorSourceIdx != NPOS)
                 {
-                    u32 diffTexInd = a.aTextures[baseColorSourceIdx].source;
+                    u32 diffTexInd = a.m_aTextures[baseColorSourceIdx].source;
                     if (diffTexInd != NPOS)
                     {
                         nMesh.meshData.materials.diffuse = aTex[diffTexInd];
@@ -220,7 +220,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                 u32 normalSourceIdx = mat.normalTexture.index;
                 if (normalSourceIdx != NPOS)
                 {
-                    u32 normTexIdx = a.aTextures[normalSourceIdx].source;
+                    u32 normTexIdx = a.m_aTextures[normalSourceIdx].source;
                     if (normTexIdx != NPOS)
                     {
                         nMesh.meshData.materials.normal = aTex[normalSourceIdx];
@@ -234,12 +234,12 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         s->aaMeshes.push(s->pAlloc, aNMeshes);
     }
 
-    s->aTmIdxs = VecBase<int>(s->pAlloc, math::sq(s->modelData.aNodes.getSize()));
-    s->aTmCounters = VecBase<int>(s->pAlloc, s->modelData.aNodes.getSize());
-    s->aTmIdxs.setSize(s->pAlloc, math::sq(s->modelData.aNodes.getSize())); /* 2d map */
-    s->aTmCounters.setSize(s->pAlloc, s->modelData.aNodes.getSize());
+    s->aTmIdxs = VecBase<int>(s->pAlloc, math::sq(s->modelData.m_aNodes.getSize()));
+    s->aTmCounters = VecBase<int>(s->pAlloc, s->modelData.m_aNodes.getSize());
+    s->aTmIdxs.setSize(s->pAlloc, math::sq(s->modelData.m_aNodes.getSize())); /* 2d map */
+    s->aTmCounters.setSize(s->pAlloc, s->modelData.m_aNodes.getSize());
 
-    auto& aNodes = s->modelData.aNodes;
+    auto& aNodes = s->modelData.m_aNodes;
     auto at = [&](int r, int c) -> int {
         return (r * aNodes.getSize()) + c;
     };
@@ -304,7 +304,7 @@ ModelDrawGraph(
     const math::M4& tmGlobal
 )
 {
-    auto& aNodes = s->modelData.aNodes;
+    auto& aNodes = s->modelData.m_aNodes;
 
     auto at = [&](int r, int c) -> int {
         return r*aNodes.getSize() + c;

@@ -69,25 +69,50 @@ struct MapBase
     /* */
 
     [[nodiscard]] bool empty() const { return m_nOccupied == 0; }
+
     [[nodiscard]] u32 idx(KeyVal<K, V>* p) const;
+
     [[nodiscard]] u32 idx(MapResult<K, V> res) const;
+
     [[nodiscard]] u32 firstI() const;
+
     [[nodiscard]] u32 nextI(u32 i) const;
+
     [[nodiscard]] f32 loadFactor() const;
+
     MapResult<K, V> insert(IAllocator* p, const K& key, const V& val);
+
+    template<typename ...ARGS> requires(std::is_constructible_v<V, ARGS...>)
+        MapResult<K, V> emplace(IAllocator* p, const K& key, ARGS&&... args);
+
     [[nodiscard]] MapResult<K, V> search(const K& key);
+
     void remove(u32 i);
+
     void remove(const K& key);
+
     MapResult<K, V> tryInsert(IAllocator* p, const K& key, const V& val);
+
     void destroy(IAllocator* p);
+
     [[nodiscard]] u32 getCap() const;
+
     [[nodiscard]] u32 getSize() const;
+
     void rehash(IAllocator* p, u32 size);
+
     MapResult<K, V> insertHashed(const K& key, const V& val, u64 hash);
+
     [[nodiscard]] MapResult<K, V> searchHashed(const K& key, u64 keyHash);
 
     /* */
 
+private:
+    u32 getInsertionIdx(u64 hash) const;
+
+    /* */
+
+public:
     struct It
     {
         MapBase* s {};
@@ -170,13 +195,40 @@ template<typename K, typename V>
 inline MapResult<K, V>
 MapBase<K, V>::insert(IAllocator* p, const K& key, const V& val)
 {
-    u64 keyHash = hash::func(key);
-
     if (m_aBuckets.getCap() == 0) *this = {p};
     else if (loadFactor() >= m_maxLoadFactor)
         rehash(p, m_aBuckets.getCap() * 2);
 
+    u64 keyHash = hash::func(key);
+
     return insertHashed(key, val, keyHash);
+}
+
+template<typename K, typename V>
+template<typename ...ARGS> requires(std::is_constructible_v<V, ARGS...>)
+inline MapResult<K, V>
+MapBase<K, V>::emplace(IAllocator* p, const K& key, ARGS&&... args)
+{
+    if (m_aBuckets.getCap() == 0) *this = {p};
+    else if (loadFactor() >= m_maxLoadFactor)
+        rehash(p, m_aBuckets.getCap() * 2);
+
+    u64 keyHash = hash::func(key);
+    u32 idx = getInsertionIdx(keyHash);
+
+    new(&m_aBuckets[idx].key) K(key);
+    new(&m_aBuckets[idx].val) V(std::forward<ARGS>(args)...);
+
+    m_aBuckets[idx].bOccupied = true;
+    m_aBuckets[idx].bDeleted = false;
+
+    ++m_nOccupied;
+
+    return {
+        .pData = &m_aBuckets[idx],
+        .hash = keyHash,
+        .eStatus = MAP_RESULT_STATUS::INSERTED
+    };
 }
 
 template<typename K, typename V>
@@ -255,14 +307,7 @@ template<typename K, typename V>
 inline MapResult<K, V>
 MapBase<K, V>::insertHashed(const K& key, const V& val, u64 keyHash)
 {
-    u32 idx = u32(keyHash % m_aBuckets.getCap());
-
-    while (m_aBuckets[idx].bOccupied)
-    {
-        ++idx;
-        if (idx >= m_aBuckets.getCap())
-            idx = 0;
-    }
+    const u32 idx = getInsertionIdx(keyHash);
 
     new(&m_aBuckets[idx].key) K(key);
     new(&m_aBuckets[idx].val) V(val);
@@ -309,6 +354,21 @@ MapBase<K, V>::searchHashed(const K& key, u64 keyHash)
     return res;
 }
 
+template<typename K, typename V>
+inline u32
+MapBase<K, V>::getInsertionIdx(u64 hash) const
+{
+    u32 idx = u32(hash % m_aBuckets.getCap());
+
+    while (m_aBuckets[idx].bOccupied)
+    {
+        ++idx;
+        if (idx >= m_aBuckets.getCap())
+            idx = 0;
+    }
+
+    return idx;
+}
 
 template<typename K, typename V>
 MapBase<K, V>::MapBase(IAllocator* pAllocator, u32 prealloc)
@@ -337,17 +397,32 @@ struct Map
     /* */
 
     [[nodiscard]] bool empty() const { return base.empty(); }
+
     [[nodiscard]] u32 idx(MapResult<K, V> res) const { return base.idx(res); }
+
     [[nodiscard]] u32 firstI() const { return base.firstI(); }
+
     [[nodiscard]] u32 nextI(u32 i) const { return base.nextI(i); }
+
     [[nodiscard]] f32 loadFactor() const { return base.loadFactor(); }
+
     MapResult<K, V> insert(const K& key, const V& val) { return base.insert(m_pAlloc, key, val); }
+
+    template<typename ...ARGS> requires(std::is_constructible_v<V, ARGS...>) MapResult<K, V> emplace(const K& key, ARGS&&... args)
+    { return base.emplace(m_pAlloc, key, std::forward<ARGS>(args)...); };
+
     [[nodiscard]] MapResult<K, V> search(const K& key) { return base.search(key); }
+
     void remove(u32 i) { base.remove(i); }
+
     void remove(const K& key) { base.remove(key); }
+
     MapResult<K, V> tryInsert(const K& key, const V& val) { return base.tryInsert(m_pAlloc, key, val); }
+
     void destroy() { base.destroy(m_pAlloc); }
+
     [[nodiscard]] u32 getCap() const { return base.getCap(); }
+
     [[nodiscard]] u32 getSize() const { return base.getSize(); }
 
     /* */
