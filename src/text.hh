@@ -55,6 +55,11 @@ struct TTF
     void rasterizeAscii(reader::ttf::Font* pFont);
     void updateText(IAllocator* pAlloc, const String str, const int x, const int y, const f32 z);
     void draw();
+
+    /* */
+
+private:
+    void rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height);
 };
 
 struct TTFRasterizeArg

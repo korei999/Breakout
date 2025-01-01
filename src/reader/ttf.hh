@@ -479,7 +479,7 @@ struct Font
     /* */
 
 private:
-    void parse();
+    bool parse();
     MapResult<String, TableRecord> getTable(String sTableTag);
     void readHeadTable();
     void readCmapTable();

@@ -16,7 +16,7 @@ bool g_bTTFDebugDots = false;
 bool g_bTTFStepDebug = false;
 bool g_bStepDebug = false;
 bool g_bPause = false;
-int g_nDots = 0;
+bool g_bJoke = false;
 
 static void PlayerProcMovements(game::Player* s);
 
@@ -104,17 +104,6 @@ procKeysOnce(u32 key, u32 pressed)
             LOG_NOTIFY("g_bTTFDebugDots: {}\n", g_bTTFDebugDots);
         } break;
 
-        case KEY_E: {
-            if (!pressed) break;
-
-            if (g_aPressedKeys[KEY_LEFTSHIFT]) --g_nDots;
-            else if (g_aPressedKeys[KEY_LEFTCTRL]) g_nDots += 9;
-            else if (g_aPressedKeys[KEY_LEFTALT]) g_nDots -= 9;
-            else ++g_nDots;
-
-            /*LOG_NOTIFY("g_nDots: {}\n", g_nDots);*/
-        } break;
-
         case KEY_G: {
             if (!pressed) break;
 
@@ -127,6 +116,13 @@ procKeysOnce(u32 key, u32 pressed)
 
             utils::toggle(&g_bStepDebug);
             LOG_NOTIFY("g_bStepDebug: {}\n", g_bStepDebug);
+        } break;
+
+        case KEY_J: {
+            if (!pressed) break;
+
+            utils::toggle(&g_bJoke);
+            LOG_NOTIFY("g_bStepDebug: {}\n", g_bJoke);
         } break;
 
         default:

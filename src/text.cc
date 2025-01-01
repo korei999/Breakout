@@ -194,7 +194,7 @@ insertPoints(
 }
 
 static VecBase<PointOnCurve>
-makeItCurvy(IAllocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, CurveEndIdx* pEndIdxs, bool bTessellate = true)
+makeItCurvy(IAllocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, CurveEndIdx* pEndIdxs, u32 nTessellations)
 {
     VecBase<PointOnCurve> aNew(pAlloc, aNonCurvyPoints.getSize());
     utils::fill(pEndIdxs->aIdxs, NPOS16, utils::size(pEndIdxs->aIdxs));
@@ -210,24 +210,24 @@ makeItCurvy(IAllocator* pAlloc, const VecBase<PointOnCurve>& aNonCurvyPoints, Cu
         {
             if (!aNonCurvyPoints[idx].bOnCurve || !aNonCurvyPoints[firstInCurveIdx].bOnCurve)
             {
-                if (bTessellate)
+                if (nTessellations > 0)
                 {
                     math::V2 p0 {aNonCurvyPoints[idx - 1].pos};
                     math::V2 p1 {aNonCurvyPoints[idx - 0].pos};
                     math::V2 p2 {aNonCurvyPoints[firstInCurveIdx].pos};
-                    insertPoints(pAlloc, &aNew, p0, p1, p2, 6);
+                    insertPoints(pAlloc, &aNew, p0, p1, p2, nTessellations);
                 }
             }
         }
 
         if (!bPrevOnCurve)
         {
-            if (bTessellate)
+            if (nTessellations > 0)
             {
                 math::V2 p0 {aNonCurvyPoints[idx - 2].pos};
                 math::V2 p1 {aNonCurvyPoints[idx - 1].pos};
                 math::V2 p2 {aNonCurvyPoints[idx - 0].pos};
-                insertPoints(pAlloc, &aNew, p0, p1, p2, 6);
+                insertPoints(pAlloc, &aNew, p0, p1, p2, nTessellations);
             }
         }
 
@@ -269,8 +269,6 @@ getPointsWithMissingOnCurve(IAllocator* pAlloc, reader::ttf::Glyph* g)
     const auto& aGlyphPoints = g->uGlyph.simple.aPoints;
     u32 size = aGlyphPoints.getSize();
 
-    /*LOG("numberOfContours: {}\n", g->numberOfContours);*/
-
     bool bCurrOnCurve = false;
     bool bPrevOnCurve = false;
     u32 firstInCurveIdx = 0;
@@ -280,9 +278,6 @@ getPointsWithMissingOnCurve(IAllocator* pAlloc, reader::ttf::Glyph* g)
     for (const auto& p : aGlyphPoints)
     {
         const u32 pointIdx = aGlyphPoints.idx(&p);
-
-        /*f32 x = f32(p.x) / f32(g->xMax);*/
-        /*f32 y = f32(p.y) / f32(g->yMax);*/
 
         f32 x = f32(p.x);
         f32 y = f32(p.y);
@@ -325,7 +320,7 @@ getPointsWithMissingOnCurve(IAllocator* pAlloc, reader::ttf::Glyph* g)
     return aPoints;
 }
 
-#define AT(BITMAP, X, Y) BITMAP[width*int(X) + int(Y)]
+#define M_AT(BITMAP, X, Y) BITMAP[width*int(X) + int(Y)]
 
 static void
 drawLineH(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1, int y1)
@@ -348,7 +343,7 @@ drawLineH(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1
         int p = 2*dy - dx;
         for (int i = 0; i < dx+1; ++i)
         {
-            AT(pBitmap, y, x0 + i) = 0xff;
+            M_AT(pBitmap, y, x0 + i) = 0xff;
             if (p >= 0)
             {
                 y += dir;
@@ -380,7 +375,7 @@ drawLineV(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1
         int p = 2*dx - dy;
         for (int i = 0; i < dy+1; ++i)
         {
-            AT(pBitmap, y0 + i, utils::clamp(x, 0, int(width-1))) = 0xff;
+            M_AT(pBitmap, y0 + i, utils::clamp(x, 0, int(width-1))) = 0xff;
             if (p >= 0)
             {
                 x += dir;
@@ -407,12 +402,12 @@ floodFillDFS(u8* pBitmap, const u32 width, const u32 height, u16 x, u16 y)
 
     auto& pBm = pBitmap;
 
-    AT(pBm, x, y) = 0xff;
+    M_AT(pBm, x, y) = 0xff;
 
-    if ((x + 1) < height && AT(pBm, x + 1, y + 0) != 0xff) floodFillDFS(pBm, width, height, u16(x + 1), u16(y + 0));
-    if ((y + 1) < width  && AT(pBm, x + 0, y + 1) != 0xff) floodFillDFS(pBm, width, height, u16(x + 0), u16(y + 1));
-    if ((x - 1) < height && AT(pBm, x - 1, y + 0) != 0xff) floodFillDFS(pBm, width, height, u16(x - 1), u16(y + 0));
-    if ((y - 1) < width  && AT(pBm, x - 0, y - 1) != 0xff) floodFillDFS(pBm, width, height, u16(x - 0), u16(y - 1));
+    if ((x + 1) < height && M_AT(pBm, x + 1, y + 0) != 0xff) floodFillDFS(pBm, width, height, u16(x + 1), u16(y + 0));
+    if ((y + 1) < width  && M_AT(pBm, x + 0, y + 1) != 0xff) floodFillDFS(pBm, width, height, u16(x + 0), u16(y + 1));
+    if ((x - 1) < height && M_AT(pBm, x - 1, y + 0) != 0xff) floodFillDFS(pBm, width, height, u16(x - 1), u16(y + 0));
+    if ((y - 1) < width  && M_AT(pBm, x - 0, y - 1) != 0xff) floodFillDFS(pBm, width, height, u16(x - 0), u16(y - 1));
 }
 
 static Pair<u16, u16>
@@ -423,11 +418,11 @@ pickPosition(u8* pBitmap, const u32 width, const u32 height)
     {
         for (u32 j = 0; j < width; ++j)
         {
-            if (AT(pBitmap, i, j) == 0xff)
+            if (M_AT(pBitmap, i, j) == 0xff)
             {
                 /* NOTE: stupid heuristic */
                 u32 off = 0;
-                while (AT(pBitmap, i, j + off) == 0xff)
+                while (M_AT(pBitmap, i, j + off) == 0xff)
                     ++off;
 
                 picked = {u16(i + 1), u16((j + j+off) / 2)};
@@ -494,6 +489,7 @@ polygonCentroid(
 static void
 floodFillThing(u8* pBitmap, const u32 width, const u32 height)
 {
+    /* NOTE: how to correctly and reliably pick the position? */
     auto pos = pickPosition(pBitmap, width, height);
     floodFillDFS(pBitmap, width, height, pos.first, pos.second);
 }
@@ -548,20 +544,21 @@ blit(u8* pDst, u8* pSrc, u32 width, u32 height, BLIT_MODE eMode)
 }
 
 /* https://sharo.dev/post/reading-ttf-files-and-rasterizing-them-using-a-handmade- */
-static void
-TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height)
+void
+TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height)
 {
     const auto& aGlyphPoints = pGlyph->uGlyph.simple.aPoints;
     u32 size = aGlyphPoints.getSize();
 
     CurveEndIdx endIdxs;
-    VecBase<PointOnCurve> aPoints = getPointsWithMissingOnCurve(pAlloc, pGlyph);
-    auto aCurvyPoints = makeItCurvy(pAlloc, aPoints, &endIdxs, true);
+    auto aCurvyPoints = makeItCurvy(
+        pAlloc, getPointsWithMissingOnCurve(pAlloc, pGlyph), &endIdxs, 12
+    );
 
-    f32 xMax = s->m_pFont->m_head.xMax;
-    f32 xMin = s->m_pFont->m_head.xMin;
-    f32 yMax = s->m_pFont->m_head.yMax;
-    f32 yMin = s->m_pFont->m_head.yMin;
+    f32 xMax = m_pFont->m_head.xMax;
+    f32 xMin = m_pFont->m_head.xMin;
+    f32 yMax = m_pFont->m_head.yMax;
+    f32 yMin = m_pFont->m_head.yMin;
 
     Arr<f32, 32> aIntersections {};
 
@@ -576,34 +573,34 @@ TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8
         const f32 scanline = f32(i);
         for (u32 j = 1; j < aCurvyPoints.getSize(); ++j)
         {
-            f32 x0 = (aCurvyPoints[j - 1].pos.x - pGlyph->xMin) * hScale;
-            f32 y0 = (aCurvyPoints[j - 1].pos.y - pGlyph->yMin) * vScale;
-            f32 x1 = (aCurvyPoints[j - 0].pos.x - pGlyph->xMin) * hScale;
-            f32 y1 = (aCurvyPoints[j - 0].pos.y - pGlyph->yMin) * vScale;
+            /*f32 x0 = (aCurvyPoints[j - 1].pos.x - pGlyph->xMin) * hScale;*/
+            /*f32 x1 = (aCurvyPoints[j - 0].pos.x - pGlyph->xMin) * hScale;*/
+            f32 x0 = (aCurvyPoints[j - 1].pos.x) * hScale;
+            f32 x1 = (aCurvyPoints[j - 0].pos.x) * hScale;
+
+            /*f32 y0 = (aCurvyPoints[j - 1].pos.y - pGlyph->yMin) * vScale;*/
+            /*f32 y1 = (aCurvyPoints[j - 0].pos.y - pGlyph->yMin) * vScale;*/
+            /*f32 y0 = (aCurvyPoints[j - 1].pos.y) * vScale;*/
+            /*f32 y1 = (aCurvyPoints[j - 0].pos.y) * vScale;*/
+
+            f32 y0 = (aCurvyPoints[j - 1].pos.y - yMin) * vScale;
+            f32 y1 = (aCurvyPoints[j - 0].pos.y - yMin) * vScale;
+
+            {
+                /*f32 oy0 = (aCurvyPoints[j - 1].pos.y) * vScale;*/
+                /*f32 oy1 = (aCurvyPoints[j - 0].pos.y) * vScale;*/
+                /*LOG_WARN("{}, {}, [{}, {}]\n", y0 - oy0 , y0 - oy1, y0, y1);*/
+            }
 
             if (aCurvyPoints[j].bEndOfCurve)
                 j += 1;
-
-            // y0 = std::round(utils::clamp(y0, 0.0f, f32(width - 1)));
-            // x0 = std::round(utils::min(x0, f32(height - 1)));
-            // y1 = std::round(utils::clamp(y1, 0.0f, f32(width - 1)));
-            // x1 = std::round(utils::min(x1, f32(height - 1)));
 
             x0 = std::round(x0);
             y0 = std::round(y0);
             x1 = std::round(x1);
             y1 = std::round(y1);
 
-            /*COUT("width: {}, height: {}, xy0: [{}, {}], xy1: [{}, {}]\n", width, height, x0, y0, x1, y0);*/
-
-            /*assert(x0 >= 0.0f && x0 < height);*/
-            /*assert(y0 >= 0.0f && y0 < width);*/
-            /*assert(x1 >= 0.0f && x1 < height);*/
-            /*assert(y1 >= 0.0f && y1 < width);*/
-
-            /*COUT("x0: {}, y0: {}, x1: {}, y1: {}\n", x0, y0, x1, y0);*/
-
-            /* for the intersection all we need is to find what X is when our y = scanline or when our y is equal to i of our loop
+            /* for the intersection all we need is to find what X is when our y = scanline or when y is equal to i of the loop
              *
              * y - y1 = m*(x - x1) sub both sides by m
              * (y - y1)/m = x - x1 add x1 to both sides
@@ -622,7 +619,6 @@ TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8
 
             f32 intersection = -1.0f;
 
-
             if (math::eq(dx, 0.0f)) intersection = x1;
             else intersection = (scanline - y1)*(dx/dy) + x1;
 
@@ -639,13 +635,13 @@ TTFRasterizeGlyphTEST(TTF* s, IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8
                 int end = std::round(aIntersections[m + 1]);
 
                 for (int j = start; j <= end; ++j)
-                    AT(pBitmap, i, j) = 0xff;
+                    M_AT(pBitmap, i, j) = 0xff;
             }
         }
     }
 }
 
-#undef AT
+#undef M_AT
 
 [[nodiscard]]
 static VecBase<CharQuad3Pos2UV>
@@ -659,57 +655,59 @@ TTFGenStringMesh(
 )
 {
     auto getUV = [&](int c) -> f32 {
-        return (c*s->m_scale) / (128*s->m_scale);
+        return (c*s->m_scale) / (128.0f * s->m_scale);
     };
+
+    const auto& head = s->m_pFont->m_head;
 
     VecBase<CharQuad3Pos2UV> aQuads(pAlloc, s->m_maxSize);
 
     f32 xOff = 0.0f;
     f32 yOff = 0.0f;
 
-    for (char c : str)
+    for (char ch : str)
     {
-        if (c == '\0') break;
-
-        auto g = s->m_pFont->readGlyph(c);
+        if (ch == '\0') break;
 
         /* FIXME: uv ordering is messed up (but works correctly) */
 
         /* tr */
         f32 x0 = 0.0f;
-        f32 y0 = getUV(c + 1);
+        f32 y0 = getUV(ch + 1);
 
         /* br */
         f32 x3 = 1.0f;
-        f32 y3 = getUV(c + 1);
+        f32 y3 = getUV(ch + 1);
 
         /* tl */
         f32 x1 = 0.0f;
-        f32 y1 = getUV(c + 0);
+        f32 y1 = getUV(ch + 0);
 
         /* bl */
         f32 x2 = 1.0f;
-        f32 y2 = getUV(c + 0);
+        f32 y2 = getUV(ch + 0);
 
-        if (c == '\n')
+        if (ch == '\n')
         {
-            xOff = -0.0f;
+            xOff = 0.0f;
             yOff -= 2.0f;
             continue;
         }
 
-        aQuads.push(pAlloc, {
-             0.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x0, y0,
-             0.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x1, y1,
-             2.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x2, y2,
+        namespace f = frame;
 
-             0.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x0, y0,
-             2.0f + xOff + xOrigin,  0.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x2, y2,
-             2.0f + xOff + xOrigin,  2.0f + yOff + frame::g_uiHeight - 2.0f - yOrigin,  zOff,     x3, y3,
+        aQuads.push(pAlloc, {
+             0.0f + xOff + xOrigin,  2.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x0, y0,
+             0.0f + xOff + xOrigin,  0.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x1, y1,
+             2.0f + xOff + xOrigin,  0.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x2, y2,
+
+             0.0f + xOff + xOrigin,  2.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x0, y0,
+             2.0f + xOff + xOrigin,  0.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x2, y2,
+             2.0f + xOff + xOrigin,  2.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x3, y3,
         });
 
         /* TODO: account for aspect ratio */
-        xOff += 1.1f;
+        xOff += 1.0f;
     }
 
     return aQuads;
@@ -718,7 +716,7 @@ TTFGenStringMesh(
 void
 TTF::rasterizeAscii(reader::ttf::Font* pFont)
 {
-    const f32 scale = 64.0f;
+    const f32 scale = 128.0f;
     const int iScale = std::round(scale);
     m_scale = scale;
     m_maxSize = 100;
@@ -726,9 +724,9 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
     m_pFont = pFont;
 
     /* width*height*128 */
-    m_pBitmap = (u8*)m_pAlloc->zalloc(1, math::sq(iScale)*128);
+    m_pBitmap = (u8*)m_pAlloc->zalloc(1, math::sq(iScale) * 128);
 
-    Arena arena(SIZE_1M);
+    Arena arena(SIZE_8M);
     defer( arena.freeAll() );
 
     for (int ch = '!'; ch <= '~'; ++ch)
@@ -736,14 +734,14 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
         u8* pTmp = (u8*)arena.zalloc(1, math::sq(iScale));
 
         auto g = pFont->readGlyph(ch);
-        TTFRasterizeGlyphTEST(this, &arena, &g, pTmp, iScale, iScale);
-        memcpy(m_pBitmap + ch*math::sq(iScale), pTmp, math::sq(iScale));
+        rasterizeGlyphTEST(&arena, &g, pTmp, iScale, iScale);
+        memcpy(m_pBitmap + ch*math::sq(iScale), pTmp, iScale * 128);
 
         arena.reset();
     }
 
     texture::Img img {};
-    texture::ImgSetMonochrome(&img, m_pBitmap, iScale, iScale*128);
+    texture::ImgSetMonochrome(&img, m_pBitmap, iScale, iScale * 128);
     m_texId = img.id;
 
     char test[100] {};

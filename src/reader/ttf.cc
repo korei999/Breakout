@@ -20,18 +20,22 @@ bool
 Font::loadParse(String path)
 {
     auto bSuc = m_bin.load(path);
-    if (!bSuc) LOG_FATAL("BinLoadFile failed: '{}'\n", path);
+    if (!bSuc)
+    {
+        LOG_BAD("BinLoadFile failed: '{}'\n", path);
+        return false;
+    }
 
-    parse();
+    if (!parse()) return false;
 
     /* cache some ascii glyphs */
-    for (u32 i = 21; i < 127; ++i)
+    for (u32 i = '!'; i <= '~'; ++i)
         readGlyph(i);
 
     return true;
 }
 
-constexpr u32
+static constexpr u32
 getTableChecksum(u32* pTable, u32 nBytes)
 {
     u32 sum = 0;
@@ -45,7 +49,7 @@ getTableChecksum(u32* pTable, u32 nBytes)
     return sum;
 }
 
-constexpr String
+static constexpr String
 platformIDToString(u16 platformID)
 {
     constexpr String map[] {
@@ -56,7 +60,7 @@ platformIDToString(u16 platformID)
     return map[platformID];
 }
 
-constexpr String
+static constexpr String
 platformSpecificIDToString(u16 platformSpecificID)
 {
     constexpr String map[] {
@@ -73,7 +77,7 @@ platformSpecificIDToString(u16 platformSpecificID)
     return map[platformSpecificID];
 }
 
-constexpr String
+static constexpr String
 languageIDToString(u16 languageID)
 {
     switch (languageID)
@@ -444,7 +448,7 @@ Font::getGlyphIdx(u16 code)
     auto& c = m_cmapF4;
     auto fIdx = c.mCodeToGlyphIdx.search(code);
 
-    if (fIdx) return fIdx.pData->val;
+    if (fIdx) return fIdx.getData().val;
 
     u32 savedPos = m_bin.m_pos;
     defer(m_bin.m_pos = savedPos);
@@ -483,7 +487,8 @@ Font::readGlyph(u32 code)
     const u32 offset = getGlyphOffset(glyphIdx);
 
     auto fCachedGlyph = m_mOffsetToGlyph.search(offset);
-    if (fCachedGlyph) return fCachedGlyph.pData->val;
+    if (fCachedGlyph)
+        return fCachedGlyph.pData->val;
 
     const auto fGlyf = getTable("glyf");
     const auto& glyfTable = *fGlyf.pData;
@@ -510,7 +515,8 @@ Font::readGlyph(u32 code)
         readCompoundGlyph(&g);
     else readSimpleGlyph(&g);
 
-    m_mOffsetToGlyph.insert(m_bin.m_pAlloc, offset, g);
+    /* cache every used glyph */
+    m_mOffsetToGlyph.emplace(m_bin.m_pAlloc, offset, g);
 
     return g;
 };
@@ -553,12 +559,16 @@ Font::printGlyphDBG(const Glyph& g, bool bNormalize)
     }
 }
 
-void
+bool
 Font::parse()
 {
     LOG_GOOD("loading font: '{}'\n", m_bin.m_sPath);
 
-    if (m_bin.m_sFile.getSize() == 0) LOG_FATAL("unable to parse empty file\n");
+    if (m_bin.m_sFile.getSize() == 0)
+    {
+        LOG_BAD("unable to parse empty file\n");
+        return false;
+    }
 
     auto& td = m_tableDirectory;
 
@@ -639,6 +649,8 @@ Font::parse()
 
     readHeadTable();
     readCmapTable();
+
+    return true;
 }
 
 void

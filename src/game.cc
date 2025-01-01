@@ -67,7 +67,7 @@ static void drawFPSCounter(Arena* pAlloc);
 static void drawFPSCounterTTF(Arena* pAlloc);
 static void drawInfo(Arena* pArena);
 static void drawEntities(Arena* pAlloc, const f64 alpha);
-static void drawTTF(Arena* pAlloc);
+static void drawJoke(Arena* pAlloc);
 
 void
 loadAssets()
@@ -477,10 +477,16 @@ updateState()
 void
 draw(Arena* pArena, const f64 alpha)
 {
-    drawEntities(pArena, alpha);
-
-    drawFPSCounterTTF(pArena);
-    drawInfo(pArena);
+    if (controls::g_bJoke)
+    {
+        drawJoke(pArena);
+    }
+    else
+    {
+        drawEntities(pArena, alpha);
+        drawFPSCounterTTF(pArena);
+        drawInfo(pArena);
+    }
 }
 
 static void
@@ -498,7 +504,7 @@ drawFPSCounter(Arena* pAlloc)
     f64 currTime = utils::timeNowMS();
     if (currTime >= frame::g_prevTime + 1000.0)
     {
-        String s = StringAlloc((IAllocator*)pAlloc, s_textFPS.maxSize);
+        String s = StringAlloc(pAlloc, s_textFPS.maxSize);
         s.m_size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
 
         frame::g_nfps = 0;
@@ -529,7 +535,7 @@ drawFPSCounterTTF(Arena* pAlloc)
     if ((currTime - frame::g_prevTime) >= 1000.0)
         nLastFps = frame::g_nfps; 
 
-    String s = StringAlloc((IAllocator*)pAlloc, s_ttfTest.m_maxSize);
+    String s = StringAlloc(pAlloc, s_ttfTest.m_maxSize);
     s.m_size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", nLastFps, frame::g_frameTime);
 
     s_ttfTest.updateText(pAlloc, s, 0, 0, 1.0f);
@@ -544,6 +550,30 @@ drawFPSCounterTTF(Arena* pAlloc)
 }
 
 static void
+drawJoke(Arena* pAlloc)
+{
+    f32 width = frame::g_uiWidth / 2;
+    f32 height = frame::g_uiHeight / 2;
+
+    math::M4 proj = math::M4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+
+    String str = StringAlloc(pAlloc, s_ttfTest.m_maxSize);
+    str.m_size = print::toString(&str, "Dawg i aint drawing without FreeType");
+
+    /* FIXME: height is going the wrong way? */
+    s_ttfTest.updateText(pAlloc, str, width/2 - str.m_size/2.0f, height*1.5f - 1, 1.0f);
+
+    auto* sh = &s_sh1Col;
+    sh->use();
+    sh->setM4("uProj", proj);
+    sh->setV4("uColor", colors::hexToV4(0xeeeeeeff));
+
+    texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
+
+    s_ttfTest.draw();
+}
+
+static void
 drawInfo(Arena* pArena)
 {
     math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
@@ -552,14 +582,17 @@ drawInfo(Arena* pArena)
 
     sh->setM4("uProj", proj);
     sh->setV4("uColor", {colors::hexToV4(0x666666ff)});
+    /*math::V4 c {.xyz = colors::get(colors::IDX::DARKOLIVEGREEN) };*/
+    /*c.w = 1.0f;*/
+    /*sh->setV4("uColor", c);*/
 
     texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
 
     String s = StringAlloc(pArena, 256);
     s.m_size = print::toString(&s,
-        "TOGGLE FULLSCREEN: F\n"
-        "UNLOCK MOUSE: Q\n"
-        "QUIT: ESC\n"
+        "Toggle fullscreen: F\n"
+        "Unlock mouse: Q\n"
+        "Quit: ESC\n"
     );
     int nSpaces = 0;
     for (auto c : s) if (c == '\n') ++nSpaces;

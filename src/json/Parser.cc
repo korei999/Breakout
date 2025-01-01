@@ -98,11 +98,11 @@ Parser::parseNode(Object* pNode)
             return printNodeError();
             break;
 
-        case json::TOKEN_TYPE::QUOTED_STRING:
+        case TOKEN_TYPE::QUOTED_STRING:
             parseIdent(&pNode->tagVal);
             break;
 
-        case json::TOKEN_TYPE::STRING:
+        case TOKEN_TYPE::STRING:
             parseString(&pNode->tagVal);
             break;
 
