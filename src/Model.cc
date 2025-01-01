@@ -85,7 +85,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         auto task = [](void* pArgs) -> int {
             auto a = *(Args*)pArgs;
             *a.p = texture::Img(a.pAlloc);
-            ImgLoad(a.p, a.path, a.flip, a.type, a.texMode);
+            a.p->load(a.path, a.flip, a.type, a.texMode);
             return 0;
         };
 
@@ -264,9 +264,9 @@ ModelDraw(Model* s, DRAW flags, Shader* sh, String svUniform, String svUniformM3
             glBindVertexArray(e.meshData.vao);
 
             if (flags & DRAW::DIFF)
-                ImgBind(&e.meshData.materials.diffuse, GL_TEXTURE0);
+                e.meshData.materials.diffuse.bind(GL_TEXTURE0);
             if (flags & DRAW::NORM)
-                ImgBind(&e.meshData.materials.normal, GL_TEXTURE1);
+                e.meshData.materials.normal.bind(GL_TEXTURE1);
 
             math::M4 m = math::M4Iden();
             if (flags & DRAW::APPLY_TM)
@@ -336,9 +336,9 @@ ModelDrawGraph(
                 glBindVertexArray(e.meshData.vao);
 
                 if (flags & DRAW::DIFF)
-                    ImgBind(&e.meshData.materials.diffuse, GL_TEXTURE0);
+                    e.meshData.materials.diffuse.bind(GL_TEXTURE0);
                 if (flags & DRAW::NORM)
-                    ImgBind(&e.meshData.materials.normal, GL_TEXTURE1);
+                    e.meshData.materials.normal.bind(GL_TEXTURE1);
 
                 if (sh)
                 {

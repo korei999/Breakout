@@ -741,7 +741,7 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
     }
 
     texture::Img img {};
-    texture::ImgSetMonochrome(&img, m_pBitmap, iScale, iScale * 128);
+    img.setMonochrome(m_pBitmap, iScale, iScale * 128);
     m_texId = img.id;
 
     char test[100] {};

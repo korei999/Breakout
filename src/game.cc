@@ -496,7 +496,7 @@ drawFPSCounter(Arena* pAlloc)
     auto* sh = &s_shFontBitmap;
     sh->use();
 
-    texture::ImgBind(&s_tAsciiMap, GL_TEXTURE0);
+    s_tAsciiMap.bind(GL_TEXTURE0);
 
     sh->setM4("uProj", proj);
     sh->setV4("uColor", {colors::hexToV4(0xeeeeeeff)});
@@ -646,7 +646,7 @@ cleanup()
 
     for (auto& e : g_aAllShaders) e.destroy();
 
-    for (auto& t : texture::g_aAllTextures) texture::ImgDestroy(&t);
+    for (auto& t : texture::g_aAllTextures) t.destroy();
     texture::g_mAllTexturesIdxs.destroy();
 
     s_assetArenas.freeAll();

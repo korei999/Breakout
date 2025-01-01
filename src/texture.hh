@@ -5,7 +5,7 @@
 #include "adt/Pool.hh"
 #include "adt/Vec.hh"
 #include "adt/String.hh"
-#include "gl/gl.hh"
+#include "gl/gl.hh" /* IWYU pragma: keep */
 #include "adt/math.hh"
 
 namespace texture
@@ -45,9 +45,25 @@ struct Img
     GLuint id = 0;
     enum TYPE type = TYPE::DIFFUSE;
 
+    /* */
+
     Img() = default;
     Img(IAllocator* p) : pAlloc(p) {}
+
+    /* */
+
+    void bind(GLint glTex);
+
+    void load(String path, bool bFlip, TYPE type, GLint texMode, GLint magFilter = GL_NEAREST, GLint minFilter = GL_NEAREST_MIPMAP_NEAREST);
+
+    void set(u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter);
+
+    void setMonochrome(u8* pData, u32 width, u32 height);
+
+    void destroy();
 };
+
+void ImgBind(GLuint id, GLint glTex);
 
 struct ImgLoadArg
 {
@@ -87,35 +103,6 @@ struct CubeMapProjections
     math::M4& operator[](size_t i) { assert(i < 6); return tms[i]; }
 };
 
-void ImgBind(Img* s, GLint glTex);
-void ImgBind(GLuint id, GLint glTex);
-
-void
-ImgLoad(
-    Img* s,
-    String path,
-    bool bFlip,
-    TYPE type,
-    GLint texMode,
-    GLint magFilter = GL_NEAREST,
-    GLint minFilter = GL_NEAREST_MIPMAP_NEAREST
-);
-
-void 
-ImgSet(
-    Img* s,
-    u8* pData,
-    GLint texMode,
-    GLint format,
-    GLsizei width,
-    GLsizei height,
-    GLint magFilter,
-    GLint minFilter
-);
-
-void ImgSetMonochrome(Img* s, u8* pData, u32 width, u32 height);
-void ImgDestroy(Img* s);
-
 Framebuffer FramebufferCreate(const GLsizei width, const GLsizei height);
 
 ShadowMap ShadowMapCreate(const int width, const int height);
@@ -133,7 +120,7 @@ inline int
 ImgSubmit(void* p)
 {
     auto a = *(ImgLoadArg*)p;
-    ImgLoad(a.self, a.path, a.flip, a.type, a.texMode, a.magFilter, a.minFilter);
+    a.self->load(a.path, a.flip, a.type, a.texMode, a.magFilter, a.minFilter);
     return 0;
 }
 

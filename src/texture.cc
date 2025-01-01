@@ -40,7 +40,7 @@ static mtx_t s_mtxAllTextures;
 static once_flag s_onceFlagAllTextures = ONCE_FLAG_INIT;
 
 void
-ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilter, GLint minFilter)
+Img::load(String path, bool bFlip, TYPE type, GLint texMode, GLint magFilter, GLint minFilter)
 {
     call_once(&s_onceFlagAllTextures, +[]{
         mtx_init(&s_mtxAllTextures, mtx_plain);
@@ -58,7 +58,7 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
             return;
         }
 
-        idx = g_aAllTextures.push(*s);
+        idx = g_aAllTextures.push(*this);
         g_mAllTexturesIdxs.insert(path, idx);
     }
 
@@ -66,47 +66,47 @@ ImgLoad(Img* s, String path, bool bFlip, TYPE type, GLint texMode, GLint magFilt
     LOG_OK("loading '{}' texture...\n", path);
 #endif
 
-    if (s->id != 0) LOG_FATAL("id != 0: '{}'\n", s->id);
+    if (id != 0) LOG_FATAL("id != 0: '{}'\n", id);
 
     Arena al(SIZE_1M * 5);
     defer( al.freeAll() );
     Data img = loadBMP(&al, path, bFlip);
 
-    s->texPath = path;
-    s->type = type;
+    texPath = path;
+    this->type = type;
 
     Vec<u8> pixels = img.aData;
 
-    ImgSet(s, pixels.data(), texMode, img.format, img.width, img.height, magFilter, minFilter);
+    set(pixels.data(), texMode, img.format, img.width, img.height, magFilter, minFilter);
 
-    s->width = img.width;
-    s->height = img.height;
+    width = img.width;
+    height = img.height;
     
     auto found = g_mAllTexturesIdxs.search(path);
     if (found)
     {
         u32 idx = found.pData->val;
-        g_aAllTextures[idx] = *s;
+        g_aAllTextures[idx] = *this;
     }
     else LOG_FATAL("Why didn't find?\n");
 }
 
 void
-ImgDestroy(Img* s)
+Img::destroy()
 {
-    if (s->id != 0)
+    if (id != 0)
     {
-        glDeleteTextures(1, &s->id);
-        LOG_OK("Texture '{}' destroyed\n", s->id);
-        s->id = 0;
+        glDeleteTextures(1, &id);
+        LOG_OK("Texture '{}' destroyed\n", id);
+        id = 0;
     }
 }
 
 void
-ImgBind(Img* s, GLint glTex)
+Img::bind(GLint glTex)
 {
     glActiveTexture(glTex);
-    glBindTexture(GL_TEXTURE_2D, s->id);
+    glBindTexture(GL_TEXTURE_2D, id);
 }
 
 void
@@ -117,7 +117,7 @@ ImgBind(GLuint id, GLint glTex)
 }
 
 void
-ImgSet(Img* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter)
+Img::set(u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter)
 {
     mtx_lock(&gl::g_mtxGlContext);
     app::g_pWindow->bindGlContext();
@@ -126,8 +126,8 @@ ImgSet(Img* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei he
         mtx_unlock(&gl::g_mtxGlContext);
     );
 
-    glGenTextures(1, &s->id);
-    glBindTexture(GL_TEXTURE_2D, s->id);
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
     /* set the texture wrapping parameters */
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texMode);
@@ -145,7 +145,7 @@ ImgSet(Img* s, u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei he
 }
 
 void
-ImgSetMonochrome(Img* s, u8* pData, u32 width, u32 height)
+Img::setMonochrome(u8* pData, u32 width, u32 height)
 {
     mtx_lock(&gl::g_mtxGlContext);
     app::g_pWindow->bindGlContext();
@@ -154,12 +154,12 @@ ImgSetMonochrome(Img* s, u8* pData, u32 width, u32 height)
         mtx_unlock(&gl::g_mtxGlContext);
     );
 
-    s->width = width;
-    s->height = height;
+    this->width = width;
+    this->height = height;
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glGenTextures(1, &s->id);
-    glBindTexture(GL_TEXTURE_2D, s->id);
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
     defer(
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         glBindTexture(GL_TEXTURE_2D, 0);
