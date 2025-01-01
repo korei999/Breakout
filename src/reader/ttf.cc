@@ -448,7 +448,7 @@ Font::getGlyphIdx(u16 code)
     auto& c = m_cmapF4;
     auto fIdx = c.mCodeToGlyphIdx.search(code);
 
-    if (fIdx) return fIdx.getData().val;
+    if (fIdx) return fIdx.data().val;
 
     u32 savedPos = m_bin.m_pos;
     defer(m_bin.m_pos = savedPos);

@@ -50,7 +50,11 @@ static text::TTF s_ttfTest(s_assetArenas.get(SIZE_1K * 520));
 
 Pool<Entity, ASSET_MAX_COUNT> g_aEntities;
 static Arr<math::V2, ASSET_MAX_COUNT> s_aPrevPos;
+
+static const Level* s_pCurrLvl {};
 static WidthHeight s_currLvlSize {};
+static Map<Entity*, Pair<u16, u16>> s_mapPEntityToTilePos(s_assetArenas.get(SIZE_1K));
+static Vec<Entity*> s_aPBlocksMap(s_assetArenas.get(SIZE_1K));
 
 Player g_player {
     .enIdx = 0,
@@ -198,6 +202,46 @@ AABB(
 }
 
 static void
+explodeBlock(Entity* p)
+{
+    const u32 lvlWidth = s_pCurrLvl->width;
+    const u32 lvlHeight = s_pCurrLvl->height;
+
+    auto fPos = s_mapPEntityToTilePos.search(p);
+    if (!fPos) return;
+
+    const auto& [tileX, tileY] = fPos.data().val;
+
+    if (s_aPBlocksMap[tileY*lvlWidth + tileX]->bDead) return;
+
+    /* xy offsets */
+    const Pair<s8, s8> aKernel[] {
+        {-1,  1}, {0,  1}, {1,  1},
+        {-1,  0},          {1,  0},
+        {-1, -1}, {0, -1}, {1, -1},
+    };
+
+    for (auto [x, y] : aKernel)
+    {
+        u32 px = int(tileX) + x;
+        u32 py = int(tileY) + y;
+
+        if (px < lvlWidth && py < lvlHeight)
+        {
+            auto* pEn = s_aPBlocksMap[py*lvlWidth + px];
+            if (pEn != nullptr)
+            {
+                pEn->bDead = true;
+
+                /* FIXME: endless recursion */
+                /*if (pEn->eColor == game::COLOR::RED)*/
+                /*    explodeBlock(pEn);*/
+            }
+        }
+    }
+}
+
+static void
 blockHit()
 {
     auto& mix = *app::g_pMixer;
@@ -220,7 +264,13 @@ blockHit()
     {
         auto& b = g_aEntities[block.enIdx];
 
-        if (b.bDead || b.eColor == COLOR::INVISIBLE) continue;
+        bool bMarkDead = false;
+        defer(
+            if (bMarkDead)
+                b.bDead = true;
+        );
+
+        if (b.bDead || b.eColor == game::COLOR::INVISIBLE) continue;
 
         math::V2 center = nextPos(enBall, true);
         if (AABB(center, g_ball.radius, g_ball.radius, b.pos, b.width, b.height))
@@ -269,13 +319,15 @@ blockHit()
                 break;
             }
 
-            if (b.eColor != COLOR::INVISIBLE && b.eColor != COLOR::DIMGRAY)
-                b.bDead = true;
+            if (b.eColor != game::COLOR::INVISIBLE && b.eColor != game::COLOR::DIMGRAY)
+                bMarkDead = true;
 
-            if (b.eColor == COLOR::RED)
+            if (b.eColor == game::COLOR::RED)
             {
                 enBall.dir = enBall.pos - b.pos;
                 bExplosive = true;
+
+                explodeBlock(&b);
             }
 
             break;
@@ -365,10 +417,11 @@ void
 loadLevel()
 {
     const auto& lvl = g_lvl1;
-    const auto& l = lvl.aTiles;
+    const auto& aTiles = lvl.aTiles;
+    s_pCurrLvl = &lvl;
 
-    auto at = [&](int y, int x) -> s8& {
-        return l[y*lvl.width + x];
+    auto lvlAt = [&](int y, int x) -> s8& {
+        return aTiles[y*lvl.width + x];
     };
 
     frame::g_unit.first = frame::WIDTH / lvl.width / 2;
@@ -378,20 +431,24 @@ loadLevel()
     s_aBlocks.setSize(0);
 
     auto fBoxTex = texture::g_mAllTexturesIdxs.search("test-assets/box3.bmp");
-    auto boxTexId = texture::g_aAllTextures[fBoxTex.pData->val].m_id;
+    assert(fBoxTex);
+    auto boxTexId = texture::g_aAllTextures[fBoxTex.data().val].m_id;
+
+    s_aPBlocksMap.setSize(lvl.width * lvl.height);
+    s_mapPEntityToTilePos.zeroOut();
 
     LOG_NOTIFY("width: {}, height: {}\n", lvl.width, lvl.height);
     for (u32 y = 0; y < lvl.height; ++y)
     {
         for (u32 x = 0; x < lvl.width; ++x)
         {
-            if (at(y, x) != s8(COLOR::INVISIBLE))
+            if (lvlAt(y, x) != s8(game::COLOR::INVISIBLE))
             {
                 u32 idx = g_aEntities.getHandle();
                 auto& e = g_aEntities[idx];
 
-                s_aBlocks.push({u16(idx)});
-                e.pos = {static_cast<f32>(x), static_cast<f32>(lvl.height - y - 1)};
+                s_aBlocks.emplace(u16(idx));
+                e.pos = {f32(x), f32(lvl.height - y - 1)};
                 e.width = 1.0f;
                 e.height = 1.0f;
                 e.xOff = 0.0f;
@@ -399,9 +456,12 @@ loadLevel()
                 e.zOff = 0.0f;
                 e.shaderIdx = 0;
                 e.texIdx = u16(boxTexId);
-                e.eColor = COLOR(at(y, x));
+                e.eColor = game::COLOR(lvlAt(y, x));
                 e.bDead = false;
                 e.bRemoveAfterDraw = false;
+
+                s_mapPEntityToTilePos.emplace(&e, x, y);
+                s_aPBlocksMap[y*lvl.width + x] = &e;
             }
         }
     }
@@ -415,13 +475,13 @@ loadLevel()
     enPlayer.height = 1.0f;
     enPlayer.xOff = -0.5f;
     enPlayer.zOff = 10.0f;
-    enPlayer.eColor = COLOR::TEAL;
+    enPlayer.eColor = game::COLOR::TEAL;
     enPlayer.bRemoveAfterDraw = false;
 
     g_ball.enIdx = g_aEntities.getHandle();
     auto& enBall = g_aEntities[g_ball.enIdx];
     enBall.speed = 9.0f;
-    enBall.eColor = COLOR::ORANGERED;
+    enBall.eColor = game::COLOR::ORANGERED;
     enBall.texIdx = s_tBall.m_id;
     enBall.width = 1.0f;
     enBall.height = 1.0f;
@@ -617,7 +677,7 @@ drawEntities([[maybe_unused]] Arena* pArena, const f64 alpha)
 
     for (const Entity& en : g_aEntities)
     {
-        if (en.bDead || en.eColor == COLOR::INVISIBLE) continue;
+        if (en.bDead || en.eColor == game::COLOR::INVISIBLE) continue;
 
         auto enIdx = g_aEntities.idx(&en);
 

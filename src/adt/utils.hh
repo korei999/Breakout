@@ -257,7 +257,7 @@ reverse(auto* a, const u32 size)
 inline constexpr void
 reverse(auto* a)
 {
-    reverse(a->pData, a->size);
+    reverse(a->data(), a->getSize());
 }
 
 } /* namespace utils */

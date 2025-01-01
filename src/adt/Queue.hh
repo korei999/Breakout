@@ -180,7 +180,7 @@ template<typename T>
 inline u32
 QueueBase<T>::idx(const T* pItem) const
 {
-    return pItem - m_pData;
+    auto r = pItem - m_pData;
 }
 
 template<typename T>
