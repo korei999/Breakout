@@ -742,7 +742,7 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
 
     texture::Img img {};
     img.setMonochrome(m_pBitmap, iScale, iScale * 128);
-    m_texId = img.id;
+    m_texId = img.m_id;
 
     char test[100] {};
     for (int c = '!', i = 0; c <= '~'; ++c, ++i)

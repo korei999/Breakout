@@ -8,22 +8,22 @@
 #include "app.hh"
 
 void
-ModelLoad(Model* s, String path, GLint drawMode, GLint texMode)
+Model::load(String path, GLint drawMode, GLint texMode)
 {
     if (path.endsWith(".gltf"))
-        ModelLoadGLTF(s, path, drawMode, texMode);
+        loadGLTF(path, drawMode, texMode);
     else
         LOG_FATAL("trying to load unsupported asset: '{}'\n", path);
 
-    s->sSavedPath = path;
+    m_sSavedPath = path;
 }
 
 bool
-ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
+Model::loadGLTF(String path, GLint drawMode, GLint texMode)
 {
-    if (!s->modelData.load(path)) return false;
+    if (!m_modelData.load(path)) return false;
 
-    auto& a = s->modelData;;
+    auto& a = m_modelData;;
 
     MutexArena atmAl(SIZE_1M * 10);
     defer( atmAl.freeAll() );
@@ -76,7 +76,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
         *arg = {
             .p = &aTex[i],
             .pAlloc = &atmAl,
-            .path = file::replacePathEnding(s->pAlloc, path, uri),
+            .path = file::replacePathEnding(m_pAlloc, path, uri),
             .type = texture::TYPE::DIFFUSE,
             .flip = true,
             .texMode = texMode
@@ -96,7 +96,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
 
     for (auto& mesh : a.m_aMeshes)
     {
-        VecBase<Mesh> aNMeshes(s->pAlloc);
+        VecBase<Mesh> aNMeshes(m_pAlloc);
 
         for (auto& primitive : mesh.aPrimitives)
         {
@@ -213,7 +213,7 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                     if (diffTexInd != NPOS)
                     {
                         nMesh.meshData.materials.diffuse = aTex[diffTexInd];
-                        nMesh.meshData.materials.diffuse.type = texture::TYPE::DIFFUSE;
+                        nMesh.meshData.materials.diffuse.m_eType = texture::TYPE::DIFFUSE;
                     }
                 }
 
@@ -224,22 +224,22 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
                     if (normTexIdx != NPOS)
                     {
                         nMesh.meshData.materials.normal = aTex[normalSourceIdx];
-                        nMesh.meshData.materials.normal.type = texture::TYPE::NORMAL;
+                        nMesh.meshData.materials.normal.m_eType = texture::TYPE::NORMAL;
                     }
                 }
             }
 
-            aNMeshes.push(s->pAlloc, nMesh);
+            aNMeshes.push(m_pAlloc, nMesh);
         }
-        s->aaMeshes.push(s->pAlloc, aNMeshes);
+        m_aaMeshes.push(m_pAlloc, aNMeshes);
     }
 
-    s->aTmIdxs = VecBase<int>(s->pAlloc, math::sq(s->modelData.m_aNodes.getSize()));
-    s->aTmCounters = VecBase<int>(s->pAlloc, s->modelData.m_aNodes.getSize());
-    s->aTmIdxs.setSize(s->pAlloc, math::sq(s->modelData.m_aNodes.getSize())); /* 2d map */
-    s->aTmCounters.setSize(s->pAlloc, s->modelData.m_aNodes.getSize());
+    m_aTmIdxs = VecBase<int>(m_pAlloc, math::sq(m_modelData.m_aNodes.getSize()));
+    m_aTmCounters = VecBase<int>(m_pAlloc, m_modelData.m_aNodes.getSize());
+    m_aTmIdxs.setSize(m_pAlloc, math::sq(m_modelData.m_aNodes.getSize())); /* 2d map */
+    m_aTmCounters.setSize(m_pAlloc, m_modelData.m_aNodes.getSize());
 
-    auto& aNodes = s->modelData.m_aNodes;
+    auto& aNodes = m_modelData.m_aNodes;
     auto at = [&](int r, int c) -> int {
         return (r * aNodes.getSize()) + c;
     };
@@ -248,16 +248,16 @@ ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode)
     {
         auto& node = aNodes[i];
         for (auto& ch : node.children)
-            s->aTmIdxs[at(ch, s->aTmCounters[ch]++)] = i; /* give each children it's parent's idx's */
+            m_aTmIdxs[at(ch, m_aTmCounters[ch]++)] = i; /* give each children it's parent's idx's */
     }
 
     return true;
 }
 
 void
-ModelDraw(Model* s, DRAW flags, Shader* sh, String svUniform, String svUniformM3Norm, const math::M4& tmGlobal)
+Model::draw(DRAW flags, Shader* sh, String svUniform, String svUniformM3Norm, const math::M4& tmGlobal)
 {
-    for (auto& m : s->aaMeshes)
+    for (auto& m : m_aaMeshes)
     {
         for (auto& e : m)
         {
@@ -294,8 +294,7 @@ ModelDraw(Model* s, DRAW flags, Shader* sh, String svUniform, String svUniformM3
 }
 
 void
-ModelDrawGraph(
-    Model* s,
+Model::drawGraph(
     [[maybe_unused]] IAllocator* pFrameAlloc,
     DRAW flags,
     Shader* sh,
@@ -304,7 +303,7 @@ ModelDrawGraph(
     const math::M4& tmGlobal
 )
 {
-    auto& aNodes = s->modelData.m_aNodes;
+    auto& aNodes = m_modelData.m_aNodes;
 
     auto at = [&](int r, int c) -> int {
         return r*aNodes.getSize() + c;
@@ -317,10 +316,10 @@ ModelDrawGraph(
         {
             math::M4 tm = tmGlobal;
             math::Qt rot = math::QtIden();
-            for (int j = 0; j < s->aTmCounters[i]; j++)
+            for (int j = 0; j < m_aTmCounters[i]; j++)
             {
                 /* collect each transformation from parent's map */
-                auto& n = aNodes[ s->aTmIdxs[at(i, j)] ];
+                auto& n = aNodes[ m_aTmIdxs[at(i, j)] ];
 
                 tm = M4Scale(tm, n.scale);
                 rot *= n.rotation;
@@ -331,7 +330,7 @@ ModelDrawGraph(
             tm = M4Translate(tm, node.translation);
             tm *= node.matrix;
 
-            for (auto& e : s->aaMeshes[node.mesh])
+            for (auto& e : m_aaMeshes[node.mesh])
             {
                 glBindVertexArray(e.meshData.vao);
 

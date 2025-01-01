@@ -58,14 +58,40 @@ struct Mesh
 
 struct Model
 {
-    IAllocator* pAlloc;
-    String sSavedPath;
-    VecBase<VecBase<Mesh>> aaMeshes;
-    gltf::Model modelData;
-    VecBase<int> aTmIdxs; /* parents map */
-    VecBase<int> aTmCounters; /* map's sizes */
+    IAllocator* m_pAlloc;
+    String m_sSavedPath;
+    VecBase<VecBase<Mesh>> m_aaMeshes;
+    gltf::Model m_modelData;
+    VecBase<int> m_aTmIdxs; /* parents map */
+    VecBase<int> m_aTmCounters; /* map's sizes */
 
-    Model(IAllocator* p) : pAlloc(p), aaMeshes(p), modelData(p), aTmIdxs(p), aTmCounters(p) {}
+    /* */
+
+    Model(IAllocator* p) : m_pAlloc(p), m_aaMeshes(p), m_modelData(p), m_aTmIdxs(p), m_aTmCounters(p) {}
+
+    /* */
+
+    void load(String path, GLint drawMode, GLint texMode);
+
+    bool loadGLTF(String path, GLint drawMode, GLint texMode);
+
+    void draw(
+        DRAW flags,
+        Shader* sh = nullptr,
+        String svUniform = "",
+        String svUniformM3Norm = "",
+        const math::M4& tmGlobal = math::M4Iden()
+    );
+
+    void
+    drawGraph(
+        IAllocator* pFrameAlloc,
+        DRAW flags,
+        Shader* sh,
+        String svUniform,
+        String svUniformM3Norm,
+        const math::M4& tmGlobal
+    );
 };
 
 struct Quad
@@ -75,8 +101,12 @@ struct Quad
     GLuint m_ebo;
     GLuint m_eboSize;
 
+    /* */
+
     Quad() = default;
     Quad(GLint drawMode);
+
+    /* */
 
     void draw();
 };
@@ -86,39 +116,24 @@ struct Plain
     GLuint m_vao;
     GLuint m_vbo;
 
+    /* */
+
     Plain() = default;
     Plain(GLint drawMode);
+
+    /* */
 
     void draw();
     void drawBox();
     void destroy();
 };
 
-void ModelLoad(Model* s, String path, GLint drawMode, GLint texMode);
-bool ModelLoadGLTF(Model* s, String path, GLint drawMode, GLint texMode);
-void ModelDraw(
-    Model* s,
-    DRAW flags,
-    Shader* sh = nullptr,
-    String svUniform = "",
-    String svUniformM3Norm = "",
-    const math::M4& tmGlobal = math::M4Iden()
-);
-void
-ModelDrawGraph(
-    Model* s,
-    IAllocator* pFrameAlloc,
-    DRAW flags,
-    Shader* sh,
-    String svUniform,
-    String svUniformM3Norm,
-    const math::M4& tmGlobal
-);
-
 struct TextPlain
 {
-    GLuint vao;
-    GLuint vbo;
+    GLuint m_vao;
+    GLuint m_vbo;
+
+    /* */
 
     TextPlain() = default;
     TextPlain(GLint drawMode);
@@ -136,6 +151,6 @@ inline int
 ModelSubmit(void* p)
 {
     auto a = *(ModelLoadArg*)p;
-    ModelLoad(a.p, a.path, a.drawMode, a.texMode);
+    a.p->load(a.path, a.drawMode, a.texMode);
     return 0;
 };

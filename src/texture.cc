@@ -66,21 +66,21 @@ Img::load(String path, bool bFlip, TYPE type, GLint texMode, GLint magFilter, GL
     LOG_OK("loading '{}' texture...\n", path);
 #endif
 
-    if (id != 0) LOG_FATAL("id != 0: '{}'\n", id);
+    if (m_id != 0) LOG_FATAL("id != 0: '{}'\n", m_id);
 
     Arena al(SIZE_1M * 5);
     defer( al.freeAll() );
     Data img = loadBMP(&al, path, bFlip);
 
-    texPath = path;
-    this->type = type;
+    m_texPath = path;
+    this->m_eType = type;
 
     Vec<u8> pixels = img.aData;
 
     set(pixels.data(), texMode, img.format, img.width, img.height, magFilter, minFilter);
 
-    width = img.width;
-    height = img.height;
+    m_width = img.width;
+    m_height = img.height;
     
     auto found = g_mAllTexturesIdxs.search(path);
     if (found)
@@ -94,11 +94,11 @@ Img::load(String path, bool bFlip, TYPE type, GLint texMode, GLint magFilter, GL
 void
 Img::destroy()
 {
-    if (id != 0)
+    if (m_id != 0)
     {
-        glDeleteTextures(1, &id);
-        LOG_OK("Texture '{}' destroyed\n", id);
-        id = 0;
+        glDeleteTextures(1, &m_id);
+        LOG_OK("Texture '{}' destroyed\n", m_id);
+        m_id = 0;
     }
 }
 
@@ -106,7 +106,7 @@ void
 Img::bind(GLint glTex)
 {
     glActiveTexture(glTex);
-    glBindTexture(GL_TEXTURE_2D, id);
+    glBindTexture(GL_TEXTURE_2D, m_id);
 }
 
 void
@@ -126,8 +126,8 @@ Img::set(u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, 
         mtx_unlock(&gl::g_mtxGlContext);
     );
 
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
+    glGenTextures(1, &m_id);
+    glBindTexture(GL_TEXTURE_2D, m_id);
     /* set the texture wrapping parameters */
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texMode);
@@ -154,12 +154,12 @@ Img::setMonochrome(u8* pData, u32 width, u32 height)
         mtx_unlock(&gl::g_mtxGlContext);
     );
 
-    this->width = width;
-    this->height = height;
+    this->m_width = width;
+    this->m_height = height;
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
+    glGenTextures(1, &m_id);
+    glBindTexture(GL_TEXTURE_2D, m_id);
     defer(
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         glBindTexture(GL_TEXTURE_2D, 0);

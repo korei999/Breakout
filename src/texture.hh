@@ -38,17 +38,17 @@ struct Data
 
 struct Img
 {
-    IAllocator* pAlloc;
-    String texPath;
-    u32 width = 0;
-    u32 height = 0;
-    GLuint id = 0;
-    enum TYPE type = TYPE::DIFFUSE;
+    IAllocator* m_pAlloc;
+    String m_texPath;
+    u32 m_width = 0;
+    u32 m_height = 0;
+    GLuint m_id = 0;
+    enum TYPE m_eType = TYPE::DIFFUSE;
 
     /* */
 
     Img() = default;
-    Img(IAllocator* p) : pAlloc(p) {}
+    Img(IAllocator* p) : m_pAlloc(p) {}
 
     /* */
 

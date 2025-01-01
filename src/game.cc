@@ -370,7 +370,7 @@ loadLevel()
     s_aBlocks.setSize(0);
 
     auto fBoxTex = texture::g_mAllTexturesIdxs.search("test-assets/box3.bmp");
-    auto boxTexId = texture::g_aAllTextures[fBoxTex.pData->val].id;
+    auto boxTexId = texture::g_aAllTextures[fBoxTex.pData->val].m_id;
 
     LOG_NOTIFY("width: {}, height: {}\n", lvl.width, lvl.height);
     for (u32 y = 0; y < lvl.height; ++y)
@@ -402,7 +402,7 @@ loadLevel()
     auto& enPlayer = g_aEntities[g_player.enIdx];
     enPlayer.speed = 9.0f;
     enPlayer.pos.x = lvl.width / 2.0f;
-    enPlayer.texIdx = s_tPaddle.id;
+    enPlayer.texIdx = s_tPaddle.m_id;
     enPlayer.width = 2.0f;
     enPlayer.height = 1.0f;
     enPlayer.xOff = -0.5f;
@@ -414,7 +414,7 @@ loadLevel()
     auto& enBall = g_aEntities[g_ball.enIdx];
     enBall.speed = 9.0f;
     enBall.eColor = COLOR::ORANGERED;
-    enBall.texIdx = s_tBall.id;
+    enBall.texIdx = s_tBall.m_id;
     enBall.width = 1.0f;
     enBall.height = 1.0f;
     enBall.zOff = 10.0f;
