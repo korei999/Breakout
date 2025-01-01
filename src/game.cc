@@ -93,7 +93,7 @@ loadAssets()
     s_textFPS = text::Bitmap("", 40, 0, 0, GL_DYNAMIC_DRAW);
     s_fontLiberation.loadParse("test-assets/LiberationMono-Regular.ttf");
 
-    /* unbind before creating threads */
+    /* unbind before running threads */
     app::g_pWindow->unbindGlContext();
     defer( app::g_pWindow->bindGlContext() );
 
@@ -247,27 +247,27 @@ blockHit()
 
                 case REFLECT_SIDE::UP:
                 {
-                    /*enBall.pos -= (enBall.dir * off);*/
                     enBall.dir.y = -enBall.dir.y;
-                } break;
+                }
+                break;
 
                 case REFLECT_SIDE::DOWN:
                 {
-                    /*enBall.pos -= (enBall.dir * off);*/
                     enBall.dir.y = -enBall.dir.y;
-                } break;
+                }
+                break;
 
                 case REFLECT_SIDE::LEFT:
                 {
-                    /*enBall.pos -= (enBall.dir * off);*/
                     enBall.dir.x = -enBall.dir.x;
-                } break;
+                }
+                break;
 
                 case REFLECT_SIDE::RIGHT:
                 {
-                    /*enBall.pos -= (enBall.dir * off);*/
                     enBall.dir.x = -enBall.dir.x;
-                } break;
+                }
+                break;
             }
 
             break;

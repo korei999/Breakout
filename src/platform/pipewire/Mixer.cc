@@ -149,7 +149,6 @@ Mixer::addBackground(audio::Track t)
     mtx_unlock(&this->mtxAdd);
 }
 
-//__attribute__((target("default")))
 static void
 writeFrames(Mixer* s, void* pBuff, u32 nFrames)
 {
@@ -233,112 +232,6 @@ writeFrames(Mixer* s, void* pBuff, u32 nFrames)
         pSimdDest++;
     }
 }
-
-//#pragma clang diagnostic push
-//#pragma clang diagnostic ignored "-Wunused-function"
-//
-//__attribute__((target("avx2")))
-//static void
-//writeFrames(Mixer* s, void* pBuff, u32 nFrames)
-//{
-//    __m256i_u* pSimdDest = (__m256i_u*)pBuff;
-//
-//    for (u32 i = 0; i < nFrames / 8; i++)
-//    {
-//        __m256i packed16Samples {};
-//
-//        if (VecSize(&s->aBackgroundTracks) > 0)
-//        {
-//            auto& t = s->aBackgroundTracks[s->currentBackgroundTrackIdx];
-//            f32 vol = powf(t.volume * audio::g_globalVolume, 3.0f);
-//
-//            if (t.pcmPos + 16 <= t.pcmSize)
-//            {
-//                auto what = _mm256_set_epi16(
-//                    t.pData[t.pcmPos + 15] * vol,
-//                    t.pData[t.pcmPos + 14] * vol,
-//                    t.pData[t.pcmPos + 13] * vol,
-//                    t.pData[t.pcmPos + 12] * vol,
-//                    t.pData[t.pcmPos + 11] * vol,
-//                    t.pData[t.pcmPos + 10] * vol,
-//                    t.pData[t.pcmPos + 9 ] * vol,
-//                    t.pData[t.pcmPos + 8 ] * vol,
-//                    t.pData[t.pcmPos + 7 ] * vol,
-//                    t.pData[t.pcmPos + 6 ] * vol,
-//                    t.pData[t.pcmPos + 5 ] * vol,
-//                    t.pData[t.pcmPos + 4 ] * vol,
-//                    t.pData[t.pcmPos + 3 ] * vol,
-//                    t.pData[t.pcmPos + 2 ] * vol,
-//                    t.pData[t.pcmPos + 1 ] * vol,
-//                    t.pData[t.pcmPos + 0 ] * vol
-//                );
-//
-//                packed16Samples = _mm256_add_epi16(packed16Samples, what);
-//
-//                t.pcmPos += 16;
-//            }
-//            else
-//            {
-//                t.pcmPos = 0;
-//                auto current = s->currentBackgroundTrackIdx + 1;
-//                if (current > VecSize(&s->aBackgroundTracks) - 1) current = 0;
-//                s->currentBackgroundTrackIdx = current;
-//            }
-//        }
-//
-//        for (u32 i = 0; i < VecSize(&s->aTracks); i++)
-//        {
-//            auto& t = s->aTracks[i];
-//            f32 vol = powf(t.volume, 3.0f);
-//
-//            if (t.pcmPos + 16 <= t.pcmSize)
-//            {
-//                auto what = _mm256_set_epi16(
-//                    t.pData[t.pcmPos + 15] * vol,
-//                    t.pData[t.pcmPos + 14] * vol,
-//                    t.pData[t.pcmPos + 13] * vol,
-//                    t.pData[t.pcmPos + 12] * vol,
-//                    t.pData[t.pcmPos + 11] * vol,
-//                    t.pData[t.pcmPos + 10] * vol,
-//                    t.pData[t.pcmPos + 9 ] * vol,
-//                    t.pData[t.pcmPos + 8 ] * vol,
-//                    t.pData[t.pcmPos + 7 ] * vol,
-//                    t.pData[t.pcmPos + 6 ] * vol,
-//                    t.pData[t.pcmPos + 5 ] * vol,
-//                    t.pData[t.pcmPos + 4 ] * vol,
-//                    t.pData[t.pcmPos + 3 ] * vol,
-//                    t.pData[t.pcmPos + 2 ] * vol,
-//                    t.pData[t.pcmPos + 1 ] * vol,
-//                    t.pData[t.pcmPos + 0 ] * vol
-//                );
-//
-//                packed16Samples = _mm256_add_epi16(packed16Samples, what);
-//
-//                t.pcmPos += 16;
-//            }
-//            else
-//            {
-//                if (t.bRepeat)
-//                {
-//                    t.pcmPos = 0;
-//                }
-//                else
-//                {
-//                    mtx_lock(&s->mtxAdd);
-//                    VecPopAsLast(&s->aTracks, i);
-//                    --i;
-//                    mtx_unlock(&s->mtxAdd);
-//                }
-//            }
-//        }
-//
-//        _mm256_storeu_si256(pSimdDest, packed16Samples);
-//
-//        pSimdDest++;
-//    }
-//}
-//
-//#pragma clang diagnostic pop
 
 static void
 onProcess(void* data)
