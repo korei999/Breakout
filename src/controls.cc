@@ -1,7 +1,9 @@
 #include "controls.hh"
 
-#include "app.hh"
 #include "adt/logs.hh"
+#include "app.hh"
+#include "game.hh"
+#include "keybinds.hh"
 
 #include <cmath>
 
@@ -9,16 +11,13 @@ namespace controls
 {
 
 bool g_aPressedKeys[300] {};
+MOD_STATE g_eKeyMods {};
 Mouse g_mouse {};
 Camera g_camera {};
 bool g_bTTFDebugScreen = false;
-bool g_bTTFDebugDots = false;
 bool g_bTTFStepDebug = false;
 bool g_bStepDebug = false;
 bool g_bPause = false;
-bool g_bJoke = false;
-
-static void PlayerProcMovements();
 
 void
 procMouse()
@@ -46,106 +45,78 @@ procMouse()
     g_camera.right = V3Norm(V3Cross(g_camera.front, g_camera.up));
 }
 
-void
-procKeysOnce(u32 key, u32 pressed)
+/* execute commands with bRepeat == false only once per keypress */
+template<bool FN_EQUALS_TO(const void* pCommand), u32 ARR_CAP, typename COMMAND_T>
+static void
+procCommands(Arr<bool, ARR_CAP>* paMap, const COMMAND_T& aCommands)
 {
-    auto& enPlayer = game::g_aEntities[game::g_player.enIdx];
-    auto& enBall = game::g_aEntities[game::g_ball.enIdx];
-
-    switch (key)
+    for (auto& com : aCommands)
     {
-        case KEY_P:
-        case KEY_GRAVE:
-            if (pressed)
+        u32 idx = &com - &aCommands[0];
+        if (idx >= paMap->getSize())
+        {
+            LOG_BAD("command array size is bigger than {}, skipping the rest\n", paMap->getSize());
+            return;
+        }
+
+        if (FN_EQUALS_TO(&com))
+        {
+            if (com.bRepeat)
             {
-                utils::toggle(&app::g_pWindow->m_bPaused);
-                LOG_WARN("paused: {}\n", app::g_pWindow->m_bPaused);
-            } break;
-
-        case KEY_Q:
-            if (pressed) app::g_pWindow->togglePointerRelativeMode();
-            break;
-
-        case KEY_ESC:
-            if (pressed)
+                com.exec();
+            }
+            else
             {
-                app::g_pWindow->m_bRunning = false;
-                app::g_pMixer->m_bRunning = false;
-
-                LOG_OK("quit...\n");
-            } break;
-
-        case KEY_F:
-            if (pressed) app::g_pWindow->toggleFullscreen();
-            break;
-
-        case KEY_V:
-            if (pressed) app::g_pWindow->toggleVSync();
-            break;
-
-        case KEY_SPACE: {
-            if (!pressed) break;
-
-            utils::toggle(&game::g_ball.bReleased);
-            enBall.dir = math::V2{0.0f, 1.0f} + math::V2{enPlayer.dir * 0.25f};
-        } break;
-
-        case KEY_T: {
-            if (!pressed) break;
-
-            g_bTTFDebugScreen = !g_bTTFDebugScreen;
-            LOG_NOTIFY("g_bTTFDebugScreen: {}\n", g_bTTFDebugScreen);
-        } break;
-
-        case KEY_R: {
-            if (!pressed) break;
-
-            g_bTTFDebugDots = !g_bTTFDebugDots;
-            LOG_NOTIFY("g_bTTFDebugDots: {}\n", g_bTTFDebugDots);
-        } break;
-
-        case KEY_G: {
-            if (!pressed) break;
-
-            g_bTTFStepDebug = !g_bTTFStepDebug;
-            LOG_NOTIFY("g_bTTFStepDebbug: {}\n", g_bTTFStepDebug);
-        } break;
-
-        case KEY_B: {
-            if (!pressed) break;
-
-            utils::toggle(&g_bStepDebug);
-            LOG_NOTIFY("g_bStepDebug: {}\n", g_bStepDebug);
-        } break;
-
-        case KEY_J: {
-            if (!pressed) break;
-
-            utils::toggle(&g_bJoke);
-            LOG_NOTIFY("g_bStepDebug: {}\n", g_bJoke);
-        } break;
-
-        default:
-            break;
+                if (!(*paMap)[idx])
+                {
+                    (*paMap)[idx] = true;
+                    com.exec();
+                }
+            }
+        }
+        else
+        {
+            (*paMap)[idx] = false;
+        }
     }
 }
 
 void
 procKeys()
 {
-    PlayerProcMovements();
-}
+    game::playerEntity().dir = {};
 
-static void
-PlayerProcMovements()
-{
-    auto& enPlayer = game::g_aEntities[game::g_player.enIdx];
-    enPlayer.dir = {};
+    {
+        /* 500 should be enough */
+        static Arr<bool, MAX_COMMANDS> aPressedKeysOnceMap {};
+        aPressedKeysOnceMap.setSize(MAX_COMMANDS);
 
-    if (g_aPressedKeys[KEY_A]) enPlayer.dir = {-1.0f, 0.0f};
-    if (g_aPressedKeys[KEY_D]) enPlayer.dir = {1.0f, 0.0f};
-    if (g_aPressedKeys[KEY_LEFTALT]) enPlayer.dir /= 2.0f;
-    if (g_aPressedKeys[KEY_LEFTSHIFT]) enPlayer.dir *= 2.0f;
+        procCommands<
+            [](const void* pCommand) -> bool {
+                const auto* pCom = (keybinds::Command*)pCommand;
+                return g_aPressedKeys[pCom->key];
+            }>
+        (
+            &aPressedKeysOnceMap,
+            keybinds::inl_aCommands
+        );
+    }
+
+    /* apply ModCommands after */
+    {
+        static Arr<bool, MAX_COMMANDS> aPressedModsOnceMap {};
+        aPressedModsOnceMap.setSize(MAX_COMMANDS);
+
+        procCommands<
+            [](const void* pArg) -> bool {
+                const auto* pCom = (keybinds::ModCommand*)pArg;
+                return g_eKeyMods == pCom->eMod;
+            }>
+        (
+            &aPressedModsOnceMap,
+            keybinds::inl_aModCommands
+        );
+    }
 }
 
 void
@@ -155,9 +126,73 @@ updateView()
 }
 
 void
-updateProj(f32 fov, f32 aspect, f32 near, f32 far)
+togglePause()
 {
-    g_camera.proj = math::M4Pers(fov, aspect, near, far);
+    utils::toggle(&app::g_pWindow->m_bPaused);
+    LOG_WARN("paused: {}\n", app::g_pWindow->m_bPaused);
+}
+
+void
+move(math::V2 dir)
+{
+    game::playerEntity().dir = dir;
+}
+
+void
+mulDirection(f32 factor)
+{
+    game::playerEntity().dir *= factor;
+}
+
+void
+toggleMouseLock()
+{
+    app::g_pWindow->togglePointerRelativeMode();
+}
+
+void
+quit()
+{
+    app::g_pWindow->m_bRunning = false;
+    app::g_pMixer->m_bRunning = false;
+
+    LOG_OK("quit...\n");
+}
+
+void
+toggleFullscreen()
+{
+    app::g_pWindow->toggleFullscreen();
+}
+
+void
+toggleVSync()
+{
+    app::g_pWindow->toggleVSync();
+}
+
+void
+releaseBall()
+{
+    auto& enPlayer = game::playerEntity();
+    auto& enBall = game::g_aEntities[game::g_ball.enIdx];
+
+    utils::toggle(&game::g_ball.bReleased);
+    enBall.dir = math::V2{0.0f, 1.0f} + math::V2{enPlayer.dir * 0.25f};
+}
+
+void
+toggleDebugScreen()
+{
+    g_bTTFDebugScreen = !g_bTTFDebugScreen;
+    LOG_NOTIFY("g_bTTFDebugScreen: {}\n", g_bTTFDebugScreen);
+}
+
+void
+toggleStepDebug()
+{
+    utils::toggle(&g_bStepDebug);
+    LOG_NOTIFY("g_bStepDebug: {}\n", g_bStepDebug);
 }
 
 } /* namespace controls */

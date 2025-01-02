@@ -264,7 +264,6 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     break;
 
                 controls::g_aPressedKeys[ aAsciiToLinuxKeyCodes[keyCode] ] = bDown;
-                controls::procKeysOnce(aAsciiToLinuxKeyCodes[keyCode], bDown);
             }
             break;
 

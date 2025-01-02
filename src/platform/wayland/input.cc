@@ -85,7 +85,7 @@ keyboardKeyHandler(
 #endif
 
     controls::g_aPressedKeys[key] = keyState;
-    controls::procKeysOnce(key, keyState);
+    /*LOG_NOTIFY("key: {}, {}\n", key, keyState);*/
 }
 
 void
@@ -94,11 +94,13 @@ keyboardModifiersHandler(
     [[maybe_unused]] wl_keyboard* keyboard,
     [[maybe_unused]] u32 serial,
     [[maybe_unused]] u32 modsDepressed,
-    [[maybe_unused]] u32 modsLatched, [[maybe_unused]] u32 modsLocked,
+    [[maybe_unused]] u32 modsLatched,
+    [[maybe_unused]] u32 modsLocked,
     [[maybe_unused]] u32 group
 )
 {
-    //
+    /* shift == 1, ctrl == 4, alt == 8, super == 64 */
+    controls::g_eKeyMods = MOD_STATE(modsDepressed);
 }
 
 void
@@ -129,8 +131,11 @@ pointerEnterHandler(
     s->m_pointerSerial = serial;
 
     if (s->m_bPointerRelativeMode)
+    {
         wl_pointer_set_cursor(pointer, serial, nullptr, 0, 0);
+    }
     else
+    {
         wl_pointer_set_cursor(
             pointer,
             serial,
@@ -138,6 +143,7 @@ pointerEnterHandler(
             s->m_cursorImage->hotspot_x,
             s->m_cursorImage->hotspot_y
         );
+    }
 }
 
 void

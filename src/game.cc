@@ -558,7 +558,7 @@ updateState(Arena* pArena)
 void
 draw(Arena* pArena, const f64 alpha)
 {
-    if (controls::g_bJoke)
+    if (controls::g_bTTFDebugScreen)
     {
         drawJoke(pArena);
     }
@@ -663,16 +663,13 @@ drawInfo(Arena* pArena)
 
     sh->setM4("uProj", proj);
     sh->setV4("uColor", {colors::hexToV4(0x666666ff)});
-    /*math::V4 c {.xyz = colors::get(colors::IDX::DARKOLIVEGREEN) };*/
-    /*c.w = 1.0f;*/
-    /*sh->setV4("uColor", c);*/
 
     texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
 
     String s = StringAlloc(pArena, 256);
     s.m_size = print::toString(&s,
-        "Toggle fullscreen: F\n"
-        "Unlock mouse: Q\n"
+        "Fullscreen: F\n"
+        "Mouse lock: Q\n"
         "Quit: ESC\n"
     );
     int nSpaces = 0;

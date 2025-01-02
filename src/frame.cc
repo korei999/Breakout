@@ -94,6 +94,9 @@ run()
     controls::procKeys();
     app::g_pWindow->procEvents();
 
+#ifdef NDEBUG
+    app::g_pWindow->setFullscreen();
+#endif
     app::g_pWindow->disableRelativeMode();
 
     mainLoop();

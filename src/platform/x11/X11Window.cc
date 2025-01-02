@@ -175,7 +175,7 @@ Window::hideCursor()
 }
 
 void
-Window::setCursorImage(String cursorType)
+Window::setCursorImage([[maybe_unused]] String cursorType)
 {
 }
 

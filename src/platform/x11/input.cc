@@ -155,14 +155,12 @@ procEvents(Window* s)
                 auto linuxCode = s_aKeyCodeToLinux[event.xkey.keycode];
 
                 controls::g_aPressedKeys[linuxCode] = true;
-                controls::procKeysOnce(linuxCode, true);
             } break;
 
             case KeyRelease: {
                 auto linuxCode = s_aKeyCodeToLinux[event.xkey.keycode];
 
                 controls::g_aPressedKeys[linuxCode] = false;
-                controls::procKeysOnce(linuxCode, false);
             } break;
 
             case ButtonPress: {
@@ -187,7 +185,7 @@ procEvents(Window* s)
 
             case ConfigureNotify: {
                 XWindowAttributes attr;
-                Status status = XGetWindowAttributes(s->pDisplay, s->window, &attr);
+                /*Status status = XGetWindowAttributes(s->pDisplay, s->window, &attr);*/
 
                 s->m_wWidth = attr.width;
                 s->m_wHeight = attr.height;

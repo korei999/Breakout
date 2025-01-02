@@ -160,6 +160,12 @@ extern Player g_player;
 extern Ball g_ball;
 extern Pool<Entity, ASSET_MAX_COUNT> g_aEntities;
 
+inline Entity&
+playerEntity()
+{
+    return g_aEntities[g_player.enIdx];
+}
+
 } /* namespace game */
 
 namespace adt
