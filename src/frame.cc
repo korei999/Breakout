@@ -139,6 +139,7 @@ mainLoop()
         g_uboProjView.bufferData(&controls::g_camera, 0, sizeof(math::M4) * 2);
 
         controls::procKeys();
+        controls::procMouse();
 
         if (controls::g_bStepDebug && !win.m_bPaused)
         {

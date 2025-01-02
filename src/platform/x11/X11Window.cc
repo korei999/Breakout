@@ -152,6 +152,7 @@ Win::start()
     input::mapX11KeycodesToLinuxKeycodes(this);
 
     m_bRunning = true;
+    input::startMouseReadingThread(this);
 }
 
 void
@@ -165,11 +166,13 @@ Win::destroy()
 void
 Win::enableRelativeMode()
 {
+    m_bPointerRelativeMode = true;
 }
 
 void
 Win::disableRelativeMode()
 {
+    m_bPointerRelativeMode = false;
 }
 
 void
@@ -203,6 +206,7 @@ Win::unsetFullscreen()
 void
 Win::togglePointerRelativeMode()
 {
+    utils::toggle(&m_bPointerRelativeMode);
 }
 
 void

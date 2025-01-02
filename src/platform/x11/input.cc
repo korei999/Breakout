@@ -4,8 +4,12 @@
 #include "adt/logs.hh"
 #include "app.hh"
 #include "controls.hh"
+#include "adt/Pair.hh"
 
 #include <X11/keysym.h>
+
+#include <fcntl.h>
+#include <linux/input.h>
 
 namespace platform
 {
@@ -18,6 +22,48 @@ static int s_aKeyCodeToLinux[300] {};
 
 static Atom s_atomWM_PROTOCOLS;
 static Atom s_atomWM_DELETE_WINDOW;
+
+void
+startMouseReadingThread(Win* s)
+{
+    thrd_t mouseThrd {};
+
+    thrd_create(&mouseThrd,
+        +[](void* pArg) -> int
+        {
+            int fdMouse = open("/dev/input/mice", O_RDONLY);
+            if (fdMouse < 0)
+                LOG_FATAL("open(\"/dev/input/mice\")\n");
+            defer( close(fdMouse) );
+
+            s8 aBuff[3] {};
+            Pair<s8, s8> xy {};
+            auto& win = *(Win*)pArg;
+
+            while (win.m_bRunning)
+            {
+                int nRead = read(fdMouse, &aBuff, sizeof(aBuff));
+                if (nRead == 3)
+                {
+                    auto& [x, y] = xy;
+                    x = aBuff[1];
+                    y = aBuff[2];
+
+                    if (win.m_bPointerRelativeMode)
+                    {
+                        controls::g_mouse.relX += (f64)x;
+                        controls::g_mouse.relY += (f64)y;
+                    }
+                }
+            }
+
+            return thrd_success;
+        },
+        s
+    );
+
+    thrd_detach(mouseThrd);
+}
 
 void
 mapX11KeycodesToLinuxKeycodes(Win* s)
@@ -144,19 +190,10 @@ procEvents(Win* s)
 
             case MotionNotify:
             {
-                auto& m = event.xmotion;
+                const auto& m = event.xmotion;
 
-                if (s->m_bPointerRelativeMode)
-                {
-                    controls::g_mouse.relX += (f64)m.x;
-                    controls::g_mouse.relY += (f64)m.y;
-                }
-                else
-                {
-                    controls::g_mouse.absX = (f64)m.x;
-                    controls::g_mouse.absY = (f64)m.y;
-                }
-
+                controls::g_mouse.absX = (f64)m.x;
+                controls::g_mouse.absY = (f64)m.y;
             }
             break;
 

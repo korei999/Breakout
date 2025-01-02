@@ -9,6 +9,7 @@ namespace x11
 namespace input
 {
 
+void startMouseReadingThread(Win* s);
 void mapX11KeycodesToLinuxKeycodes(Win* s);
 void storeAtoms(Win* s);
 void procEvents(Win* s);
