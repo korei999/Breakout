@@ -63,16 +63,16 @@ struct ModCommand
 };
 
 inline const Command inl_aCommands[] {
-    {true,  KEY_A,     (void*)controls::move,              {ARG_TYPE::VEC2, {.v4 = {-1.0f, 0.0f}}}},
-    {true,  KEY_D,     (void*)controls::move,              {ARG_TYPE::VEC2, {.v4 = {1.0f, 0.0f}}} },
-    {false, KEY_P,     (void*)controls::togglePause,       {ARG_TYPE::NONE}                       },
-    {false, KEY_Q,     (void*)controls::toggleMouseLock,   {ARG_TYPE::NONE}                       },
-    {false, KEY_ESC,   (void*)controls::quit,              {ARG_TYPE::NONE}                       },
-    {false, KEY_F,     (void*)controls::toggleFullscreen,  {ARG_TYPE::NONE}                       },
-    {false, KEY_V,     (void*)controls::toggleVSync,       {ARG_TYPE::NONE}                       },
-    {false, KEY_SPACE, (void*)controls::releaseBall,       {ARG_TYPE::NONE}                       },
-    {false, KEY_J,     (void*)controls::toggleDebugScreen, {ARG_TYPE::NONE}                       },
-    {false, KEY_B,     (void*)controls::toggleStepDebug,   {ARG_TYPE::NONE}                       },
+    {true,  KEY_A,     (void*)controls::move,              {ARG_TYPE::VEC2, {.v4 {-1.0f, 0.0f}}}},
+    {true,  KEY_D,     (void*)controls::move,              {ARG_TYPE::VEC2, {.v4 {1.0f, 0.0f}}} },
+    {false, KEY_P,     (void*)controls::togglePause,       {ARG_TYPE::NONE}                     },
+    {false, KEY_Q,     (void*)controls::toggleMouseLock,   {ARG_TYPE::NONE}                     },
+    {false, KEY_ESC,   (void*)controls::quit,              {ARG_TYPE::NONE}                     },
+    {false, KEY_F,     (void*)controls::toggleFullscreen,  {ARG_TYPE::NONE}                     },
+    {false, KEY_V,     (void*)controls::toggleVSync,       {ARG_TYPE::NONE}                     },
+    {false, KEY_SPACE, (void*)controls::releaseBall,       {ARG_TYPE::NONE}                     },
+    {false, KEY_J,     (void*)controls::toggleDebugScreen, {ARG_TYPE::NONE}                     },
+    {false, KEY_B,     (void*)controls::toggleStepDebug,   {ARG_TYPE::NONE}                     },
 };
 
 inline const ModCommand inl_aModCommands[] {

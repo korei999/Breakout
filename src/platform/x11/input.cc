@@ -36,25 +36,23 @@ startMouseReadingThread(Win* s)
                 LOG_FATAL("open(\"/dev/input/mice\")\n");
             defer( close(fdMouse) );
 
-            s8 aBuff[3] {};
-            Pair<s8, s8> xy {};
             auto& win = *(Win*)pArg;
 
             while (win.m_bRunning)
             {
+                s8 aBuff[3] {};
+                Pair<s8, s8> xy {};
+                auto& [x, y] = xy;
+
                 int nRead = read(fdMouse, &aBuff, sizeof(aBuff));
-                if (nRead == 3)
+                if (nRead > 0)
                 {
-                    auto& [x, y] = xy;
                     x = aBuff[1];
                     y = aBuff[2];
-
-                    if (win.m_bPointerRelativeMode)
-                    {
-                        controls::g_mouse.relX += (f64)x;
-                        controls::g_mouse.relY += (f64)y;
-                    }
                 }
+
+                controls::g_mouse.relX += (f64)x;
+                controls::g_mouse.relY += (f64)y;
             }
 
             return thrd_success;
