@@ -147,7 +147,7 @@ getReflectionSide(math::V2 tar)
 
     f32 max = 0.0f;
     REFLECT_SIDE eBestMatch = NONE;
-    for (u64 i = 0; i < utils::size(compass); i++)
+    for (u32 i = 0; i < utils::size(compass); ++i)
     {
         f32 dot = V2Dot(V2Norm(tar), compass[i]);
         if (dot > max || math::eq(dot, max))
@@ -252,6 +252,7 @@ explodeBlock(Arena* pArena, Entity* p)
     vDfsMap.setSize(lvlWidth * lvlHeight);
 
     explodeBlockDFS(&vDfsMap, p);
+
     for (auto pEn : vDfsMap)
         if (pEn) pEn->bDead = true;
 }
@@ -691,14 +692,13 @@ drawEntities([[maybe_unused]] Arena* pArena, const f64 alpha)
 
         auto enIdx = g_aEntities.idx(&en);
 
-        const auto& prev = s_aPrevPos[enIdx];
+        const auto& prevPos = s_aPrevPos[enIdx];
         math::V2 pos = math::lerp(
-            tileToImage(prev.x, prev.y),
+            tileToImage(prevPos.x, prevPos.y),
             tileToImage(en.pos.x, en.pos.y),
             alpha
         );
 
-        pos = tileToImage(en.pos.x, en.pos.y);
         math::V2 off = tileToImage(en.xOff, en.yOff);
 
         math::M4 tm = math::M4Iden();

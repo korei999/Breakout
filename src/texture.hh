@@ -108,7 +108,6 @@ Framebuffer FramebufferCreate(const GLsizei width, const GLsizei height);
 ShadowMap ShadowMapCreate(const int width, const int height);
 
 CubeMap CubeMapShadowMapCreate(const int width, const int height);
-
 CubeMap skyBoxCreate(String sFaces[6]);
 
 Data loadBMP(IAllocator* pAlloc, String path, bool flip);
