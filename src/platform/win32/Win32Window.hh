@@ -22,14 +22,14 @@ namespace win32
 
 struct Win32Window : public IWindow
 {
-    HINSTANCE _hInstance;
-    HWND hWindow;
-    HDC hDeviceContext;
-    HGLRC hGlContext;
-    WNDCLASSEXW windowClass;
-    RAWINPUTDEVICE rawInputDevices[2];
+    HINSTANCE m_hInstance;
+    HWND m_hWindow;
+    HDC m_hDeviceContext;
+    HGLRC m_hGlContext;
+    WNDCLASSEXW m_windowClass;
+    RAWINPUTDEVICE m_rawInputDevices[2];
 
-    Win32Window(String sName, HINSTANCE hInstance) : IWindow(sName), _hInstance(hInstance) {}
+    Win32Window(String sName, HINSTANCE hInstance) : IWindow(sName), m_hInstance(hInstance) {}
 
     virtual void start() override final;
     virtual void disableRelativeMode() override final;

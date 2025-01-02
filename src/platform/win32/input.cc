@@ -159,17 +159,17 @@ registerRawMouseDevice(Win32Window* pApp, bool on)
 {
     DWORD flag = on ? RIDEV_NOLEGACY : RIDEV_REMOVE;
 
-    pApp->rawInputDevices[0].usUsagePage = 0x01; /* HID_USAGE_PAGE_GENERIC */
-    pApp->rawInputDevices[0].usUsage = 0x02;     /* HID_USAGE_GENERIC_MOUSE */
-    pApp->rawInputDevices[0].dwFlags = flag;     /* adds mouse and also ignores legacy mouse messages */
-    pApp->rawInputDevices[0].hwndTarget = 0;
+    pApp->m_rawInputDevices[0].usUsagePage = 0x01; /* HID_USAGE_PAGE_GENERIC */
+    pApp->m_rawInputDevices[0].usUsage = 0x02;     /* HID_USAGE_GENERIC_MOUSE */
+    pApp->m_rawInputDevices[0].dwFlags = flag;     /* adds mouse and also ignores legacy mouse messages */
+    pApp->m_rawInputDevices[0].hwndTarget = 0;
 
     // pApp->rawInputDevices[1].usUsagePage = 0x01;       /* HID_USAGE_PAGE_GENERIC */
     // pApp->rawInputDevices[1].usUsage = 0x06;           /* HID_USAGE_GENERIC_KEYBOARD */
     // pApp->rawInputDevices[1].dwFlags = RIDEV_NOLEGACY; /* adds keyboard and also ignores legacy keyboard messages */
     // pApp->rawInputDevices[1].hwndTarget = 0;
 
-    if (RegisterRawInputDevices(pApp->rawInputDevices, 1, sizeof(pApp->rawInputDevices[0])) == FALSE)
+    if (RegisterRawInputDevices(pApp->m_rawInputDevices, 1, sizeof(pApp->m_rawInputDevices[0])) == FALSE)
         LOG_FATAL("RegisterRawInputDevices failed: {}\n", GetLastError());
 }
 
@@ -178,12 +178,12 @@ registerRawKBDevice(Win32Window* pApp, bool on)
 {
     DWORD flag = on ? RIDEV_NOLEGACY : RIDEV_REMOVE;
 
-    pApp->rawInputDevices[1].usUsagePage = 0x01;       /* HID_USAGE_PAGE_GENERIC */
-    pApp->rawInputDevices[1].usUsage = 0x06;           /* HID_USAGE_GENERIC_KEYBOARD */
-    pApp->rawInputDevices[1].dwFlags = flag; /* adds keyboard and also ignores legacy keyboard messages */
-    pApp->rawInputDevices[1].hwndTarget = 0;
+    pApp->m_rawInputDevices[1].usUsagePage = 0x01;       /* HID_USAGE_PAGE_GENERIC */
+    pApp->m_rawInputDevices[1].usUsage = 0x06;           /* HID_USAGE_GENERIC_KEYBOARD */
+    pApp->m_rawInputDevices[1].dwFlags = flag; /* adds keyboard and also ignores legacy keyboard messages */
+    pApp->m_rawInputDevices[1].hwndTarget = 0;
 
-    if (RegisterRawInputDevices(pApp->rawInputDevices, 1, sizeof(pApp->rawInputDevices[1])) == FALSE)
+    if (RegisterRawInputDevices(pApp->m_rawInputDevices, 1, sizeof(pApp->m_rawInputDevices[1])) == FALSE)
         LOG_FATAL("RegisterRawInputDevices failed: {}\n", GetLastError());
 }
 
@@ -221,6 +221,28 @@ exitFullscreen(HWND hwnd, int windowX, int windowY, int windowedWidth, int windo
     ShowWindow(hwnd, SW_RESTORE);
 
     return bSucces;
+}
+
+static void
+setMods(WPARAM keyCode, bool bDown)
+{
+    switch (aAsciiToLinuxKeyCodes[keyCode])
+    {
+        case KEY_LEFTSHIFT:
+        if (bDown) controls::g_eKeyMods |= MOD_STATE::SHIFT;
+        else controls::g_eKeyMods &= ~MOD_STATE::SHIFT;
+        break;
+
+        case KEY_LEFTALT:
+        if (bDown) controls::g_eKeyMods |= MOD_STATE::ALT;
+        else controls::g_eKeyMods &= ~MOD_STATE::ALT;
+        break;
+
+        case KEY_LEFTCTRL:
+        if (bDown) controls::g_eKeyMods |= MOD_STATE::CTRL;
+        else controls::g_eKeyMods &= ~MOD_STATE::CTRL;
+        break;
+    }
 }
 
 LRESULT CALLBACK
@@ -264,6 +286,7 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     break;
 
                 controls::g_aPressedKeys[ aAsciiToLinuxKeyCodes[keyCode] ] = bDown;
+                setMods(keyCode, bDown);
             }
             break;
 
@@ -295,7 +318,7 @@ windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     if (s && s->m_bPointerRelativeMode)
     {
         RECT r;
-        GetWindowRect(s->hWindow, &r);
+        GetWindowRect(s->m_hWindow, &r);
 
         SetCursorPos(
             s->m_wWidth / 2 + r.left,

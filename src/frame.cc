@@ -115,8 +115,9 @@ mainLoop()
     f64 accumulator = 0.0;
 
     auto& win = *app::g_pWindow;
+    auto& mix = *app::g_pMixer;
 
-    while (win.m_bRunning || win.m_bRunning)
+    while (win.m_bRunning || mix.m_bRunning)
     {
         if (!win.m_bPaused)
         {
