@@ -4,7 +4,6 @@
 #include "adt/logs.hh"
 #include "app.hh"
 #include "controls.hh"
-#include "adt/Pair.hh"
 
 #include <X11/keysym.h>
 
@@ -41,8 +40,8 @@ startMouseReadingThread(Win* s)
             while (win.m_bRunning)
             {
                 s8 aBuff[3] {};
-                Pair<s8, s8> xy {};
-                auto& [x, y] = xy;
+                s8 x {};
+                s8 y {};
 
                 int nRead = read(fdMouse, &aBuff, sizeof(aBuff));
                 if (nRead > 0)
