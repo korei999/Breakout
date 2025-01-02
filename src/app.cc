@@ -108,8 +108,8 @@ platformWindowAlloc(IAllocator* pAlloc)
     else
     {
     #ifdef X11_LIB
-        pWindow = (IWindow*)pAlloc->zalloc(1, sizeof(x::Window));
-        new(pWindow) x::Window("Breakout");
+        pWindow = (IWindow*)pAlloc->zalloc(1, sizeof(x::Win));
+        new(pWindow) x::Win("Breakout");
     #else
         print::err("Can't create graphical window\n");
     #endif

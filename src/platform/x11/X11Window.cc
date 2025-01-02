@@ -26,10 +26,10 @@ EGLint eglLastErrorCode = EGL_SUCCESS;
 #endif
 
 void
-Window::start()
+Win::start()
 {
-    this->pDisplay = XOpenDisplay({});
-    if (!this->pDisplay)
+    m_pDisplay = XOpenDisplay({});
+    if (!m_pDisplay)
     {
         CERR("XOpenDisplay(): failed\n");
         exit(1);
@@ -37,23 +37,24 @@ Window::start()
 
     XSetWindowAttributes attrs {};
     attrs.event_mask = StructureNotifyMask;
+    attrs.override_redirect = true;
 
-    this->window = XCreateWindow(
-        this->pDisplay,
-        DefaultRootWindow(this->pDisplay),
-        0, 0, this->m_wWidth, this->m_wHeight,
+    m_window = XCreateWindow(
+        m_pDisplay,
+        DefaultRootWindow(m_pDisplay),
+        0, 0, m_wWidth, m_wHeight,
         0, CopyFromParent, InputOutput, CopyFromParent, CWEventMask,
         &attrs
     );
 
-    assert(this->window && "XCreateWindow()");
+    assert(m_window && "XCreateWindow()");
 
     {
-        this->pEGLDisplay = eglGetDisplay((EGLNativeDisplayType)this->pDisplay);
-        assert(this->pEGLDisplay && "eglGetDisplay()");
+        m_pEGLDisplay = eglGetDisplay((EGLNativeDisplayType)m_pDisplay);
+        assert(m_pEGLDisplay && "eglGetDisplay()");
 
         EGLint major, minor;
-        if (!eglInitialize(this->pEGLDisplay, &major, &minor))
+        if (!eglInitialize(m_pEGLDisplay, &major, &minor))
         {
             CERR("eglInitialize(): failed\n");
             exit(1);
@@ -90,7 +91,7 @@ Window::start()
         };
 
         EGLint count {};
-        if (!eglChooseConfig(this->pEGLDisplay, aAttr, &config, 1, &count) || count != 1)
+        if (!eglChooseConfig(m_pEGLDisplay, aAttr, &config, 1, &count) || count != 1)
         {
             CERR("eglChooseConfig(): failed\n");
             exit(1);
@@ -104,10 +105,10 @@ Window::start()
             EGL_NONE,
         };
 
-        this->pEGLSurface = eglCreateWindowSurface(this->pEGLDisplay, config, this->window, aAttr);
-        if (this->pEGLSurface == EGL_NO_SURFACE)
+        m_pEGLSurface = eglCreateWindowSurface(m_pEGLDisplay, config, m_window, aAttr);
+        if (m_pEGLSurface == EGL_NO_SURFACE)
         {
-            CERR("this->pEGLSurface == EGL_NO_SURFACE\n");
+            CERR("pEGLSurface == EGL_NO_SURFACE\n");
             exit(1);
         }
     }
@@ -123,19 +124,19 @@ Window::start()
             EGL_NONE,
         };
 
-        this->pEGLContext =eglCreateContext(this->pEGLDisplay, config, EGL_NO_CONTEXT, aAttr);
-        if (this->pEGLContext == EGL_NO_CONTEXT)
+        m_pEGLContext =eglCreateContext(m_pEGLDisplay, config, EGL_NO_CONTEXT, aAttr);
+        if (m_pEGLContext == EGL_NO_CONTEXT)
         {
             CERR("context == EGL_NO_CONTEXT\n");
             exit(1);
         }
     }
 
-    XStoreName(this->pDisplay, this->window, this->m_sName.data());
+    XStoreName(m_pDisplay, m_window, m_sName.data());
 
     XSelectInput(
-        this->pDisplay,
-        this->window,
+        m_pDisplay,
+        m_window,
         KeyPressMask|
         KeyReleaseMask|
         ButtonPressMask|
@@ -149,111 +150,115 @@ Window::start()
 
     input::storeAtoms(this);
     input::mapX11KeycodesToLinuxKeycodes(this);
+
+    m_bRunning = true;
 }
 
 void
-Window::destroy()
+Win::destroy()
 {
-    if (this->pEGLDisplay) eglTerminate(this->pEGLDisplay);
-    XDestroyWindow(this->pDisplay, this->window);
-    if (this->pDisplay) XCloseDisplay(this->pDisplay);
+    if (m_pEGLDisplay) eglTerminate(m_pEGLDisplay);
+    XDestroyWindow(m_pDisplay, m_window);
+    if (m_pDisplay) XCloseDisplay(m_pDisplay);
 }
 
 void
-Window::enableRelativeMode()
-{
-}
-
-void
-Window::disableRelativeMode()
+Win::enableRelativeMode()
 {
 }
 
 void
-Window::hideCursor()
+Win::disableRelativeMode()
 {
 }
 
 void
-Window::setCursorImage([[maybe_unused]] String cursorType)
+Win::hideCursor()
 {
 }
 
 void
-Window::setFullscreen()
-{
-    if (this->m_bFullscreen) return;
-
-    this->m_bFullscreen = true;
-    Atom atomWmState = XInternAtom(this->pDisplay, "_NET_WM_STATE", true);
-    Atom atomWmFullscreen = XInternAtom(this->pDisplay, "_NET_WM_STATE_FULLSCREEN", true);
-
-    XChangeProperty(this->pDisplay, this->window, atomWmState, XA_ATOM, 32, PropModeReplace, (unsigned char*)&atomWmFullscreen, 1);
-}
-
-void
-Window::unsetFullscreen()
-{
-    this->m_bFullscreen = false;
-}
-
-void
-Window::togglePointerRelativeMode()
+Win::setCursorImage([[maybe_unused]] String cursorType)
 {
 }
 
 void
-Window::toggleFullscreen()
+Win::setFullscreen()
 {
-    if (this->m_bFullscreen) unsetFullscreen();
+    if (m_bFullscreen) return;
+
+    m_bFullscreen = true;
+    Atom atomWmState = XInternAtom(m_pDisplay, "_NET_WM_STATE", true);
+    Atom atomWmFullscreen = XInternAtom(m_pDisplay, "_NET_WM_STATE_FULLSCREEN", true);
+
+    XChangeProperty(m_pDisplay, m_window, atomWmState, XA_ATOM, 32, PropModeReplace, (unsigned char*)&atomWmFullscreen, 1);
+}
+
+void
+Win::unsetFullscreen()
+{
+    m_bFullscreen = false;
+}
+
+void
+Win::togglePointerRelativeMode()
+{
+}
+
+void
+Win::toggleFullscreen()
+{
+    if (m_bFullscreen) unsetFullscreen();
     else setFullscreen();
 
-    LOG_NOTIFY("bFullscreen: {}\n", this->m_bFullscreen);
+    LOG_NOTIFY("bFullscreen: {}\n", m_bFullscreen);
 }
 
 void
-Window::bindGlContext()
+Win::bindGlContext()
 {
-    EGLD ( eglMakeCurrent(this->pEGLDisplay, this->pEGLSurface, this->pEGLSurface, this->pEGLContext) );
+    EGLD ( eglMakeCurrent(m_pEGLDisplay, m_pEGLSurface, m_pEGLSurface, m_pEGLContext) );
 }
 
 void
-Window::unbindGlContext()
+Win::unbindGlContext()
 {
-    EGLD( eglMakeCurrent(this->pEGLDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT) );
+    EGLD( eglMakeCurrent(m_pEGLDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT) );
 }
 
 void
-Window::setSwapInterval(int interval)
+Win::setSwapInterval(int interval)
 {
-    this->m_swapInterval = interval;
-    EGLD( eglSwapInterval(this->pEGLDisplay, interval) );
+    m_swapInterval = interval;
+    EGLD( eglSwapInterval(m_pEGLDisplay, interval) );
 }
 
 void
-Window::toggleVSync()
+Win::toggleVSync()
 {
-    this->m_swapInterval = !this->m_swapInterval;
-    EGLD( eglSwapInterval(this->pEGLDisplay, this->m_swapInterval) );
-    LOG_OK("swapInterval: {}\n", this->m_swapInterval);
+    if (m_swapInterval == 1) m_swapInterval = -1;
+    else m_swapInterval = 1;
+
+    EGLD( eglSwapInterval(m_pEGLDisplay, m_swapInterval) );
+    LOG_OK("swapInterval: {}\n", m_swapInterval);
 }
 
 void
-Window::swapBuffers()
+Win::swapBuffers()
 {
-    EGLD( eglSwapBuffers(this->pEGLDisplay, this->pEGLSurface) );
+    EGLD( eglSwapBuffers(m_pEGLDisplay, m_pEGLSurface) );
 }
 
 void
-Window::procEvents()
+Win::procEvents()
 {
     input::procEvents(this);
 }
 
 void
-Window::showWindow()
+Win::showWindow()
 {
-    XMapRaised(this->pDisplay, this->window);
+    XMapRaised(m_pDisplay, m_window);
 }
 
 } /* namespace x11 */

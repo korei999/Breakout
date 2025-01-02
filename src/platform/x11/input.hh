@@ -9,9 +9,9 @@ namespace x11
 namespace input
 {
 
-void mapX11KeycodesToLinuxKeycodes(Window* s);
-void storeAtoms(Window* s);
-void procEvents(Window* s);
+void mapX11KeycodesToLinuxKeycodes(Win* s);
+void storeAtoms(Win* s);
+void procEvents(Win* s);
 
 } /* namespace input */
 } /* namespace x11 */

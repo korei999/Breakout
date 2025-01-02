@@ -10,15 +10,15 @@ namespace platform
 namespace x11
 {
 
-struct Window : IWindow
+struct Win : IWindow
 {
-    Display* pDisplay {};
-    ::Window window {};
-    EGLDisplay pEGLDisplay {};
-    EGLSurface pEGLSurface {};
-    EGLContext pEGLContext {};
+    Display* m_pDisplay {};
+    ::Window m_window {};
+    EGLDisplay m_pEGLDisplay {};
+    EGLSurface m_pEGLSurface {};
+    EGLContext m_pEGLContext {};
 
-    Window(String sName) : IWindow(sName) {}
+    Win(String sName) : IWindow(sName) {}
 
     virtual void start() override final;
     virtual void disableRelativeMode() override final;

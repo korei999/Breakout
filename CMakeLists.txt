@@ -48,6 +48,8 @@ add_executable(
     src/audio.cc
 )
 
+option(OPT_X11 "x11 support" OFF)
+
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftime-trace")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftime-trace")
 
@@ -180,20 +182,22 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(LINUX_PKGS REQUIRED gl egl wayland-client wayland-egl wayland-cursor libpipewire-0.3)
 
-    pkg_check_modules(X11_PKG x11)
-    if (${X11_PKG_FOUND})
-        add_definitions("-DX11_LIB")
-        include_directories(BEFORE ${X11_PKG_INCLUDE_DIRS})
-        target_link_libraries(
-            ${CMAKE_PROJECT_NAME} PRIVATE
-            ${X11_PKG_LIBRARIES}
-        )
+    if (OPT_X11)
+        pkg_check_modules(X11_PKGS REQUIRED x11)
+        if (${X11_PKGS_FOUND})
+            add_definitions("-DX11_LIB")
+            include_directories(BEFORE ${X11_PKGS_INCLUDE_DIRS})
+            target_link_libraries(
+                ${CMAKE_PROJECT_NAME} PRIVATE
+                ${X11_PKGS_LIBRARIES}
+            )
 
-        target_sources(
-            ${CMAKE_PROJECT_NAME} PRIVATE
-            src/platform/x11/X11Window.cc
-            src/platform/x11/input.cc
-        )
+            target_sources(
+                ${CMAKE_PROJECT_NAME} PRIVATE
+                src/platform/x11/X11Window.cc
+                src/platform/x11/input.cc
+            )
+        endif()
     endif()
 
     include_directories(BEFORE ${LINUX_PKGS_INCLUDE_DIRS})
