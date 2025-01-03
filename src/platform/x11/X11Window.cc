@@ -1,7 +1,6 @@
 #include "X11Window.hh"
 
 #include "adt/logs.hh"
-#include "input.hh"
 
 #include <X11/Xatom.h>
 
@@ -148,11 +147,11 @@ Win::start()
         StructureNotifyMask
     );
 
-    input::storeAtoms(this);
-    input::mapX11KeycodesToLinuxKeycodes(this);
+    storeAtoms();
+    mapX11KeycodesToLinuxKeycodes();
 
     m_bRunning = true;
-    input::startMouseReadingThread(this);
+    runMouseReadingThread();
 }
 
 void
@@ -251,12 +250,6 @@ void
 Win::swapBuffers()
 {
     EGLD( eglSwapBuffers(m_pEGLDisplay, m_pEGLSurface) );
-}
-
-void
-Win::procEvents()
-{
-    input::procEvents(this);
 }
 
 void

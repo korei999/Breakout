@@ -195,7 +195,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
             target_sources(
                 ${CMAKE_PROJECT_NAME} PRIVATE
                 src/platform/x11/X11Window.cc
-                src/platform/x11/input.cc
+                src/platform/x11/X11Input.cc
             )
         endif()
     endif()

@@ -268,8 +268,7 @@ blockHit(Arena* pArena)
         if (bAddSound)
         {
             f32 vol = 1.0f;
-            if (bExplosive)
-                vol *= 1.6;
+            if (bExplosive) vol *= 1.6;
 
             mix.add(s_sndBeep.getTrack(false, vol));
         }
@@ -692,12 +691,21 @@ drawEntities([[maybe_unused]] Arena* pArena, const f64 alpha)
 
         auto enIdx = g_aEntities.idx(&en);
 
-        const auto& prevPos = s_aPrevPos[enIdx];
-        math::V2 pos = math::lerp(
-            tileToImage(prevPos.x, prevPos.y),
-            tileToImage(en.pos.x, en.pos.y),
-            alpha
-        );
+        math::V2 pos;
+
+        if (controls::g_bStepDebug)
+        {
+            pos = tileToImage(en.pos.x, en.pos.y);
+        }
+        else
+        {
+            const auto& prevPos = s_aPrevPos[enIdx];
+            pos = math::lerp(
+                tileToImage(prevPos.x, prevPos.y),
+                tileToImage(en.pos.x, en.pos.y),
+                alpha
+            );
+        }
 
         math::V2 off = tileToImage(en.xOff, en.yOff);
 

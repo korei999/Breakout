@@ -18,7 +18,11 @@ struct Win : IWindow
     EGLSurface m_pEGLSurface {};
     EGLContext m_pEGLContext {};
 
+    /* */
+
     Win(String sName) : IWindow(sName) {}
+
+    /* */
 
     virtual void start() override final;
     virtual void disableRelativeMode() override final;
@@ -37,6 +41,12 @@ struct Win : IWindow
     virtual void procEvents() override final;
     virtual void showWindow() override final;
     virtual void destroy() override final;
+
+    /* */
+
+    void runMouseReadingThread();
+    void mapX11KeycodesToLinuxKeycodes();
+    void storeAtoms();
 };
 
 } /* namespace x11 */

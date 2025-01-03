@@ -45,7 +45,7 @@ procMouse()
     g_camera.right = V3Norm(V3Cross(g_camera.front, g_camera.up));
 }
 
-/* execute commands with bRepeat == false only once per keypress */
+/* execute commands with 'bRepeat == false' only once per keypress */
 template<bool FN_EQUALS_TO(const void* pCommand), u32 ARR_CAP, typename COMMAND_T>
 static void
 procCommands(Arr<bool, ARR_CAP>* paMap, const COMMAND_T& aCommands)
