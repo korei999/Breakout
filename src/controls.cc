@@ -46,9 +46,9 @@ procMouse()
 }
 
 /* execute commands with 'bRepeat == false' only once per keypress */
-template<bool FN_EQUALS_TO(const void* pCommand), u32 ARR_CAP, typename COMMAND_T>
+template<typename COMMAND_T>
 static void
-procCommands(Arr<bool, ARR_CAP>* paMap, const COMMAND_T& aCommands)
+procCommands(Arr<bool, MAX_COMMANDS>* paMap, const COMMAND_T& aCommands)
 {
     for (auto& com : aCommands)
     {
@@ -59,7 +59,7 @@ procCommands(Arr<bool, ARR_CAP>* paMap, const COMMAND_T& aCommands)
             return;
         }
 
-        if (FN_EQUALS_TO(&com))
+        if (g_aPressedKeys[com.key])
         {
             if (com.bRepeat)
             {
@@ -91,15 +91,7 @@ procKeys()
         static Arr<bool, MAX_COMMANDS> aPressedKeysOnceMap {};
         aPressedKeysOnceMap.setSize(MAX_COMMANDS);
 
-        procCommands<
-            [](const void* pCommand) -> bool {
-                const auto* pCom = (keybinds::Command*)pCommand;
-                return g_aPressedKeys[pCom->key];
-            }>
-        (
-            &aPressedKeysOnceMap,
-            keybinds::inl_aCommands
-        );
+        procCommands(&aPressedKeysOnceMap, keybinds::inl_aCommands);
     }
 
     /* apply ModCommands after */
@@ -107,15 +99,7 @@ procKeys()
         static Arr<bool, MAX_COMMANDS> aPressedModsOnceMap {};
         aPressedModsOnceMap.setSize(MAX_COMMANDS);
 
-        procCommands<
-            [](const void* pArg) -> bool {
-                const auto* pCom = (keybinds::ModCommand*)pArg;
-                return g_eKeyMods == pCom->eMod;
-            }>
-        (
-            &aPressedModsOnceMap,
-            keybinds::inl_aModCommands
-        );
+        procCommands(&aPressedModsOnceMap, keybinds::inl_aModCommands);
     }
 }
 

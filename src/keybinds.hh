@@ -54,16 +54,6 @@ struct Command
     void exec() const;
 };
 
-struct ModCommand
-{
-    bool bRepeat;
-    MOD_STATE eMod;
-    PFn pfn;
-    Arg arg;
-
-    void exec() const;
-};
-
 inline const Command inl_aCommands[] {
     {true,  KEY_A,     (void*)controls::move,              {ARG_TYPE::VEC2, {.v2 {-1.0f, 0.0f}}}},
     {true,  KEY_D,     (void*)controls::move,              {ARG_TYPE::VEC2, {.v2 {1.0f, 0.0f}}} },
@@ -77,13 +67,13 @@ inline const Command inl_aCommands[] {
     {false, KEY_B,     (void*)controls::toggleStepDebug,   {ARG_TYPE::NONE}                     },
 };
 
-inline const ModCommand inl_aModCommands[] {
-    {true, MOD_STATE::SHIFT, (void*)controls::mulDirection, {ARG_TYPE::F32, {.f = 2.0f}}},
-    {true, MOD_STATE::ALT,   (void*)controls::mulDirection, {ARG_TYPE::F32, {.f = 0.5f}}},
+inline const Command inl_aModCommands[] {
+    {true, KEY_LEFTSHIFT, (void*)controls::mulDirection, {ARG_TYPE::F32, {.f = 2.0f}}},
+    {true, KEY_LEFTALT,   (void*)controls::mulDirection, {ARG_TYPE::F32, {.f = 0.5f}}},
 };
 
 inline void
-execCommand(PFn pfn, Arg arg)
+Command::exec() const
 {
     switch (arg.eType)
     {
@@ -131,18 +121,6 @@ execCommand(PFn pfn, Arg arg)
         pfn.v4(arg.uVal.v4);
         break;
     }
-}
-
-inline void
-Command::exec() const
-{
-    execCommand(pfn, arg);
-}
-
-inline void
-ModCommand::exec() const
-{
-    execCommand(pfn, arg);
 }
 
 } /* namespace keybinds */
