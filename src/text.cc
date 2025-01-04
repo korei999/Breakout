@@ -565,14 +565,14 @@ TTF::rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8>
                 int endIdx = end;
                 f32 endCovered = end - endIdx;
 
-                if (startIdx > 0)
+                if (startIdx >= 0)
                     spBM[startIdx, row] = 255.0f * startCovered;
 
                 if (startIdx != endIdx)
                     spBM[endIdx, row] = 255.0f * endCovered;
 
                 for (int col = startIdx + 1; col < endIdx; ++col)
-                    if (col > 0)
+                    if (col >= 0)
                         spBM[col, row] = 255;
             }
         }
