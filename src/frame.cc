@@ -58,8 +58,8 @@ run()
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(gl::debugCallback, app::g_pWindow);
 
-    glPointSize(2.0f);
-    glLineWidth(2.0f);
+    /*glPointSize(2.0f);*/
+    /*glLineWidth(2.0f);*/
 #endif
 
     /*glEnable(GL_CULL_FACE);*/
@@ -74,7 +74,7 @@ run()
 
     g_uboProjView.createBuffer(sizeof(math::M4)*2, GL_DYNAMIC_DRAW);
 
-    updateDrawTime(); /* reset delta time before drawing */
+    updateDrawTime();
     updateDrawTime();
 
     app::g_pWindow->setSwapInterval(1);

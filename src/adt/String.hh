@@ -216,11 +216,11 @@ StringCmpFast(const String& l, const String& r)
 inline bool
 StringCmpSSE(const String& l, const String& r)
 {
-    if (l.size != r.size) return false;
+    if (l.getSize() != r.getSize()) return false;
 
-    const __m128i* p0 = (__m128i*)l.pData;
-    const __m128i* p1 = (__m128i*)r.pData;
-    u32 len = l.size / 16;
+    const __m128i* p0 = (__m128i*)l.data();
+    const __m128i* p1 = (__m128i*)r.data();
+    u32 len = l.getSize() / 16;
 
     u32 i = 0;
     for (; i < len; ++i)
@@ -229,31 +229,31 @@ StringCmpSSE(const String& l, const String& r)
         if (_mm_testz_si128(res, res) != 1) return false;
     }
 
-    if (l.size > 16)
+    if (l.getSize() > 16)
     {
-        auto lv = _mm_loadu_si128((__m128i*)&l.pData[l.size - 17]);
-        auto rv = _mm_loadu_si128((__m128i*)&r.pData[l.size - 17]);
+        auto lv = _mm_loadu_si128((__m128i*)&l[l.getSize() - 17]);
+        auto rv = _mm_loadu_si128((__m128i*)&r[l.getSize() - 17]);
         auto res = _mm_xor_si128(lv, rv);
         return _mm_testz_si128(res, res) == 1;
     }
 
-    u32 leftOver = l.size - i*16;
-    String nl(&l.pData[i*16], leftOver);
-    String nr(&r.pData[i*16], leftOver);
+    u32 leftOver = l.getSize() - i*16;
+    String nl(const_cast<char*>(&l[i*16]), leftOver);
+    String nr(const_cast<char*>(&r[i*16]), leftOver);
 
     return StringCmpFast(nl, nr);
 }
 #endif
 
 #ifdef ADT_AVX2
-constexpr bool
+inline bool
 StringCmpAVX2(const String& l, const String& r)
 {
-    if (l.size != r.size) return false;
+    if (l.getSize() != r.getSize()) return false;
 
-    const __m256i* p0 = (__m256i*)l.pData;
-    const __m256i* p1 = (__m256i*)r.pData;
-    u32 len = l.size / 32;
+    const __m256i* p0 = (__m256i*)l.data();
+    const __m256i* p1 = (__m256i*)r.data();
+    u32 len = l.getSize() / 32;
 
     u32 i = 0;
     for (; i < len; ++i)
@@ -262,17 +262,17 @@ StringCmpAVX2(const String& l, const String& r)
         if (_mm256_testz_si256(res, res) != 1) return false;
     }
 
-    if (l.size > 32)
+    if (l.getSize() > 32)
     {
-        auto lv = _mm256_loadu_si256((__m256i*)&l.pData[l.size - 33]);
-        auto rv = _mm256_loadu_si256((__m256i*)&r.pData[l.size - 33]);
+        auto lv = _mm256_loadu_si256((__m256i*)&l[l.getSize() - 33]);
+        auto rv = _mm256_loadu_si256((__m256i*)&r[l.getSize() - 33]);
         __m256i res = _mm256_xor_si256(lv, rv);
         return _mm256_testz_si256(res, res) == 1;
     }
 
-    u32 leftOver = l.size - i*32;
-    String nl(&l.pData[i*32], leftOver);
-    String nr(&r.pData[i*32], leftOver);
+    u32 leftOver = l.getSize() - i*32;
+    String nl(const_cast<char*>(&l[i*32]), leftOver);
+    String nr(const_cast<char*>(&r[i*32]), leftOver);
 
     return StringCmpFast(nl, nr);
 }
@@ -281,22 +281,9 @@ StringCmpAVX2(const String& l, const String& r)
 inline bool
 operator==(const String& l, const String& r)
 {
-#if defined(ADT_SSE4_2) && !defined(ADT_AVX2)
-    return StringCmpSSE(l, r);
-#endif
-
-#ifdef ADT_AVX2
-    if (l.size >= 32)
-        return StringCmpAVX2(l, r);
-    else if (l.size >= 16)
-        return StringCmpSSE(l, r);
-    else return StringCmpFast(l, r);
-#endif
-
-#if !defined(ADT_SSE4_2) && !defined(ADT_AVX2)
     if (l.m_size != r.m_size) return false;
-    return strncmp(l.m_pData, r.m_pData, l.m_size) == 0;
-#endif
+    if (l.data() == r.data()) return true; /* if points to itself */
+    return strncmp(l.m_pData, r.m_pData, l.m_size) == 0; /* strncmp is pretty fast actually */
 }
 
 inline bool

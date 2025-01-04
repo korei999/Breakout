@@ -4,6 +4,7 @@
 #include "adt/math.hh"
 #include "gl/gl.hh" /* IWYU pragma: keep */
 #include "reader/ttf.hh"
+#include "adt/TwoDSpan.hh"
 
 using namespace adt;
 
@@ -63,7 +64,7 @@ struct TTF
     /* */
 
 private:
-    void rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height);
+    void rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8> spBitmap);
 };
 
 struct TTFRasterizeArg

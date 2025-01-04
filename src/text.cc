@@ -320,8 +320,6 @@ getPointsWithMissingOnCurve(IAllocator* pAlloc, reader::ttf::Glyph* g)
     return aPoints;
 }
 
-#define M_AT(BITMAP, X, Y) BITMAP[width*int(X) + int(Y)]
-
 static void
 drawLineH(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1, int y1)
 {
@@ -337,13 +335,14 @@ drawLineH(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1
     int dir = dy < 0 ? -1 : 1;
     dy *= dir;
 
+    TwoDSpan at(pBitmap, width, height);
     if (dx != 0)
     {
         int y = y0;
         int p = 2*dy - dx;
         for (int i = 0; i < dx+1; ++i)
         {
-            M_AT(pBitmap, y, x0 + i) = 0xff;
+            at[x0 + i, y] = 0xff;
             if (p >= 0)
             {
                 y += dir;
@@ -369,13 +368,15 @@ drawLineV(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1
     int dir = dx < 0 ? -1 : 1;
     dx *= dir;
 
+    TwoDSpan at(pBitmap, width, height);
     if (dy != 0)
     {
         int x = x0;
         int p = 2*dx - dy;
         for (int i = 0; i < dy+1; ++i)
         {
-            M_AT(pBitmap, y0 + i, utils::clamp(x, 0, int(width-1))) = 0xff;
+            at[utils::clamp(x, 0, int(width-1)), y0 + i] = 0xff;
+
             if (p >= 0)
             {
                 x += dir;
@@ -396,48 +397,16 @@ drawLine(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1,
 }
 
 static void
-floodFillDFS(u8* pBitmap, const u32 width, const u32 height, u16 x, u16 y)
+floodFillDFS(TwoDSpan<u8> s, u16 x, u16 y)
 {
-    if (x >= height || y >= width) return;
+    if (x >= s.getHeight() || y >= s.getWidth()) return;
 
-    auto& pBm = pBitmap;
+    s[x, y] = 0xff;
 
-    M_AT(pBm, x, y) = 0xff;
-
-    if ((x + 1) < height && M_AT(pBm, x + 1, y + 0) != 0xff) floodFillDFS(pBm, width, height, u16(x + 1), u16(y + 0));
-    if ((y + 1) < width  && M_AT(pBm, x + 0, y + 1) != 0xff) floodFillDFS(pBm, width, height, u16(x + 0), u16(y + 1));
-    if ((x - 1) < height && M_AT(pBm, x - 1, y + 0) != 0xff) floodFillDFS(pBm, width, height, u16(x - 1), u16(y + 0));
-    if ((y - 1) < width  && M_AT(pBm, x - 0, y - 1) != 0xff) floodFillDFS(pBm, width, height, u16(x - 0), u16(y - 1));
-}
-
-static Pair<u16, u16>
-pickPosition(u8* pBitmap, const u32 width, const u32 height)
-{
-    Pair<u16, u16> picked = {NPOS16, NPOS16};
-    for (u32 i = 0; i < height; ++i)
-    {
-        for (u32 j = 0; j < width; ++j)
-        {
-            if (M_AT(pBitmap, i, j) == 0xff)
-            {
-                /* NOTE: stupid heuristic */
-                u32 off = 0;
-                while (M_AT(pBitmap, i, j + off) == 0xff)
-                    ++off;
-
-                picked = {u16(i + 1), u16((j + j+off) / 2)};
-
-                goto skip;
-            }
-        }
-    }
-
-skip:
-
-    if (picked == Pair{NPOS16, NPOS16} && picked < Pair{u16(width), u16(height)})
-        assert(false && "no white points?");
-
-    return picked;
+    if ((x + 1) < s.getHeight() && s[x + 1, y + 0] != 0xff) floodFillDFS(s, u16(x + 1), u16(y + 0));
+    if ((y + 1) < s.getWidth()  && s[x + 0, y + 1] != 0xff) floodFillDFS(s, u16(x + 0), u16(y + 1));
+    if ((x - 1) < s.getHeight() && s[x - 1, y + 0] != 0xff) floodFillDFS(s, u16(x - 1), u16(y + 0));
+    if ((y - 1) < s.getWidth()  && s[x - 0, y - 1] != 0xff) floodFillDFS(s, u16(x - 0), u16(y - 1));
 }
 
 /* https://en.wikipedia.org/wiki/Centroid#Of_a_polygon */
@@ -485,15 +454,6 @@ polygonCentroid(
     return {u16(std::round(_Cx)), u16(std::round(_Cy))};
 }
 
-
-static void
-floodFillThing(u8* pBitmap, const u32 width, const u32 height)
-{
-    /* NOTE: how to correctly and reliably pick the position? */
-    auto pos = pickPosition(pBitmap, width, height);
-    floodFillDFS(pBitmap, width, height, pos.first, pos.second);
-}
-
 static int
 polygonArea(const VecBase<PointOnCurve>& aPoints, u32 startIdx)
 {
@@ -515,37 +475,16 @@ polygonWindingOrder(const VecBase<PointOnCurve>& aPoints, u32 startIdx)
 {
     if (aPoints.getSize() - startIdx <= 2)
     {
-        LOG_FATAL("How can you get area of a LINE/DOT?\n");
+        LOG_FATAL("How can you get an area of a LINE/DOT?\n");
         return 0;
     }
 
     return polygonArea(aPoints, startIdx);
 }
 
-enum class BLIT_MODE : u8
-{
-    XOR = 0, OR
-};
-
-static void
-blit(u8* pDst, u8* pSrc, u32 width, u32 height, BLIT_MODE eMode)
-{
-
-    if (eMode == BLIT_MODE::XOR)
-    {
-        for (u32 i = 0; i < width*height; ++i)
-            pDst[i] ^= pSrc[i]; /* should work with full white/black pixels */
-    }
-    else if (eMode == BLIT_MODE::OR)
-    {
-        for (u32 i = 0; i < width*height; ++i)
-            pDst[i] |= pSrc[i];
-    }
-}
-
 /* https://sharo.dev/post/reading-ttf-files-and-rasterizing-them-using-a-handmade- */
 void
-TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8* pBitmap, u32 width, u32 height)
+TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8> spBitmap)
 {
     const auto& aGlyphPoints = pGlyph->uGlyph.simple.aPoints;
     u32 size = aGlyphPoints.getSize();
@@ -561,36 +500,22 @@ TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8* pBit
     f32 yMin = m_pFont->m_head.yMin;
 
     Arr<f32, 32> aIntersections {};
+    auto& spBM = spBitmap;
 
-    /*f32 vScale = f32(height) / f32(pGlyph->yMax - pGlyph->yMin);*/
-    /*f32 hScale = f32(width) / f32(pGlyph->xMax - pGlyph->xMin);*/
-    f32 vScale = f32(height) / f32(yMax - yMin);
-    f32 hScale = f32(width) / f32(xMax - xMin);
+    f32 vScale = f32(spBM.getHeight()) / f32(yMax - yMin);
+    f32 hScale = f32(spBM.getWidth()) / f32(xMax - xMin);
 
-    for (u32 i = 0; i < height; ++i)
+    for (u32 i = 0; i < spBM.getHeight(); ++i)
     {
         aIntersections.setSize(0);
         const f32 scanline = f32(i);
         for (u32 j = 1; j < aCurvyPoints.getSize(); ++j)
         {
-            /*f32 x0 = (aCurvyPoints[j - 1].pos.x - pGlyph->xMin) * hScale;*/
-            /*f32 x1 = (aCurvyPoints[j - 0].pos.x - pGlyph->xMin) * hScale;*/
             f32 x0 = (aCurvyPoints[j - 1].pos.x) * hScale;
             f32 x1 = (aCurvyPoints[j - 0].pos.x) * hScale;
 
-            /*f32 y0 = (aCurvyPoints[j - 1].pos.y - pGlyph->yMin) * vScale;*/
-            /*f32 y1 = (aCurvyPoints[j - 0].pos.y - pGlyph->yMin) * vScale;*/
-            /*f32 y0 = (aCurvyPoints[j - 1].pos.y) * vScale;*/
-            /*f32 y1 = (aCurvyPoints[j - 0].pos.y) * vScale;*/
-
             f32 y0 = (aCurvyPoints[j - 1].pos.y - yMin) * vScale;
             f32 y1 = (aCurvyPoints[j - 0].pos.y - yMin) * vScale;
-
-            {
-                /*f32 oy0 = (aCurvyPoints[j - 1].pos.y) * vScale;*/
-                /*f32 oy1 = (aCurvyPoints[j - 0].pos.y) * vScale;*/
-                /*LOG_WARN("{}, {}, [{}, {}]\n", y0 - oy0 , y0 - oy1, y0, y1);*/
-            }
 
             if (aCurvyPoints[j].bEndOfCurve)
                 j += 1;
@@ -631,17 +556,18 @@ TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8* pBit
 
             for (u32 m = 0; m < aIntersections.getSize(); m += 2)
             {
-                int start = std::round(aIntersections[m]);
-                int end = std::round(aIntersections[m + 1]);
+                f32 start = aIntersections[m];
+                f32 end = aIntersections[m + 1];
 
-                for (int j = start; j <= end; ++j)
-                    M_AT(pBitmap, i, j) = 0xff; /* full white */
+                int iStart = std::round(start);
+                int iEnd = std::round(end);
+
+                for (int j = iStart; j <= iEnd; ++j)
+                    spBM[j, i] = 0xff;
             }
         }
     }
 }
-
-#undef M_AT
 
 [[nodiscard]]
 static VecBase<CharQuad3Pos2UV>
@@ -654,7 +580,8 @@ TTFGenStringMesh(
     const f32 zOff
 )
 {
-    auto getUV = [&](int c) -> f32 {
+    auto getUV = [&](int c) -> f32
+    {
         return (c*s->m_scale) / (128.0f * s->m_scale);
     };
 
@@ -694,16 +621,16 @@ TTFGenStringMesh(
             continue;
         }
 
-        namespace f = frame;
+        // namespace f = frame;
 
         aQuads.push(pAlloc, {
-             0.0f + xOff + xOrigin,  2.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x0, y0,
-             0.0f + xOff + xOrigin,  0.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x1, y1,
-             2.0f + xOff + xOrigin,  0.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x2, y2,
+             0.0f + xOff + xOrigin,  2.0f + yOff + yOrigin,  zOff,     x0, y0,
+             0.0f + xOff + xOrigin,  0.0f + yOff + yOrigin,  zOff,     x1, y1,
+             2.0f + xOff + xOrigin,  0.0f + yOff + yOrigin,  zOff,     x2, y2,
 
-             0.0f + xOff + xOrigin,  2.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x0, y0,
-             2.0f + xOff + xOrigin,  0.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x2, y2,
-             2.0f + xOff + xOrigin,  2.0f + yOff + f::g_uiHeight - 2.0f - yOrigin,  zOff,     x3, y3,
+             0.0f + xOff + xOrigin,  2.0f + yOff + yOrigin,  zOff,     x0, y0,
+             2.0f + xOff + xOrigin,  0.0f + yOff + yOrigin,  zOff,     x2, y2,
+             2.0f + xOff + xOrigin,  2.0f + yOff + yOrigin,  zOff,     x3, y3,
         });
 
         /* TODO: account for aspect ratio */
@@ -734,7 +661,7 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
         u8* pTmp = (u8*)arena.zalloc(1, math::sq(iScale));
 
         auto g = pFont->readGlyph(ch);
-        rasterizeGlyphTEST(&arena, &g, pTmp, iScale, iScale);
+        rasterizeGlyphTEST(&arena, &g, TwoDSpan{pTmp, iScale, iScale});
         memcpy(m_pBitmap + ch*math::sq(iScale), pTmp, iScale * 128);
 
         arena.reset();
@@ -781,6 +708,7 @@ void
 TTF::updateText(IAllocator* pAlloc, const String str, const int x, const int y, const f32 z)
 {
     assert(str.getSize() <= m_maxSize);
+    if (m_str == str) return;
 
     m_str = str;
     auto aQuads = TTFGenStringMesh(this, pAlloc, str, x, y, z);

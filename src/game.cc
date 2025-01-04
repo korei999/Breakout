@@ -72,7 +72,7 @@ static void drawFPSCounter(Arena* pAlloc);
 static void drawFPSCounterTTF(Arena* pAlloc);
 static void drawInfo(Arena* pArena);
 static void drawEntities(Arena* pAlloc, const f64 alpha);
-static void drawJoke(Arena* pAlloc);
+static void drawTTFTest(Arena* pAlloc);
 
 void
 loadAssets()
@@ -560,14 +560,15 @@ draw(Arena* pArena, const f64 alpha)
 {
     if (controls::g_bTTFDebugScreen)
     {
-        drawJoke(pArena);
+        drawTTFTest(pArena);
     }
     else
     {
         drawEntities(pArena, alpha);
-        drawFPSCounterTTF(pArena);
-        drawInfo(pArena);
     }
+
+    drawFPSCounterTTF(pArena);
+    drawInfo(pArena);
 }
 
 [[maybe_unused]] static void
@@ -600,55 +601,55 @@ drawFPSCounter(Arena* pAlloc)
 static void
 drawFPSCounterTTF(Arena* pAlloc)
 {
-    math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
+    namespace f = frame;
+    auto width = f::g_uiWidth;
+    auto height = f::g_uiHeight;
 
-    auto* sh = &s_sh1Col;
-    sh->use();
-
-    sh->setM4("uProj", proj);
-    sh->setV4("uColor", colors::hexToV4(0x00ff00ff));
-
-    texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
-
-    static int nLastFps = frame::g_nfps;
+    static int nLastFps = f::g_nfps;
 
     f64 currTime = utils::timeNowMS();
-    if ((currTime - frame::g_prevTime) >= 1000.0)
-        nLastFps = frame::g_nfps; 
+    if ((currTime - f::g_prevTime) >= 1000.0)
+        nLastFps = f::g_nfps; 
 
     String s = StringAlloc(pAlloc, s_ttfTest.m_maxSize);
-    s.m_size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", nLastFps, frame::g_frameTime);
+    s.m_size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", nLastFps, f::g_frameTime);
 
-    s_ttfTest.updateText(pAlloc, s, 0, 0, 1.0f);
+    s_ttfTest.updateText(pAlloc, s, 0.0f, height - 2.0f, 1.0f);
 
-    if (currTime >= frame::g_prevTime + 1000.0)
+    if (currTime >= f::g_prevTime + 1000.0)
     {
-        frame::g_nfps = 0;
-        frame::g_prevTime = currTime;
+        f::g_nfps = 0;
+        f::g_prevTime = currTime;
     }
+
+    math::M4 proj = math::M4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+    auto* sh = &s_sh1Col;
+
+    sh->use();
+    sh->setM4("uProj", proj);
+    sh->setV4("uColor", colors::hexToV4(0x00ff00ff));
+    texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
 
     s_ttfTest.draw();
 }
 
 static void
-drawJoke(Arena* pAlloc)
+drawTTFTest(Arena* pAlloc)
 {
-    f32 width = frame::g_uiWidth / 2;
-    f32 height = frame::g_uiHeight / 2;
-
-    math::M4 proj = math::M4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+    const f32 width = frame::g_uiWidth / 2.0f;
+    const f32 height = frame::g_uiHeight / 2.0f;
+    const math::M4 proj = math::M4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
     String str = StringAlloc(pAlloc, s_ttfTest.m_maxSize);
-    str.m_size = print::toString(&str, "Dawg I ain't drawing without FreeType");
+    str.m_size = print::toString(&str, "Who needs FreeType? (probably me)");
 
-    /* FIXME: height is going the wrong way? */
-    s_ttfTest.updateText(pAlloc, str, width/2 - str.m_size/2.0f, height*1.5f - 1, 1.0f);
+    s_ttfTest.updateText(pAlloc, str, width/2.0f - str.m_size/2.0f, height/2.0f - 1.0f, 1.0f);
 
     auto* sh = &s_sh1Col;
+
     sh->use();
     sh->setM4("uProj", proj);
     sh->setV4("uColor", colors::hexToV4(0xeeeeeeff));
-
     texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
 
     s_ttfTest.draw();
@@ -675,7 +676,7 @@ drawInfo(Arena* pArena)
     int nSpaces = 0;
     for (auto c : s) if (c == '\n') ++nSpaces;
 
-    s_ttfTest.updateText(pArena, s, 0, frame::g_uiHeight - (nSpaces*2), 1.0f);
+    s_ttfTest.updateText(pArena, s, 0, nSpaces + 1.0f, 1.0f);
     s_ttfTest.draw();
 }
 

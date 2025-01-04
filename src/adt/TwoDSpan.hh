@@ -1,3 +1,5 @@
+#pragma once
+
 #include "types.hh"
 
 #include <cassert>
@@ -20,17 +22,14 @@ struct TwoDSpan
 
     /* */
 
-    constexpr T&
-    operator[](u32 x, u32 y)
-    {
-        return at(x, y);
-    }
+    constexpr T& operator[](u32 x, u32 y) { return at(x, y); }
+    constexpr const T& operator[](u32 x, u32 y) const { return at(x, y); }
 
-    constexpr const T&
-    operator[](u32 x, u32 y) const
-    {
-        return at(x, y);
-    }
+    constexpr T* data() { return m_pData; }
+    constexpr const T* data() const { return m_pData; }
+
+    constexpr u32 getWidth() const { return m_width; }
+    constexpr u32 getHeight() const { return m_height; }
 
     /* */
 
