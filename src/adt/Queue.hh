@@ -181,6 +181,7 @@ inline u32
 QueueBase<T>::idx(const T* pItem) const
 {
     auto r = pItem - m_pData;
+    return r;
 }
 
 template<typename T>
