@@ -484,7 +484,7 @@ polygonWindingOrder(const VecBase<PointOnCurve>& aPoints, u32 startIdx)
 
 /* https://sharo.dev/post/reading-ttf-files-and-rasterizing-them-using-a-handmade- */
 void
-TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8> spBitmap)
+TTF::rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8> spBitmap)
 {
     const auto& aGlyphPoints = pGlyph->uGlyph.simple.aPoints;
     u32 size = aGlyphPoints.getSize();
@@ -509,6 +509,7 @@ TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan
     {
         aIntersections.setSize(0);
         const f32 scanline = f32(row);
+
         for (u32 j = 1; j < aCurvyPoints.getSize(); ++j)
         {
             f32 x0 = (aCurvyPoints[j - 1].pos.x) * hScale;
@@ -557,13 +558,19 @@ TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan
             for (u32 m = 0; m < aIntersections.getSize(); m += 2)
             {
                 f32 start = aIntersections[m];
+                int startIdx = start;
+                f32 startCovered = (startIdx + 1) - start;
+
                 f32 end = aIntersections[m + 1];
+                int endIdx = end;
+                f32 endCovered = end - endIdx;
 
-                int iStart = start;
-                int iEnd = end;
+                spBM[startIdx, row] = 255.0f * startCovered;
+                if (startIdx != endIdx)
+                    spBM[endIdx, row] = 255.0f * endCovered;
 
-                for (int col = iStart; col <= iEnd; ++col)
-                    spBM[col, row] = 0xff;
+                for (int col = startIdx + 1; col < endIdx; ++col)
+                    spBM[col, row] = 255;
             }
         }
     }
@@ -594,8 +601,6 @@ ttfGenStringMesh(
 
     for (char ch : str)
     {
-        if (ch == '\0') break;
-
         /* FIXME: uv ordering is messed up (but works correctly) */
 
         /* tr */
@@ -620,8 +625,6 @@ ttfGenStringMesh(
             yOff -= 2.0f;
             continue;
         }
-
-        // namespace f = frame;
 
         aQuads.push(pAlloc, {
              0.0f + xOff + xOrigin,  2.0f + yOff + yOrigin,  zOff,     x0, y0,
@@ -661,7 +664,7 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
         u8* pTmp = (u8*)arena.zalloc(1, math::sq(iScale));
 
         auto g = pFont->readGlyph(ch);
-        rasterizeGlyphTEST(&arena, &g, TwoDSpan{pTmp, iScale, iScale});
+        rasterizeGlyph(&arena, &g, TwoDSpan{pTmp, iScale, iScale});
         memcpy(m_pBitmap + ch*math::sq(iScale), pTmp, iScale * 128);
 
         arena.reset();

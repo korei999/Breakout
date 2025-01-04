@@ -67,7 +67,7 @@ struct TTF
     /* */
 
 private:
-    void rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8> spBitmap);
+    void rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8> spBitmap);
 };
 
 struct TTFRasterizeArg
