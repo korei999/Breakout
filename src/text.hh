@@ -12,18 +12,18 @@ namespace text
 
 struct Bitmap
 {
-    String str;
-    u32 maxSize;
-    GLuint vao;
-    GLuint vbo;
-    GLuint vboSize;
+    String m_str;
+    u32 m_maxSize;
+    GLuint m_vao;
+    GLuint m_vbo;
+    GLuint m_vboSize;
 
     Bitmap() = default;
     Bitmap(String s, u64 size, int x, int y, GLint drawMode);
-};
 
-void BitmapUpdate(Bitmap* s, IAllocator* pAlloc, String str, int x, int y);
-void BitmapDraw(Bitmap* s);
+    void update(IAllocator* pAlloc, String str, int x, int y);
+    void draw();
+};
 
 struct CurveEndIdx
 {
@@ -49,8 +49,12 @@ struct TTF
     GLuint m_vboSize {};
     GLuint m_texId {};
 
+    /* */
+
     TTF() = default;
     TTF(IAllocator* p) : m_pAlloc(p) {}
+
+    /* */
 
     void rasterizeAscii(reader::ttf::Font* pFont);
     void updateText(IAllocator* pAlloc, const String str, const int x, const int y, const f32 z);

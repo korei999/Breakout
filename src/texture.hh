@@ -63,7 +63,12 @@ struct Img
     void destroy();
 };
 
-void ImgBind(GLuint id, GLint glTex);
+inline void
+ImgBind(GLuint id, GLint glTex)
+{
+    glActiveTexture(glTex);
+    glBindTexture(GL_TEXTURE_2D, id);
+}
 
 struct ImgLoadArg
 {

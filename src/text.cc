@@ -35,29 +35,29 @@ struct PointOnCurve
     f32 __pad {};
 };
 
-static VecBase<CharQuad> TextUpdateBuffer(Bitmap* s, IAllocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
-static void TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode);
+static VecBase<CharQuad> updateBuffer(Bitmap* s, IAllocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin);
+static void genMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode);
 
 Bitmap::Bitmap(String s, u64 size, int x, int y, GLint drawMode)
-    : str(s), maxSize(size)
+    : m_str(s), m_maxSize(size)
 {
-    TextGenMesh(this, x, y, drawMode);
+    genMesh(this, x, y, drawMode);
 }
 
 static void
-TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode)
+genMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode)
 {
     Arena arena(SIZE_1M);
     defer( arena.freeAll() );
 
-    auto aQuads = TextUpdateBuffer(s, &arena, s->str, s->maxSize, xOrigin, yOrigin);
+    auto aQuads = updateBuffer(s, &arena, s->m_str, s->m_maxSize, xOrigin, yOrigin);
 
-    glGenVertexArrays(1, &s->vao);
-    glBindVertexArray(s->vao);
+    glGenVertexArrays(1, &s->m_vao);
+    glBindVertexArray(s->m_vao);
 
-    glGenBuffers(1, &s->vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferData(GL_ARRAY_BUFFER, s->maxSize * sizeof(CharQuad), aQuads.data(), drawMode);
+    glGenBuffers(1, &s->m_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, s->m_vbo);
+    glBufferData(GL_ARRAY_BUFFER, s->m_maxSize * sizeof(CharQuad), aQuads.data(), drawMode);
 
     /* positions */
     glEnableVertexAttribArray(0);
@@ -70,7 +70,7 @@ TextGenMesh(Bitmap* s, int xOrigin, int yOrigin, GLint drawMode)
 }
 
 static VecBase<CharQuad>
-TextUpdateBuffer(Bitmap* s, IAllocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin)
+updateBuffer(Bitmap* s, IAllocator* pAlloc, String str, u32 size, int xOrigin, int yOrigin)
 {
     VecBase<CharQuad> aQuads(pAlloc, size);
 
@@ -120,29 +120,29 @@ TextUpdateBuffer(Bitmap* s, IAllocator* pAlloc, String str, u32 size, int xOrigi
         xOff += 2.0f;
     }
 
-    s->vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
+    s->m_vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
 
     return aQuads;
 }
 
 void
-BitmapUpdate(Bitmap* s, IAllocator* pAlloc, String str, int x, int y)
+Bitmap::update(IAllocator* pAlloc, String str, int x, int y)
 {
-    assert(str.getSize() <= s->maxSize);
+    assert(str.getSize() <= m_maxSize);
 
-    s->str = str;
-    VecBase<CharQuad> aQuads = TextUpdateBuffer(s, pAlloc, str, s->maxSize, x, y);
+    this->m_str = str;
+    VecBase<CharQuad> aQuads = updateBuffer(this, pAlloc, str, m_maxSize, x, y);
 
-    glBindBuffer(GL_ARRAY_BUFFER, s->vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, s->maxSize * sizeof(f32)*4*6, aQuads.data());
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, m_maxSize * sizeof(f32)*4*6, aQuads.data());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void
-BitmapDraw(Bitmap* s)
+Bitmap::draw()
 {
-    glBindVertexArray(s->vao);
-    glDrawArrays(GL_TRIANGLES, 0, s->vboSize);
+    glBindVertexArray(m_vao);
+    glDrawArrays(GL_TRIANGLES, 0, m_vboSize);
 }
 
 static VecBase<Point>
@@ -625,17 +625,17 @@ TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, u8* pBit
             aIntersections.push(intersection);
         }
 
-        sort::insertion(&aIntersections);
-
         if (aIntersections.getSize() > 1)
         {
+            sort::insertion(&aIntersections);
+
             for (u32 m = 0; m < aIntersections.getSize(); m += 2)
             {
                 int start = std::round(aIntersections[m]);
                 int end = std::round(aIntersections[m + 1]);
 
                 for (int j = start; j <= end; ++j)
-                    M_AT(pBitmap, i, j) = 0xff;
+                    M_AT(pBitmap, i, j) = 0xff; /* full white */
             }
         }
     }

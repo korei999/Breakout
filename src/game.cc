@@ -585,16 +585,16 @@ drawFPSCounter(Arena* pAlloc)
     f64 currTime = utils::timeNowMS();
     if (currTime >= frame::g_prevTime + 1000.0)
     {
-        String s = StringAlloc(pAlloc, s_textFPS.maxSize);
+        String s = StringAlloc(pAlloc, s_textFPS.m_maxSize);
         s.m_size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
 
         frame::g_nfps = 0;
         frame::g_prevTime = currTime;
 
-        text::BitmapUpdate(&s_textFPS, pAlloc, s, 0, 0);
+        s_textFPS.update(pAlloc, s, 0, 0);
     }
 
-    text::BitmapDraw(&s_textFPS);
+    s_textFPS.draw();
 }
 
 static void
@@ -639,7 +639,7 @@ drawJoke(Arena* pAlloc)
     math::M4 proj = math::M4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
     String str = StringAlloc(pAlloc, s_ttfTest.m_maxSize);
-    str.m_size = print::toString(&str, "Dawg i aint drawing without FreeType");
+    str.m_size = print::toString(&str, "Dawg I ain't drawing without FreeType");
 
     /* FIXME: height is going the wrong way? */
     s_ttfTest.updateText(pAlloc, str, width/2 - str.m_size/2.0f, height*1.5f - 1, 1.0f);

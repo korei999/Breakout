@@ -8,13 +8,14 @@ using namespace adt;
 namespace keybinds
 {
 
-enum class ARG_TYPE : u8 { NONE, LONG, F32, F64, U64, U64_BOOL, BOOL, VEC2, VEC3, VEC4 };
+enum class ARG_TYPE : u8 { NONE, VOID, LONG, F32, F64, U64, U64_BOOL, BOOL, VEC2, VEC3, VEC4 };
 
 struct Arg
 {
     ARG_TYPE eType {};
     union {
         null nil;
+        void* p;
         long l;
         f32 f;
         f64 d;
@@ -31,6 +32,7 @@ union PFn
 {
     void* ptr;
     void (*none)();
+    void (*void_)(void*);
     void (*long_)(long);
     void (*f32_)(f32);
     void (*f64_)(f64);
@@ -63,8 +65,8 @@ struct ModCommand
 };
 
 inline const Command inl_aCommands[] {
-    {true,  KEY_A,     (void*)controls::move,              {ARG_TYPE::VEC2, {.v4 {-1.0f, 0.0f}}}},
-    {true,  KEY_D,     (void*)controls::move,              {ARG_TYPE::VEC2, {.v4 {1.0f, 0.0f}}} },
+    {true,  KEY_A,     (void*)controls::move,              {ARG_TYPE::VEC2, {.v2 {-1.0f, 0.0f}}}},
+    {true,  KEY_D,     (void*)controls::move,              {ARG_TYPE::VEC2, {.v2 {1.0f, 0.0f}}} },
     {false, KEY_P,     (void*)controls::togglePause,       {ARG_TYPE::NONE}                     },
     {false, KEY_Q,     (void*)controls::toggleMouseLock,   {ARG_TYPE::NONE}                     },
     {false, KEY_ESC,   (void*)controls::quit,              {ARG_TYPE::NONE}                     },
@@ -87,6 +89,10 @@ execCommand(PFn pfn, Arg arg)
     {
         case ARG_TYPE::NONE:
         pfn.none();
+        break;
+
+        case ARG_TYPE::VOID:
+        pfn.void_(arg.uVal.p);
         break;
 
         case ARG_TYPE::LONG:
