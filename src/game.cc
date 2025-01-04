@@ -45,9 +45,8 @@ static reader::Wave s_sndUnatco(s_assetArenas.get(SIZE_1M * 35));
 
 static Plain s_plain;
 
+static text::TTF s_ttfWriter(s_assetArenas.get(SIZE_1K * 520));
 static reader::ttf::Font s_fontLiberation(s_assetArenas.get(SIZE_1K * 500));
-static text::Bitmap s_textFPS;
-static text::TTF s_ttfTest(s_assetArenas.get(SIZE_1K * 520));
 
 Pool<Entity, ASSET_MAX_COUNT> g_aEntities;
 static Arr<math::V2, ASSET_MAX_COUNT> s_aPrevPos;
@@ -69,7 +68,6 @@ Ball g_ball {
 };
 
 static void drawFPSCounter(Arena* pAlloc);
-static void drawFPSCounterTTF(Arena* pAlloc);
 static void drawInfo(Arena* pArena);
 static void drawEntities(Arena* pAlloc, const f64 alpha);
 static void drawTTFTest(Arena* pAlloc);
@@ -95,14 +93,13 @@ loadAssets()
 
     frame::g_uboProjView.bindShader(&s_shSprite, "ubProjView", 0);
 
-    s_textFPS = text::Bitmap("", 40, 0, 0, GL_DYNAMIC_DRAW);
     s_fontLiberation.loadParse("test-assets/LiberationMono-Regular.ttf");
 
     /* unbind before running threads */
     app::g_pWindow->unbindGlContext();
     defer( app::g_pWindow->bindGlContext() );
 
-    text::TTFRasterizeArg argTTF {&s_ttfTest, &s_fontLiberation};
+    text::TTFRasterizeArg argTTF {&s_ttfWriter, &s_fontLiberation};
 
     reader::WaveLoadArg argBeep {&s_sndBeep, "test-assets/c100s16.wav"};
     reader::WaveLoadArg argUnatco {&s_sndUnatco, "test-assets/Unatco.wav"};
@@ -567,41 +564,15 @@ draw(Arena* pArena, const f64 alpha)
         drawEntities(pArena, alpha);
     }
 
-    drawFPSCounterTTF(pArena);
+    drawFPSCounter(pArena);
     drawInfo(pArena);
 }
 
-[[maybe_unused]] static void
+static void
 drawFPSCounter(Arena* pAlloc)
 {
-    math::M4 proj = math::M4Ortho(0.0f, frame::g_uiWidth, 0.0f, frame::g_uiHeight, -1.0f, 1.0f);
-    auto* sh = &s_shFontBitmap;
-    sh->use();
-
-    s_tAsciiMap.bind(GL_TEXTURE0);
-
-    sh->setM4("uProj", proj);
-    sh->setV4("uColor", {colors::hexToV4(0xeeeeeeff)});
-
-    f64 currTime = utils::timeNowMS();
-    if (currTime >= frame::g_prevTime + 1000.0)
-    {
-        String s = StringAlloc(pAlloc, s_textFPS.m_maxSize);
-        s.m_size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", frame::g_nfps, frame::g_frameTime);
-
-        frame::g_nfps = 0;
-        frame::g_prevTime = currTime;
-
-        s_textFPS.update(pAlloc, s, 0, 0);
-    }
-
-    s_textFPS.draw();
-}
-
-static void
-drawFPSCounterTTF(Arena* pAlloc)
-{
     namespace f = frame;
+
     auto width = f::g_uiWidth;
     auto height = f::g_uiHeight;
 
@@ -611,10 +582,10 @@ drawFPSCounterTTF(Arena* pAlloc)
     if ((currTime - f::g_prevTime) >= 1000.0)
         nLastFps = f::g_nfps; 
 
-    String s = StringAlloc(pAlloc, s_ttfTest.m_maxSize);
+    String s = StringAlloc(pAlloc, s_ttfWriter.m_maxSize);
     s.m_size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", nLastFps, f::g_frameTime);
 
-    s_ttfTest.updateText(pAlloc, s, 0.0f, height - 2.0f, 1.0f);
+    s_ttfWriter.updateText(pAlloc, s, 0.0f, height - 2.0f, 1.0f);
 
     if (currTime >= f::g_prevTime + 1000.0)
     {
@@ -628,9 +599,9 @@ drawFPSCounterTTF(Arena* pAlloc)
     sh->use();
     sh->setM4("uProj", proj);
     sh->setV4("uColor", colors::hexToV4(0x00ff00ff));
-    texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
+    texture::ImgBind(s_ttfWriter.m_texId, GL_TEXTURE0);
 
-    s_ttfTest.draw();
+    s_ttfWriter.draw();
 }
 
 static void
@@ -640,19 +611,29 @@ drawTTFTest(Arena* pAlloc)
     const f32 height = frame::g_uiHeight / 2.0f;
     const math::M4 proj = math::M4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-    String str = StringAlloc(pAlloc, s_ttfTest.m_maxSize);
-    str.m_size = print::toString(&str, "Who needs FreeType? (probably me)");
+    String str = StringAlloc(pAlloc, s_ttfWriter.m_maxSize);
 
-    s_ttfTest.updateText(pAlloc, str, width/2.0f - str.m_size/2.0f, height/2.0f - 1.0f, 1.0f);
+    int i, j;
+    int off = 0;
+    for (i = '!', j = 0; i <= '~' && j < (int)s_ttfWriter.m_maxSize; ++i, ++j)
+    {
+        if (j % int(width) == 0)
+            str[j++] = '\n';
+
+        str[j] = i;
+    }
+    str.m_size = j;
+
+    s_ttfWriter.updateText(pAlloc, str, 0, height/2.0f + 2.0f, 1.0f);
 
     auto* sh = &s_sh1Col;
 
     sh->use();
     sh->setM4("uProj", proj);
     sh->setV4("uColor", colors::hexToV4(0xeeeeeeff));
-    texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
+    texture::ImgBind(s_ttfWriter.m_texId, GL_TEXTURE0);
 
-    s_ttfTest.draw();
+    s_ttfWriter.draw();
 }
 
 static void
@@ -665,7 +646,7 @@ drawInfo(Arena* pArena)
     sh->setM4("uProj", proj);
     sh->setV4("uColor", {colors::hexToV4(0x666666ff)});
 
-    texture::ImgBind(s_ttfTest.m_texId, GL_TEXTURE0);
+    texture::ImgBind(s_ttfWriter.m_texId, GL_TEXTURE0);
 
     String s = StringAlloc(pArena, 256);
     s.m_size = print::toString(&s,
@@ -676,8 +657,8 @@ drawInfo(Arena* pArena)
     int nSpaces = 0;
     for (auto c : s) if (c == '\n') ++nSpaces;
 
-    s_ttfTest.updateText(pArena, s, 0, nSpaces + 1.0f, 1.0f);
-    s_ttfTest.draw();
+    s_ttfWriter.updateText(pArena, s, 0, nSpaces + 1.0f, 1.0f);
+    s_ttfWriter.draw();
 }
 
 static void

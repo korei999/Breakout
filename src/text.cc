@@ -505,10 +505,10 @@ TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan
     f32 vScale = f32(spBM.getHeight()) / f32(yMax - yMin);
     f32 hScale = f32(spBM.getWidth()) / f32(xMax - xMin);
 
-    for (u32 i = 0; i < spBM.getHeight(); ++i)
+    for (u32 row = 0; row < spBM.getHeight(); ++row)
     {
         aIntersections.setSize(0);
-        const f32 scanline = f32(i);
+        const f32 scanline = f32(row);
         for (u32 j = 1; j < aCurvyPoints.getSize(); ++j)
         {
             f32 x0 = (aCurvyPoints[j - 1].pos.x) * hScale;
@@ -559,11 +559,11 @@ TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan
                 f32 start = aIntersections[m];
                 f32 end = aIntersections[m + 1];
 
-                int iStart = std::round(start);
-                int iEnd = std::round(end);
+                int iStart = start;
+                int iEnd = end;
 
-                for (int j = iStart; j <= iEnd; ++j)
-                    spBM[j, i] = 0xff;
+                for (int col = iStart; col <= iEnd; ++col)
+                    spBM[col, row] = 0xff;
             }
         }
     }
@@ -571,7 +571,7 @@ TTF::rasterizeGlyphTEST(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan
 
 [[nodiscard]]
 static VecBase<CharQuad3Pos2UV>
-TTFGenStringMesh(
+ttfGenStringMesh(
     TTF* s,
     IAllocator* pAlloc,
     const String str,
@@ -678,7 +678,7 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
         test[i] = c;
     }
 
-    auto aQuads = TTFGenStringMesh(this, &arena, test, 0, 0, 1.0f);
+    auto aQuads = ttfGenStringMesh(this, &arena, test, 0, 0, 1.0f);
     m_vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
 
     mtx_lock(&gl::g_mtxGlContext);
@@ -705,13 +705,13 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
 }
 
 void
-TTF::updateText(IAllocator* pAlloc, const String str, const int x, const int y, const f32 z)
+TTF::updateText(IAllocator* pAlloc, const String str, f32 x, f32 y, f32 z)
 {
     assert(str.getSize() <= m_maxSize);
     if (m_str == str) return;
 
     m_str = str;
-    auto aQuads = TTFGenStringMesh(this, pAlloc, str, x, y, z);
+    auto aQuads = ttfGenStringMesh(this, pAlloc, str, x, y, z);
     m_vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
 
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);

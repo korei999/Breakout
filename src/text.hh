@@ -58,7 +58,10 @@ struct TTF
     /* */
 
     void rasterizeAscii(reader::ttf::Font* pFont);
-    void updateText(IAllocator* pAlloc, const String str, const int x, const int y, const f32 z);
+
+    /* xy [0, 0] is bottom left */
+    void updateText(IAllocator* pAlloc, const String str, f32 x, f32 y, f32 z);
+
     void draw();
 
     /* */

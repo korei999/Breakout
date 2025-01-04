@@ -147,8 +147,8 @@ Img::setMonochrome(u8* pData, u32 width, u32 height)
         mtx_unlock(&gl::g_mtxGlContext);
     );
 
-    this->m_width = width;
-    this->m_height = height;
+    m_width = width;
+    m_height = height;
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glGenTextures(1, &m_id);
