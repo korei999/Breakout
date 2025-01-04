@@ -38,7 +38,7 @@ private:
     at(u32 x, u32 y)
     {
         u32 idx = y*m_width + x;
-        assert(x < m_width && y < m_height && idx < m_width*m_height && "[TwoDSpan]: out of range");
+        assert(x < m_width && y < m_height && "[TwoDSpan]: out of range");
         return m_pData[idx];
     }
 };
