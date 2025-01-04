@@ -487,11 +487,10 @@ void
 TTF::rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8> spBitmap)
 {
     const auto& aGlyphPoints = pGlyph->uGlyph.simple.aPoints;
-    u32 size = aGlyphPoints.getSize();
 
     CurveEndIdx endIdxs;
     auto aCurvyPoints = makeItCurvy(
-        pAlloc, getPointsWithMissingOnCurve(pAlloc, pGlyph), &endIdxs, 12
+        pAlloc, getPointsWithMissingOnCurve(pAlloc, pGlyph), &endIdxs, 6
     );
 
     f32 xMax = m_pFont->m_head.xMax;
@@ -510,21 +509,16 @@ TTF::rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8>
         aIntersections.setSize(0);
         const f32 scanline = f32(row);
 
-        for (u32 j = 1; j < aCurvyPoints.getSize(); ++j)
+        for (u32 pointIdx = 1; pointIdx < aCurvyPoints.getSize(); ++pointIdx)
         {
-            f32 x0 = (aCurvyPoints[j - 1].pos.x) * hScale;
-            f32 x1 = (aCurvyPoints[j - 0].pos.x) * hScale;
+            f32 x0 = (aCurvyPoints[pointIdx - 1].pos.x) * hScale;
+            f32 x1 = (aCurvyPoints[pointIdx - 0].pos.x) * hScale;
 
-            f32 y0 = (aCurvyPoints[j - 1].pos.y - yMin) * vScale;
-            f32 y1 = (aCurvyPoints[j - 0].pos.y - yMin) * vScale;
+            f32 y0 = (aCurvyPoints[pointIdx - 1].pos.y - yMin) * vScale;
+            f32 y1 = (aCurvyPoints[pointIdx - 0].pos.y - yMin) * vScale;
 
-            if (aCurvyPoints[j].bEndOfCurve)
-                j += 1;
-
-            x0 = std::round(x0);
-            y0 = std::round(y0);
-            x1 = std::round(x1);
-            y1 = std::round(y1);
+            if (aCurvyPoints[pointIdx].bEndOfCurve)
+                ++pointIdx;
 
             /* for the intersection all we need is to find what X is when our y = scanline or when y is equal to i of the loop
              *
@@ -545,8 +539,10 @@ TTF::rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8>
 
             f32 intersection = -1.0f;
 
-            if (math::eq(dx, 0.0f)) intersection = x1;
-            else intersection = (scanline - y1)*(dx/dy) + x1;
+            if (math::eq(dx, 0.0f))
+                intersection = x1;
+            else
+                intersection = (scanline - y1)*(dx/dy) + x1;
 
             aIntersections.push(intersection);
         }

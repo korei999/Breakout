@@ -41,8 +41,8 @@ struct TTF
 {
     IAllocator* m_pAlloc {};
     reader::ttf::Font* m_pFont {};
-    u8* m_pBitmap {};
     String m_str {};
+    u8* m_pBitmap {};
     u32 m_maxSize {};
     f32 m_scale {};
     GLuint m_vao {};
