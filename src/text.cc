@@ -551,13 +551,13 @@ TTF::rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8>
         {
             sort::insertion(&aIntersections);
 
-            for (u32 m = 0; m < aIntersections.getSize(); m += 2)
+            for (u32 intIdx = 0; intIdx < aIntersections.getSize(); intIdx += 2)
             {
-                f32 start = aIntersections[m];
+                f32 start = aIntersections[intIdx];
                 int startIdx = start;
                 f32 startCovered = (startIdx + 1) - start;
 
-                f32 end = aIntersections[m + 1];
+                f32 end = aIntersections[intIdx + 1];
                 int endIdx = end;
                 f32 endCovered = end - endIdx;
 
@@ -663,7 +663,7 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
         u8* pTmp = (u8*)arena.zalloc(1, math::sq(iScale));
 
         auto g = pFont->readGlyph(ch);
-        rasterizeGlyph(&arena, &g, TwoDSpan{pTmp, iScale, iScale});
+        rasterizeGlyph(&arena, &g, TwoDSpan{pTmp, u32(iScale), u32(iScale)});
         memcpy(m_pBitmap + ch*math::sq(iScale), pTmp, iScale * 128);
 
         arena.reset();
