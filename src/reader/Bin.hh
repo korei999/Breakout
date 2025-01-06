@@ -56,7 +56,7 @@ Bin::load(String path)
     Opt<String> rs = file::load(m_pAlloc, path);
     if (!rs) LOG_FATAL("error opening file: '{}'\n", path);
 
-    m_sFile = rs.data;
+    m_sFile = rs.value();
 
     return m_sFile.data() != nullptr;
 }

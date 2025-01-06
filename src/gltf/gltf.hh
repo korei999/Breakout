@@ -89,7 +89,7 @@ struct Node
     u32 camera;
     VecBase<u32> children;
     math::M4 matrix = math::M4Iden();
-    u32 mesh = NPOS; /* The index of the mesh in this node. */
+    ssize mesh = NPOS; /* The index of the mesh in this node. */
     math::V3 translation {};
     math::V4 rotation = math::QtIden().base;
     math::V3 scale {1, 1, 1};
@@ -236,9 +236,10 @@ struct Model
     String m_sPath {};
     String m_sFile {};
 
+    /* */
+
     Model(IAllocator* p)
         : m_pAlloc(p),
-          m_parser(p),
           m_aScenes(p),
           m_aBuffers(p),
           m_aBufferViews(p),
@@ -248,6 +249,8 @@ struct Model
           m_aMaterials(p),
           m_aImages(p),
           m_aNodes(p) {}
+
+    /* */
 
     bool load(String path);
 

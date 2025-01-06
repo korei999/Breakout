@@ -194,7 +194,7 @@ ShaderLoadOne(GLenum type, String path)
     Opt<String> src = file::load(&al, path);
     if (!src) LOG_FATAL("error opening shader file: '{}'\n", path);
 
-    const char* srcData = src.data.data();
+    const char* srcData = src.value().data();
 
     glShaderSource(shader, 1, &srcData, nullptr);
     glCompileShader(shader);

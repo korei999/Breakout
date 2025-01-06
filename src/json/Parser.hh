@@ -1,43 +1,124 @@
 #pragma once
 
 #include "Lexer.hh"
-#include "ast.hh"
+#include  "adt/Vec.hh"
 
 #include <cassert>
 
 namespace json
 {
 
+enum class TAG : adt::u8
+{
+    NULL_,
+    STRING,
+    LONG,
+    DOUBLE,
+    ARRAY,
+    OBJECT,
+    BOOL
+};
+
+inline adt::String
+getTAGString(enum TAG t)
+{
+    constexpr adt::String TAGStrings[] {
+        "NULL_", "STRING", "LONG", "DOUBLE", "ARRAY", "OBJECT", "BOOL"
+    };
+
+    return TAGStrings[static_cast<int>(t)];
+}
+
+struct Object;
+
+union Val
+{
+    adt::null n;
+    adt::String s;
+    adt::s64 l;
+    adt::f64 d;
+    adt::VecBase<Object> a;
+    adt::VecBase<Object> o;
+    bool b;
+};
+
+struct TagVal
+{
+    TAG eTag;
+    union Val val;
+};
+
+struct Object
+{
+    adt::String sKey;
+    TagVal tagVal;
+
+    /* */
+
+    Object&
+    operator[](adt::u32 i)
+    {
+        assert(tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY && "[json]: using operator[] on non ARRAY or OBJECT");
+        return tagVal.val.o[i];
+    }
+
+    Object&
+    first()
+    {
+        assert(tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY && "[json]: last() on non ARRAY or OBJECT");
+        return tagVal.val.o.first();
+    }
+
+    Object&
+    last()
+    {
+        assert(tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY && "[json]: last() on non ARRAY or OBJECT");
+        return tagVal.val.o.last();
+    }
+
+    adt::u32
+    pushToArray(adt::IAllocator* pAlloc, const Object& o)
+    {
+        assert(tagVal.eTag == TAG::ARRAY && "[json]: this object is not tagged as ARRAY");
+        return tagVal.val.a.push(pAlloc, o);
+    }
+
+    adt::u32
+    pushToObject(adt::IAllocator* pAlloc, const Object& o)
+    {
+        assert(tagVal.eTag == TAG::OBJECT && "[json]: this object is not tagged as OBJECT");
+        return tagVal.val.o.push(pAlloc, o);
+    }
+};
+
 enum class STATUS : adt::u8 { OK, FAIL };
 
 class Parser
 {
-    adt::IAllocator* m_pAlloc;
-    Lexer m_lex;
+    adt::IAllocator* m_pAlloc {};
+    Lexer m_lex {};
     adt::VecBase<Object> m_aObjects {};
-    Token m_tCurr;
-    Token m_tNext;
+    Token m_tCurr {};
+    Token m_tNext {};
 
     /* */
 
 public:
     Parser() = default;
-    Parser(adt::IAllocator* p) : m_pAlloc(p) {}
 
     /* */
 
     void destroy();
-    STATUS parse(adt::String sJson);
+
+    STATUS parse(adt::IAllocator* pAlloc, adt::String sJson);
+
     void print(FILE* fp);
-    void traverse(Object* pNode, bool (*pfn)(Object* pNode, void* pArgs), void* pArgs);
+
     /* if root json object consists of only one object return that, otherwise get array of root objects */
     adt::VecBase<Object>& getRoot();
 
-    void
-    traverseAll(bool (*pfn)(Object* p, void* pFnArgs), void* pArgs)
-    {
-        for (auto& obj : m_aObjects) traverse(&obj, pfn, pArgs);
-    }
+    /* pfn returns true for early return */
+    void traverse(bool (*pfn)(Object* p, void* pFnArgs), void* pArgs);
 
 private:
     STATUS parseNode(Object* pNode);
@@ -53,6 +134,9 @@ private:
     void next();
 };
 
+
+/* pfn returns true for early return */
+void traverseNode(Object* pNode, bool (*pfn)(Object* pNode, void* pArgs), void* pArgs);
 void printNode(FILE* fp, Object* pNode, adt::String sEnd = "", int depth = 0);
 
 /* Linear search inside JSON object. Returns nullptr if not found */
@@ -69,42 +153,42 @@ searchObject(adt::VecBase<Object>& aObj, adt::String sKey)
 [[nodiscard]] inline adt::VecBase<Object>&
 getObject(Object* obj)
 {
-    assert(obj->tagVal.tag == TAG::OBJECT);
+    assert(obj->tagVal.eTag == TAG::OBJECT);
     return obj->tagVal.val.o;
 }
 
 [[nodiscard]] inline adt::VecBase<Object>&
 getArray(Object* obj)
 {
-    assert(obj->tagVal.tag == TAG::ARRAY);
+    assert(obj->tagVal.eTag == TAG::ARRAY);
     return obj->tagVal.val.a;
 }
 
 [[nodiscard]] inline long
 getLong(Object* obj)
 {
-    assert(obj->tagVal.tag == TAG::LONG);
+    assert(obj->tagVal.eTag == TAG::LONG);
     return obj->tagVal.val.l;
 }
 
 [[nodiscard]] inline double
 getDouble(Object* obj)
 {
-    assert(obj->tagVal.tag == TAG::DOUBLE);
+    assert(obj->tagVal.eTag == TAG::DOUBLE);
     return obj->tagVal.val.d;
 }
 
 [[nodiscard]] inline adt::String
 getString(Object* obj)
 {
-    assert(obj->tagVal.tag == TAG::STRING);
+    assert(obj->tagVal.eTag == TAG::STRING);
     return obj->tagVal.val.s;
 }
 
 [[nodiscard]] inline bool
 getBool(Object* obj)
 {
-    assert(obj->tagVal.tag == TAG::BOOL);
+    assert(obj->tagVal.eTag == TAG::BOOL);
     return obj->tagVal.val.b;
 }
 
@@ -113,7 +197,7 @@ makeObject(adt::IAllocator* pAlloc, adt::String key)
 {
     return {
         .sKey = key,
-        .tagVal {.tag = TAG::OBJECT, .val {.o {pAlloc}}}
+        .tagVal {.eTag = TAG::OBJECT, .val {.o {pAlloc}}}
     };
 }
 
@@ -122,7 +206,7 @@ makeArray(adt::IAllocator* pAlloc, adt::String key)
 {
     return {
         .sKey = key,
-        .tagVal {.tag = TAG::ARRAY, .val {.a {pAlloc}}}
+        .tagVal {.eTag = TAG::ARRAY, .val {.a {pAlloc}}}
     };
 }
 
@@ -131,7 +215,7 @@ makeNumber(adt::String key, adt::s64 l)
 {
     return {
         .sKey = key,
-        .tagVal {.tag = TAG::LONG, .val {.l = l}}
+        .tagVal {.eTag = TAG::LONG, .val {.l = l}}
     };
 }
 
@@ -140,7 +224,7 @@ makeFloat(adt::String key, adt::f64 d)
 {
     return {
         .sKey = key,
-        .tagVal {.tag = TAG::DOUBLE, .val {.d = d}}
+        .tagVal {.eTag = TAG::DOUBLE, .val {.d = d}}
     };
 }
 
@@ -149,7 +233,7 @@ makeString(adt::String key, adt::String s)
 {
     return {
         .sKey = key,
-        .tagVal {.tag = TAG::STRING, .val {.s = s}}
+        .tagVal {.eTag = TAG::STRING, .val {.s = s}}
     };
 }
 
@@ -158,7 +242,7 @@ makeBool(adt::String key, bool b)
 {
     return {
         .sKey = key,
-        .tagVal {.tag = TAG::BOOL, .val {.b = b}}
+        .tagVal {.eTag = TAG::BOOL, .val {.b = b}}
     };
 }
 
@@ -167,7 +251,7 @@ makeNull(adt::String key)
 {
     return {
         .sKey = key,
-        .tagVal {.tag = TAG::NULL_, .val {.n = nullptr}}
+        .tagVal {.eTag = TAG::NULL_, .val {.n = nullptr}}
     };
 }
 

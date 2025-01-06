@@ -26,6 +26,7 @@
 #include <ctime>
 #include <cstring>
 #include <cassert>
+#include <cmath>
 
 namespace adt
 {
@@ -33,10 +34,10 @@ namespace utils
 {
 
 /* bit number starts from 0 */
-inline constexpr u64
-setBit(u64 num, u64 bit, bool val)
+inline constexpr ssize
+setBit(ssize num, ssize bit, bool val)
 {
-    return (num & ~((u64)1 << bit)) | ((u64)val << bit);
+    return (num & ~((ssize)1 << bit)) | ((ssize)val << bit);
 }
 
 template<typename T>
@@ -61,43 +62,21 @@ negate(auto* x)
     *x = -(*x);
 }
 
-[[nodiscard]] inline constexpr const auto&
-max(const auto& l, const auto& r)
+template<typename T>
+[[nodiscard]] inline const T&
+max(const T& l, const T& r)
 {
     return l > r ? l : r;
 }
 
-[[nodiscard]] inline constexpr auto&
-max(auto& l, auto& r)
-{
-    return l > r ? l : r;
-}
-
-[[nodiscard]] inline constexpr const auto&
-min(const auto& l, const auto& r)
+template<typename T>
+[[nodiscard]] inline const T&
+min(const T& l, const T& r)
 {
     return l < r ? l : r;
 }
 
-[[nodiscard]] inline constexpr auto&
-min(auto& l, auto& r)
-{
-    return l < r ? l : r;
-}
-
-[[nodiscard]] inline constexpr auto
-maxVal(const auto& l, const auto& r)
-{
-    return l > r ? l : r;
-}
-
-[[nodiscard]] inline constexpr auto
-minVal(const auto& l, const auto& r)
-{
-    return l < r ? l : r;
-}
-
-[[nodiscard]] inline constexpr u64
+[[nodiscard]] inline constexpr ssize
 size(const auto& a)
 {
     return sizeof(a) / sizeof(a[0]);
@@ -117,20 +96,24 @@ even(const auto& a)
 }
 
 template<typename T>
-[[nodiscard]] inline constexpr s64
+[[nodiscard]] inline constexpr ssize
 compare(const T& l, const T& r)
 {
-    return l - r;
+    if (l == r) return 0;
+    else if (l > r) return 1;
+    else return -1;
 }
 
 template<typename T>
-[[nodiscard]] inline constexpr s64
+[[nodiscard]] inline constexpr ssize
 compareRev(const T& l, const T& r)
 {
-    return r - l;
+    if (l == r) return 0;
+    else if (l < r) return 1;
+    else return -1;
 }
 
-[[nodiscard]] inline s64
+[[nodiscard]] inline ssize
 timeNowUS()
 {
 #ifdef __linux__
@@ -183,9 +166,9 @@ sleepS(f64 s)
 }
 
 inline constexpr void
-addNSToTimespec(timespec* const pTs, const s64 nsec)
+addNSToTimespec(timespec* const pTs, const ssize nsec)
 {
-    constexpr s64 nsecMax = 1000000000;
+    constexpr ssize nsecMax = 1000000000;
     /* overflow check */
     if (pTs->tv_nsec + nsec >= nsecMax)
     {
@@ -197,7 +180,7 @@ addNSToTimespec(timespec* const pTs, const s64 nsec)
 
 template<typename T>
 inline void
-copy(T* pDest, T* pSrc, u64 size)
+copy(T* pDest, T* pSrc, ssize size)
 {
     assert(pDest != nullptr);
     assert(pSrc != nullptr);
@@ -206,9 +189,9 @@ copy(T* pDest, T* pSrc, u64 size)
 
 template<typename T>
 inline constexpr void
-fill(T* pData, T x, u64 size)
+fill(T* pData, T x, ssize size)
 {
-    for (u64 i = 0; i < size; ++i)
+    for (ssize i = 0; i < size; ++i)
         pData[i] = x;
 }
 
@@ -246,11 +229,11 @@ searchMin(CON_T<T>* s)
 }
 
 inline constexpr void
-reverse(auto* a, const u32 size)
+reverse(auto* a, const ssize size)
 {
     assert(size > 0);
 
-    for (u32 i = 0; i < size / 2; ++i)
+    for (ssize i = 0; i < size / 2; ++i)
         swap(&a[i], &a[size - 1 - i]);
 }
 

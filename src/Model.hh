@@ -15,14 +15,14 @@ enum DRAW : u32
     NORM     = 1 << 1, /* bind normal textures */
     APPLY_TM = 1 << 2, /* apply transformation matrix */
     APPLY_NM = 1 << 3, /* generate and apply normal matrix */
-    ALL      = NPOS
+    ALL      = NPOS32
 };
 ADT_ENUM_BITWISE_OPERATORS(DRAW);
 
 struct Ubo
 {
     GLuint id;
-    u32 size;
+    ssize size;
     GLuint point;
 
     void createBuffer(u32 size, GLint drawMode);
@@ -53,7 +53,7 @@ struct Mesh
 
     gltf::COMPONENT_TYPE indType;
     gltf::PRIMITIVES mode;
-    u32 triangleCount;
+    ssize triangleCount;
 };
 
 struct Model

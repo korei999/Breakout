@@ -100,12 +100,12 @@ Model::loadGLTF(String path, GLint drawMode, GLint texMode)
 
         for (auto& primitive : mesh.aPrimitives)
         {
-            u32 accIndIdx = primitive.indices;
-            u32 accPosIdx = primitive.attributes.POSITION;
-            u32 accNormIdx = primitive.attributes.NORMAL;
-            u32 accTexIdx = primitive.attributes.TEXCOORD_0;
-            u32 accTanIdx = primitive.attributes.TANGENT;
-            u32 accMatIdx = primitive.material;
+            ssize accIndIdx = primitive.indices;
+            ssize accPosIdx = primitive.attributes.POSITION;
+            ssize accNormIdx = primitive.attributes.NORMAL;
+            ssize accTexIdx = primitive.attributes.TEXCOORD_0;
+            ssize accTanIdx = primitive.attributes.TANGENT;
+            ssize accMatIdx = primitive.material;
             gltf::PRIMITIVES mode = primitive.mode;
 
             auto& accPos = a.m_aAccessors[accPosIdx];
@@ -205,11 +205,11 @@ Model::loadGLTF(String path, GLint drawMode, GLint texMode)
             if (accMatIdx != NPOS)
             {
                 auto& mat = a.m_aMaterials[accMatIdx];
-                u32 baseColorSourceIdx = mat.pbrMetallicRoughness.baseColorTexture.index;
+                ssize baseColorSourceIdx = mat.pbrMetallicRoughness.baseColorTexture.index;
 
                 if (baseColorSourceIdx != NPOS)
                 {
-                    u32 diffTexInd = a.m_aTextures[baseColorSourceIdx].source;
+                    ssize diffTexInd = a.m_aTextures[baseColorSourceIdx].source;
                     if (diffTexInd != NPOS)
                     {
                         nMesh.meshData.materials.diffuse = aTex[diffTexInd];
@@ -217,10 +217,10 @@ Model::loadGLTF(String path, GLint drawMode, GLint texMode)
                     }
                 }
 
-                u32 normalSourceIdx = mat.normalTexture.index;
+                ssize normalSourceIdx = mat.normalTexture.index;
                 if (normalSourceIdx != NPOS)
                 {
-                    u32 normTexIdx = a.m_aTextures[normalSourceIdx].source;
+                    ssize normTexIdx = a.m_aTextures[normalSourceIdx].source;
                     if (normTexIdx != NPOS)
                     {
                         nMesh.meshData.materials.normal = aTex[normalSourceIdx];

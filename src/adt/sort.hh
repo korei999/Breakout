@@ -1,33 +1,32 @@
 #pragma once
 
 #include "utils.hh"
-#include "Span.hh"
 
 namespace adt
 {
 
-inline constexpr u32
-HeapParentI(const u32 i)
+inline constexpr ssize
+HeapParentI(const ssize i)
 {
     return ((i + 1) / 2) - 1;
 }
 
-inline constexpr u32
-HeapLeftI(const u32 i)
+inline constexpr ssize
+HeapLeftI(const ssize i)
 {
     return ((i + 1) * 2) - 1;
 }
 
-inline constexpr u32
-HeapRightI(const u32 i)
+inline constexpr ssize
+HeapRightI(const ssize i)
 {
     return HeapLeftI(i) + 1;
 }
 
 inline constexpr void
-maxHeapify(auto* a, const u32 size, u32 i)
+maxHeapify(auto* a, const ssize size, ssize i)
 {
-    s64 largest, left, right;
+    ssize largest, left, right;
 
 again:
     left = HeapLeftI(i);
@@ -40,7 +39,7 @@ again:
     if (right < size && a[right] > a[largest])
         largest = right;
 
-    if (largest != (s64)i)
+    if (largest != (ssize)i)
     {
         utils::swap(&a[i], &a[largest]);
         i = largest;
@@ -54,18 +53,18 @@ namespace sort
 enum ORDER : u8 { INC, DEC };
 
 inline constexpr bool
-sorted(const auto* a, const u32 size, const ORDER eOrder = INC)
+sorted(const auto* a, const ssize size, const ORDER eOrder = INC)
 {
     if (size <= 1) return true;
 
     if (eOrder == ORDER::INC)
     {
-        for (u32 i = 1; i < size; ++i)
+        for (ssize i = 1; i < size; ++i)
             if (a[i - 1] > a[i]) return false;
     }
     else
     {
-        for (s64 i = size - 2; i >= 0; --i)
+        for (ssize i = size - 2; i >= 0; --i)
             if (a[i + 1] > a[i]) return false;
     }
 
@@ -80,24 +79,17 @@ sorted(const auto& a, const ORDER eOrder = INC)
 
 template<typename T, auto FN_CMP = utils::compare<T>>
 inline constexpr void
-insertion(T* a, s64 l, s64 h)
+insertion(T* p, ssize l, ssize h)
 {
-    for (s64 i = l + 1; i < h + 1; ++i)
+    for (ssize i = l + 1; i < h + 1; ++i)
     {
-        T key = a[i];
-        s64 j = i;
-        for (; j > l && FN_CMP(a[j - 1], key) > 0; --j)
-            a[j] = a[j - 1];
+        T key = p[i];
+        ssize j = i;
+        for (; j > l && FN_CMP(p[j - 1], key) > 0; --j)
+            p[j] = p[j - 1];
 
-        a[j] = key;
+        p[j] = key;
     }
-}
-
-template<typename T, auto FN_CMP = utils::compare<T>>
-inline constexpr void
-insertion(Span<T> s)
-{
-    insertion<T, FN_CMP>(s.data(), 0, s.lastI());
 }
 
 template<template<typename> typename CON_T, typename T, auto FN_CMP = utils::compare<T>>
@@ -110,13 +102,13 @@ insertion(CON_T<T>* a)
 }
 
 inline constexpr void
-heapMax(auto* a, const u32 size)
+heapMax(auto* a, const ssize size)
 {
-    u32 heapSize = size;
-    for (s64 p = HeapParentI(heapSize); p >= 0; --p)
+    ssize heapSize = size;
+    for (ssize p = HeapParentI(heapSize); p >= 0; --p)
         maxHeapify(a, heapSize, p);
 
-    for (s64 i = size - 1; i > 0; --i)
+    for (ssize i = size - 1; i > 0; --i)
     {
         utils::swap(&a[i], &a[0]);
 
@@ -134,8 +126,8 @@ median3(const auto& x, const auto& y, const auto& z)
 }
 
 template<typename T, auto FN_CMP = utils::compare<T>>
-inline constexpr s64
-partition(T a[], s64 l, s64 r, const T& pivot)
+inline constexpr ssize
+partition(T a[], ssize l, ssize r, const T& pivot)
 {
     while (l <= r)
     {
@@ -150,14 +142,7 @@ partition(T a[], s64 l, s64 r, const T& pivot)
 
 template<typename T, auto FN_CMP = utils::compare<T>>
 inline constexpr void
-partition(Span<T> s, const T& pivot)
-{
-    partition<T, FN_CMP>(s.data(), 0, s.lastI(), pivot);
-}
-
-template<typename T, auto FN_CMP = utils::compare<T>>
-inline constexpr void
-quick(T a[], s64 l, s64 r)
+quick(T a[], ssize l, ssize r)
 {
     if (l < r)
     {
@@ -168,7 +153,7 @@ quick(T a[], s64 l, s64 r)
         }
 
         T pivot = a[ median3(l, (l + r) / 2, r) ];
-        s64 i = l, j = r;
+        ssize i = l, j = r;
 
         while (i <= j)
         {
@@ -181,13 +166,6 @@ quick(T a[], s64 l, s64 r)
         if (l < j) quick<T, FN_CMP>(a, l, j);
         if (i < r) quick<T, FN_CMP>(a, i, r);
     }
-}
-
-template<typename T, auto FN_CMP = utils::compare<T>>
-inline constexpr void
-quick(Span<T> s)
-{
-    quick<T, FN_CMP>(s.data(), 0, s.lastI());
 }
 
 template<template<typename> typename CON_T, typename T, auto FN_CMP = utils::compare<T>>

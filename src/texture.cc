@@ -417,7 +417,7 @@ printPack(String s, __m128i m)
 {
     u32 f[4];
     memcpy(f, &m, sizeof(f));
-    fprintf(stderr, "'%.*s': %08x, %08x, %08x, %08x\n", s.getSize(), s.data(), f[0], f[1], f[2], f[3]);
+    fprintf(stderr, "'%.*s': %08x, %08x, %08x, %08x\n", (int)s.getSize(), s.data(), f[0], f[1], f[2], f[3]);
 };
 #endif
 

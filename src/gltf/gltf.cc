@@ -93,7 +93,7 @@ assignUnionType(json::Object* obj, u32 n)
     union Type type;
 
     for (u32 i = 0; i < n; i++)
-        if (arr[i].tagVal.tag == json::TAG::LONG)
+        if (arr[i].tagVal.eTag == json::TAG::LONG)
             type.MAT4.d[i] = f32(json::getLong(&arr[i]));
         else
             type.MAT4.d[i] = f32(json::getDouble(&arr[i]));
@@ -112,7 +112,7 @@ accessorTypeToUnionType(enum ACCESSOR_TYPE t, json::Object* obj)
         case ACCESSOR_TYPE::SCALAR:
         {
             auto& arr = json::getArray(obj);
-            if (arr[0].tagVal.tag == json::TAG::LONG)
+            if (arr[0].tagVal.eTag == json::TAG::LONG)
                 type.SCALAR = f64(json::getLong(&arr[0]));
             else type.SCALAR = f64(json::getDouble(&arr[0]));
         } break;
@@ -148,7 +148,7 @@ Model::load(String path)
     if (!o_sFile) return false;
 
     m_sPath = path.clone(m_pAlloc);
-    if (m_parser.parse(o_sFile.value()) == json::STATUS::FAIL) return false;
+    if (m_parser.parse(m_pAlloc, o_sFile.value()) == json::STATUS::FAIL) return false;
 
     procJSONObjs();
     m_defaultSceneIdx = json::getLong(m_jsonObjs.scene);
@@ -302,10 +302,13 @@ Model::procBuffers()
             auto sNewPath = file::replacePathEnding(m_pAlloc, m_sPath, svUri);
 
             rsBin = file::load(m_pAlloc, sNewPath);
-            if (!rsBin) LOG_WARN("error opening file: '{}'\n", sNewPath);
+            if (!rsBin)
+            {
+                LOG_WARN("error opening file: '{}'\n", sNewPath);
+            }
             else
             {
-                aBin = rsBin.data;
+                aBin = rsBin.value();
             }
         }
 

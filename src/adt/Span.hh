@@ -11,31 +11,31 @@ template<typename T>
 struct Span
 {
     T* m_pData {};
-    u64 m_size {};
+    ssize m_size {};
 
     /* */
 
     constexpr Span() = default;
-    constexpr Span(T* pData, u64 size) : m_pData(pData), m_size(size) {}
+    constexpr Span(T* pData, ssize size) : m_pData(pData), m_size(size) {}
 
     /* */
 
     constexpr T* data() { return m_pData; }
     constexpr const T* data() const { return m_pData; }
 
-    constexpr u64 getSize() const { return m_size; }
+    constexpr ssize getSize() const { return m_size; }
 
-    constexpr u64 lastI() const { return m_size - 1; }
+    constexpr ssize lastI() const { return m_size - 1; }
 
     constexpr T&
-    operator[](u64 i)
+    operator[](ssize i)
     {
         assert(i < m_size && "[Span]: out of range");
         return m_pData + i;
     }
 
     constexpr T&
-    operator[](u64 i) const
+    operator[](ssize i) const
     {
         assert(i < m_size && "[Span]: out of range");
         return m_pData + i;
