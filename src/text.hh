@@ -1,10 +1,11 @@
 #pragma once
 
+#include "adt/Span2D.hh"
 #include "adt/String.hh"
+#include "adt/Thread.hh"
 #include "adt/math.hh"
 #include "gl/gl.hh" /* IWYU pragma: keep */
 #include "reader/ttf.hh"
-#include "adt/TwoDSpan.hh"
 
 using namespace adt;
 
@@ -67,7 +68,7 @@ struct TTF
     /* */
 
 private:
-    void rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8> spBitmap);
+    void rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, Span2D<u8> spBitmap);
 };
 
 struct TTFRasterizeArg
@@ -76,13 +77,13 @@ struct TTFRasterizeArg
     reader::ttf::Font* pFont {};
 };
 
-inline int
+inline THREAD_STATUS
 TTFRasterizeSubmit(void* pArg)
 {
     auto arg = *(TTFRasterizeArg*)pArg;
     arg.self->rasterizeAscii(arg.pFont);
 
-    return thrd_success;
+    return {};
 }
 
 } /* namespace text */

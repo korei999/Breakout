@@ -104,7 +104,7 @@ run()
 static void
 mainLoop()
 {
-    Arena arena(SIZE_1K * 20);
+    Arena arena(SIZE_8M);
     defer( arena.freeAll() );
 
     g_gameTime = 0.0;
@@ -161,6 +161,7 @@ mainLoop()
 
         game::draw(&arena, alpha);
 
+        arena.shrinkToFirstBlock();
         arena.reset();
 
         app::g_pWindow->swapBuffers();

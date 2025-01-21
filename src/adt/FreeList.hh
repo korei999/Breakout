@@ -34,18 +34,18 @@ struct FreeListData
     
     /* */
 
-    constexpr usize getSize() const { return m_sizeAndIsFree & ~IS_FREE_MASK; }
-    constexpr bool isFree() const { return m_sizeAndIsFree & IS_FREE_MASK; }
-    constexpr void setFree(bool _bFree) { _bFree ? m_sizeAndIsFree |= IS_FREE_MASK : m_sizeAndIsFree &= ~IS_FREE_MASK; };
-    constexpr void setSizeSetFree(usize _size, bool _bFree) { m_sizeAndIsFree = _size; setFree(_bFree); }
-    constexpr void setSize(usize _size) { setSizeSetFree(_size, isFree()); }
-    constexpr void addSize(usize _size) { setSize(_size + getSize()); }
+    constexpr usize getSize() const noexcept { return m_sizeAndIsFree & ~IS_FREE_MASK; }
+    constexpr bool isFree() const noexcept { return m_sizeAndIsFree & IS_FREE_MASK; }
+    constexpr void setFree(bool _bFree) noexcept { _bFree ? m_sizeAndIsFree |= IS_FREE_MASK : m_sizeAndIsFree &= ~IS_FREE_MASK; };
+    constexpr void setSizeSetFree(usize _size, bool _bFree) noexcept { m_sizeAndIsFree = _size; setFree(_bFree); }
+    constexpr void setSize(usize _size) noexcept { setSizeSetFree(_size, isFree()); }
+    constexpr void addSize(usize _size) noexcept { setSize(_size + getSize()); }
 };
 
 class FreeList : public IAllocator
 {
 public:
-    using Node = RBNode<FreeListData>; /* node is the header + memory chunk of the allocation */
+    using Node = RBNode<FreeListData>; /* node is the header + the memory chunk */
 
     /* */
 
@@ -60,18 +60,18 @@ private:
 
 public:
     FreeList() = default;
-    FreeList(usize _blockSize, IAllocator* pBackAlloc = OsAllocatorGet())
+    FreeList(usize _blockSize, IAllocator* pBackAlloc = OsAllocatorGet()) noexcept(false)
         : m_blockSize(align8(_blockSize + sizeof(FreeListBlock) + sizeof(FreeList::Node))),
           m_pBackAlloc(pBackAlloc),
           m_pBlocks(allocBlock(m_blockSize)) {}
 
     /* */
 
-    [[nodiscard]] virtual void* malloc(usize mCount, usize mSize) override;
-    [[nodiscard]] virtual void* zalloc(usize mCount, usize mSize) override;
-    [[nodiscard]] virtual void* realloc(void* ptr, usize mCount, usize mSize) override;
-    virtual void free(void* ptr) override;
-    virtual void freeAll() override;
+    [[nodiscard]] virtual void* malloc(usize mCount, usize mSize) noexcept(false) override;
+    [[nodiscard]] virtual void* zalloc(usize mCount, usize mSize) noexcept(false) override;
+    [[nodiscard]] virtual void* realloc(void* ptr, usize oldCount, usize newCount, usize mSize) noexcept(false) override;
+    virtual void free(void* ptr) noexcept override;
+    virtual void freeAll() noexcept override;
     usize nBytesAllocated();
 
 #ifndef NDEBUG
@@ -89,10 +89,10 @@ private:
 };
 
 template<>
-constexpr s64
+inline constexpr ssize
 utils::compare(const FreeListData& l, const FreeListData& r)
 {
-    return (s64)l.getSize() - (s64)r.getSize();
+    return (ssize)l.getSize() - (ssize)r.getSize();
 }
 
 inline FreeList::Node*
@@ -152,7 +152,7 @@ FreeList::blockPrepend(usize size)
 }
 
 inline void
-FreeList::freeAll()
+FreeList::freeAll() noexcept
 {
     auto* it = m_pBlocks;
     while (it)
@@ -180,21 +180,21 @@ _FreeListNodeFromPtr(void* p)
 inline FreeList::Node*
 FreeList::findFittingNode(const usize size)
 {
-    auto* it = m_tree.m_pRoot;
-    const s64 realSize = size + sizeof(FreeList::Node);
+    auto* it = m_tree.getRoot();
+    const ssize realSize = size + sizeof(FreeList::Node);
 
     FreeList::Node* pLastFitting {};
     while (it)
     {
         assert(it->m_data.isFree() && "[FreeList]: non free node in the free list");
 
-        s64 nodeSize = it->m_data.getSize();
+        ssize nodeSize = it->m_data.getSize();
 
         if (nodeSize >= realSize)
             pLastFitting = it;
 
         /* save size for the header */
-        s64 cmp = realSize - nodeSize;
+        ssize cmp = realSize - nodeSize;
 
         if (cmp == 0) break;
         else if (cmp < 0) it = it->left();
@@ -249,14 +249,14 @@ FreeList::verify()
 inline FreeList::Node*
 FreeList::splitNode(FreeList::Node* pNode, usize realSize)
 {
-    s64 splitSize = s64(pNode->m_data.getSize()) - s64(realSize);
+    ssize splitSize = ssize(pNode->m_data.getSize()) - ssize(realSize);
 
     assert(splitSize >= 0);
 
     assert(pNode->m_data.isFree() && "splitting non free node (corruption)");
     m_tree.remove(pNode);
 
-    if (splitSize <= (s64)sizeof(FreeList::Node))
+    if (splitSize <= (ssize)sizeof(FreeList::Node))
     {
         pNode->m_data.setFree(false);
         return pNode;
@@ -324,7 +324,7 @@ FreeList::zalloc(usize nMembers, usize mSize)
 }
 
 inline void
-FreeList::free(void* ptr)
+FreeList::free(void* ptr) noexcept
 {
     if (ptr == nullptr) return;
 
@@ -366,21 +366,21 @@ FreeList::free(void* ptr)
 }
 
 inline void*
-FreeList::realloc(void* ptr, usize nMembers, usize mSize)
+FreeList::realloc(void* ptr, usize oldCount, usize newCount, usize mSize)
 {
-    if (!ptr) return malloc(nMembers, mSize);
+    if (!ptr) return malloc(newCount, mSize);
 
     auto* pNode = _FreeListNodeFromPtr(ptr);
-    s64 nodeSize = (s64)pNode->m_data.getSize() - (s64)sizeof(FreeList::Node);
+    ssize nodeSize = (ssize)pNode->m_data.getSize() - (ssize)sizeof(FreeList::Node);
     assert(nodeSize > 0 && "[FreeList]: 0 or negative size allocation (corruption)");
 
-    if ((s64)nMembers*(s64)mSize <= nodeSize) return ptr;
+    if ((ssize)newCount*(ssize)mSize <= nodeSize) return ptr;
 
     assert(!pNode->m_data.isFree() && "[FreeList]: trying to realloc non free node");
 
     /* try to bump if next is free and can fit */
     {
-        usize requested = align8(nMembers * mSize);
+        usize requested = align8(newCount * mSize);
         usize realSize = requested + sizeof(FreeList::Node);
         auto* pNext = pNode->m_data.m_pNext;
 
@@ -411,8 +411,8 @@ FreeList::realloc(void* ptr, usize nMembers, usize mSize)
         }
     }
 
-    auto* pRet = malloc(nMembers, mSize);
-    memcpy(pRet, ptr, nodeSize);
+    auto* pRet = malloc(newCount, mSize);
+    memcpy(pRet, ptr, oldCount * mSize);
     free(ptr);
 
     return pRet;

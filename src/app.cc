@@ -40,7 +40,7 @@ platformMixerAlloc(IAllocator* pAlloc)
 
         return pMixer;
     }
-#elifdef _WIN32
+#elif defined _WIN32
     {
         namespace p32 = platform::win32;
 
@@ -116,7 +116,7 @@ platformWindowAlloc(IAllocator* pAlloc)
     }
 
     return pWindow;
-#elifdef _WIN32
+#elif defined _WIN32
     return win32WindowAlloc(pAlloc);
 #else
     #error "Platform window"

@@ -11,7 +11,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 message(STATUS "CMAKE_C_COMPILER_ID: '${CMAKE_C_COMPILER_ID}'")
 message(STATUS "CMAKE_CXX_COMPILER_ID: '${CMAKE_CXX_COMPILER_ID}'")
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 
 message(STATUS "CMAKE_CXX_STANDARD: '${CMAKE_CXX_STANDARD}'")
 
@@ -135,17 +135,17 @@ endif()
 message(STATUS "CMAKE_BUILD_TYPE: '${CMAKE_BUILD_TYPE}'")
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /GR") # disable exceptions
-    add_definitions("/D_HAS_EXCEPTIONS=0")
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /GR") # disable exceptions
+    # add_definitions("/D_HAS_EXCEPTIONS=0")
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4146 /wd4200 /wd4312")
     set(CMAKE_CXX_FLAGS "/utf-8")
     set(CMAKE_C_FLAGS "/utf-8")
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-threadsafe-statics -fno-rtti -fno-exceptions -fno-unwind-tables")
-    if (NOT CMAKE_BUILD_TYPE MATCHES "Debug")
-        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nodefaultlibs -lc -lm")
-    endif()
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-threadsafe-statics -fno-rtti -fno-exceptions -fno-unwind-tables")
+    # if (NOT CMAKE_BUILD_TYPE MATCHES "Debug")
+    #     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nodefaultlibs -lc -lm")
+    # endif()
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fms-extensions -Wno-missing-braces")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fms-extensions -Wno-missing-braces")

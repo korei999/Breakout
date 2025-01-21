@@ -1,10 +1,13 @@
 #include "game.hh"
 
+#include "AllocatorPool.hh"
 #include "IWindow.hh"
 #include "Shader.hh"
 #include "adt/Arena.hh"
 #include "adt/Pool.hh"
+#include "adt/ScratchBuffer.hh"
 #include "adt/ThreadPool.hh"
+#include "adt/Span2D.hh"
 #include "adt/defer.hh"
 #include "app.hh"
 #include "controls.hh"
@@ -13,9 +16,6 @@
 #include "reader/ttf.hh"
 #include "text.hh"
 #include "texture.hh"
-#include "adt/TwoDSpan.hh"
-
-#include "AllocatorPool.hh"
 
 namespace game
 {
@@ -25,6 +25,9 @@ struct WidthHeight
     f32 width {};
     f32 height {};
 };
+
+thread_local static u8 tls_aMemBuffer[SIZE_8K] {};
+thread_local static ScratchBuffer tls_scratch(tls_aMemBuffer);
 
 static AllocatorPool<Arena, ASSET_MAX_COUNT> s_assetArenas {};
 
@@ -75,6 +78,9 @@ static void drawTTFTest(Arena* pAlloc);
 void
 loadAssets()
 {
+    f64 t0 = utils::timeNowS();
+    LOG_GOOD("loadAssets() at: {}\n", (ssize)t0);
+
     frame::g_uiHeight = (frame::g_uiWidth * (f32)app::g_pWindow->m_wHeight) / (f32)app::g_pWindow->m_wWidth;
 
     s_plain = Plain(GL_STATIC_DRAW);
@@ -122,6 +128,9 @@ loadAssets()
     app::g_pThreadPool->submit(texture::ImgSubmit, &argWhitePixel);
 
     app::g_pThreadPool->wait();
+
+    f64 t1 = utils::timeNowS();
+    LOG_GOOD("loaded in: {} s, at {}\n", t1 - t0, (ssize)t1);
 }
 
 template<typename T>
@@ -217,8 +226,8 @@ explodeBlockDFS(Vec<Entity*>* pVDfsMap, Entity* pEntity)
         {-1, -1}, {0, -1}, {1, -1},
     };
 
-    TwoDSpan span(s_aPBlocksMap.data(), lvlWidth, lvlHeight);
-    TwoDSpan dfsMap(pVDfsMap->data(), lvlWidth, lvlHeight);
+    Span2D span(s_aPBlocksMap.data(), lvlWidth, lvlHeight);
+    Span2D dfsMap(pVDfsMap->data(), lvlWidth, lvlHeight);
 
     for (auto [x, y] : aKernel)
     {
@@ -227,10 +236,10 @@ explodeBlockDFS(Vec<Entity*>* pVDfsMap, Entity* pEntity)
 
         if (px < lvlWidth && py < lvlHeight)
         {
-            auto* pEn = span[px, py];
-            if (pEn && !dfsMap[px, py])
+            auto* pEn = span(px, py);
+            if (pEn && !dfsMap(px, py))
             {
-                dfsMap[px, py] = pEn;
+                dfsMap(px, py) = pEn;
 
                 if (pEn->eColor == game::COLOR::RED)
                     explodeBlockDFS(pVDfsMap, pEn);
@@ -432,7 +441,7 @@ loadLevel()
     const auto& aTiles = lvl.aTiles;
     s_pCurrLvl = &lvl;
 
-    TwoDSpan lvlAt(aTiles, lvl.width, lvl.height);
+    Span2D lvlAt(aTiles, lvl.width, lvl.height);
 
     frame::g_unit.first = frame::WIDTH / lvl.width / 2;
     frame::g_unit.second = frame::HEIGHT / lvl.height / 2;
@@ -452,7 +461,7 @@ loadLevel()
     {
         for (u32 x = 0; x < lvl.width; ++x)
         {
-            if (lvlAt[x, y] != s8(game::COLOR::INVISIBLE))
+            if (lvlAt(x, y) != s8(game::COLOR::INVISIBLE))
             {
                 u32 idx = g_aEntities.getHandle();
                 auto& e = g_aEntities[idx];
@@ -466,7 +475,7 @@ loadLevel()
                 e.zOff = 0.0f;
                 e.shaderIdx = 0;
                 e.texIdx = u16(boxTexId);
-                e.eColor = game::COLOR(lvlAt[x, y]);
+                e.eColor = game::COLOR(lvlAt(x, y));
                 e.bDead = false;
                 e.bRemoveAfterDraw = false;
 
@@ -582,10 +591,10 @@ drawFPSCounter(Arena* pAlloc)
     if ((currTime - f::g_prevTime) >= 1000.0)
         nLastFps = f::g_nfps; 
 
-    String s = StringAlloc(pAlloc, s_ttfWriter.m_maxSize);
-    s.m_size = print::toString(&s, "FPS: {}\nFrame time: {:.3} ms", nLastFps, f::g_frameTime);
+    auto sp = tls_scratch.nextMemZero<char>(s_ttfWriter.m_maxSize);
+    ssize nChars = print::toSpan(sp, "FPS: {}\nFrame time: {:.3} ms", nLastFps, f::g_frameTime);
 
-    s_ttfWriter.updateText(pAlloc, s, 0.0f, height - 2.0f, 1.0f);
+    s_ttfWriter.updateText(pAlloc, String(sp.data(), nChars), 0.0f, height - 2.0f, 1.0f);
 
     if (currTime >= f::g_prevTime + 1000.0)
     {
@@ -611,20 +620,19 @@ drawTTFTest(Arena* pAlloc)
     const f32 height = frame::g_uiHeight / 2.0f;
     const math::M4 proj = math::M4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-    String str = StringAlloc(pAlloc, s_ttfWriter.m_maxSize);
+    auto sp = tls_scratch.nextMemZero<char>(s_ttfWriter.m_maxSize);
 
     int i, j;
     int off = 0;
     for (i = '!', j = 0; i <= '~' && j < (int)s_ttfWriter.m_maxSize; ++i, ++j)
     {
         if (j % int(width) == 0)
-            str[j++] = '\n';
+            sp[j++] = '\n';
 
-        str[j] = i;
+        sp[j] = i;
     }
-    str.m_size = j;
 
-    s_ttfWriter.updateText(pAlloc, str, 0, height/2.0f + 2.0f, 1.0f);
+    s_ttfWriter.updateText(pAlloc, {sp.data(), j}, 0, height/2.0f + 2.0f, 1.0f);
 
     auto* sh = &s_sh1Col;
 
@@ -648,12 +656,14 @@ drawInfo(Arena* pArena)
 
     texture::ImgBind(s_ttfWriter.m_texId, GL_TEXTURE0);
 
-    String s = StringAlloc(pArena, 256);
-    s.m_size = print::toString(&s,
+    auto sp = tls_scratch.nextMem<char>(256);
+    ssize nChars = print::toSpan(sp,
         "Fullscreen: F\n"
         "Mouse lock: Q\n"
         "Quit: ESC\n"
     );
+    String s = {sp.data(), nChars};
+
     int nSpaces = 0;
     for (auto c : s) if (c == '\n') ++nSpaces;
 

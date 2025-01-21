@@ -335,14 +335,14 @@ drawLineH(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1
     int dir = dy < 0 ? -1 : 1;
     dy *= dir;
 
-    TwoDSpan at(pBitmap, width, height);
+    Span2D at(pBitmap, width, height);
     if (dx != 0)
     {
         int y = y0;
         int p = 2*dy - dx;
         for (int i = 0; i < dx+1; ++i)
         {
-            at[x0 + i, y] = 0xff;
+            at(x0 + i, y) = 0xff;
             if (p >= 0)
             {
                 y += dir;
@@ -368,14 +368,14 @@ drawLineV(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1
     int dir = dx < 0 ? -1 : 1;
     dx *= dir;
 
-    TwoDSpan at(pBitmap, width, height);
+    Span2D at(pBitmap, width, height);
     if (dy != 0)
     {
         int x = x0;
         int p = 2*dx - dy;
         for (int i = 0; i < dy+1; ++i)
         {
-            at[utils::clamp(x, 0, int(width-1)), y0 + i] = 0xff;
+            at(utils::clamp(x, 0, int(width-1)), y0 + i) = 0xff;
 
             if (p >= 0)
             {
@@ -397,16 +397,16 @@ drawLine(u8* pBitmap, const u32 width, const u32 height, int x0, int y0, int x1,
 }
 
 static void
-floodFillDFS(TwoDSpan<u8> s, u16 x, u16 y)
+floodFillDFS(Span2D<u8> s, u16 x, u16 y)
 {
     if (x >= s.getHeight() || y >= s.getWidth()) return;
 
-    s[x, y] = 0xff;
+    s(x, y) = 0xff;
 
-    if ((x + 1) < s.getHeight() && s[x + 1, y + 0] != 0xff) floodFillDFS(s, u16(x + 1), u16(y + 0));
-    if ((y + 1) < s.getWidth()  && s[x + 0, y + 1] != 0xff) floodFillDFS(s, u16(x + 0), u16(y + 1));
-    if ((x - 1) < s.getHeight() && s[x - 1, y + 0] != 0xff) floodFillDFS(s, u16(x - 1), u16(y + 0));
-    if ((y - 1) < s.getWidth()  && s[x - 0, y - 1] != 0xff) floodFillDFS(s, u16(x - 0), u16(y - 1));
+    if ((x + 1) < s.getHeight() && s(x + 1, y + 0) != 0xff) floodFillDFS(s, u16(x + 1), u16(y + 0));
+    if ((y + 1) < s.getWidth()  && s(x + 0, y + 1) != 0xff) floodFillDFS(s, u16(x + 0), u16(y + 1));
+    if ((x - 1) < s.getHeight() && s(x - 1, y + 0) != 0xff) floodFillDFS(s, u16(x - 1), u16(y + 0));
+    if ((y - 1) < s.getWidth()  && s(x - 0, y - 1) != 0xff) floodFillDFS(s, u16(x - 0), u16(y - 1));
 }
 
 /* https://en.wikipedia.org/wiki/Centroid#Of_a_polygon */
@@ -484,7 +484,7 @@ polygonWindingOrder(const VecBase<PointOnCurve>& aPoints, u32 startIdx)
 
 /* https://sharo.dev/post/reading-ttf-files-and-rasterizing-them-using-a-handmade- */
 void
-TTF::rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8> spBitmap)
+TTF::rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, Span2D<u8> spBitmap)
 {
     const auto& aGlyphPoints = pGlyph->uGlyph.simple.aPoints;
 
@@ -562,14 +562,14 @@ TTF::rasterizeGlyph(IAllocator* pAlloc, reader::ttf::Glyph* pGlyph, TwoDSpan<u8>
                 f32 endCovered = end - endIdx;
 
                 if (startIdx >= 0)
-                    spBM[startIdx, row] = 255.0f * startCovered;
+                    spBM(startIdx, row) = 255.0f * startCovered;
 
                 if (startIdx != endIdx)
-                    spBM[endIdx, row] = 255.0f * endCovered;
+                    spBM(endIdx, row) = 255.0f * endCovered;
 
                 for (int col = startIdx + 1; col < endIdx; ++col)
                     if (col >= 0)
-                        spBM[col, row] = 255;
+                        spBM(col, row) = 255;
             }
         }
     }
@@ -663,7 +663,7 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
         u8* pTmp = (u8*)arena.zalloc(1, math::sq(iScale));
 
         auto g = pFont->readGlyph(ch);
-        rasterizeGlyph(&arena, &g, TwoDSpan{pTmp, u32(iScale), u32(iScale)});
+        rasterizeGlyph(&arena, &g, Span2D{pTmp, u32(iScale), u32(iScale)});
         memcpy(m_pBitmap + ch*math::sq(iScale), pTmp, iScale * 128);
 
         arena.reset();

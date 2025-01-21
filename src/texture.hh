@@ -120,12 +120,12 @@ void flipCpyBGRAtoRGBA(u8* dest, u8* src, int width, int height, bool vertFlip);
 void flipCpyBGRtoRGB(u8* dest, u8* src, int width, int height, bool vertFlip);
 void flipCpyBGRtoRGBA(u8* dest, u8* src, int width, int height, bool vertFlip);
 
-inline int
+inline THREAD_STATUS
 ImgSubmit(void* p)
 {
     auto a = *(ImgLoadArg*)p;
     a.self->load(a.path, a.flip, a.type, a.texMode, a.magFilter, a.minFilter);
-    return 0;
+    return {};
 }
 
 } /* namespace texure */

@@ -62,7 +62,7 @@ math()
     LOG_GOOD("'math' passed\n");
 }
 
-mtx_t mtxLocks;
+Mutex mtxLocks;
 
 static int
 lockGuard(int what)
@@ -82,8 +82,8 @@ lockGuard(int what)
 void
 locks()
 {
-    mtx_init(&mtxLocks, mtx_plain);
-    defer(mtx_destroy(&mtxLocks));
+    mtxLocks = Mutex(MUTEX_TYPE::PLAIN);
+    defer( mtxLocks.destroy() );
 
     lockGuard(ADT_GET_NCORES());
     lockGuard(-2);

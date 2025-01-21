@@ -55,10 +55,18 @@ main(int argc, char** argv)
 {
     app::g_argc = argc, app::g_argv = argv;
 
+    try
+    {
+
     #if defined _WIN32
-    return WinMain({}, {}, {}, SW_SHOWNORMAL);
+        return WinMain({}, {}, {}, SW_SHOWNORMAL);
     #else
-    return startup();
+        return startup();
     #endif
+    }
+    catch (IException& ex)
+    {
+        ex.logErrorMsg(stderr);
+    }
 }
 #endif

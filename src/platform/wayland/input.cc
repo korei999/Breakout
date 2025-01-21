@@ -168,10 +168,6 @@ pointerMotionHandler(
 {
     controls::g_mouse.absX = wl_fixed_to_double(surfaceX);
     controls::g_mouse.absY = wl_fixed_to_double(surfaceY);
-
-    /*auto s = (Client*)(data);*/
-    /*if (s->base.bHideCursor)*/
-    /*    ClientHideCursor(s);*/
 }
 
 void

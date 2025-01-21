@@ -3,7 +3,6 @@
 #include "IAllocator.hh"
 #include "hash.hh"
 
-#include <cassert>
 #include <cstring>
 #include <cstdlib>
 #include <immintrin.h>
@@ -27,7 +26,7 @@ struct String;
 [[nodiscard]] inline bool operator==(const String& l, const String& r);
 [[nodiscard]] inline bool operator==(const String& l, const char* r);
 [[nodiscard]] inline bool operator!=(const String& l, const String& r);
-[[nodiscard]] constexpr s64 operator-(const String& l, const String& r);
+[[nodiscard]] inline s64 operator-(const String& l, const String& r);
 
 /* StringAlloc() inserts '\0' char */
 [[nodiscard]] inline String StringAlloc(IAllocator* p, const char* str, ssize size);
@@ -60,19 +59,28 @@ struct String
 
     /* */
 
-    constexpr char& operator[](ssize i)             { assert(i < m_size && "[String]: out of size"); return m_pData[i]; }
-    constexpr const char& operator[](ssize i) const { assert(i < m_size && "[String]: out of size"); return m_pData[i]; }
+#define ADT_RANGE_CHECK ADT_ASSERT(i >= 0 && i < m_size, "i: %lld, m_size: %lld", i, m_size);
+
+    char& operator[](ssize i)             { ADT_RANGE_CHECK; return m_pData[i]; }
+    const char& operator[](ssize i) const { ADT_RANGE_CHECK; return m_pData[i]; }
+
+#undef ADT_RANGE_CHECK
 
     const char* data() const { return m_pData; }
     char* data() { return m_pData; }
     ssize getSize() const { return m_size; }
-    [[nodiscard]] constexpr bool endsWith(const String r) const;
-    [[nodiscard]] constexpr ssize lastOf(char c) const;
+    [[nodiscard]] bool beginsWith(const String r) const;
+    [[nodiscard]] bool endsWith(const String r) const;
+    [[nodiscard]] ssize lastOf(char c) const;
     void destroy(IAllocator* p);
     void trimEnd();
     void removeNLEnd(); /* remove \r\n */
     [[nodiscard]] bool contains(const String r) const;
     [[nodiscard]] String clone(IAllocator* pAlloc) const;
+    [[nodiscard]] char& first();
+    [[nodiscard]] const char& first() const;
+    [[nodiscard]] char& last();
+    [[nodiscard]] const char& last() const;
 
     /* */
 
@@ -108,15 +116,11 @@ struct String
 /* wchar_t iterator for mutlibyte strings */
 struct StringGlyphIt
 {
-    using Iter = String::It;
+    const String m_s;
 
     /* */
 
-    const String s;
-
-    /* */
-
-    StringGlyphIt(const String _s) : s(_s) {};
+    StringGlyphIt(const String s) : m_s(s) {};
 
     /* */
 
@@ -127,7 +131,11 @@ struct StringGlyphIt
         ssize size = 0;
         wchar_t wc {};
 
-        constexpr It(const char* pFirst, ssize _i, ssize _size) : p{pFirst}, i(_i), size(_size) {}
+        It(const char* pFirst, ssize _i, ssize _size)
+            : p{pFirst}, i(_i), size(_size)
+        {
+            operator++();
+        }
 
         wchar_t& operator*() { return wc; }
         wchar_t* operator->() { return &wc; }
@@ -135,14 +143,24 @@ struct StringGlyphIt
         It
         operator++()
         {
-            if (i >= size)
+            if (!p || i < 0 || i >= size)
             {
+death:
                 i = NPOS;
                 return *this;
             }
 
-            int len = mbtowc(&wc, &p[i], size - i);
+            int len = 0;
+
+            len = mbtowc(&wc, &p[i], size - i);
+
+            if (len == -1)
+                goto death;
+            else if (len == 0)
+                len = 1;
+
             i += len;
+
             return *this;
         }
 
@@ -150,14 +168,92 @@ struct StringGlyphIt
         friend bool operator!=(const It& l, const It& r) { return l.i != r.i; }
     };
 
-    It begin() { return {s.data(), 0, s.getSize()}; }
+    It begin() { return {m_s.data(), 0, m_s.getSize()}; }
     It end() { return {{}, NPOS, {}}; }
 
-    const It begin() const { return {s.data(), 0, s.getSize()}; }
+    const It begin() const { return {m_s.data(), 0, m_s.getSize()}; }
     const It end() const { return {{}, NPOS, {}}; }
 };
 
-constexpr bool
+/* Separated by delimiter String iterator adapter */
+struct StringWordIt
+{
+    String m_s {};
+    char m_delimiter {};
+
+    /* */
+
+    StringWordIt(const String s, const char delimiter = ' ') : m_s(s), m_delimiter(delimiter) {}
+
+    struct It
+    {
+        String m_sCurrWord {};
+        String m_str;
+        ssize m_i = 0;
+        char m_sep {};
+
+        /* */
+
+        It(String s, ssize pos, char sep)
+            : m_str(s), m_i(pos), m_sep(sep)
+        {
+            if (pos != NPOS)
+                operator++();
+        }
+
+        /* */
+
+        String& operator*() { return m_sCurrWord; }
+        String* operator->() { return &m_sCurrWord; }
+
+        It&
+        operator++()
+        {
+            if (m_i >= m_str.getSize())
+            {
+                m_i = NPOS;
+                return *this;
+            }
+
+            ssize start = m_i;
+            ssize end = m_i;
+
+            while (end < m_str.getSize() && m_str[end] != m_sep)
+                end++;
+
+            m_sCurrWord = {&m_str[start], end - start};
+            m_i = end + 1;
+
+            return *this;
+        }
+
+        friend bool operator==(const It& l, const It& r) { return l.m_i == r.m_i; }
+        friend bool operator!=(const It& l, const It& r) { return l.m_i != r.m_i; }
+    };
+
+    It begin() { return {m_s, 0, m_delimiter}; }
+    It end() { return {m_s, NPOS, m_delimiter}; }
+
+    const It begin() const { return {m_s, 0, m_delimiter}; }
+    const It end() const { return {m_s, NPOS, m_delimiter}; }
+};
+
+inline bool
+String::beginsWith(const String r) const
+{
+    const auto& l = *this;
+
+    if (l.getSize() < r.getSize())
+        return false;
+
+    for (ssize i = 0; i < r.getSize(); ++i)
+        if (l[i] != r[i])
+            return false;
+
+    return true;
+}
+
+inline bool
 String::endsWith(const String r) const
 {
     const auto& l = *this;
@@ -165,7 +261,7 @@ String::endsWith(const String r) const
     if (l.m_size < r.m_size)
         return false;
 
-    for (int i = r.m_size - 1, j = l.m_size - 1; i >= 0; --i, --j)
+    for (ssize i = r.m_size - 1, j = l.m_size - 1; i >= 0; --i, --j)
         if (r[i] != l[j])
             return false;
 
@@ -297,7 +393,7 @@ operator!=(const String& l, const String& r)
     return !(l == r);
 }
 
-constexpr s64
+inline s64
 operator-(const String& l, const String& r)
 {
     if (l.m_size < r.m_size) return -1;
@@ -310,7 +406,7 @@ operator-(const String& l, const String& r)
     return sum;
 }
 
-constexpr ssize
+inline ssize
 String::lastOf(char c) const
 {
     for (int i = m_size - 1; i >= 0; i--)
@@ -323,7 +419,7 @@ String::lastOf(char c) const
 inline String
 StringAlloc(IAllocator* p, const char* str, ssize size)
 {
-    if (str == nullptr || size == 0) return {};
+    if (str == nullptr || size <= 0) return {};
 
     char* pData = (char*)p->zalloc(size + 1, sizeof(char));
     strncpy(pData, str, size);
@@ -410,15 +506,14 @@ String::trimEnd()
 inline void
 String::removeNLEnd()
 {
-    auto oneOf = [&](char c) -> bool {
+    auto oneOf = [&](const char c) -> bool {
         constexpr String chars = "\r\n";
-        for (auto ch : chars)
+        for (const char ch : chars)
             if (c == ch) return true;
         return false;
     };
 
-    usize pos = m_size - 1;
-    while (m_size > 0 && oneOf((*this)[pos]))
+    while (m_size > 0 && oneOf(last()))
         m_pData[--m_size] = '\0';
 }
 
@@ -436,10 +531,34 @@ String::contains(const String r) const
     return false;
 }
 
-[[nodiscard]] inline String
+inline String
 String::clone(IAllocator* pAlloc) const
 {
     return StringAlloc(pAlloc, *this);
+}
+
+inline char&
+String::first()
+{
+    return operator[](0);
+}
+
+inline const char&
+String::first() const
+{
+    return operator[](0);
+}
+
+inline char&
+String::last()
+{
+    return operator[](m_size - 1);
+}
+
+inline const char&
+String::last() const
+{
+    return operator[](m_size - 1);
 }
 
 inline ssize
@@ -456,10 +575,10 @@ nGlyphs(const String str)
 }
 
 template<>
-constexpr usize
+inline usize
 hash::func(const String& str)
 {
-    return hash::fnv(str.data(), str.getSize(), hash::FNV1_64_INIT);
+    return hash::func(str.m_pData, str.getSize());
 }
 
 namespace utils

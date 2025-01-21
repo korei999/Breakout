@@ -9,8 +9,6 @@
 #include <limits>
 #include <utility>
 
-#include <threads.h>
-
 namespace adt
 {
 
@@ -30,20 +28,17 @@ struct Pool
     Arr<PoolNode<T>, CAP> m_aNodes {};
     Arr<PoolHnd, CAP> m_aFreeIdxs {};
     ssize m_nOccupied {};
-    mtx_t m_mtx;
+    Mutex m_mtx;
 
     /* */
 
     Pool() = default;
-    Pool([[maybe_unused]] INIT_FLAG e)
-    { 
-        mtx_init(&m_mtx, mtx_plain);
-    }
+    Pool(INIT_FLAG) : m_mtx(MUTEX_TYPE::PLAIN) {}
 
     /* */
 
-    T& operator[](ssize i)             { assert(!m_aNodes[i].bDeleted && "[MemPool]: accessing deleted node"); return m_aNodes[i].data; }
-    const T& operator[](ssize i) const { assert(!m_aNodes[i].bDeleted && "[MemPool]: accessing deleted node"); return m_aNodes[i].data; }
+    T& operator[](ssize i)             { return at(i); }
+    const T& operator[](ssize i) const { return at(i); }
 
     ssize firstI() const;
     ssize lastI() const;
@@ -57,18 +52,29 @@ struct Pool
     template<typename ...ARGS> requires(std::is_constructible_v<T, ARGS...>) [[nodiscard]] PoolHnd emplace(ARGS&&... args);
     void giveBack(PoolHnd hnd);
     ssize getCap() const { return CAP; }
+    ssize getSize() const { return m_nOccupied; }
 
     /* */
 
+private:
+    T& at(ssize i);
+
+    /* */
+
+public:
     struct It
     {
         Pool* s {};
         ssize i {};
 
-        It(Pool* _self, ssize _i) : s(_self), i(_i) {}
+        /* */
 
-        T& operator*() { return s->m_aNodes[i].data; }
-        T* operator->() { return &s->m_aNodes[i].data; }
+        It(const Pool* _self, ssize _i) : s(const_cast<Pool*>(_self)), i(_i) {}
+
+        /* */
+
+        auto& operator*() { return s->m_aNodes[i].data; }
+        auto* operator->() { return &s->m_aNodes[i].data; }
 
         It
         operator++()
@@ -100,19 +106,15 @@ struct Pool
             return {s, tmp};
         }
 
-        friend bool operator==(It l, It r) { return l.i == r.i; }
-        friend bool operator!=(It l, It r) { return l.i != r.i; }
+        friend bool operator==(const It& l, const It& r) { return l.i == r.i; }
+        friend bool operator!=(const It& l, const It& r) { return l.i != r.i; }
     };
 
     It begin() { return {this, firstI()}; }
-    It end() { return {this, m_aNodes.m_size == 0 ? -1 : lastI() + 1}; }
-    It rbegin() { return {this, lastI()}; }
-    It rend() { return {this, m_aNodes.m_size == 0 ? -1 : firstI() - 1}; }
+    It end() { return {this, getSize() == 0 ? -1 : lastI() + 1}; }
 
     const It begin() const { return {this, firstI()}; }
-    const It end() const { return {this, m_aNodes.m_size == 0 ? -1 : lastI() + 1}; }
-    const It rbegin() const { return {this, lastI()}; }
-    const It rend() const { return {this, m_aNodes.m_size == 0 ? -1 : firstI() - 1}; }
+    const It end() const { return {this, getSize() == 0 ? -1 : lastI() + 1}; }
 };
 
 template<typename T, ssize CAP>
@@ -163,7 +165,7 @@ template<typename T, ssize CAP>
 inline ssize
 Pool<T, CAP>::idx(const PoolNode<T>* p) const
 {
-    ssize r = p - &m_aNodes.m_aData[0];
+    ssize r = p - &m_aNodes[0];
     assert(r < CAP && "[Pool]: out of range");
     return r;
 }
@@ -179,7 +181,7 @@ template<typename T, ssize CAP>
 inline void
 Pool<T, CAP>::destroy()
 {
-    mtx_destroy(&m_mtx);
+    m_mtx.destroy();
 }
 
 template<typename T, ssize CAP>
@@ -244,5 +246,26 @@ Pool<T, CAP>::giveBack(PoolHnd hnd)
         node.bDeleted = true;
     }
 }
+
+template<typename T, ssize CAP>
+inline T&
+Pool<T, CAP>::at(ssize i)
+{
+    ADT_ASSERT(i >= 0 && i < m_aNodes.getSize(), "i: %lld, size: %lld", i, m_aNodes.getSize());
+    ADT_ASSERT(!m_aNodes[i].bDeleted, "trying to access deleted node");
+    return m_aNodes[i].data;
+}
+
+namespace print
+{
+
+template<typename T, ssize CAP>
+inline ssize
+formatToContext(Context ctx, FormatArgs fmtArgs, const Pool<T, CAP>& x)
+{
+    return print::formatToContextTemplSize(ctx, fmtArgs, x, x.getSize());
+}
+
+} /* namespace print */
 
 } /* namespace adt */

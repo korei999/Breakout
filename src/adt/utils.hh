@@ -28,9 +28,7 @@
 #include <cassert>
 #include <cmath>
 
-namespace adt
-{
-namespace utils
+namespace adt::utils
 {
 
 /* bit number starts from 0 */
@@ -44,10 +42,9 @@ template<typename T>
 inline constexpr void
 swap(T* l, T* r)
 {
-    T t0 = *l;
-    T t1 = *r;
-    *l = t1;
-    *r = t0;
+    T t = *r;
+    *r = *l;
+    *l = t;
 }
 
 inline constexpr void
@@ -180,11 +177,26 @@ addNSToTimespec(timespec* const pTs, const ssize nsec)
 
 template<typename T>
 inline void
-copy(T* pDest, T* pSrc, ssize size)
+copy(T* pDest, const T* const pSrc, ssize size)
+{
+    assert(pDest != nullptr && pSrc != nullptr);
+    memcpy(pDest, pSrc, size * sizeof(T));
+}
+
+template<typename T>
+inline void
+move(T* pDest, const T* const pSrc, ssize size)
+{
+    assert(pDest != nullptr && pSrc != nullptr);
+    memmove(pDest, pSrc, size * sizeof(T));
+}
+
+template<typename T>
+inline void
+set(T* pDest, int byte, ssize size)
 {
     assert(pDest != nullptr);
-    assert(pSrc != nullptr);
-    memcpy(pDest, pSrc, size * sizeof(T));
+    memset(pDest, byte, size * sizeof(T));
 }
 
 template<typename T>
@@ -243,5 +255,34 @@ reverse(auto* a)
     reverse(a->data(), a->getSize());
 }
 
-} /* namespace utils */
-} /* namespace adt */
+
+inline constexpr u16
+swapBytes(u16 x)
+{
+    return ((x & 0xff00u) >> 1 * 8) |
+           ((x & 0x00ffu) << 1 * 8);
+}
+
+inline constexpr u32
+swapBytes(u32 x)
+{
+    return ((x & 0xff000000u) >> 3 * 8) |
+           ((x & 0x00ff0000u) >> 1 * 8) |
+           ((x & 0x0000ff00u) << 1 * 8) |
+           ((x & 0x000000ffu) << 3 * 8);
+}
+
+inline constexpr u64
+swapBytes(u64 x)
+{
+    return ((x & 0xff00000000000000llu) >> 7 * 8) |
+           ((x & 0x00ff000000000000llu) >> 5 * 8) |
+           ((x & 0x0000ff0000000000llu) >> 2 * 8) |
+           ((x & 0x000000ff00000000llu) >> 1 * 8) |
+           ((x & 0x00000000ff000000llu) << 1 * 8) |
+           ((x & 0x0000000000ff0000llu) << 3 * 8) |
+           ((x & 0x000000000000ff00llu) << 5 * 8) |
+           ((x & 0x00000000000000ffllu) << 7 * 8);
+}
+
+} /* namespace adt::utils */

@@ -36,7 +36,7 @@ enum _ADT_LOG_SEV
     _ADT_LOG_SEV_EXIT,
     _ADT_LOG_SEV_DIE,
     _ADT_LOG_SEV_FATAL,
-    _ADT_LOG_SEV_ENUM_SIZE
+    _ADT_LOG_SEV_ENUM_SIZE,
 };
 
 constexpr adt::String _ADT_LOG_SEV_STR[] = {
@@ -45,24 +45,18 @@ constexpr adt::String _ADT_LOG_SEV_STR[] = {
     ADT_LOGS_COL_CYAN "NOTIFY: " ADT_LOGS_COL_NORM,
     ADT_LOGS_COL_YELLOW "WARNING: " ADT_LOGS_COL_NORM,
     ADT_LOGS_COL_RED "BAD: " ADT_LOGS_COL_NORM,
-    ADT_LOGS_COL_MAGENTA "EXIT: " ADT_LOGS_COL_NORM,
+    ADT_LOGS_COL_BLUE "EXIT: " ADT_LOGS_COL_NORM,
     ADT_LOGS_COL_MAGENTA "DIE: " ADT_LOGS_COL_NORM,
     ADT_LOGS_COL_RED "FATAL: " ADT_LOGS_COL_NORM,
 };
-
-#if defined __clang__ || __GNUC__
-    #define ADT_LOGS_FILE __FILE_NAME__
-#else
-    #define ADT_LOGS_FILE __FILE__
-#endif
 
 #ifdef ADT_LOGS
     #define _ADT_LOG(SEV, ...)                                                                                         \
         do                                                                                                             \
         {                                                                                                              \
             assert(SEV >= 0 && SEV < _ADT_LOG_SEV_ENUM_SIZE && "wrong _ADT_LOG_SEV*");                                 \
-            CERR("({}{}, {}): ", _ADT_LOG_SEV_STR[SEV], ADT_LOGS_FILE, __LINE__);                                      \
-            CERR(__VA_ARGS__);                                                                                         \
+            ADT_CERR("({}{}, {}): ", _ADT_LOG_SEV_STR[SEV], ADT_LOGS_FILE, __LINE__);                                  \
+            ADT_CERR(__VA_ARGS__);                                                                                     \
             switch (SEV)                                                                                               \
             {                                                                                                          \
                 default:                                                                                               \

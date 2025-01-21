@@ -16,30 +16,50 @@ struct Span
     /* */
 
     constexpr Span() = default;
-    constexpr Span(T* pData, ssize size) : m_pData(pData), m_size(size) {}
+
+    constexpr Span(T* pData, ssize size) noexcept
+        : m_pData(pData), m_size(size) {}
+
+    template<ssize N>
+    constexpr Span(T (&aChars)[N]) noexcept
+        : m_pData(aChars), m_size(N) {}
 
     /* */
 
-    constexpr T* data() { return m_pData; }
-    constexpr const T* data() const { return m_pData; }
+    constexpr T* data() noexcept { return m_pData; }
+    constexpr const T* data() const noexcept { return m_pData; }
 
-    constexpr ssize getSize() const { return m_size; }
+    constexpr ssize getSize() const noexcept { return m_size; }
 
-    constexpr ssize lastI() const { return m_size - 1; }
+    constexpr ssize lastI() const noexcept { return operator[](m_size - 1); }
 
-    constexpr T&
-    operator[](ssize i)
+#define ADT_RANGE_CHECK ADT_ASSERT(i >= 0 && i < m_size, "i: %lld, m_size: %lld", i, m_size);
+
+    constexpr ssize
+    idx(const T* pItem) const noexcept
     {
-        assert(i < m_size && "[Span]: out of range");
-        return m_pData + i;
+        ssize i = pItem - m_pData;
+        ADT_RANGE_CHECK
+        return i;
     }
 
     constexpr T&
-    operator[](ssize i) const
+    operator[](ssize i) noexcept
     {
-        assert(i < m_size && "[Span]: out of range");
-        return m_pData + i;
+        ADT_RANGE_CHECK
+        return m_pData[i];
     }
+
+    constexpr const T&
+    operator[](ssize i) const noexcept
+    {
+        ADT_RANGE_CHECK
+        return m_pData[i];
+    }
+
+#undef ADT_RANGE_CHECK
+
+    constexpr operator bool() const { return m_pData != nullptr; }
 
     /* */
 
@@ -49,28 +69,28 @@ struct Span
 
         It(T* pFirst) : s{pFirst} {}
 
-        T& operator*() { return *s; }
-        T* operator->() { return s; }
+        T& operator*() noexcept { return *s; }
+        T* operator->() noexcept { return s; }
 
-        It operator++() { ++s; return *this; }
-        It operator++(int) { T* tmp = s++; return tmp; }
+        It operator++() noexcept { ++s; return *this; }
+        It operator++(int) noexcept { T* tmp = s++; return tmp; }
 
-        It operator--() { --s; return *this; }
-        It operator--(int) { T* tmp = s--; return tmp; }
+        It operator--() noexcept { --s; return *this; }
+        It operator--(int) noexcept { T* tmp = s--; return tmp; }
 
-        friend constexpr bool operator==(const It& l, const It& r) { return l.s == r.s; }
-        friend constexpr bool operator!=(const It& l, const It& r) { return l.s != r.s; }
+        friend constexpr bool operator==(const It& l, const It& r) noexcept { return l.s == r.s; }
+        friend constexpr bool operator!=(const It& l, const It& r) noexcept { return l.s != r.s; }
     };
 
-    It begin() { return {&m_pData[0]}; }
-    It end() { return {&m_pData[m_size]}; }
-    It rbegin() { return {&m_pData[m_size - 1]}; }
-    It rend() { return {m_pData - 1}; }
+    It begin()  noexcept { return {&m_pData[0]}; }
+    It end()    noexcept { return {&m_pData[m_size]}; }
+    It rbegin() noexcept { return {&m_pData[m_size - 1]}; }
+    It rend()   noexcept { return {m_pData - 1}; }
 
-    const It begin() const { return {&m_pData[0]}; }
-    const It end() const { return {&m_pData[m_size]}; }
-    const It rbegin() const { return {&m_pData[m_size - 1]}; }
-    const It rend() const { return {m_pData - 1}; }
+    const It begin() const  noexcept { return {&m_pData[0]}; }
+    const It end() const    noexcept { return {&m_pData[m_size]}; }
+    const It rbegin() const noexcept { return {&m_pData[m_size - 1]}; }
+    const It rend() const   noexcept { return {m_pData - 1}; }
 };
 
 } /* namespace adt */

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "IAllocator.hh"
-#include "print.hh"
 
 #include <cassert>
 #include <new> /* IWYU pragma: keep */
@@ -9,8 +8,8 @@
 namespace adt
 {
 
-#define ADT_QUEUE_FOREACH_I(Q, I) for (int I = (Q)->first, __t = 0; __t < (Q)->size; I = (Q)->nextI(I), __t++)
-#define ADT_QUEUE_FOREACH_I_REV(Q, I) for (int I = (Q)->lastI(), __t = 0; __t < (Q)->size; I = (Q)->prevI(I), __t++)
+#define ADT_QUEUE_FOREACH_I(Q, I) for (int I = (Q)->first, _t_ = 0; _t_ < (Q)->size; I = (Q)->nextI(I),++ _t_)
+#define ADT_QUEUE_FOREACH_I_REV(Q, I) for (int I = (Q)->lastI(), _t_ = 0; _t_ < (Q)->size; I = (Q)->prevI(I), ++_t_)
 
 template<typename T>
 struct QueueBase
@@ -30,8 +29,12 @@ struct QueueBase
 
     /* */
 
-    T& operator[](int i)             { assert(i < m_cap && "[Queue]: out of capacity"); return m_pData[i]; }
-    const T& operator[](int i) const { assert(i < m_cap && "[Queue]: out of capacity"); return m_pData[i]; }
+#define ADT_RANGE_CHECK ADT_ASSERT(i >= 0 && i < m_size, "Out of capacity, i: %lld, m_cap: %lld", i, m_cap);
+
+    T& operator[](int i)             { ADT_RANGE_CHECK; return m_pData[i]; }
+    const T& operator[](int i) const { ADT_RANGE_CHECK; return m_pData[i]; }
+
+#undef ADT_RANGE_CHECK
 
     [[nodiscard]] int nextI(int i) const { return (i + 1) >= m_cap ? 0 : (i + 1); }
     [[nodiscard]] int prevI(int i) const { return (i - 1) < 0 ? m_cap - 1 : (i - 1); }
@@ -48,6 +51,7 @@ struct QueueBase
     T* popFront();
     T* popBack();
     ssize idx(const T* pItem) const;
+    ssize getSize() const { return m_size; }
 
     /* */
 
@@ -102,6 +106,7 @@ inline void
 QueueBase<T>::destroy(IAllocator* p)
 {
     p->free(m_pData);
+    *this = {};
 }
 
 template<typename T>
@@ -154,11 +159,11 @@ template<typename T>
 inline T*
 QueueBase<T>::popFront()
 {
-    assert(m_size > 0);
+    assert(m_size > 0 && "[Queue]: empty");
 
     T* ret = &m_pData[m_first];
     m_first = nextI(m_first);
-    m_size--;
+    --m_size;
 
     return ret;
 }
@@ -167,11 +172,11 @@ template<typename T>
 inline T*
 QueueBase<T>::popBack()
 {
-    assert(m_size > 0);
+    assert(m_size > 0 && "[Queue]: empty");
 
     T* ret = &m_pData[lastI()];
     m_last = prevI(lastI());
-    m_size--;
+    --m_size;
 
     return ret;
 }
@@ -180,7 +185,8 @@ template<typename T>
 inline ssize
 QueueBase<T>::idx(const T* pItem) const
 {
-    auto r = pItem - m_pData;
+    ssize r = pItem - m_pData;
+    assert(r >= 0 && r < m_cap && "[Queue]: out of capacity");
     return r;
 }
 
@@ -214,53 +220,19 @@ struct Queue
     T* popFront() { return base.popFront(); }
     T* popBack() { return base.popBack(); }
     ssize idx(const T* pItem) { return base.idx(pItem); }
+    ssize getSize() const { return base.getSize(); }
 
     /* */
 
-    QueueBase<T>::It begin() { return base.begin(); }
-    QueueBase<T>::It end() { return base.end(); }
-    QueueBase<T>::It rbegin() { return base.rbegin(); }
-    QueueBase<T>::It rend() { return base.rend(); }
+    typename QueueBase<T>::It begin() { return base.begin(); }
+    typename QueueBase<T>::It end() { return base.end(); }
+    typename QueueBase<T>::It rbegin() { return base.rbegin(); }
+    typename QueueBase<T>::It rend() { return base.rend(); }
 
-    const QueueBase<T>::It begin() const { return base.begin(); }
-    const QueueBase<T>::It end() const { return base.end(); }
-    const QueueBase<T>::It rbegin() const { return base.rbegin(); }
-    const QueueBase<T>::It rend() const { return base.rend(); }
+    const typename QueueBase<T>::It begin() const { return base.begin(); }
+    const typename QueueBase<T>::It end() const { return base.end(); }
+    const typename QueueBase<T>::It rbegin() const { return base.rbegin(); }
+    const typename QueueBase<T>::It rend() const { return base.rend(); }
 };
-
-namespace print
-{
-
-template<typename T>
-inline ssize
-formatToContext(Context ctx, [[maybe_unused]] FormatArgs fmtArgs, const QueueBase<T>& x)
-{
-    if (x.empty())
-    {
-        ctx.fmt = "{}";
-        ctx.fmtIdx = 0;
-        return printArgs(ctx, "(empty)");
-    }
-
-    char aBuff[1024] {};
-    ssize nRead = 0;
-    for (const auto& it : x)
-    {
-        const char* fmt = (x.idx(&it) == x.m_last - 1U ? "{}" : "{}, ");
-
-        nRead += toBuffer(aBuff + nRead, utils::size(aBuff) - nRead, fmt, it);
-    }
-
-    return print::copyBackToBuffer(ctx, aBuff, utils::size(aBuff));
-}
-
-template<typename T>
-inline ssize
-formatToContext(Context ctx, FormatArgs fmtArgs, const Queue<T>& x)
-{
-    return formatToContext(ctx, fmtArgs, x.base);
-}
-
-} /* namespace print */
 
 } /* namespace adt */

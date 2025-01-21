@@ -36,16 +36,11 @@ namespace texture
 Pool<Img, texture::MAX_COUNT> g_aAllTextures(INIT);
 Map<String, PoolHnd> g_mAllTexturesIdxs(OsAllocatorGet(), texture::MAX_COUNT);
 
-static mtx_t s_mtxAllTextures;
-static once_flag s_onceFlagAllTextures = ONCE_FLAG_INIT;
+static Mutex s_mtxAllTextures(MUTEX_TYPE::PLAIN);
 
 void
 Img::load(String path, bool bFlip, TYPE type, GLint texMode, GLint magFilter, GLint minFilter)
 {
-    call_once(&s_onceFlagAllTextures, +[]{
-        mtx_init(&s_mtxAllTextures, mtx_plain);
-    });
-
     u32 idx = NPOS;
 
     {
@@ -260,7 +255,7 @@ CubeMapShadowMapCreate(const int width, const int height)
 }
 
 CubeMap
-skyBoxCreate(String sFaces[6])
+skyBoxCreate(String aFaces[6])
 {
     Arena al(SIZE_1M * 6);
     defer( al.freeAll() );
@@ -272,7 +267,7 @@ skyBoxCreate(String sFaces[6])
 
     for (u32 i = 0; i < 6; i++)
     {
-        Data tex = loadBMP(&al, sFaces[i], true);
+        Data tex = loadBMP(&al, aFaces[i], true);
         glTexImage2D(
             GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
             0, tex.format, tex.width, tex.height,

@@ -82,7 +82,7 @@ Model::loadGLTF(String path, GLint drawMode, GLint texMode)
             .texMode = texMode
         };
 
-        auto task = [](void* pArgs) -> int {
+        auto task = [](void* pArgs) -> THREAD_STATUS {
             auto a = *(Args*)pArgs;
             *a.p = texture::Img(a.pAlloc);
             a.p->load(a.path, a.flip, a.type, a.texMode);

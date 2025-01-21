@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Bin.hh"
+#include "adt/Thread.hh"
 #include "audio.hh"
 
 namespace reader
@@ -9,7 +10,7 @@ namespace reader
 /* .wav audio file parser */
 struct Wave;
 
-inline int WaveSubmit(void* pArg);
+inline THREAD_STATUS WaveSubmit(void* pArg);
 
 enum WAVE_FORMATS : s8
 {
@@ -54,14 +55,14 @@ struct WaveLoadArg
     String path;
 };
 
-inline int
+inline THREAD_STATUS
 WaveSubmit(void* pArg)
 {
     auto a = *(WaveLoadArg*)pArg;
     a.s->load(a.path);
     a.s->parse();
 
-    return 0;
+    return {};
 }
 
 } /* namespace reader */

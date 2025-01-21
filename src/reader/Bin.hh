@@ -4,8 +4,6 @@
 #include "adt/String.hh"
 #include "adt/file.hh"
 
-#include <bit>
-
 using namespace adt;
 
 namespace reader
@@ -13,9 +11,38 @@ namespace reader
 
 template <typename T>
 ADT_NO_UB inline T
-readTypeBytes(String s, u32 at)
+readTypeBytes(String s, ssize at)
 {
     return *(T*)(&s[at]);
+}
+
+inline constexpr u16
+swapBytes(u16 x)
+{
+    return ((x & 0xff00u) >> 1 * 8) |
+           ((x & 0x00ffu) << 1 * 8);
+}
+
+inline constexpr u32
+swapBytes(u32 x)
+{
+    return ((x & 0xff000000u) >> 3 * 8) |
+           ((x & 0x00ff0000u) >> 1 * 8) |
+           ((x & 0x0000ff00u) << 1 * 8) |
+           ((x & 0x000000ffu) << 3 * 8);
+}
+
+inline constexpr u64
+swapBytes(u64 x)
+{
+    return ((x & 0xff00000000000000llu) >> 7 * 8) |
+           ((x & 0x00ff000000000000llu) >> 5 * 8) |
+           ((x & 0x0000ff0000000000llu) >> 2 * 8) |
+           ((x & 0x000000ff00000000llu) >> 1 * 8) |
+           ((x & 0x00000000ff000000llu) << 1 * 8) |
+           ((x & 0x0000000000ff0000llu) << 3 * 8) |
+           ((x & 0x000000000000ff00llu) << 5 * 8) |
+           ((x & 0x00000000000000ffllu) << 7 * 8);
 }
 
 struct Bin
@@ -23,7 +50,7 @@ struct Bin
     IAllocator* m_pAlloc;
     String m_sFile;
     String m_sPath;
-    u32 m_pos;
+    ssize m_pos;
 
     /* */
 
@@ -32,11 +59,11 @@ struct Bin
 
     /* */
 
-    char& operator[](u32 i) { return m_sFile[i]; };
+    char& operator[](ssize i) { return m_sFile[i]; };
 
     bool load(String sPath);
-    void skipBytes(u32 n);
-    String readString(u32 bytes);
+    void skipBytes(ssize n);
+    String readString(ssize bytes);
     u8 read8();
     u16 read16();
     u16 read16Rev();
@@ -62,13 +89,13 @@ Bin::load(String path)
 }
 
 inline void 
-Bin::skipBytes(u32 n)
+Bin::skipBytes(ssize n)
 {
     m_pos += n;
 }
 
 inline String
-Bin::readString(u32 bytes)
+Bin::readString(ssize bytes)
 {
     String ret(&m_sFile[m_pos], bytes);
     m_pos += bytes;
@@ -94,7 +121,8 @@ Bin::read16()
 inline u16
 Bin::read16Rev()
 {
-    return std::byteswap(read16());
+    /*return std::byteswap(read16());*/
+    return swapBytes(read16());
 }
 
 inline u32
@@ -108,7 +136,8 @@ Bin::read32()
 inline u32
 Bin::read32Rev()
 {
-    return std::byteswap(read32());
+    /*return std::byteswap(read32());*/
+    return swapBytes(read32());
 }
 
 inline u64
@@ -122,7 +151,8 @@ Bin::read64()
 inline u64
 Bin::read64Rev()
 {
-    return std::byteswap(read64());
+    /*return std::byteswap(read64());*/
+    return swapBytes(read64());
 }
 
 inline bool

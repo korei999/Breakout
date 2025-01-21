@@ -42,7 +42,7 @@ getTableChecksum(u32* pTable, u32 nBytes)
     u32 nLongs = (nBytes + 3) / 4;
     while (nLongs > 0)
     {
-        sum += std::byteswap(*pTable);
+        sum += reader::swapBytes(*pTable);
         nLongs--, pTable++;
     }
 
@@ -457,17 +457,17 @@ Font::getGlyphIdx(u16 code)
 
     for (u16 i = 0; i < c.segCountX2/2; ++i)
     {
-        if (std::byteswap(c.startCode[i]) <= code && std::byteswap(c.endCode[i]) >= code)
+        if (reader::swapBytes(c.startCode[i]) <= code && reader::swapBytes(c.endCode[i]) >= code)
         {
             idx = 0, glyphIndexAddr = 0;
-            if (std::byteswap(c.idRangeOffset[i]))
+            if (reader::swapBytes(c.idRangeOffset[i]))
             {
-                glyphIndexAddr = std::byteswap(c.idRangeOffset[i]) +
-                    2 * (code - std::byteswap(c.startCode[i]));
+                glyphIndexAddr = reader::swapBytes(c.idRangeOffset[i]) +
+                    2 * (code - reader::swapBytes(c.startCode[i]));
                 m_bin.m_pos = glyphIndexAddr;
                 idx = m_bin.read16Rev();
             }
-            else idx = (std::byteswap(c.idDelta[i]) + code) & 0xffff;
+            else idx = (reader::swapBytes(c.idDelta[i]) + code) & 0xffff;
 
             c.mCodeToGlyphIdx.insert(m_bin.m_pAlloc, code, u16(idx));
             break;
