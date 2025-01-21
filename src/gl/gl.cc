@@ -6,7 +6,7 @@ namespace gl
 {
 
 GLenum g_lastErrorCode = 0;
-mtx_t g_mtxGlContext;
+adt::Mutex g_mtxGlContext(adt::MUTEX_TYPE::PLAIN);
 
 #ifndef NDEBUG
 

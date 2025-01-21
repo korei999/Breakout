@@ -32,11 +32,11 @@ Model::loadGLTF(String path, GLint drawMode, GLint texMode)
     Vec<GLuint> aBufferMap(&mArena);
     for (u32 i = 0; i < a.m_aBuffers.getSize(); i++)
     {
-        mtx_lock(&gl::g_mtxGlContext);
+        gl::g_mtxGlContext.lock();
         app::g_pWindow->bindGlContext();
         defer(
             app::g_pWindow->unbindGlContext();
-            mtx_unlock(&gl::g_mtxGlContext);
+            gl::g_mtxGlContext.lock();
         );
 
         GLuint b;
@@ -119,11 +119,11 @@ Model::loadGLTF(String path, GLint drawMode, GLint texMode)
             nMesh.mode = mode;
 
             {
-                mtx_lock(&gl::g_mtxGlContext);
+                gl::g_mtxGlContext.lock();
                 app::g_pWindow->bindGlContext();
                 defer(
                     app::g_pWindow->unbindGlContext();
-                    mtx_unlock(&gl::g_mtxGlContext);
+                    gl::g_mtxGlContext.unlock();
                 );
 
                 glGenVertexArrays(1, &nMesh.meshData.vao);

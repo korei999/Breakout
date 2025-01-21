@@ -8,8 +8,6 @@ namespace platform
 namespace win32
 {
 
-static void MixerRunThread(Mixer* s);
-
 class XAudio2VoiceInterface : public IXAudio2VoiceCallback
 {
 public:
@@ -31,20 +29,48 @@ static XAudio2VoiceInterface s_aVoices[audio::MAX_TRACK_COUNT];
 /*static s16 s_chunk[audio::CHUNK_SIZE] {};*/
 
 Mixer::Mixer(IAllocator* pA)
-    : aTracks(pA, audio::MAX_TRACK_COUNT),
-      aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
+    : m_mtxAdd(MUTEX_TYPE::PLAIN),
+      m_aTracks(pA, audio::MAX_TRACK_COUNT),
+      m_aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
 {
     m_bRunning = true;
     m_bMuted = false;
     m_volume = 0.1f;
-
-    mtx_init(&this->mtxAdd, mtx_plain);
 }
 
 void
 Mixer::start()
 {
-    MixerRunThread(this);
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    assert(!FAILED(hr));
+
+    hr = XAudio2Create(&m_pXAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
+    assert(!FAILED(hr));
+
+    IXAudio2MasteringVoice* masterVoice = nullptr;
+    hr = m_pXAudio2->CreateMasteringVoice(&masterVoice);
+    assert(!FAILED(hr));
+
+    WAVEFORMATEX wave {};
+    wave.wFormatTag = WAVE_FORMAT_PCM;
+    wave.nChannels = 2;
+    wave.nSamplesPerSec = 48000;
+    wave.wBitsPerSample = 16;
+    wave.nBlockAlign = (2 * wave.wBitsPerSample) / 8;
+    wave.nAvgBytesPerSec = wave.nSamplesPerSec * wave.nBlockAlign;
+
+    for (auto& v : s_aVoices)
+    {
+        hr = m_pXAudio2->CreateSourceVoice(
+            &v.m_pVoice, &wave, 0, XAUDIO2_DEFAULT_FREQ_RATIO, &v, {}, {}
+        );
+
+        assert(!FAILED(hr));
+
+        v.m_pVoice->SetVolume(audio::g_globalVolume);
+        v.m_pVoice->Start();
+        v.m_bPlaying = false;
+    }
 }
 
 void
@@ -111,41 +137,6 @@ Mixer::addBackground(audio::Track t)
             v.m_track = t;
             break;
         }
-    }
-}
-
-static void
-MixerRunThread(Mixer* s)
-{
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    assert(!FAILED(hr));
-
-    hr = XAudio2Create(&s->pXAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
-    assert(!FAILED(hr));
-
-    IXAudio2MasteringVoice* masterVoice = nullptr;
-    hr = s->pXAudio2->CreateMasteringVoice(&masterVoice);
-    assert(!FAILED(hr));
-
-    WAVEFORMATEX wave {};
-    wave.wFormatTag = WAVE_FORMAT_PCM;
-    wave.nChannels = 2;
-    wave.nSamplesPerSec = 48000;
-    wave.wBitsPerSample = 16;
-    wave.nBlockAlign = (2 * wave.wBitsPerSample) / 8;
-    wave.nAvgBytesPerSec = wave.nSamplesPerSec * wave.nBlockAlign;
-
-    for (auto& v : s_aVoices)
-    {
-        hr = s->pXAudio2->CreateSourceVoice(
-            &v.m_pVoice, &wave, 0, XAUDIO2_DEFAULT_FREQ_RATIO, &v, {}, {}
-        );
-
-        assert(!FAILED(hr));
-
-        v.m_pVoice->SetVolume(audio::g_globalVolume);
-        v.m_pVoice->Start();
-        v.m_bPlaying = false;
     }
 }
 

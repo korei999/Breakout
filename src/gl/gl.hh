@@ -1,6 +1,6 @@
 #pragma once
 
-#include <threads.h>
+#include "adt/Thread.hh"
 
 #ifdef __linux__
     #define GL_GLEXT_PROTOTYPES
@@ -58,7 +58,7 @@ namespace gl
 {
 
 extern GLenum g_lastErrorCode;
-extern mtx_t g_mtxGlContext;
+extern adt::Mutex g_mtxGlContext;
 
 void debugCallback(
     GLenum source,

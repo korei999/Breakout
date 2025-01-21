@@ -21,11 +21,34 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+option(OPT_X11 "x11 support" OFF)
+option(OPT_SSE4_2 "compile with SSE4_2 support" ON)
+option(OPT_AVX2 "compile with AVX2 support" OFF)
+
 include_directories(BEFORE "src")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     add_definitions("-D_CRT_SECURE_NO_WARNINGS")
     add_definitions("-DADT_STD_TYPES")
+endif()
+
+if (CMAKE_BUILD_TYPE MATCHES "DebugMingw" OR CMAKE_BUILD_TYPE MATCHES "ReleaseMingw")
+    set(TOOLCHAIN_PREFIX x86_64-w64-mingw32)
+    set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
+    set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)
+
+    set(CMAKE_FIND_ROOT_PATH /usr/${TOOLCHAIN_PREFIX})
+    set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+    set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+    set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+
+    set(CMAKE_SYSTEM_NAME "Windows")
+
+    if (CMAKE_BUILD_TYPE MATCHES "DebugMingw")
+        set(CMAKE_BUILD_TYPE "Debug")
+    else()
+        set(CMAKE_BUILD_TYPE "Release")
+    endif()
 endif()
 
 add_executable(
@@ -47,10 +70,6 @@ add_executable(
     src/app.cc
     src/audio.cc
 )
-
-option(OPT_X11 "x11 support" OFF)
-option(OPT_SSE4_2 "compile with SSE4_2 support" ON)
-option(OPT_AVX2 "compile with AVX2 support" OFF)
 
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftime-trace")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftime-trace")

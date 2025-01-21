@@ -683,11 +683,11 @@ TTF::rasterizeAscii(reader::ttf::Font* pFont)
     auto aQuads = ttfGenStringMesh(this, &arena, test, 0, 0, 1.0f);
     m_vboSize = aQuads.getSize() * 6; /* 6 vertices for 1 quad */
 
-    mtx_lock(&gl::g_mtxGlContext);
+    gl::g_mtxGlContext.lock();
     app::g_pWindow->bindGlContext();
     defer(
         app::g_pWindow->unbindGlContext();
-        mtx_unlock(&gl::g_mtxGlContext);
+        gl::g_mtxGlContext.unlock();
     );
 
     glGenVertexArrays(1, &m_vao);

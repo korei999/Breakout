@@ -107,11 +107,11 @@ Img::bind(GLint glTex)
 void
 Img::set(u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, GLint magFilter, GLint minFilter)
 {
-    mtx_lock(&gl::g_mtxGlContext);
+    gl::g_mtxGlContext.lock();
     app::g_pWindow->bindGlContext();
     defer(
         app::g_pWindow->unbindGlContext();
-        mtx_unlock(&gl::g_mtxGlContext);
+        gl::g_mtxGlContext.unlock();
     );
 
     glGenTextures(1, &m_id);
@@ -135,11 +135,11 @@ Img::set(u8* pData, GLint texMode, GLint format, GLsizei width, GLsizei height, 
 void
 Img::setMonochrome(u8* pData, u32 width, u32 height)
 {
-    mtx_lock(&gl::g_mtxGlContext);
+    gl::g_mtxGlContext.lock();
     app::g_pWindow->bindGlContext();
     defer(
         app::g_pWindow->unbindGlContext();
-        mtx_unlock(&gl::g_mtxGlContext);
+        gl::g_mtxGlContext.unlock();
     );
 
     m_width = width;

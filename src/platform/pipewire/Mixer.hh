@@ -1,9 +1,9 @@
 #pragma once
 
 #include "audio.hh"
-#include "adt/Vec.hh"
 
-#include <threads.h>
+#include "adt/Thread.hh"
+#include "adt/Vec.hh"
 
 #ifdef __clang__
     #pragma clang diagnostic push
@@ -37,7 +37,7 @@ class Mixer : public audio::IMixer
     pw_stream* m_pStream = nullptr;
     u32 m_lastNFrames {};
 
-    mtx_t m_mtxAdd {};
+    Mutex m_mtxAdd {};
     Vec<audio::Track> m_aTracks {};
     u32 m_currentBackgroundTrackIdx {};
     Vec<audio::Track> m_aBackgroundTracks {};

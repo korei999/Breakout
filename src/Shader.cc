@@ -7,7 +7,6 @@
 Pool<Shader, SHADER_MAX_COUNT> g_aAllShaders(INIT);
 
 static GLuint ShaderLoadOne(GLenum type, String path);
-static mtx_t s_mtxAllShaders;
 
 static void loadVertFrag(Shader* s, String vertexPath, String fragmentPath);
 static void loadVertGeomFrag(Shader* s, String vertexPath, String geometryPath, String fragmentPath);

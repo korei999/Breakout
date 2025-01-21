@@ -39,18 +39,17 @@ static const pw_stream_events s_streamEvents {
 };
 
 Mixer::Mixer(IAllocator* pA)
-    : m_aTracks(pA, audio::MAX_TRACK_COUNT),
+    : m_mtxAdd(MUTEX_TYPE::PLAIN),
+      m_aTracks(pA, audio::MAX_TRACK_COUNT),
       m_aBackgroundTracks(pA, audio::MAX_TRACK_COUNT)
 {
-    this->m_bRunning = true;
-    this->m_bMuted = false;
-    this->m_volume = 0.1f;
+    m_bRunning = true;
+    m_bMuted = false;
+    m_volume = 0.1f;
 
-    this->m_sampleRate = 48000;
-    this->m_channels = 2;
-    this->m_eformat = SPA_AUDIO_FORMAT_S16_LE;
-
-    mtx_init(&this->m_mtxAdd, mtx_plain);
+    m_sampleRate = 48000;
+    m_channels = 2;
+    m_eformat = SPA_AUDIO_FORMAT_S16_LE;
 }
 
 void
@@ -63,10 +62,10 @@ Mixer::start()
     spa_pod_builder b {};
     spa_pod_builder_init(&b, aBuff, sizeof(aBuff));
 
-    this->m_pThrdLoop = pw_thread_loop_new("BreakoutThreadLoop", {});
+    m_pThrdLoop = pw_thread_loop_new("BreakoutThreadLoop", {});
 
-    this->m_pStream = pw_stream_new_simple(
-        pw_thread_loop_get_loop(this->m_pThrdLoop),
+    m_pStream = pw_stream_new_simple(
+        pw_thread_loop_get_loop(m_pThrdLoop),
         "BreakoutAudioSource",
         pw_properties_new(
             PW_KEY_MEDIA_TYPE, "Audio",
@@ -79,17 +78,17 @@ Mixer::start()
     );
 
     spa_audio_info_raw rawInfo {
-        .format = this->m_eformat,
+        .format = m_eformat,
         .flags {},
-        .rate = this->m_sampleRate,
-        .channels = this->m_channels,
+        .rate = m_sampleRate,
+        .channels = m_channels,
         .position {}
     };
 
     aParams[0] = spa_format_audio_raw_build(&b, SPA_PARAM_EnumFormat, &rawInfo);
 
     pw_stream_connect(
-        this->m_pStream,
+        m_pStream,
         PW_DIRECTION_OUTPUT,
         PW_ID_ANY,
         (pw_stream_flags)(PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_INACTIVE | PW_STREAM_FLAG_MAP_BUFFERS),
@@ -97,54 +96,51 @@ Mixer::start()
         utils::size(aParams)
     );
 
-    pw_thread_loop_start(this->m_pThrdLoop);
+    pw_thread_loop_start(m_pThrdLoop);
 
-    PwLockGuard tLock(this->m_pThrdLoop);
-    pw_stream_set_active(this->m_pStream, true);
+    PwLockGuard tLock(m_pThrdLoop);
+    pw_stream_set_active(m_pStream, true);
 }
 
 void
 Mixer::destroy()
 {
     {
-        PwLockGuard tLock(this->m_pThrdLoop);
-        pw_stream_set_active(this->m_pStream, true);
+        PwLockGuard tLock(m_pThrdLoop);
+        pw_stream_set_active(m_pStream, true);
     }
 
-    pw_thread_loop_stop(this->m_pThrdLoop);
+    pw_thread_loop_stop(m_pThrdLoop);
     LOG_NOTIFY("pw_thread_loop_stop()\n");
 
-    this->m_bRunning = false;
+    m_bRunning = false;
 
-    pw_stream_destroy(this->m_pStream);
-    pw_thread_loop_destroy(this->m_pThrdLoop);
+    pw_stream_destroy(m_pStream);
+    pw_thread_loop_destroy(m_pThrdLoop);
     pw_deinit();
 
-    this->m_aTracks.destroy();
-    this->m_aBackgroundTracks.destroy();
-    mtx_destroy(&this->m_mtxAdd);
+    m_aTracks.destroy();
+    m_aBackgroundTracks.destroy();
+    m_mtxAdd.destroy();
 }
 
 void
 Mixer::add(audio::Track t)
 {
-    mtx_lock(&this->m_mtxAdd);
+    guard::Mtx lock(&m_mtxAdd);
 
-    if (this->m_aTracks.getSize() < audio::MAX_TRACK_COUNT) this->m_aTracks.push(t);
+    if (m_aTracks.getSize() < audio::MAX_TRACK_COUNT) m_aTracks.push(t);
     else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
 
-    mtx_unlock(&this->m_mtxAdd);
 }
 
 void
 Mixer::addBackground(audio::Track t)
 {
-    mtx_lock(&this->m_mtxAdd);
+    guard::Mtx lock(&m_mtxAdd);
 
-    if (this->m_aTracks.getSize() < audio::MAX_TRACK_COUNT) this->m_aBackgroundTracks.push(t);
+    if (m_aTracks.getSize() < audio::MAX_TRACK_COUNT) m_aBackgroundTracks.push(t);
     else LOG_WARN("MAX_TRACK_COUNT({}) reached, ignoring track push\n", audio::MAX_TRACK_COUNT);
-
-    mtx_unlock(&this->m_mtxAdd);
 }
 
 void
@@ -217,10 +213,10 @@ Mixer::writeFrames(void* pBuff, u32 nFrames)
                 }
                 else
                 {
-                    mtx_lock(&m_mtxAdd);
+                    guard::Mtx lock(&m_mtxAdd);
+
                     m_aTracks.popAsLast(i);
                     --i;
-                    mtx_unlock(&m_mtxAdd);
                 }
             }
         }

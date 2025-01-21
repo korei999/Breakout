@@ -12,8 +12,7 @@
 
 #include "audio.hh"
 #include "adt/Vec.hh"
-
-#include <threads.h>
+#include "adt/Thread.hh"
 
 namespace platform
 {
@@ -29,15 +28,15 @@ void MixerAddBackground(Mixer* s, audio::Track t);
 
 struct Mixer : public audio::IMixer
 {
-    IXAudio2* pXAudio2 = nullptr;
-    IXAudio2SourceVoice* pSourceVoice = nullptr;
+    IXAudio2* m_pXAudio2 = nullptr;
+    IXAudio2SourceVoice* m_pSourceVoice = nullptr;
 
-    mtx_t mtxAdd {};
-    Vec<audio::Track> aTracks {};
-    u32 currentBackgroundTrackIdx = 0;
-    Vec<audio::Track> aBackgroundTracks {};
+    Mutex m_mtxAdd {};
+    Vec<audio::Track> m_aTracks {};
+    u32 m_currentBackgroundTrackIdx = 0;
+    Vec<audio::Track> m_aBackgroundTracks {};
 
-    thrd_t threadLoop {};
+    Thread m_threadLoop {};
 
     Mixer() = default;
     Mixer(IAllocator* pA);
