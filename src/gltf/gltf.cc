@@ -415,13 +415,13 @@ Model::procMeshes()
  
             aPrimitives.push(m_pAlloc, {
                 .attributes {
-                    .NORMAL = pNORMAL ? static_cast<decltype(Primitive::attributes.NORMAL)>(json::getLong(pNORMAL)) : NPOS,
-                    .POSITION = pPOSITION ? static_cast<decltype(Primitive::attributes.POSITION)>(json::getLong(pPOSITION)) : NPOS,
-                    .TEXCOORD_0 = pTEXCOORD_0 ? static_cast<decltype(Primitive::attributes.TEXCOORD_0)>(json::getLong(pTEXCOORD_0)) : NPOS,
-                    .TANGENT = pTANGENT ? static_cast<decltype(Primitive::attributes.TANGENT)>(json::getLong(pTANGENT)) : NPOS,
+                    .NORMAL = pNORMAL ? (s32)(json::getLong(pNORMAL)) : -1,
+                    .POSITION = pPOSITION ? (s32)(json::getLong(pPOSITION)) : -1,
+                    .TEXCOORD_0 = pTEXCOORD_0 ? (s32)(json::getLong(pTEXCOORD_0)) : -1,
+                    .TANGENT = pTANGENT ? (s32)(json::getLong(pTANGENT)) : -1,
                 },
-                .indices = pIndices ? static_cast<decltype(Primitive::indices)>(json::getLong(pIndices)) : NPOS,
-                .material = pMaterial ? static_cast<decltype(Primitive::material)>(json::getLong(pMaterial)) : NPOS,
+                .indices = pIndices ? (s32)(json::getLong(pIndices)) : -1,
+                .material = pMaterial ? (s32)(json::getLong(pMaterial)) : -1,
                 .mode = pMode ? static_cast<decltype(Primitive::mode)>(json::getLong(pMode)) : PRIMITIVES::TRIANGLES,
             });
         }
@@ -445,8 +445,8 @@ Model::procTexures()
         auto pSampler = json::searchObject(obj, "sampler");
 
         m_aTextures.push(m_pAlloc, {
-            .source = pSource ? (u32)(json::getLong(pSource)) : NPOS,
-            .sampler = pSampler ? (u32)(json::getLong(pSampler)) : NPOS
+            .source = pSource ? (s32)(json::getLong(pSource)) : -1,
+            .sampler = pSampler ? (s32)(json::getLong(pSampler)) : -1
         });
     }
 }

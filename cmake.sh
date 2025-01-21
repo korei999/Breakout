@@ -39,6 +39,16 @@ default()
     fi
 }
 
+defaultGCC()
+{
+    _clean
+
+    if cmake -GNinja -S . -B build/ -DCMAKE_BUILD_TYPE=RelWithDebInfo "$@"
+    then
+        cmake --build build/ -j -v
+    fi
+}
+
 debug()
 {
     _clean
@@ -49,11 +59,31 @@ debug()
     fi
 }
 
+debugGCC()
+{
+    _clean
+
+    if CC=gcc CXX=g++ cmake -G "Ninja" -S . -B build/ -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=mold" "$@" 
+    then
+        cmake --build build/ -j -v
+    fi
+}
+
 asan()
 {
     _clean
 
     if CC=clang CXX=clang++ cmake -G "Ninja" -S . -B build/ -DCMAKE_BUILD_TYPE=Asan -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=mold" "$@" 
+    then
+        cmake --build build/ -j -v
+    fi
+}
+
+asanGCC()
+{
+    _clean
+
+    if cmake -G "Ninja" -S . -B build/ -DCMAKE_BUILD_TYPE=Asan -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=mold" "$@" 
     then
         cmake --build build/ -j -v
     fi
@@ -71,8 +101,28 @@ run()
         echo ""
         # ASAN_OPTIONS=detect_leaks=1 LSAN_OPTIONS=suppressions=leaks.txt ./build/$BIN "$@" # 2> /tmp/$BIN-dbg.txt
         # ASAN_OPTIONS=halt_on_error=0 ./build/$BIN "$@" # 2> /tmp/$BIN-dbg.txt
-        # gamemoderun ./build/$BIN "$@" 2> /tmp/$BIN-dbg.txt
-        ./build/$BIN "$@" 2> /tmp/$BIN-dbg.txt
+        # ./build/$BIN "$@" 2> /tmp/$BIN-dbg.txt
+        UBSAN_OPTIONS=print_stacktrace=1 ./build/$BIN "$@"
+    fi
+}
+
+debugMINGW()
+{
+    _clean
+
+    if cmake -G "Ninja" -S . -B build/ -DCMAKE_BUILD_TYPE=DebugMingw "$@"
+    then
+        cmake --build build/ -j -v
+    fi
+}
+
+releaseMINGW()
+{
+    _clean
+
+    if cmake -G "Ninja" -S . -B build/ -DCMAKE_BUILD_TYPE=ReleaseMingw "$@"
+    then
+        cmake --build build/ -j -v
     fi
 }
 
@@ -97,11 +147,15 @@ case "$1" in
     default) default "${@:2}" ;;
     run) run "${@:2}" ;;
     debug) debug "${@:2}" ;;
+    debugGCC) debugGCC "${@:2}" ;;
     asan) asan "${@:2}" ;;
+    asanGCC) asanGCC "${@:2}" ;;
     release) release "${@:2}";;
     releaseGCC) releaseGCC "${@:2}";;
     install) _install ;;
     uninstall) _uninstall ;;
+    debugMingw) debugMINGW ;;
+    releaseMingw) releaseMINGW ;;
     clean) _clean ;;
     test) _test ;;
     *) build ;;

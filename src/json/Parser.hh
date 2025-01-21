@@ -58,21 +58,21 @@ struct Object
     Object&
     operator[](adt::u32 i)
     {
-        assert(tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY && "[json]: using operator[] on non ARRAY or OBJECT");
+        assert((tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY) && "[json]: using operator[] on non ARRAY or OBJECT");
         return tagVal.val.o[i];
     }
 
     Object&
     first()
     {
-        assert(tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY && "[json]: last() on non ARRAY or OBJECT");
+        assert((tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY) && "[json]: last() on non ARRAY or OBJECT");
         return tagVal.val.o.first();
     }
 
     Object&
     last()
     {
-        assert(tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY && "[json]: last() on non ARRAY or OBJECT");
+        assert((tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY) && "[json]: last() on non ARRAY or OBJECT");
         return tagVal.val.o.last();
     }
 

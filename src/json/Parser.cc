@@ -96,34 +96,34 @@ Parser::parseNode(Object* pNode)
     switch (m_tCurr.eType)
     {
         default:
-            return printNodeError();
-            break;
+        return printNodeError();
+        break;
 
         case TOKEN_TYPE::QUOTED_STRING:
-            parseIdent(&pNode->tagVal);
-            break;
+        parseIdent(&pNode->tagVal);
+        break;
 
         case TOKEN_TYPE::STRING:
-            parseString(&pNode->tagVal);
-            break;
+        parseString(&pNode->tagVal);
+        break;
 
         case TOKEN_TYPE::NUMBER:
-            parseNumber(&pNode->tagVal);
-            break;
+        parseNumber(&pNode->tagVal);
+        break;
 
         case TOKEN_TYPE::FLOAT:
-            parseFloat(&pNode->tagVal);
-            break;
+        parseFloat(&pNode->tagVal);
+        break;
 
         case TOKEN_TYPE::L_BRACE:
-            next(); /* skip brace */
-            OK_OR_RET(parseObject(pNode));
-            break;
+        next(); /* skip brace */
+        OK_OR_RET(parseObject(pNode));
+        break;
 
         case TOKEN_TYPE::L_BRACKET:
-            next(); /* skip bracket */
-            OK_OR_RET(parseArray(pNode));
-            break;
+        next(); /* skip bracket */
+        OK_OR_RET(parseArray(pNode));
+        break;
     }
 
     return STATUS::OK;
@@ -171,7 +171,7 @@ STATUS
 Parser::parseObject(Object* pNode)
 {
     pNode->tagVal.eTag = TAG::OBJECT;
-    pNode->tagVal.val.o = VecBase<Object>(m_pAlloc, 2);
+    pNode->tagVal.val.o = VecBase<Object>(m_pAlloc);
     auto& aObjs = getObject(pNode);
 
     while (m_tCurr.eType != TOKEN_TYPE::R_BRACE)
@@ -210,7 +210,7 @@ STATUS
 Parser::parseArray(Object* pNode)
 {
     pNode->tagVal.eTag = TAG::ARRAY;
-    pNode->tagVal.val.a = VecBase<Object>(m_pAlloc, 2);
+    pNode->tagVal.val.a = VecBase<Object>(m_pAlloc);
     auto& aTVs = getArray(pNode);
 
     /* collect each key/value pair inside array */
@@ -223,21 +223,21 @@ Parser::parseArray(Object* pNode)
             default:
             case TOKEN_TYPE::QUOTED_STRING:
             case TOKEN_TYPE::STRING:
-                parseString(&aTVs.last().tagVal);
-                break;
+            parseString(&aTVs.last().tagVal);
+            break;
 
             case TOKEN_TYPE::NUMBER:
-                parseNumber(&aTVs.last().tagVal);
-                break;
+            parseNumber(&aTVs.last().tagVal);
+            break;
 
             case TOKEN_TYPE::FLOAT:
-                parseFloat(&aTVs.last().tagVal);
-                break;
+            parseFloat(&aTVs.last().tagVal);
+            break;
 
             case TOKEN_TYPE::L_BRACE:
-                next();
-                OK_OR_RET(parseObject(&aTVs.last()));
-                break;
+            next();
+            OK_OR_RET(parseObject(&aTVs.last()));
+            break;
         }
 
         if (m_tCurr.eType != TOKEN_TYPE::COMMA)
