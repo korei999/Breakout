@@ -51,6 +51,102 @@ if (CMAKE_BUILD_TYPE MATCHES "DebugMingw" OR CMAKE_BUILD_TYPE MATCHES "ReleaseMi
     endif()
 endif()
 
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftime-trace")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftime-trace")
+
+add_definitions("-DADT_DEFER_LESS_TYPING")
+add_definitions("-DADT_LOGS_LESS_TYPING")
+
+if (CMAKE_BUILD_TYPE MATCHES "Release" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
+    set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY WIN32_EXECUTABLE TRUE)
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        # add_compile_options(-flto)
+        # add_link_options(-flto)
+    endif()
+endif()
+
+if (LOGS)
+    add_definitions("-DADT_LOGS")
+endif()
+
+# debug logs defines
+
+if (OPT_SSE4_2)
+    add_definitions("-DADT_SSE4_2")
+
+    if(MSVC)
+        add_compile_options(/arch:SSE4.2)
+    else()
+        add_compile_options(-msse4.2)
+    endif()
+endif()
+
+if (OPT_AVX2)
+    add_definitions("-DADT_AVX2")
+
+    if(MSVC)
+        add_compile_options(/arch:AVX2)
+    else()
+        add_compile_options(-mavx2)
+    endif()
+endif()
+
+if (CMAKE_BUILD_TYPE MATCHES "Asan")
+    set(CMAKE_BUILD_TYPE "Debug")
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        add_compile_options(-fsanitize=address)
+    else()
+        add_compile_options(-O0 -g3 -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address)
+
+        if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+            add_compile_options(-shared-libsan)
+            # doesn't work...
+            # target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE clang_rt.asan_cxx-x86_64.lib clang_rt.asan-x86_64.lib)
+        else()
+            add_link_options(-fsanitize=undefined -fsanitize=address)
+        endif()
+
+    endif()
+endif()
+
+message(STATUS "CMAKE_BUILD_TYPE: '${CMAKE_BUILD_TYPE}'")
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /GR") # disable exceptions
+    # add_definitions("/D_HAS_EXCEPTIONS=0")
+
+    add_compile_options(/wd4146 /wd4200 /wd4312 /utf-8)
+else()
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-threadsafe-statics -fno-rtti -fno-exceptions -fno-unwind-tables")
+    # if (NOT CMAKE_BUILD_TYPE MATCHES "Debug")
+    #     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nodefaultlibs -lc -lm")
+    # endif()
+
+    add_compile_options(-Wall -Wextra -fms-extensions -Wno-missing-braces)
+endif()
+
+if (CMAKE_BUILD_TYPE MATCHES "Debug")
+    add_definitions("-DADT_LOGS")
+    add_definitions("-DADT_DBG_MEMORY")
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        add_compile_options(/wd4267 /wd4101 /wd4200 /wd4244)
+    else()
+        add_compile_options(-Wmissing-field-initializers -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable)
+    endif()
+endif()
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-class-memaccess -Wno-cast-function-type")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-Wno-cast-function-type-mismatch)
+endif()
+
+message(STATUS "CMAKE_SYSTEM_NAME: '${CMAKE_SYSTEM_NAME}'")
+message(STATUS "CMAKE_SOURCE_DIR: '${CMAKE_SOURCE_DIR}'")
+
 add_executable(
     ${CMAKE_PROJECT_NAME}
     src/main.cc
@@ -71,131 +167,13 @@ add_executable(
     src/audio.cc
 )
 
-# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftime-trace")
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftime-trace")
-
-add_definitions("-DADT_DEFER_LESS_TYPING")
-add_definitions("-DADT_LOGS_LESS_TYPING")
-
-if (CMAKE_BUILD_TYPE MATCHES "Release" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
-    set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY WIN32_EXECUTABLE TRUE)
-
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto=thin")
-    endif()
-endif()
-
-if (LOGS)
-    add_definitions("-DADT_LOGS")
-endif()
-
-# debug logs defines
-
-# if (D_TTF)
-#     add_definitions("-DD_TTF")
-# endif()
-# if (D_GLTF)
-#     add_definitions("-DD_GLTF")
-# endif()
-# if (D_TEXTURE)
-#     add_definitions("-DD_TEXTURE")
-# endif()
-# if (D_WAVE)
-#     add_definitions("-DD_WAVE")
-# endif()
-
-if (OPT_SSE4_2)
-    add_definitions("-DADT_SSE4_2")
-
-    if(MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE4.2")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:SSE4.2")
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2")
-    endif()
-endif()
-
-if (OPT_AVX2)
-    add_definitions("-DADT_AVX2")
-
-    if(MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX2")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:AVX2")
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2")
-    endif()
-endif()
-
-if (CMAKE_BUILD_TYPE MATCHES "Asan")
-    set(CMAKE_BUILD_TYPE "Debug")
-
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
-    else()
-
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g3 -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g3 -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address")
-
-        if (CMAKE_SYSTEM_NAME MATCHES "Windows")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -shared-libsan")
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -shared-libsan")
-            # doesn't work...
-            # target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE clang_rt.asan_cxx-x86_64.lib clang_rt.asan-x86_64.lib)
-        else()
-            add_link_options(-fsanitize=undefined -fsanitize=address)
-        endif()
-
-    endif()
-endif()
-
-message(STATUS "CMAKE_BUILD_TYPE: '${CMAKE_BUILD_TYPE}'")
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /GR") # disable exceptions
-    # add_definitions("/D_HAS_EXCEPTIONS=0")
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4146 /wd4200 /wd4312")
-    set(CMAKE_CXX_FLAGS "/utf-8")
-    set(CMAKE_C_FLAGS "/utf-8")
-else()
-    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-threadsafe-statics -fno-rtti -fno-exceptions -fno-unwind-tables")
-    # if (NOT CMAKE_BUILD_TYPE MATCHES "Debug")
-    #     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nodefaultlibs -lc -lm")
-    # endif()
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fms-extensions -Wno-missing-braces")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fms-extensions -Wno-missing-braces")
-endif()
-
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
-    add_definitions("-DADT_LOGS")
-    add_definitions("-DADT_DBG_MEMORY")
-
     target_sources(
         ${CMAKE_PROJECT_NAME}
         PRIVATE
         src/test.cc
     )
-
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267 /wd4101 /wd4200 /wd4244")
-    else()
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wmissing-field-initializers -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmissing-field-initializers -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-unused-but-set-variable")
-    endif()
 endif()
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-class-memaccess -Wno-cast-function-type")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cast-function-type-mismatch")
-endif()
-
-message(STATUS "CMAKE_SYSTEM_NAME: '${CMAKE_SYSTEM_NAME}'")
-message(STATUS "CMAKE_SOURCE_DIR: '${CMAKE_SOURCE_DIR}'")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_package(PkgConfig REQUIRED)
