@@ -5,6 +5,13 @@ struct AllocatorPool
 {
     adt::Pool<ALLOC_T, CAP> pool {};
 
+    /* */
+
+    AllocatorPool() = default;
+    AllocatorPool(adt::INIT_FLAG eFlag) : pool(eFlag) {}
+
+    /* */
+
     template<typename ...ARGS>
     [[nodiscard]] ALLOC_T*
     get(ARGS&&... args)

@@ -29,7 +29,7 @@ struct WidthHeight
 thread_local static u8 tls_aMemBuffer[SIZE_8K] {};
 thread_local static ScratchBuffer tls_scratch(tls_aMemBuffer);
 
-static AllocatorPool<Arena, ASSET_MAX_COUNT> s_assetArenas {};
+static AllocatorPool<Arena, ASSET_MAX_COUNT> s_assetArenas(INIT);
 
 static Vec<game::Block> s_aBlocks(s_assetArenas.get(SIZE_1K));
 
@@ -51,7 +51,7 @@ static Plain s_plain;
 static text::TTF s_ttfWriter(s_assetArenas.get(SIZE_1K * 520));
 static reader::ttf::Font s_fontLiberation(s_assetArenas.get(SIZE_1K * 500));
 
-Pool<Entity, ASSET_MAX_COUNT> g_aEntities;
+Pool<Entity, ASSET_MAX_COUNT> g_aEntities(INIT);
 static Arr<math::V2, ASSET_MAX_COUNT> s_aPrevPos;
 
 static const Level* s_pCurrLvl {};
