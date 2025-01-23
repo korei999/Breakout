@@ -44,54 +44,67 @@ union Val
 
 struct TagVal
 {
-    TAG eTag;
-    union Val val;
+    TAG eTag {};
+    union Val val {};
 };
 
 struct Object
 {
-    adt::String sKey;
-    TagVal tagVal;
+    adt::String sKey {};
+    TagVal tagVal {};
 
     /* */
+
+    void
+    freeData(adt::IAllocator* pAlloc)
+    {
+        pAlloc->free(tagVal.val.a.m_pData);
+    }
 
     Object&
     operator[](adt::u32 i)
     {
-        assert((tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY) && "[json]: using operator[] on non ARRAY or OBJECT");
+        ADT_ASSERT((tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY),
+            "not an ARRAY or OBJECT, tag is: '%s'", getTAGString(tagVal.eTag).data()
+        );
         return tagVal.val.o[i];
     }
 
     Object&
     first()
     {
-        assert((tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY) && "[json]: last() on non ARRAY or OBJECT");
+        ADT_ASSERT((tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY),
+            "not an ARRAY or OBJECT, tag is: '%s'", getTAGString(tagVal.eTag).data()
+        );
         return tagVal.val.o.first();
     }
 
     Object&
     last()
     {
-        assert((tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY) && "[json]: last() on non ARRAY or OBJECT");
+        ADT_ASSERT((tagVal.eTag == TAG::OBJECT || tagVal.eTag == TAG::ARRAY),
+            "not an ARRAY or OBJECT, tag is: '%s'", getTAGString(tagVal.eTag).data()
+        );
         return tagVal.val.o.last();
     }
 
     adt::u32
     pushToArray(adt::IAllocator* pAlloc, const Object& o)
     {
-        assert(tagVal.eTag == TAG::ARRAY && "[json]: this object is not tagged as ARRAY");
+        ADT_ASSERT(tagVal.eTag == TAG::ARRAY, "not an ARRAY, tag is: '%s'", getTAGString(tagVal.eTag).data());
         return tagVal.val.a.push(pAlloc, o);
     }
 
     adt::u32
     pushToObject(adt::IAllocator* pAlloc, const Object& o)
     {
-        assert(tagVal.eTag == TAG::OBJECT && "[json]: this object is not tagged as OBJECT");
+        ADT_ASSERT(tagVal.eTag == TAG::OBJECT, "not an OBJECT, tag is: '%s'", getTAGString(tagVal.eTag).data());
         return tagVal.val.o.push(pAlloc, o);
     }
 };
 
 enum class STATUS : adt::u8 { OK, FAIL };
+enum class TRAVERSAL_ORDER : adt::u8 { PRE, POST };
 
 class Parser
 {
@@ -118,7 +131,7 @@ public:
     adt::VecBase<Object>& getRoot();
 
     /* pfn returns true for early return */
-    void traverse(bool (*pfn)(Object* p, void* pFnArgs), void* pArgs);
+    void traverse(bool (*pfn)(Object* p, void* pFnArgs), void* pArgs, TRAVERSAL_ORDER eOrder);
 
 private:
     STATUS parseNode(Object* pNode);
@@ -134,9 +147,8 @@ private:
     void next();
 };
 
-
 /* pfn returns true for early return */
-void traverseNode(Object* pNode, bool (*pfn)(Object* pNode, void* pArgs), void* pArgs);
+void traverseNode(Object* pNode, bool (*pfn)(Object* pNode, void* pArgs), void* pArgs, TRAVERSAL_ORDER eOrder);
 void printNode(FILE* fp, Object* pNode, adt::String sEnd = "", int depth = 0);
 
 /* Linear search inside JSON object. Returns nullptr if not found */
@@ -164,7 +176,7 @@ getArray(Object* obj)
     return obj->tagVal.val.a;
 }
 
-[[nodiscard]] inline long
+[[nodiscard]] inline adt::s64
 getLong(Object* obj)
 {
     assert(obj->tagVal.eTag == TAG::LONG);

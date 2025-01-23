@@ -102,7 +102,7 @@ Lexer::nextChar(TOKEN_TYPE eType)
 Token
 Lexer::nextString()
 {
-    assert(m_sJson[m_pos] == '"');
+    ADT_ASSERT(m_sJson[m_pos] == '"', " ");
 
     advanceOne();
     if (done()) return {};
@@ -151,7 +151,7 @@ Lexer::nextStringNoQuotes()
 Token
 Lexer::nextNumber()
 {
-    assert(std::isdigit(m_sJson[m_pos]));
+    ADT_ASSERT(std::isdigit(m_sJson[m_pos]), " ");
 
     auto fPos = m_pos;
     TOKEN_TYPE eType = TOKEN_TYPE::NUMBER;

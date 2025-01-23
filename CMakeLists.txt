@@ -25,6 +25,7 @@ option(OPT_X11 "x11 support" OFF)
 option(OPT_SSE4_2 "compile with SSE4_2 support" ON)
 option(OPT_AVX2 "compile with AVX2 support" OFF)
 
+include_directories(BEFORE "libs")
 include_directories(BEFORE "src")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -154,8 +155,6 @@ add_executable(
     src/controls.cc
     src/frame.cc
     src/Shader.cc
-    src/json/Lexer.cc
-    src/json/Parser.cc
     src/gltf/gltf.cc
     src/reader/Wave.cc
     src/reader/ttf.cc
@@ -165,6 +164,14 @@ add_executable(
     src/game.cc
     src/app.cc
     src/audio.cc
+)
+
+target_sources(
+    ${CMAKE_PROJECT_NAME}
+    PRIVATE
+
+    libs/json/Lexer.cc
+    libs/json/Parser.cc
 )
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
