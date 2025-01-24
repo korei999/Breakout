@@ -245,6 +245,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     target_sources(
         ${CMAKE_PROJECT_NAME} PRIVATE
+        ${WLP}/ClientSW.cc
         ${WLP}/Client.cc
         ${WLP}/input.cc
         ${WLPD}/pointer-constraints-unstable-v1.c

@@ -31,7 +31,7 @@ thread_local static ScratchBuffer tls_scratch(tls_aMemBuffer);
 
 static AllocatorPool<Arena, ASSET_MAX_COUNT> s_assetArenas(INIT);
 
-static Vec<game::Block> s_aBlocks(s_assetArenas.get(SIZE_1K));
+static Vec<Block> s_aBlocks(s_assetArenas.get(SIZE_1K));
 
 static Shader s_shFontBitmap;
 static Shader s_shSprite;

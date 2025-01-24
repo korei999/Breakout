@@ -16,14 +16,54 @@ WinMain(
     [[maybe_unused]] LPSTR cmdline,
     [[maybe_unused]] int cmdshow)
 {
+    /* TODO: */
+    // LPWSTR *sz_arglist;
+    //     int n_args;
+    //     int result;
+    //     sz_arglist = CommandLineToArgvW(GetCommandLineW(), &n_args);
+
+    app::g_eWindowType = app::WINDOW_TYPE::WIN11_GL;
+
     return startup();
 }
 #endif
+
+static void
+parserArgs(int argc, char** argv)
+{
+    for (int i = 1; i < argc; ++i)
+    {
+        String sArg = String(argv[i]);
+
+        if (sArg.beginsWith("--"))
+        {
+            if (sArg == "--wayland-sw")
+            {
+                app::g_eWindowType = app::WINDOW_TYPE::WAYLAND_SW;
+            }
+            else if (sArg == "--wayland-gl")
+            {
+                app::g_eWindowType = app::WINDOW_TYPE::WAYLAND_GL;
+            }
+            else if (sArg == "--x11-gl")
+            {
+                app::g_eWindowType = app::WINDOW_TYPE::X11_GL;
+            }
+            else if (sArg == "--win11-gl")
+            {
+                app::g_eWindowType = app::WINDOW_TYPE::WIN11_GL;
+            }
+        }
+        else return;
+    }
+}
 
 static int
 startup()
 {
     setlocale(LC_ALL, "");
+
+    parserArgs(app::g_argc, app::g_argv);
 
     FreeList alloc(SIZE_1M);
     defer( alloc.freeAll() );
@@ -61,12 +101,14 @@ main(int argc, char** argv)
     #if defined _WIN32
         return WinMain({}, {}, {}, SW_SHOWNORMAL);
     #else
+        app::g_eWindowType = app::WINDOW_TYPE::WAYLAND_GL;
+
         return startup();
     #endif
     }
     catch (IException& ex)
     {
-        ex.logErrorMsg(stderr);
+        ex.logErrorMsg(stdout);
     }
 }
 #endif

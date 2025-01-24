@@ -281,7 +281,7 @@ Client::destroy()
 void
 Client::start()
 {
-    Arena arena(SIZE_8K);
+    Arena arena(SIZE_1K);
     defer( arena.freeAll() );
 
     if ((m_display = wl_display_connect(nullptr)))

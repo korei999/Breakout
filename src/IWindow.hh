@@ -20,8 +20,8 @@ struct IWindow
     int m_swapInterval = 1;
     f64 m_hideCursorTime = 0.0f;
 
-    constexpr IWindow() = default;
-    constexpr IWindow(String _sName = "Breakout")
+    IWindow() = default;
+    IWindow(String _sName = "Breakout")
         : m_sName(_sName) {}
 
     virtual void start() = 0;
