@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.25)
 
 project(Breakout VERSION 0.1 LANGUAGES CXX C)
 message(STATUS "CMAKE_PROJECT_VERSION: '${CMAKE_PROJECT_VERSION}'")
@@ -56,15 +56,6 @@ endif()
 
 add_definitions("-DADT_DEFER_LESS_TYPING")
 add_definitions("-DADT_LOGS_LESS_TYPING")
-
-if (CMAKE_BUILD_TYPE MATCHES "Release" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
-    set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY WIN32_EXECUTABLE TRUE)
-
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        # add_compile_options(-flto)
-        # add_link_options(-flto)
-    endif()
-endif()
 
 if (LOGS)
     add_definitions("-DADT_LOGS")
@@ -166,6 +157,15 @@ add_executable(
     src/app.cc
     src/audio.cc
 )
+
+if (CMAKE_BUILD_TYPE MATCHES "Release" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
+    set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY WIN32_EXECUTABLE TRUE)
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        # add_compile_options(-flto)
+        # add_link_options(-flto)
+    endif()
+endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
     target_sources(
